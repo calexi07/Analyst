@@ -1,0 +1,908 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Daily Observer | EaglePips</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦅</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --paper:#F5F6F2; --surface:#FFFFFF; --ink:#1B211D; --muted:#5E6963; --line:#D8DDD6; --hover:#F0F4EC;
+    --sheet:#274E13; --sheet-2:#3A6B20; --pos:#1E7B34; --neg:#C5221F; --focus:#2F6FDE;
+    --bull:#D9EAD3; --bear:#F4CCCC; --two:#FCE5CD; --neu:#ECEEEA; --today:#FFF8D6;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#111613; --surface:#181E1A; --ink:#E4EAE5; --muted:#98A49D; --line:#2B342E; --hover:#1F2822;
+      --sheet:#2C5A17; --sheet-2:#3B7420; --pos:#62C57F; --neg:#F07D73; --focus:#7AA7FF;
+      --bull:#22402A; --bear:#4A2724; --two:#4A3920; --neu:#252B27; --today:#2E2B18;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#111613; --surface:#181E1A; --ink:#E4EAE5; --muted:#98A49D; --line:#2B342E; --hover:#1F2822;
+    --sheet:#2C5A17; --sheet-2:#3B7420; --pos:#62C57F; --neg:#F07D73; --focus:#7AA7FF;
+    --bull:#22402A; --bear:#4A2724; --two:#4A3920; --neu:#252B27; --today:#2E2B18;
+    color-scheme: dark;
+  }
+  :root{ box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+  html{ scroll-padding-top:env(safe-area-inset-top,0px); }
+  html,body{ background:var(--paper); color:var(--ink); }
+  body{ font-family:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; font-size:14px; line-height:1.45; }
+  .cond{ font-family:'IBM Plex Sans Condensed','IBM Plex Sans','Arial Narrow',sans-serif; }
+  .num{ font-variant-numeric:tabular-nums; }
+  .muted{ color:var(--muted); }
+  .pos{ color:var(--pos); } .neg{ color:var(--neg); }
+  :focus-visible{ outline:2px solid var(--focus); outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
+
+  header.app{ background:var(--sheet); color:#fff; }
+  header.app .brand{ font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:600; font-size:20px; letter-spacing:-.01em; }
+  .tab{ padding:6px 12px; border-radius:6px; color:rgba(255,255,255,.8); font-weight:500; }
+  .tab:hover{ color:#fff; background:rgba(255,255,255,.08); }
+  .tab[aria-selected="true"]{ background:#fff; color:var(--sheet); }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .tab[aria-selected="true"]{ background:var(--paper); color:var(--ink); } }
+  .hbtn{ padding:6px 10px; border-radius:6px; border:1px solid rgba(255,255,255,.3); color:#fff; font-size:13px; }
+  .hbtn:hover{ background:rgba(255,255,255,.1); }
+
+  /* Pair strip — the signature element: every pair colored by this week's bias */
+  .strip{ display:flex; gap:4px; overflow-x:auto; padding:8px 16px; background:var(--surface); border-bottom:1px solid var(--line); scrollbar-width:thin; }
+  .chip{ flex:0 0 auto; font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:600; font-size:13px; padding:5px 9px 5px 8px;
+         border-radius:5px; border:1px solid var(--line); background:var(--surface); color:var(--ink); border-left-width:4px; }
+  .chip:hover{ background:var(--hover); }
+  .chip.b-bullish{ border-left-color:var(--pos); } .chip.b-bearish{ border-left-color:var(--neg); }
+  .chip.b-two-sided{ border-left-color:#D9922E; } .chip.b-neutral{ border-left-color:var(--muted); }
+  .chip[aria-current="true"]{ background:var(--sheet); color:#fff; border-color:var(--sheet); }
+  .chip.b-bullish[aria-current="true"]{ border-left-color:#8BE0A0; } .chip.b-bearish[aria-current="true"]{ border-left-color:#FF9A91; }
+  .chip.b-two-sided[aria-current="true"]{ border-left-color:#F5C27A; }
+  .stripsep{ flex:0 0 1px; background:var(--line); margin:2px 4px; }
+
+  .btn{ border:1px solid var(--line); background:var(--surface); color:var(--ink); padding:6px 12px; border-radius:6px; font-weight:500; font-size:13px; }
+  .btn:hover{ background:var(--hover); }
+  .btn-primary{ background:var(--sheet); color:#fff; border-color:var(--sheet); }
+  .btn-primary:hover{ background:var(--sheet-2); }
+  .btn-danger{ color:var(--neg); }
+
+  .pairtitle{ font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:600; font-size:30px; line-height:1; letter-spacing:-.02em; }
+
+  .grid-wrap{ overflow:auto; max-height:calc(100vh - 215px); border:1px solid var(--line); background:var(--surface); border-radius:6px; }
+  table.sheet{ border-collapse:separate; border-spacing:0; min-width:2350px; font-size:12.5px; }
+  table.sheet th{ position:sticky; top:0; z-index:2; background:var(--sheet); color:#fff; font-family:'IBM Plex Sans Condensed',sans-serif;
+                  font-weight:600; font-size:13px; padding:8px 6px; text-align:center; border-right:1px solid rgba(255,255,255,.14); white-space:nowrap; }
+  table.sheet td{ border-right:1px solid var(--line); border-bottom:1px solid var(--line); padding:6px 8px; vertical-align:middle;
+                  text-align:center; white-space:pre-line; }
+  table.sheet td.txt{ min-width:190px; max-width:260px; }
+  table.sheet td.news{ min-width:170px; max-width:220px; }
+  tr.day{ cursor:pointer; }
+  tr.day:hover td:not(.wk), tr.day:focus-visible td:not(.wk){ background:var(--hover); }
+  tr.day.today td:not(.wk){ background:var(--today); }
+  tr.day.trade td:not(.wk){ font-weight:600; }
+  tr.day.blank td.dt{ color:var(--muted); }
+  td.wk{ cursor:pointer; }
+  td.wk:hover{ filter:brightness(.97); }
+  td.fund{ min-width:190px; max-width:230px; }
+  .bias-bullish{ background:var(--bull); } .bias-bearish{ background:var(--bear); }
+  .bias-two-sided{ background:var(--two); } .bias-neutral{ background:var(--neu); }
+  .biaslbl{ font-weight:600; margin-bottom:2px; }
+  .tv a{ display:inline-block; padding:1px 6px; margin:1px; border:1px solid var(--line); border-radius:4px; color:var(--focus); font-weight:500; }
+  .tv a:hover{ background:var(--hover); }
+  .dash{ color:var(--line); }
+
+  dialog.panel{ width:min(940px,96vw); max-height:92vh; border:none; border-radius:10px; padding:0; background:var(--surface); color:var(--ink);
+                box-shadow:0 24px 60px rgba(0,0,0,.28); }
+  dialog.panel::backdrop{ background:rgba(8,18,10,.5); }
+  .dlg-head{ background:var(--sheet); color:#fff; padding:14px 20px; display:flex; align-items:baseline; gap:12px; position:sticky; top:0; z-index:1; }
+  .dlg-body{ padding:16px 20px 8px; }
+  .dlg-foot{ padding:12px 20px 16px; display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; border-top:1px solid var(--line); position:sticky; bottom:0; background:var(--surface); }
+  fieldset{ border:1px solid var(--line); border-radius:8px; padding:10px 12px 12px; margin-bottom:14px; }
+  legend{ font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:600; padding:0 6px; font-size:14px; }
+  .fgrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
+  .fgrid.wide{ grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); }
+  .f label{ display:block; font-size:12px; color:var(--muted); margin-bottom:3px; }
+  .f input,.f select,.f textarea{ width:100%; border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:6px; padding:6px 8px; font-size:13px; }
+  .f textarea{ min-height:64px; resize:vertical; }
+  .hint{ font-size:12px; color:var(--muted); margin-top:6px; }
+
+  .sumtable{ border-collapse:separate; border-spacing:0; width:100%; border:1px solid var(--line); border-radius:6px; overflow:hidden; background:var(--surface); }
+  .sumtable th{ background:var(--sheet); color:#fff; font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:600; padding:7px 10px; text-align:left; font-size:13px; }
+  .sumtable td{ padding:8px 10px; border-top:1px solid var(--line); }
+  .sumtable.kpi td{ font-size:20px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .card{ background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:14px; }
+  .card h3{ font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:600; font-size:16px; margin-bottom:8px; }
+  .chartbox{ position:relative; height:240px; }
+  .seg{ display:inline-flex; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+  .seg button{ padding:5px 10px; font-size:13px; background:var(--surface); color:var(--ink); }
+  .seg button[aria-pressed="true"]{ background:var(--sheet); color:#fff; }
+  .toast{ position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); background:var(--ink); color:var(--paper);
+          padding:9px 16px; border-radius:6px; font-size:13px; z-index:50; }
+  tr.click{ cursor:pointer; } tr.click:hover td{ background:var(--hover); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" class="toast" hidden></div>
+
+<!-- Day editor -->
+<dialog id="dayDlg" class="panel" aria-labelledby="dayTitle">
+  <form id="dayForm" method="dialog">
+    <div class="dlg-head"><h2 id="dayTitle" class="cond" style="font-size:20px;font-weight:600"></h2><span id="daySub" style="opacity:.8"></span></div>
+    <div class="dlg-body">
+      <fieldset><legend>Zi</legend>
+        <div class="fgrid">
+          <div class="f"><label for="f_trade_status">Trade</label><input id="f_trade_status" name="trade_status" list="dl_status"></div>
+          <div class="f"><label for="f_action">Action</label><input id="f_action" name="action" list="dl_action"></div>
+          <div class="f"><label for="f_daily_change">Închidere zi (%)</label><input id="f_daily_change" name="daily_change" inputmode="decimal" placeholder="-0.19"></div>
+        </div>
+      </fieldset>
+      <fieldset><legend>Știri</legend>
+        <div class="fgrid wide">
+          <div class="f"><label for="f_base_news" id="l_base_news">Știri</label><textarea id="f_base_news" name="base_news" placeholder="15:30 CPI"></textarea></div>
+          <div class="f"><label for="f_quote_news" id="l_quote_news">Știri</label><textarea id="f_quote_news" name="quote_news"></textarea></div>
+        </div>
+        <p class="hint">Știrile se salvează pe monedă: le scrii o dată și apar la toate perechile care conțin moneda respectivă.</p>
+      </fieldset>
+      <fieldset><legend>Observații</legend>
+        <div class="fgrid wide">
+          <div class="f"><label for="f_daily_obs">Daily</label><textarea id="f_daily_obs" name="daily_obs"></textarea></div>
+          <div class="f"><label for="f_h4_obs">4h</label><textarea id="f_h4_obs" name="h4_obs"></textarea></div>
+          <div class="f"><label for="f_h1_obs">1h</label><textarea id="f_h1_obs" name="h1_obs"></textarea></div>
+        </div>
+        <div class="fgrid wide" style="margin-top:10px">
+          <div class="f"><label for="f_tv_daily">TV Daily</label><input id="f_tv_daily" name="tv_daily" type="url" placeholder="https://www.tradingview.com/x/..."></div>
+          <div class="f"><label for="f_tv_4h">TV 4h</label><input id="f_tv_4h" name="tv_4h" type="url"></div>
+          <div class="f"><label for="f_tv_1h">TV 1h</label><input id="f_tv_1h" name="tv_1h" type="url"></div>
+        </div>
+      </fieldset>
+      <fieldset><legend>Tranzacție</legend>
+        <div class="fgrid">
+          <div class="f"><label for="f_session">Session</label><input id="f_session" name="session" list="dl_session"></div>
+          <div class="f"><label for="f_direction">Long/Short</label><select id="f_direction" name="direction"><option value="">–</option><option>Long</option><option>Short</option></select></div>
+          <div class="f"><label for="f_result">W/L</label><select id="f_result" name="result"><option value="">–</option><option value="W">W</option><option value="L">L</option><option value="BE">BE</option></select></div>
+          <div class="f"><label for="f_r_multiple">R</label><input id="f_r_multiple" name="r_multiple" inputmode="decimal" placeholder="2.5"></div>
+          <div class="f"><label for="f_risk">Risk (%)</label><input id="f_risk" name="risk" inputmode="decimal"></div>
+          <div class="f"><label for="f_profit">Profit ($)</label><input id="f_profit" name="profit" inputmode="decimal"></div>
+          <div class="f"><label for="f_entry_time">Entry hour</label><input id="f_entry_time" name="entry_time" type="time"></div>
+          <div class="f"><label for="f_exit_time">Exit hour</label><input id="f_exit_time" name="exit_time" type="time"></div>
+          <div class="f"><label for="f_duration">Duration</label><input id="f_duration" name="duration" placeholder="se calculează"></div>
+          <div class="f"><label for="f_entry_price">Entry</label><input id="f_entry_price" name="entry_price" inputmode="decimal"></div>
+          <div class="f"><label for="f_sl">SL</label><input id="f_sl" name="sl" inputmode="decimal"></div>
+          <div class="f"><label for="f_tp">TP</label><input id="f_tp" name="tp" inputmode="decimal"></div>
+          <div class="f"><label for="f_pips">Pips</label><input id="f_pips" name="pips" inputmode="decimal"></div>
+        </div>
+        <p class="hint" id="rrHint"></p>
+      </fieldset>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn btn-danger" id="dayDelete" style="margin-right:auto">Șterge ziua</button>
+      <button type="button" class="btn" id="dayPrev">‹ Ziua anterioară</button>
+      <button type="button" class="btn" id="dayNext">Ziua următoare ›</button>
+      <button type="button" class="btn" id="dayCancel">Închide</button>
+      <button type="submit" class="btn btn-primary">Salvează ziua</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Week editor -->
+<dialog id="weekDlg" class="panel" aria-labelledby="weekTitle" style="width:min(640px,96vw)">
+  <form id="weekForm" method="dialog">
+    <div class="dlg-head"><h2 id="weekTitle" class="cond" style="font-size:20px;font-weight:600"></h2><span id="weekSub" style="opacity:.8"></span></div>
+    <div class="dlg-body">
+      <div class="fgrid">
+        <div class="f"><label for="w_bias">Bias</label>
+          <select id="w_bias" name="bias"><option value="">–</option><option value="bullish">Bullish</option><option value="bearish">Bearish</option><option value="two-sided">Two-sided</option><option value="neutral">Neutral</option></select></div>
+        <div class="f"><label for="w_conviction">Convingere</label>
+          <select id="w_conviction" name="conviction"><option value="">–</option><option value="low">Low / mild</option><option value="medium">Medium</option><option value="high">High</option></select></div>
+      </div>
+      <div class="f" style="margin-top:10px"><label for="w_fundamentals">Fundamentals (apare în jurnal)</label><textarea id="w_fundamentals" name="fundamentals" placeholder="Bearish EUR/USD lean, strengthening"></textarea></div>
+      <div class="f" style="margin-top:10px"><label for="w_review">Review la final de săptămână</label><textarea id="w_review" name="review" placeholder="Ce s-a întâmplat față de ce ai anticipat"></textarea></div>
+      <p class="hint" id="weekRealized"></p>
+    </div>
+    <div class="dlg-foot">
+      <button type="button" class="btn btn-danger" id="weekDelete" style="margin-right:auto">Șterge săptămâna</button>
+      <button type="button" class="btn" id="weekCopy">Copiază din săptămâna trecută</button>
+      <button type="button" class="btn" id="weekCancel">Închide</button>
+      <button type="submit" class="btn btn-primary">Salvează săptămâna</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Data dialog -->
+<dialog id="dataDlg" class="panel" aria-labelledby="dataTitle" style="width:min(620px,96vw)">
+  <div class="dlg-head"><h2 id="dataTitle" class="cond" style="font-size:20px;font-weight:600">Import și export</h2></div>
+  <div class="dlg-body" style="display:grid;gap:14px">
+    <div>
+      <h3 class="cond" style="font-weight:600;font-size:16px">Import din Google Sheets</h3>
+      <p class="muted" style="font-size:13px">În sheet: Fișier → Descărcare → CSV, din tab-ul perechii. Rândurile sunt importate în perechea selectată acum (<b id="impPair"></b>). Coloanele sunt recunoscute după numele din header (Date, Trade, Session, Long/Short, W/L, USD News, EUR News, Daily Observations etc.). Procentul de închidere e extras automat din „Price closed ±x%”.</p>
+      <input type="file" id="csvFile" accept=".csv,text/csv" class="btn" style="margin-top:6px">
+    </div>
+    <div>
+      <h3 class="cond" style="font-weight:600;font-size:16px">Backup</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+        <button class="btn" id="expJson">Export backup JSON</button>
+        <label class="btn" style="cursor:pointer">Import backup JSON<input type="file" id="jsonFile" accept=".json,application/json" hidden></label>
+        <button class="btn" id="expCsv">Export CSV pereche</button>
+      </div>
+    </div>
+    <div>
+      <h3 class="cond" style="font-weight:600;font-size:16px">Perechi proprii</h3>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <input id="newPair" class="btn" style="width:140px;text-transform:uppercase" maxlength="6" placeholder="XAUUSD" aria-label="Simbol nou">
+        <button class="btn" id="addPair">Adaugă</button>
+      </div>
+      <p class="hint" id="extraList"></p>
+    </div>
+  </div>
+  <div class="dlg-foot"><button class="btn" id="dataClose">Închide</button></div>
+</dialog>
+
+<datalist id="dl_status"><option>No trade</option><option>Wait</option><option>Setup formed</option><option>YES</option><option>In trade</option><option>Closed trade</option></datalist>
+<datalist id="dl_session"><option>Asia</option><option>London</option><option>New York</option><option>Asia / London</option><option>London / New York</option></datalist>
+<datalist id="dl_action"><option>Wait</option><option>Entry</option><option>Look for long tomorrow</option><option>Look for short tomorrow</option><option>Manage trade</option></datalist>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
+
+/* ====== CONFIG — pune datele proiectului tău Supabase ====== */
+const SUPABASE_URL = 'https://XXXX.supabase.co';
+const SUPABASE_ANON_KEY = 'PUNE_AICI_ANON_KEY';
+/* =========================================================== */
+
+const CONFIGURED = !SUPABASE_URL.includes('XXXX') && !SUPABASE_ANON_KEY.startsWith('PUNE');
+const sb = CONFIGURED ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+const PAIRS = [
+  'EURUSD','GBPUSD','USDJPY','USDCHF','USDCAD','AUDUSD','NZDUSD',
+  'EURGBP','EURJPY','EURCHF','EURCAD','EURAUD','EURNZD',
+  'GBPJPY','GBPCHF','GBPCAD','GBPAUD','GBPNZD',
+  'AUDJPY','AUDCHF','AUDCAD','AUDNZD',
+  'NZDJPY','NZDCHF','NZDCAD',
+  'CADJPY','CADCHF','CHFJPY'
+];
+const GROUP_BREAKS = new Set(['EURGBP','GBPJPY','AUDJPY','NZDJPY','CADJPY']);
+const MONTHS = ['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'];
+const WD = ['Duminică','Luni','Marți','Miercuri','Joi','Vineri','Sâmbătă'];
+const BIAS_LBL = { bullish:'Bullish', bearish:'Bearish', 'two-sided':'Two-sided', neutral:'Neutral' };
+const CONV_LBL = { low:'mild', medium:'medium conviction', high:'high conviction' };
+const TEXT_F = ['trade_status','session','direction','result','entry_time','exit_time','duration','daily_obs','h4_obs','h1_obs','tv_daily','tv_4h','tv_1h','action'];
+const NUM_F  = ['r_multiple','risk','profit','entry_price','sl','tp','pips','daily_change'];
+
+/* ---------- safe localStorage ---------- */
+const ls = {
+  get(k, d=null){ try{ const v = localStorage.getItem(k); return v==null ? d : JSON.parse(v); }catch{ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} }
+};
+
+const S = {
+  user:null, view: ls.get('do_view','journal'), pair: ls.get('do_pair','EURUSD'),
+  month: firstOfMonth(new Date()), scope: ls.get('do_scope','pair'), period: ls.get('do_period','all'), metric:'pips',
+  daily:new Map(), weekly:new Map(), news:new Map(), charts:[], extra: ls.get('do_extra_pairs', []),
+  editDay:null, editWeek:null
+};
+const allPairs = () => [...PAIRS, ...S.extra.filter(p => !PAIRS.includes(p))];
+const base = p => p.slice(0,3), quote = p => p.slice(3,6);
+const dk = (p,d) => `${p}|${d}`, wk = (p,y,w) => `${p}|${y}|${w}`, nk = (c,d) => `${c}|${d}`;
+
+/* ---------- helpers ---------- */
+function firstOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+function iso(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function parseISO(s){ const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); }
+function isoWeek(date){
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const day = d.getUTCDay() || 7; d.setUTCDate(d.getUTCDate() + 4 - day);
+  const y = d.getUTCFullYear(), ys = new Date(Date.UTC(y,0,1));
+  return { year:y, week: Math.ceil(((d - ys)/86400000 + 1)/7) };
+}
+function mondayOf(y, w){ const j4 = new Date(y,0,4); const m = new Date(y,0,4 - ((j4.getDay()||7) - 1)); m.setDate(m.getDate() + (w-1)*7); return m; }
+function prevWeek(y, w){ const m = mondayOf(y,w); m.setDate(m.getDate()-7); return isoWeek(m); }
+const esc = s => s==null ? '' : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function parseNum(v){ if(v==null) return null; const s = String(v).trim().replace('−','-').replace(/[^\d,.\-+]/g,'').replace(',','.'); if(s==='' || s==='-' || s==='+') return null; const n = parseFloat(s); return isFinite(n) ? n : null; }
+const fmt = (n, d=2) => n==null ? '' : Number(n).toLocaleString('ro-RO', { maximumFractionDigits:d });
+const sgn = n => n==null ? '' : (n>0 ? 'pos' : n<0 ? 'neg' : '');
+const pct = n => n==null ? '' : `${n>0?'+':''}${Number(n).toFixed(2)}%`;
+const pipSize = p => p.startsWith('XAU') ? 0.1 : p.includes('JPY') ? 0.01 : p.startsWith('XAG') ? 0.01 : 0.0001;
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function toast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(()=> t.hidden = true, 2600); }
+function currentWeekBias(p){ const w = isoWeek(new Date()); return S.weekly.get(wk(p,w.year,w.week))?.bias || ''; }
+
+/* ---------- data ---------- */
+async function fetchAll(table){
+  const out = []; const size = 1000;
+  for(let from = 0; ; from += size){
+    const { data, error } = await sb.from(table).select('*').range(from, from+size-1);
+    if(error) throw error;
+    out.push(...data); if(data.length < size) break;
+  }
+  return out;
+}
+async function loadAll(){
+  const [d, w, n] = await Promise.all([fetchAll('do_daily'), fetchAll('do_weekly'), fetchAll('do_news')]);
+  S.daily = new Map(d.map(r => [dk(r.pair, r.day), r]));
+  S.weekly = new Map(w.map(r => [wk(r.pair, r.year, r.week), r]));
+  S.news = new Map(n.map(r => [nk(r.currency, r.day), r]));
+}
+async function saveNews(cur, day, text){
+  const k = nk(cur, day), ex = S.news.get(k); text = (text||'').trim();
+  if(!text){ if(ex){ const { error } = await sb.from('do_news').delete().eq('id', ex.id); if(error) throw error; S.news.delete(k); } return; }
+  if(ex && ex.events === text) return;
+  const { data, error } = await sb.from('do_news').upsert({ user_id:S.user.id, currency:cur, day, events:text }, { onConflict:'user_id,currency,day' }).select().single();
+  if(error) throw error; S.news.set(k, data);
+}
+async function upsertChunks(table, rows, onConflict){
+  for(let i = 0; i < rows.length; i += 400){
+    const { error } = await sb.from(table).upsert(rows.slice(i, i+400), { onConflict });
+    if(error) throw error;
+  }
+}
+
+/* ---------- shell ---------- */
+function render(){
+  const app = document.getElementById('app');
+  if(!CONFIGURED){ app.innerHTML = setupScreen(); return; }
+  if(!S.user){ app.innerHTML = loginScreen(); bindLogin(); return; }
+  app.innerHTML = `
+    <header class="app">
+      <div class="flex flex-wrap items-center gap-3 px-4 py-3">
+        <div class="brand">Daily Observer <span style="opacity:.6;font-weight:500">EaglePips</span></div>
+        <nav class="flex gap-1" role="tablist" aria-label="Secțiuni">
+          ${[['journal','Jurnal'],['analysis','Analiză'],['overview','Toate perechile']].map(([v,l]) =>
+            `<button class="tab" role="tab" aria-selected="${S.view===v}" data-view="${v}">${l}</button>`).join('')}
+        </nav>
+        <div class="ml-auto flex items-center gap-2">
+          <button class="hbtn" id="openData">Import / export</button>
+          <span class="hidden md:inline text-xs" style="opacity:.75">${esc(S.user.email)}</span>
+          <button class="hbtn" id="logout">Ieșire</button>
+        </div>
+      </div>
+    </header>
+    <div class="strip" role="navigation" aria-label="Perechi">
+      ${allPairs().map(p => `${GROUP_BREAKS.has(p) || (!PAIRS.includes(p) && p===S.extra[0]) ? '<span class="stripsep" aria-hidden="true"></span>' : ''}
+        <button class="chip b-${currentWeekBias(p)}" data-pair="${p}" aria-current="${p===S.pair}" title="${p}${currentWeekBias(p) ? ' – săptămâna asta: '+BIAS_LBL[currentWeekBias(p)] : ''}">${p}</button>`).join('')}
+    </div>
+    <main id="main" class="px-4 py-4"></main>`;
+  app.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { S.view = b.dataset.view; ls.set('do_view', S.view); render(); });
+  app.querySelectorAll('[data-pair]').forEach(b => b.onclick = () => { S.pair = b.dataset.pair; ls.set('do_pair', S.pair); render(); });
+  document.getElementById('logout').onclick = async () => { await sb.auth.signOut(); S.user = null; render(); };
+  document.getElementById('openData').onclick = openData;
+  renderMain();
+  app.querySelector('.chip[aria-current="true"]')?.scrollIntoView({ block:'nearest', inline:'center' });
+}
+function renderMain(){
+  S.charts.forEach(c => c.destroy()); S.charts = [];
+  if(S.view === 'analysis') renderAnalysis();
+  else if(S.view === 'overview') renderOverview();
+  else renderJournal();
+}
+function setupScreen(){
+  return `<div class="max-w-xl mx-auto p-8"><h1 class="pairtitle mb-4">Daily Observer</h1>
+    <div class="card"><p>Aplicația nu e conectată încă la Supabase.</p>
+    <p class="mt-2 muted">1) Rulează <b>schema.sql</b> în Supabase → SQL Editor. 2) Pune <b>SUPABASE_URL</b> și <b>SUPABASE_ANON_KEY</b> în secțiunea CONFIG din index.html. 3) Urcă fișierul pe GitHub Pages.</p></div></div>`;
+}
+function loginScreen(){
+  return `<div class="max-w-sm mx-auto" style="padding-top:12vh">
+    <h1 class="pairtitle">Daily Observer</h1><p class="muted mb-5">Observații zilnice și analiză de trade pe toate perechile.</p>
+    <form id="loginForm" class="card" style="display:grid;gap:10px">
+      <div class="f"><label for="le">Email</label><input id="le" type="email" required autocomplete="email"></div>
+      <div class="f"><label for="lp">Parolă</label><input id="lp" type="password" required minlength="6" autocomplete="current-password"></div>
+      <button class="btn btn-primary" type="submit">Intră în cont</button>
+      <button class="btn" type="button" id="signup">Creează cont</button>
+      <p id="lmsg" class="hint" role="status"></p>
+    </form></div>`;
+}
+function bindLogin(){
+  const msg = t => document.getElementById('lmsg').textContent = t;
+  const creds = () => ({ email: document.getElementById('le').value.trim(), password: document.getElementById('lp').value });
+  document.getElementById('loginForm').onsubmit = async e => {
+    e.preventDefault(); msg('Se conectează…');
+    const { data, error } = await sb.auth.signInWithPassword(creds());
+    if(error) return msg('Autentificare eșuată: ' + error.message);
+    await afterLogin(data.user);
+  };
+  document.getElementById('signup').onclick = async () => {
+    const c = creds(); if(!c.email || c.password.length < 6) return msg('Completează emailul și o parolă de minim 6 caractere.');
+    const { data, error } = await sb.auth.signUp(c);
+    if(error) return msg(error.message);
+    if(data.session) await afterLogin(data.user); else msg('Cont creat. Confirmă emailul, apoi intră în cont.');
+  };
+}
+async function afterLogin(user){
+  S.user = user;
+  try{ await loadAll(); }catch(e){ console.error(e); toast('Nu am putut încărca datele: ' + e.message); }
+  render();
+}
+
+/* ---------- journal ---------- */
+function monthDays(){
+  const y = S.month.getFullYear(), m = S.month.getMonth(), last = new Date(y, m+1, 0).getDate(), out = [];
+  for(let d = 1; d <= last; d++){
+    const dt = new Date(y, m, d), wd = dt.getDay();
+    if((wd >= 1 && wd <= 5) || S.daily.has(dk(S.pair, iso(dt)))) out.push(dt);
+  }
+  return out;
+}
+function fundCell(w){
+  if(!w || (!w.bias && !w.fundamentals)) return '<span class="muted">Adaugă bias</span>';
+  const lbl = w.bias ? `${BIAS_LBL[w.bias]}${w.conviction ? ', ' + CONV_LBL[w.conviction] : ''}` : '';
+  return `${lbl ? `<div class="biaslbl">${esc(lbl)}</div>` : ''}${w.fundamentals ? `<div>${esc(w.fundamentals)}</div>` : ''}`;
+}
+const dash = '<span class="dash">–</span>';
+function cell(v, cls=''){ return `<td class="${cls}">${v==null || v==='' ? dash : esc(v)}</td>`; }
+
+function renderJournal(){
+  const p = S.pair, b = base(p), q = quote(p), today = iso(new Date());
+  const groups = [];
+  for(const dt of monthDays()){
+    const w = isoWeek(dt), k = `${w.year}|${w.week}`;
+    if(!groups.length || groups.at(-1).k !== k) groups.push({ k, ...w, days:[] });
+    groups.at(-1).days.push(dt);
+  }
+  let rows = '';
+  for(const g of groups){
+    const wr = S.weekly.get(wk(p, g.year, g.week));
+    g.days.forEach((dt, i) => {
+      const ds = iso(dt), e = S.daily.get(dk(p, ds)) || {};
+      const bn = S.news.get(nk(b, ds))?.events, qn = S.news.get(nk(q, ds))?.events;
+      const tv = [['D','tv_daily'],['4H','tv_4h'],['1H','tv_1h']].filter(([,f]) => e[f])
+        .map(([l,f]) => `<a href="${esc(e[f])}" target="_blank" rel="noopener">${l}</a>`).join('');
+      rows += `<tr class="day ${e.direction ? 'trade':''} ${ds===today ? 'today':''} ${e.id ? '' : 'blank'}" data-day="${ds}" tabindex="0">`;
+      if(i === 0){
+        rows += `<td class="wk num" rowspan="${g.days.length}" data-week="${g.year}|${g.week}" title="Editează săptămâna">${g.week}</td>
+                 <td class="wk fund bias-${wr?.bias || 'none'}" rowspan="${g.days.length}" data-week="${g.year}|${g.week}">${fundCell(wr)}</td>`;
+      }
+      rows += `<td class="dt num" style="white-space:nowrap">${dt.getDate()} ${MONTHS[dt.getMonth()].toLowerCase()}</td>
+        <td>${WD[dt.getDay()]}</td>
+        ${cell(e.trade_status)}${cell(e.session)}${cell(e.direction)}
+        <td class="${e.result==='W' ? 'pos' : e.result==='L' ? 'neg' : ''}">${e.result ? esc(e.result) : dash}</td>
+        <td class="num ${sgn(e.r_multiple)}">${e.r_multiple!=null ? fmt(e.r_multiple) : dash}</td>
+        <td class="num">${e.risk!=null ? fmt(e.risk)+'%' : dash}</td>
+        <td class="num ${sgn(e.profit)}">${e.profit!=null ? fmt(e.profit) : dash}</td>
+        ${cell(e.entry_time,'num')}${cell(e.exit_time,'num')}${cell(e.duration,'num')}
+        <td class="num">${e.entry_price!=null ? e.entry_price : dash}</td>
+        <td class="num">${e.sl!=null ? e.sl : dash}</td>
+        <td class="num">${e.tp!=null ? e.tp : dash}</td>
+        <td class="num ${sgn(e.pips)}">${e.pips!=null ? fmt(e.pips,1) : dash}</td>
+        ${cell(bn,'news')}${cell(qn,'news')}
+        <td class="num ${sgn(e.daily_change)}" style="white-space:nowrap">${e.daily_change!=null ? pct(e.daily_change) : dash}</td>
+        ${cell(e.daily_obs,'txt')}${cell(e.h4_obs,'txt')}${cell(e.h1_obs,'txt')}
+        <td class="tv" style="white-space:nowrap">${tv || dash}</td>
+        ${cell(e.action)}
+      </tr>`;
+    });
+  }
+  const main = document.getElementById('main');
+  const mStats = monthStats();
+  main.innerHTML = `
+    <div class="flex flex-wrap items-end gap-x-6 gap-y-3 mb-3">
+      <div><div class="pairtitle">${p}</div><div class="muted mt-1">${b} / ${q}</div></div>
+      <div class="flex items-center gap-2">
+        <button class="btn" id="mPrev" aria-label="Luna anterioară">‹</button>
+        <div class="cond" style="font-size:18px;font-weight:600;min-width:150px;text-align:center">${MONTHS[S.month.getMonth()]} ${S.month.getFullYear()}</div>
+        <button class="btn" id="mNext" aria-label="Luna următoare">›</button>
+        <button class="btn" id="mToday">Luna curentă</button>
+      </div>
+      <div class="muted num" style="font-size:13px">${mStats}</div>
+      <button class="btn btn-primary ml-auto" id="addToday">Observație azi</button>
+    </div>
+    <div class="grid-wrap">
+      <table class="sheet">
+        <thead><tr>
+          <th>Week</th><th>Fundamentals</th><th>Date</th><th>Day</th><th>Trade</th><th>Session</th><th>Long/Short</th><th>W/L</th><th>R</th>
+          <th>Risk</th><th>Profit</th><th>Entry hour</th><th>Exit hour</th><th>Duration</th><th>Entry</th><th>SL</th><th>TP</th><th>Pips</th>
+          <th>${b} News</th><th>${q} News</th><th>Close</th><th>Daily observations</th><th>4h observations</th><th>1h observations</th><th>TradingView</th><th>Actions</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  const shift = n => { S.month = new Date(S.month.getFullYear(), S.month.getMonth()+n, 1); renderMain(); };
+  document.getElementById('mPrev').onclick = () => shift(-1);
+  document.getElementById('mNext').onclick = () => shift(1);
+  document.getElementById('mToday').onclick = () => { S.month = firstOfMonth(new Date()); renderMain(); };
+  document.getElementById('addToday').onclick = () => openDay(iso(new Date()));
+  const tb = main.querySelector('tbody');
+  tb.addEventListener('click', ev => {
+    if(ev.target.closest('a')) return;
+    const w = ev.target.closest('td.wk'); if(w){ const [y,n] = w.dataset.week.split('|').map(Number); return openWeek(y, n); }
+    const tr = ev.target.closest('tr.day'); if(tr) openDay(tr.dataset.day);
+  });
+  tb.addEventListener('keydown', ev => { if(ev.key === 'Enter' && ev.target.matches('tr.day')) openDay(ev.target.dataset.day); });
+}
+function monthStats(){
+  const y = S.month.getFullYear(), m = S.month.getMonth();
+  const es = [...S.daily.values()].filter(e => e.pair===S.pair && parseISO(e.day).getFullYear()===y && parseISO(e.day).getMonth()===m);
+  const tr = es.filter(e => ['W','L','BE'].includes(e.result));
+  if(!es.length) return 'Nicio observație luna aceasta';
+  const w = tr.filter(e => e.result==='W').length, l = tr.filter(e => e.result==='L').length;
+  const pips = tr.reduce((s,e) => s + (e.pips||0), 0);
+  return `${es.length} zile observate · ${tr.length} trade-uri${tr.length ? ` · ${w}W / ${l}L · ${fmt(pips,1)} pips` : ''}`;
+}
+
+/* ---------- day editor ---------- */
+const dayDlg = document.getElementById('dayDlg'), dayForm = document.getElementById('dayForm');
+function openDay(ds){
+  S.editDay = ds;
+  const p = S.pair, e = S.daily.get(dk(p, ds)) || {}, dt = parseISO(ds);
+  document.getElementById('dayTitle').textContent = `${p} — ${WD[dt.getDay()]}, ${dt.getDate()} ${MONTHS[dt.getMonth()].toLowerCase()} ${dt.getFullYear()}`;
+  const w = isoWeek(dt), wr = S.weekly.get(wk(p, w.year, w.week));
+  document.getElementById('daySub').textContent = `Săpt. ${w.week}${wr?.bias ? ' · ' + BIAS_LBL[wr.bias] : ''}`;
+  for(const f of [...TEXT_F, ...NUM_F]) dayForm.elements[f].value = e[f] ?? '';
+  document.getElementById('l_base_news').textContent = `${base(p)} News`;
+  document.getElementById('l_quote_news').textContent = `${quote(p)} News`;
+  dayForm.elements.base_news.value = S.news.get(nk(base(p), ds))?.events || '';
+  dayForm.elements.quote_news.value = S.news.get(nk(quote(p), ds))?.events || '';
+  document.getElementById('dayDelete').hidden = !e.id;
+  rrHint();
+  if(!dayDlg.open) dayDlg.showModal();
+  dayForm.elements.trade_status.focus();
+}
+function rrHint(){
+  const el = dayForm.elements, en = parseNum(el.entry_price.value), sl = parseNum(el.sl.value), tp = parseNum(el.tp.value), ps = pipSize(S.pair);
+  const parts = [];
+  if(en!=null && sl!=null) parts.push(`SL: ${fmt(Math.abs(en-sl)/ps,1)} pips`);
+  if(en!=null && tp!=null) parts.push(`TP: ${fmt(Math.abs(tp-en)/ps,1)} pips`);
+  if(en!=null && sl!=null && tp!=null && en!==sl) parts.push(`RR planificat 1:${fmt(Math.abs(tp-en)/Math.abs(en-sl))}`);
+  document.getElementById('rrHint').textContent = parts.join('   ');
+}
+['entry_price','sl','tp'].forEach(f => dayForm.elements[f].addEventListener('input', rrHint));
+['entry_time','exit_time'].forEach(f => dayForm.elements[f].addEventListener('change', () => {
+  const a = dayForm.elements.entry_time.value, b = dayForm.elements.exit_time.value, d = dayForm.elements.duration;
+  if(!a || !b || (d.value && !d.dataset.auto)) return;
+  const [ah,am] = a.split(':').map(Number), [bh,bm] = b.split(':').map(Number);
+  let mins = (bh*60+bm) - (ah*60+am); if(mins < 0) mins += 1440;
+  d.value = `${Math.floor(mins/60)}h ${String(mins%60).padStart(2,'0')}m`; d.dataset.auto = '1';
+}));
+dayForm.elements.duration.addEventListener('input', e => delete e.target.dataset.auto);
+async function saveDay(){
+  const p = S.pair, ds = S.editDay, el = dayForm.elements;
+  const row = { user_id:S.user.id, pair:p, day:ds };
+  for(const f of TEXT_F){ const v = el[f].value.trim(); row[f] = v || null; }
+  for(const f of NUM_F) row[f] = parseNum(el[f].value);
+  const hasContent = [...TEXT_F, ...NUM_F].some(f => row[f] != null);
+  try{
+    if(hasContent){
+      const { data, error } = await sb.from('do_daily').upsert(row, { onConflict:'user_id,pair,day' }).select().single();
+      if(error) throw error; S.daily.set(dk(p, ds), data);
+    }
+    await saveNews(base(p), ds, el.base_news.value);
+    await saveNews(quote(p), ds, el.quote_news.value);
+    return true;
+  }catch(e){ console.error(e); toast('Nu s-a salvat: ' + e.message); return false; }
+}
+dayForm.addEventListener('submit', async ev => { ev.preventDefault(); if(await saveDay()){ dayDlg.close(); toast('Zi salvată'); renderMain(); } });
+document.getElementById('dayCancel').onclick = () => dayDlg.close();
+async function stepDay(n){
+  if(!(await saveDay())) return;
+  const d = parseISO(S.editDay);
+  do { d.setDate(d.getDate()+n); } while(d.getDay()===0 || d.getDay()===6);
+  if(d.getMonth() !== S.month.getMonth() || d.getFullYear() !== S.month.getFullYear()) S.month = firstOfMonth(d);
+  renderMain(); openDay(iso(d));
+}
+document.getElementById('dayPrev').onclick = () => stepDay(-1);
+document.getElementById('dayNext').onclick = () => stepDay(1);
+document.getElementById('dayDelete').onclick = async () => {
+  const e = S.daily.get(dk(S.pair, S.editDay)); if(!e) return;
+  if(!confirm('Ștergi observațiile și trade-ul din ziua asta? Știrile rămân, fiind comune pe monedă.')) return;
+  const { error } = await sb.from('do_daily').delete().eq('id', e.id);
+  if(error) return toast('Nu s-a șters: ' + error.message);
+  S.daily.delete(dk(S.pair, S.editDay)); dayDlg.close(); toast('Zi ștearsă'); renderMain();
+};
+
+/* ---------- week editor ---------- */
+const weekDlg = document.getElementById('weekDlg'), weekForm = document.getElementById('weekForm');
+function weekRealized(p, y, w){
+  const m = mondayOf(y, w); let sum = 0, n = 0;
+  for(let i = 0; i < 7; i++){ const d = new Date(m); d.setDate(m.getDate()+i); const e = S.daily.get(dk(p, iso(d))); if(e?.daily_change != null){ sum += Number(e.daily_change); n++; } }
+  return n ? { sum, n } : null;
+}
+function fillWeek(r){ ['bias','conviction','fundamentals','review'].forEach(f => weekForm.elements[f].value = r?.[f] ?? ''); }
+function openWeek(y, w){
+  S.editWeek = { y, w };
+  const m = mondayOf(y, w), f = new Date(m); f.setDate(m.getDate()+4);
+  document.getElementById('weekTitle').textContent = `${S.pair} — săptămâna ${w}`;
+  document.getElementById('weekSub').textContent = `${m.getDate()} ${MONTHS[m.getMonth()].toLowerCase()} – ${f.getDate()} ${MONTHS[f.getMonth()].toLowerCase()} ${f.getFullYear()}`;
+  const r = S.weekly.get(wk(S.pair, y, w)); fillWeek(r);
+  const re = weekRealized(S.pair, y, w);
+  document.getElementById('weekRealized').innerHTML = re ? `Realizat până acum: <b class="${sgn(re.sum)}">${pct(re.sum)}</b> din ${re.n} închideri zilnice.` : 'Nicio închidere zilnică notată în săptămâna asta.';
+  document.getElementById('weekDelete').hidden = !r;
+  weekDlg.showModal();
+}
+document.getElementById('weekCopy').onclick = () => {
+  const { y, w } = S.editWeek, pw = prevWeek(y, w), r = S.weekly.get(wk(S.pair, pw.year, pw.week));
+  if(!r) return toast('Săptămâna trecută nu are bias salvat');
+  fillWeek({ ...r, review:'' });
+};
+weekForm.addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const { y, w } = S.editWeek, el = weekForm.elements;
+  const row = { user_id:S.user.id, pair:S.pair, year:y, week:w };
+  ['bias','conviction','fundamentals','review'].forEach(f => row[f] = el[f].value.trim() || null);
+  const { data, error } = await sb.from('do_weekly').upsert(row, { onConflict:'user_id,pair,year,week' }).select().single();
+  if(error) return toast('Nu s-a salvat: ' + error.message);
+  S.weekly.set(wk(S.pair, y, w), data); weekDlg.close(); toast('Săptămână salvată'); render();
+});
+document.getElementById('weekCancel').onclick = () => weekDlg.close();
+document.getElementById('weekDelete').onclick = async () => {
+  const { y, w } = S.editWeek, r = S.weekly.get(wk(S.pair, y, w)); if(!r || !confirm('Ștergi bias-ul acestei săptămâni?')) return;
+  const { error } = await sb.from('do_weekly').delete().eq('id', r.id); if(error) return toast(error.message);
+  S.weekly.delete(wk(S.pair, y, w)); weekDlg.close(); render();
+};
+
+/* ---------- analysis ---------- */
+function periodStart(){
+  const now = new Date();
+  if(S.period === '30') return iso(new Date(now.getFullYear(), now.getMonth(), now.getDate()-30));
+  if(S.period === '90') return iso(new Date(now.getFullYear(), now.getMonth(), now.getDate()-90));
+  if(S.period === 'ytd') return `${now.getFullYear()}-01-01`;
+  return '0000-01-01';
+}
+function scoped(){
+  const from = periodStart();
+  return [...S.daily.values()].filter(e => (S.scope==='all' || e.pair===S.pair) && e.day >= from).sort((a,b) => a.day.localeCompare(b.day));
+}
+function biasFor(e){ const w = isoWeek(parseISO(e.day)); return S.weekly.get(wk(e.pair, w.year, w.week))?.bias || ''; }
+function alignment(e){
+  const b = biasFor(e);
+  if(b==='bullish') return e.direction==='Long' ? 'Cu bias-ul' : 'Contra bias';
+  if(b==='bearish') return e.direction==='Short' ? 'Cu bias-ul' : 'Contra bias';
+  return 'Fără bias direcțional';
+}
+function groupStats(trades, keyFn, order){
+  const g = {};
+  for(const t of trades){ const k = keyFn(t) || '—'; (g[k] ||= { n:0, w:0, l:0, be:0, pips:0, profit:0 });
+    const s = g[k]; s.n++; if(t.result==='W') s.w++; else if(t.result==='L') s.l++; else s.be++; s.pips += t.pips||0; s.profit += t.profit||0; }
+  const keys = order ? order.filter(k => g[k]) .concat(Object.keys(g).filter(k => !order.includes(k))) : Object.keys(g);
+  return keys.map(k => ({ k, ...g[k], wr: g[k].w + g[k].l ? g[k].w/(g[k].w+g[k].l)*100 : 0 }));
+}
+function mkChart(id, type, labels, datasets, opts={}){
+  const el = document.getElementById(id); if(!el || !window.Chart) return;
+  const tc = cssv('--muted'), gc = cssv('--line');
+  S.charts.push(new Chart(el, { type, data:{ labels, datasets },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false }, tooltip:opts.tooltip||{} },
+      indexAxis: opts.indexAxis || 'x',
+      scales:{ x:{ ticks:{ color:tc, maxRotation:0, autoSkip:true }, grid:{ color:gc } }, y:{ ticks:{ color:tc }, grid:{ color:gc }, ...(opts.y||{}) } } } }));
+}
+function renderAnalysis(){
+  const es = scoped(), trades = es.filter(e => ['W','L','BE'].includes(e.result));
+  const W = trades.filter(t => t.result==='W'), L = trades.filter(t => t.result==='L');
+  const pips = trades.reduce((s,t) => s+(t.pips||0), 0), profit = trades.reduce((s,t) => s+(t.profit||0), 0);
+  const rs = trades.filter(t => t.r_multiple!=null), avgR = rs.length ? rs.reduce((s,t) => s+Number(t.r_multiple), 0)/rs.length : null;
+  const gw = W.reduce((s,t) => s+Math.max(0,t.profit||0), 0), gl = Math.abs(L.reduce((s,t) => s+Math.min(0,t.profit||0), 0));
+  const pf = gl ? gw/gl : null, wr = W.length+L.length ? W.length/(W.length+L.length)*100 : null;
+
+  // weekly bias accuracy
+  const from = periodStart();
+  const weeks = [...S.weekly.values()].filter(w => (S.scope==='all' || w.pair===S.pair) && (w.bias==='bullish' || w.bias==='bearish') && iso(mondayOf(w.year,w.week)) >= from)
+    .map(w => ({ ...w, re: weekRealized(w.pair, w.year, w.week) })).filter(w => w.re)
+    .map(w => ({ ...w, hit: (w.bias==='bullish' && w.re.sum>0) || (w.bias==='bearish' && w.re.sum<0) }))
+    .sort((a,b) => b.year-a.year || b.week-a.week);
+  const hitRate = weeks.length ? weeks.filter(w => w.hit).length/weeks.length*100 : null;
+
+  // news impact on daily range of close
+  const withC = es.filter(e => e.daily_change!=null);
+  const hasNews = e => S.news.has(nk(base(e.pair), e.day)) || S.news.has(nk(quote(e.pair), e.day));
+  const avgAbs = arr => arr.length ? arr.reduce((s,e) => s+Math.abs(e.daily_change), 0)/arr.length : null;
+  const nY = withC.filter(hasNews), nN = withC.filter(e => !hasNews(e));
+
+  const statuses = groupStats(es.filter(e => e.trade_status), e => e.trade_status);
+
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <div class="flex flex-wrap items-end gap-4 mb-4">
+      <div><div class="pairtitle">${S.scope==='all' ? 'Toate perechile' : S.pair}</div><div class="muted mt-1">${es.length} zile observate în perioadă</div></div>
+      <div class="seg" role="group" aria-label="Aria analizei">
+        <button data-scope="pair" aria-pressed="${S.scope==='pair'}">${S.pair}</button><button data-scope="all" aria-pressed="${S.scope==='all'}">Toate</button></div>
+      <div class="seg" role="group" aria-label="Perioadă">
+        ${[['30','30 zile'],['90','90 zile'],['ytd','Anul acesta'],['all','Tot']].map(([v,l]) => `<button data-period="${v}" aria-pressed="${S.period===v}">${l}</button>`).join('')}</div>
+    </div>
+    <table class="sumtable kpi mb-4"><thead><tr><th>Trade-uri</th><th>Win rate</th><th>Pips</th><th>Profit</th><th>R mediu</th><th>Profit factor</th><th>Bias săpt. corect</th></tr></thead>
+      <tbody><tr>
+        <td>${trades.length}<span class="muted" style="font-size:13px;font-weight:400"> ${W.length}W ${L.length}L</span></td>
+        <td>${wr!=null ? fmt(wr,1)+'%' : '–'}</td>
+        <td class="${sgn(pips)}">${fmt(pips,1)}</td>
+        <td class="${sgn(profit)}">${fmt(profit)}</td>
+        <td>${avgR!=null ? fmt(avgR) : '–'}</td>
+        <td>${pf!=null ? fmt(pf) : '–'}</td>
+        <td>${hitRate!=null ? fmt(hitRate,0)+'%' : '–'}<span class="muted" style="font-size:13px;font-weight:400"> ${weeks.length} săpt.</span></td>
+      </tr></tbody></table>
+    ${trades.length ? '' : '<div class="card mb-4"><p>Nicio tranzacție închisă în perioada aleasă. Setează W/L, Long/Short și pips la ziua de intrare din jurnal și statisticile apar aici.</p></div>'}
+    <div class="grid gap-4" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr))">
+      <div class="card" style="grid-column:1/-1"><div class="flex items-center gap-3"><h3 style="margin:0">Evoluție cumulată</h3>
+        <div class="seg ml-auto" role="group" aria-label="Metrică"><button data-metric="pips" aria-pressed="${S.metric==='pips'}">Pips</button><button data-metric="profit" aria-pressed="${S.metric==='profit'}">Profit</button></div></div>
+        <div class="chartbox mt-2"><canvas id="c_eq" aria-label="Curba cumulată"></canvas></div></div>
+      <div class="card"><h3>Win rate pe sesiune</h3><div class="chartbox"><canvas id="c_sess"></canvas></div></div>
+      <div class="card"><h3>Win rate pe zi a săptămânii</h3><div class="chartbox"><canvas id="c_wd"></canvas></div></div>
+      <div class="card"><h3>Pips pe direcție</h3><div class="chartbox"><canvas id="c_dir"></canvas></div></div>
+      <div class="card"><h3>Trade-uri față de bias-ul săptămânal</h3><div class="chartbox"><canvas id="c_align"></canvas></div></div>
+      ${S.scope==='all' ? '<div class="card"><h3>Pips pe pereche</h3><div class="chartbox"><canvas id="c_pair"></canvas></div></div>' : ''}
+      <div class="card"><h3>Ce ai făcut în zilele observate</h3><div class="chartbox"><canvas id="c_status"></canvas></div></div>
+      <div class="card"><h3>Știri și mișcare</h3>
+        <table class="sumtable"><thead><tr><th></th><th>Zile</th><th>|Închidere| medie</th></tr></thead><tbody>
+          <tr><td>Cu știri</td><td class="num">${nY.length}</td><td class="num">${nY.length ? fmt(avgAbs(nY),3)+'%' : '–'}</td></tr>
+          <tr><td>Fără știri</td><td class="num">${nN.length}</td><td class="num">${nN.length ? fmt(avgAbs(nN),3)+'%' : '–'}</td></tr>
+        </tbody></table>
+        <p class="hint">Compară cât se mișcă prețul în zilele cu evenimente notate pe oricare dintre cele două monede.</p></div>
+      <div class="card" style="grid-column:1/-1"><h3>Bias săptămânal vs. realizat</h3>
+        ${weeks.length ? `<div style="overflow-x:auto"><table class="sumtable"><thead><tr><th>Săptămâna</th>${S.scope==='all' ? '<th>Pereche</th>' : ''}<th>Bias</th><th>Fundamentals</th><th>Realizat</th><th>Rezultat</th></tr></thead><tbody>
+          ${weeks.slice(0,26).map(w => `<tr class="click" data-goweek="${w.pair}|${w.year}|${w.week}"><td class="num">${w.year} / S${w.week}</td>${S.scope==='all' ? `<td>${w.pair}</td>` : ''}
+            <td><span class="bias-${w.bias}" style="padding:2px 8px;border-radius:4px">${BIAS_LBL[w.bias]}${w.conviction ? ', '+CONV_LBL[w.conviction] : ''}</span></td>
+            <td style="max-width:360px">${esc(w.fundamentals||'')}</td><td class="num ${sgn(w.re.sum)}">${pct(w.re.sum)}</td>
+            <td class="${w.hit ? 'pos' : 'neg'}" style="font-weight:600">${w.hit ? 'Corect' : 'Greșit'}</td></tr>`).join('')}
+          </tbody></table></div>` : '<p class="muted">Setează bias bullish/bearish pe săptămâni și notează închiderea zilnică (%) ca să vezi aici cât de des ai citit corect direcția.</p>'}
+      </div>
+    </div>`;
+
+  main.querySelectorAll('[data-scope]').forEach(b => b.onclick = () => { S.scope = b.dataset.scope; ls.set('do_scope', S.scope); renderMain(); });
+  main.querySelectorAll('[data-period]').forEach(b => b.onclick = () => { S.period = b.dataset.period; ls.set('do_period', S.period); renderMain(); });
+  main.querySelectorAll('[data-metric]').forEach(b => b.onclick = () => { S.metric = b.dataset.metric; renderMain(); });
+  main.querySelectorAll('[data-goweek]').forEach(r => r.onclick = () => {
+    const [p,y,w] = r.dataset.goweek.split('|'); S.pair = p; S.view = 'journal'; S.month = firstOfMonth(mondayOf(+y,+w)); ls.set('do_pair',p); ls.set('do_view','journal'); render(); });
+
+  const pos = cssv('--pos'), neg = cssv('--neg'), ink = cssv('--sheet-2');
+  let cum = 0;
+  const eq = trades.map(t => (cum += (S.metric==='pips' ? t.pips : t.profit) || 0));
+  mkChart('c_eq','line', trades.map(t => `${t.day.slice(5)}${S.scope==='all' ? ' '+t.pair : ''}`),
+    [{ data:eq, borderColor:ink, backgroundColor:ink, pointRadius:trades.length > 60 ? 0 : 3, tension:.15, borderWidth:2 }]);
+  const wrBar = (id, gs) => mkChart(id, 'bar', gs.map(g => g.k), [{ data:gs.map(g => +g.wr.toFixed(1)), backgroundColor:pos, borderRadius:3 }],
+    { y:{ min:0, max:100 }, tooltip:{ callbacks:{ label:c => { const g = gs[c.dataIndex]; return `${g.wr.toFixed(1)}% · ${g.w}W ${g.l}L · ${fmt(g.pips,1)} pips`; } } } });
+  wrBar('c_sess', groupStats(trades, t => t.session));
+  wrBar('c_wd', groupStats(trades, t => WD[parseISO(t.day).getDay()], ['Luni','Marți','Miercuri','Joi','Vineri']));
+  wrBar('c_align', groupStats(trades, alignment, ['Cu bias-ul','Contra bias','Fără bias direcțional']));
+  const dir = groupStats(trades, t => t.direction, ['Long','Short']);
+  mkChart('c_dir','bar', dir.map(g => g.k), [{ data:dir.map(g => +g.pips.toFixed(1)), backgroundColor:dir.map(g => g.pips>=0 ? pos : neg), borderRadius:3 }],
+    { tooltip:{ callbacks:{ label:c => { const g = dir[c.dataIndex]; return `${fmt(g.pips,1)} pips · ${g.n} trade-uri · WR ${g.wr.toFixed(1)}%`; } } } });
+  if(S.scope==='all'){
+    const bp = groupStats(trades, t => t.pair).sort((a,b) => b.pips-a.pips);
+    mkChart('c_pair','bar', bp.map(g => g.k), [{ data:bp.map(g => +g.pips.toFixed(1)), backgroundColor:bp.map(g => g.pips>=0 ? pos : neg), borderRadius:3 }]);
+  }
+  mkChart('c_status','bar', statuses.map(s => s.k), [{ data:statuses.map(s => s.n), backgroundColor:cssv('--muted'), borderRadius:3 }], { indexAxis:'y' });
+}
+
+/* ---------- overview ---------- */
+function renderOverview(){
+  const cw = isoWeek(new Date());
+  const rows = allPairs().map(p => {
+    const es = [...S.daily.values()].filter(e => e.pair===p);
+    const tr = es.filter(e => ['W','L','BE'].includes(e.result));
+    const w = tr.filter(e => e.result==='W').length, l = tr.filter(e => e.result==='L').length;
+    const last = es.reduce((m,e) => e.day > m ? e.day : m, '');
+    const wr = S.weekly.get(wk(p, cw.year, cw.week));
+    return { p, es:es.length, tr:tr.length, w, l, pips:tr.reduce((s,e) => s+(e.pips||0), 0), last, wr };
+  });
+  document.getElementById('main').innerHTML = `
+    <div class="mb-4"><div class="pairtitle">Toate perechile</div><div class="muted mt-1">Săptămâna ${cw.week} · click pe o pereche pentru jurnal</div></div>
+    <div style="overflow-x:auto"><table class="sumtable" style="min-width:820px"><thead><tr>
+      <th>Pereche</th><th>Bias săptămâna asta</th><th>Fundamentals</th><th>Ultima observație</th><th>Zile</th><th>Trade-uri</th><th>W / L</th><th>Pips</th></tr></thead>
+      <tbody>${rows.map(r => `<tr class="click" data-pair-go="${r.p}">
+        <td class="cond" style="font-weight:600;font-size:15px">${r.p}</td>
+        <td>${r.wr?.bias ? `<span class="bias-${r.wr.bias}" style="padding:2px 8px;border-radius:4px">${BIAS_LBL[r.wr.bias]}${r.wr.conviction ? ', '+CONV_LBL[r.wr.conviction] : ''}</span>` : '<span class="muted">nesetat</span>'}</td>
+        <td style="max-width:320px">${esc(r.wr?.fundamentals || '')}</td>
+        <td class="num">${r.last ? r.last.split('-').reverse().join('.') : '<span class="muted">–</span>'}</td>
+        <td class="num">${r.es}</td><td class="num">${r.tr}</td><td class="num">${r.tr ? `${r.w} / ${r.l}` : '–'}</td>
+        <td class="num ${sgn(r.pips)}">${r.tr ? fmt(r.pips,1) : '–'}</td></tr>`).join('')}</tbody></table></div>`;
+  document.querySelectorAll('[data-pair-go]').forEach(r => r.onclick = () => {
+    S.pair = r.dataset.pairGo; S.view = 'journal'; ls.set('do_pair', S.pair); ls.set('do_view','journal'); render(); });
+}
+
+/* ---------- import / export ---------- */
+const dataDlg = document.getElementById('dataDlg');
+function openData(){
+  document.getElementById('impPair').textContent = S.pair;
+  document.getElementById('extraList').textContent = S.extra.length ? 'Adăugate: ' + S.extra.join(', ') : '';
+  dataDlg.showModal();
+}
+document.getElementById('dataClose').onclick = () => dataDlg.close();
+document.getElementById('addPair').onclick = () => {
+  const v = document.getElementById('newPair').value.trim().toUpperCase();
+  if(!/^[A-Z]{6}$/.test(v)) return toast('Simbolul trebuie să aibă 6 litere, ex. XAUUSD');
+  if(allPairs().includes(v)) return toast(`${v} există deja`);
+  S.extra.push(v); ls.set('do_extra_pairs', S.extra); dataDlg.close(); render(); toast(`${v} adăugat`);
+};
+function download(name, text, type){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+document.getElementById('expJson').onclick = () => download(`daily-observer-backup-${iso(new Date())}.json`,
+  JSON.stringify({ version:1, daily:[...S.daily.values()], weekly:[...S.weekly.values()], news:[...S.news.values()] }, null, 1), 'application/json');
+document.getElementById('expCsv').onclick = () => {
+  const p = S.pair, cols = ['day',...TEXT_F.slice(0,7),'r_multiple','risk','profit','entry_price','sl','tp','pips','daily_change','daily_obs','h4_obs','h1_obs','tv_daily','tv_4h','tv_1h','action'];
+  const q = v => v==null ? '' : /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g,'""')}"` : String(v);
+  const rows = [...S.daily.values()].filter(e => e.pair===p).sort((a,b) => a.day.localeCompare(b.day));
+  const head = [...cols, `${base(p)}_news`, `${quote(p)}_news`, 'bias', 'fundamentals'];
+  const lines = rows.map(e => { const w = isoWeek(parseISO(e.day)), wr = S.weekly.get(wk(p,w.year,w.week));
+    return [...cols.map(c => q(e[c])), q(S.news.get(nk(base(p),e.day))?.events), q(S.news.get(nk(quote(p),e.day))?.events), q(wr?.bias), q(wr?.fundamentals)].join(','); });
+  download(`${p}-daily-observer.csv`, [head.join(','), ...lines].join('\n'), 'text/csv');
+};
+document.getElementById('jsonFile').onchange = async ev => {
+  const f = ev.target.files[0]; ev.target.value = ''; if(!f) return;
+  try{
+    const j = JSON.parse(await f.text()), uid = S.user.id;
+    const clean = arr => (arr||[]).map(({ id, created_at, updated_at, ...r }) => ({ ...r, user_id:uid }));
+    if(!confirm(`Import: ${j.daily?.length||0} zile, ${j.weekly?.length||0} săptămâni, ${j.news?.length||0} știri. Înregistrările existente pe aceleași date sunt suprascrise. Continui?`)) return;
+    await upsertChunks('do_daily', clean(j.daily), 'user_id,pair,day');
+    await upsertChunks('do_weekly', clean(j.weekly), 'user_id,pair,year,week');
+    await upsertChunks('do_news', clean(j.news), 'user_id,currency,day');
+    await loadAll(); dataDlg.close(); render(); toast('Backup importat');
+  }catch(e){ console.error(e); toast('Import eșuat: ' + e.message); }
+};
+
+function parseCSV(text){
+  const rows = []; let row = [], f = '', q = false;
+  for(let i = 0; i < text.length; i++){
+    const c = text[i];
+    if(q){ if(c === '"'){ if(text[i+1] === '"'){ f += '"'; i++; } else q = false; } else f += c; }
+    else if(c === '"') q = true;
+    else if(c === ','){ row.push(f); f = ''; }
+    else if(c === '\n'){ row.push(f); rows.push(row); row = []; f = ''; }
+    else if(c !== '\r') f += c;
+  }
+  if(f !== '' || row.length){ row.push(f); rows.push(row); }
+  return rows;
+}
+const MN = { january:1,february:2,march:3,april:4,may:5,june:6,july:7,august:8,september:9,october:10,november:11,december:12,
+  ianuarie:1,februarie:2,martie:3,aprilie:4,mai:5,iunie:6,iulie:7,septembrie:9,octombrie:10,noiembrie:11,decembrie:12,
+  jan:1,feb:2,mar:3,apr:4,jun:6,jul:7,aug:8,sep:9,sept:9,oct:10,nov:11,dec:12 };
+function parseDateLoose(s){
+  s = (s||'').trim(); const ymd = (y,m,d) => `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`; let m;
+  if((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return ymd(m[1],m[2],m[3]);
+  if((m = s.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})/))) return ymd(m[3],m[2],m[1]);
+  if((m = s.match(/(\d{1,2})\s+([A-Za-zăâîșțşţ]+)\.?,?\s+(\d{4})/))){ const mo = MN[m[2].toLowerCase()]; if(mo) return ymd(m[3],mo,m[1]); }
+  return null;
+}
+document.getElementById('csvFile').onchange = async ev => {
+  const f = ev.target.files[0]; ev.target.value = ''; if(!f) return;
+  try{
+    const p = S.pair, uid = S.user.id, rows = parseCSV(await f.text());
+    const norm = s => String(s||'').toLowerCase().replace(/\s+/g,'');
+    const hi = rows.findIndex(r => r.some(c => norm(c) === 'date'));
+    if(hi < 0) throw new Error('nu am găsit coloana "Date" în header');
+    const H = rows[hi].map(norm), col = n => H.indexOf(n);
+    const MAP = { trade_status:'trade', session:'session', direction:'long/short', result:'w/l', r_multiple:'r', risk:'risk', profit:'profit',
+      entry_time:'entryhour', exit_time:'exithour', duration:'duration', entry_price:'entry', sl:'sl', tp:'tp', pips:'pips',
+      daily_obs:'dailyobservations', h4_obs:'4hobservations', h1_obs:'1hobservations', tv_daily:'tvdaily', tv_4h:'tv4h', tv_1h:'tv1h', action:'actions' };
+    const newsCols = H.map((h,i) => { const m = h.match(/^([a-z]{3})news$/); return m ? { i, cur:m[1].toUpperCase() } : null; }).filter(Boolean);
+    const dI = col('date'), fI = col('fundamentals');
+    const daily = [], news = [], weekly = new Map();
+    for(const r of rows.slice(hi+1)){
+      const day = parseDateLoose(r[dI]); if(!day) continue;
+      const val = k => { const i = col(MAP[k]); if(i < 0) return null; const v = (r[i]||'').trim(); return v==='' || v==='-' ? null : v; };
+      const row = { user_id:uid, pair:p, day };
+      for(const f of TEXT_F) row[f] = val(f);
+      for(const f of NUM_F.filter(f => f!=='daily_change')) row[f] = parseNum(val(f));
+      if(row.result){ const u = row.result.toUpperCase(); row.result = u.startsWith('W') ? 'W' : u.startsWith('L') ? 'L' : u.startsWith('B') ? 'BE' : row.result; }
+      if(row.direction){ row.direction = /short/i.test(row.direction) ? 'Short' : /long/i.test(row.direction) ? 'Long' : row.direction; }
+      const m = (row.daily_obs||'').match(/closed[^\d+\-−]*([+\-−]?\d+(?:[.,]\d+)?)\s*%/i);
+      row.daily_change = m ? parseNum(m[1]) : null;
+      if([...TEXT_F, ...NUM_F].some(f => row[f] != null)) daily.push(row);
+      for(const nc of newsCols){ const v = (r[nc.i]||'').trim(); if(v && v !== '-') news.push({ user_id:uid, currency:nc.cur, day, events:v }); }
+      const ft = fI >= 0 ? (r[fI]||'').trim() : '';
+      if(ft){ const w = isoWeek(parseISO(day)), k = `${w.year}|${w.week}`;
+        if(!weekly.has(k)) weekly.set(k, { user_id:uid, pair:p, year:w.year, week:w.week, fundamentals:ft,
+          bias: /two[- ]?sided/i.test(ft) ? 'two-sided' : /bear/i.test(ft) ? 'bearish' : /bull/i.test(ft) ? 'bullish' : /neutral/i.test(ft) ? 'neutral' : null,
+          conviction: /high/i.test(ft) ? 'high' : /mild|low|slight/i.test(ft) ? 'low' : /strength|medium|moderate/i.test(ft) ? 'medium' : null }); }
+    }
+    const dedupe = (arr, key) => [...new Map(arr.map(x => [key(x), x])).values()];
+    const nws = dedupe(news, n => n.currency+n.day);
+    if(!confirm(`Import în ${p}: ${daily.length} zile, ${weekly.size} săptămâni cu fundamentale, ${nws.length} știri (${[...new Set(nws.map(n=>n.currency))].join(', ') || '—'}). Zilele deja existente sunt suprascrise. Continui?`)) return;
+    await upsertChunks('do_daily', dedupe(daily, d => d.day), 'user_id,pair,day');
+    await upsertChunks('do_weekly', [...weekly.values()], 'user_id,pair,year,week');
+    await upsertChunks('do_news', nws, 'user_id,currency,day');
+    await loadAll(); dataDlg.close();
+    if(daily.length){ S.month = firstOfMonth(parseISO(daily[0].day)); S.view = 'journal'; }
+    render(); toast(`Importat: ${daily.length} zile în ${p}`);
+  }catch(e){ console.error(e); toast('Import CSV eșuat: ' + e.message); }
+};
+
+/* ---------- boot ---------- */
+(async () => {
+  if(CONFIGURED){
+    const { data } = await sb.auth.getSession();
+    if(data.session){ await afterLogin(data.session.user); return; }
+  }
+  render();
+})();
+</script>
+</body>
+</html>
