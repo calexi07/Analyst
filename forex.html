@@ -254,7 +254,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 /* =========================================================== */
 
 const CONFIGURED = !SUPABASE_URL.includes('XXXX') && !SUPABASE_ANON_KEY.startsWith('PUNE');
-const sb = CONFIGURED ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+const sb = CONFIGURED ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{ persistSession:false, autoRefreshToken:false } }) : null;
 
 const PAIRS = [
   'EURUSD','GBPUSD','USDJPY','USDCHF','USDCAD','AUDUSD','NZDUSD',
@@ -279,7 +279,7 @@ const ls = {
 };
 
 const S = {
-  user:null, view: ls.get('do_view','journal'), pair: ls.get('do_pair','EURUSD'),
+  view: ls.get('do_view','journal'), pair: ls.get('do_pair','EURUSD'),
   month: firstOfMonth(new Date()), scope: ls.get('do_scope','pair'), period: ls.get('do_period','all'), metric:'pips',
   daily:new Map(), weekly:new Map(), news:new Map(), charts:[], extra: ls.get('do_extra_pairs', []),
   editDay:null, editWeek:null
@@ -330,7 +330,7 @@ async function saveNews(cur, day, text){
   const k = nk(cur, day), ex = S.news.get(k); text = (text||'').trim();
   if(!text){ if(ex){ const { error } = await sb.from('do_news').delete().eq('id', ex.id); if(error) throw error; S.news.delete(k); } return; }
   if(ex && ex.events === text) return;
-  const { data, error } = await sb.from('do_news').upsert({ user_id:S.user.id, currency:cur, day, events:text }, { onConflict:'user_id,currency,day' }).select().single();
+  const { data, error } = await sb.from('do_news').upsert({ currency:cur, day, events:text }, { onConflict:'currency,day' }).select().single();
   if(error) throw error; S.news.set(k, data);
 }
 async function upsertChunks(table, rows, onConflict){
@@ -344,7 +344,6 @@ async function upsertChunks(table, rows, onConflict){
 function render(){
   const app = document.getElementById('app');
   if(!CONFIGURED){ app.innerHTML = setupScreen(); return; }
-  if(!S.user){ app.innerHTML = loginScreen(); bindLogin(); return; }
   app.innerHTML = `
     <header class="app">
       <div class="flex flex-wrap items-center gap-3 px-4 py-3">
@@ -355,8 +354,6 @@ function render(){
         </nav>
         <div class="ml-auto flex items-center gap-2">
           <button class="hbtn" id="openData">Import / export</button>
-          <span class="hidden md:inline text-xs" style="opacity:.75">${esc(S.user.email)}</span>
-          <button class="hbtn" id="logout">Ieșire</button>
         </div>
       </div>
     </header>
@@ -367,7 +364,6 @@ function render(){
     <main id="main" class="px-4 py-4"></main>`;
   app.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { S.view = b.dataset.view; ls.set('do_view', S.view); render(); });
   app.querySelectorAll('[data-pair]').forEach(b => b.onclick = () => { S.pair = b.dataset.pair; ls.set('do_pair', S.pair); render(); });
-  document.getElementById('logout').onclick = async () => { await sb.auth.signOut(); S.user = null; render(); };
   document.getElementById('openData').onclick = openData;
   renderMain();
   app.querySelector('.chip[aria-current="true"]')?.scrollIntoView({ block:'nearest', inline:'center' });
@@ -381,41 +377,8 @@ function renderMain(){
 function setupScreen(){
   return `<div class="max-w-xl mx-auto p-8"><h1 class="pairtitle mb-4">Daily Observer</h1>
     <div class="card"><p>Aplicația nu e conectată încă la Supabase.</p>
-    <p class="mt-2 muted">1) Rulează <b>schema.sql</b> în Supabase → SQL Editor. 2) Pune <b>SUPABASE_URL</b> și <b>SUPABASE_ANON_KEY</b> în secțiunea CONFIG din index.html. 3) Urcă fișierul pe GitHub Pages.</p></div></div>`;
+    <p class="mt-2 muted">1) Rulează <b>schema.sql</b> în Supabase → SQL Editor. 2) Pune <b>SUPABASE_URL</b> și <b>SUPABASE_ANON_KEY</b> în secțiunea CONFIG din index.html.</p></div></div>`;
 }
-function loginScreen(){
-  return `<div class="max-w-sm mx-auto" style="padding-top:12vh">
-    <h1 class="pairtitle">Daily Observer</h1><p class="muted mb-5">Observații zilnice și analiză de trade pe toate perechile.</p>
-    <form id="loginForm" class="card" style="display:grid;gap:10px">
-      <div class="f"><label for="le">Email</label><input id="le" type="email" required autocomplete="email"></div>
-      <div class="f"><label for="lp">Parolă</label><input id="lp" type="password" required minlength="6" autocomplete="current-password"></div>
-      <button class="btn btn-primary" type="submit">Intră în cont</button>
-      <button class="btn" type="button" id="signup">Creează cont</button>
-      <p id="lmsg" class="hint" role="status"></p>
-    </form></div>`;
-}
-function bindLogin(){
-  const msg = t => document.getElementById('lmsg').textContent = t;
-  const creds = () => ({ email: document.getElementById('le').value.trim(), password: document.getElementById('lp').value });
-  document.getElementById('loginForm').onsubmit = async e => {
-    e.preventDefault(); msg('Se conectează…');
-    const { data, error } = await sb.auth.signInWithPassword(creds());
-    if(error) return msg('Autentificare eșuată: ' + error.message);
-    await afterLogin(data.user);
-  };
-  document.getElementById('signup').onclick = async () => {
-    const c = creds(); if(!c.email || c.password.length < 6) return msg('Completează emailul și o parolă de minim 6 caractere.');
-    const { data, error } = await sb.auth.signUp(c);
-    if(error) return msg(error.message);
-    if(data.session) await afterLogin(data.user); else msg('Cont creat. Confirmă emailul, apoi intră în cont.');
-  };
-}
-async function afterLogin(user){
-  S.user = user;
-  try{ await loadAll(); }catch(e){ console.error(e); toast('Nu am putut încărca datele: ' + e.message); }
-  render();
-}
-
 /* ---------- journal ---------- */
 function monthDays(){
   const y = S.month.getFullYear(), m = S.month.getMonth(), last = new Date(y, m+1, 0).getDate(), out = [];
@@ -558,13 +521,13 @@ function rrHint(){
 dayForm.elements.duration.addEventListener('input', e => delete e.target.dataset.auto);
 async function saveDay(){
   const p = S.pair, ds = S.editDay, el = dayForm.elements;
-  const row = { user_id:S.user.id, pair:p, day:ds };
+  const row = { pair:p, day:ds };
   for(const f of TEXT_F){ const v = el[f].value.trim(); row[f] = v || null; }
   for(const f of NUM_F) row[f] = parseNum(el[f].value);
   const hasContent = [...TEXT_F, ...NUM_F].some(f => row[f] != null);
   try{
     if(hasContent){
-      const { data, error } = await sb.from('do_daily').upsert(row, { onConflict:'user_id,pair,day' }).select().single();
+      const { data, error } = await sb.from('do_daily').upsert(row, { onConflict:'pair,day' }).select().single();
       if(error) throw error; S.daily.set(dk(p, ds), data);
     }
     await saveNews(base(p), ds, el.base_news.value);
@@ -618,9 +581,9 @@ document.getElementById('weekCopy').onclick = () => {
 weekForm.addEventListener('submit', async ev => {
   ev.preventDefault();
   const { y, w } = S.editWeek, el = weekForm.elements;
-  const row = { user_id:S.user.id, pair:S.pair, year:y, week:w };
+  const row = { pair:S.pair, year:y, week:w };
   ['bias','conviction','fundamentals','review'].forEach(f => row[f] = el[f].value.trim() || null);
-  const { data, error } = await sb.from('do_weekly').upsert(row, { onConflict:'user_id,pair,year,week' }).select().single();
+  const { data, error } = await sb.from('do_weekly').upsert(row, { onConflict:'pair,year,week' }).select().single();
   if(error) return toast('Nu s-a salvat: ' + error.message);
   S.weekly.set(wk(S.pair, y, w), data); weekDlg.close(); toast('Săptămână salvată'); render();
 });
@@ -818,12 +781,12 @@ document.getElementById('expCsv').onclick = () => {
 document.getElementById('jsonFile').onchange = async ev => {
   const f = ev.target.files[0]; ev.target.value = ''; if(!f) return;
   try{
-    const j = JSON.parse(await f.text()), uid = S.user.id;
-    const clean = arr => (arr||[]).map(({ id, created_at, updated_at, ...r }) => ({ ...r, user_id:uid }));
+    const j = JSON.parse(await f.text());
+    const clean = arr => (arr||[]).map(({ id, created_at, updated_at, user_id, ...r }) => r);
     if(!confirm(`Import: ${j.daily?.length||0} zile, ${j.weekly?.length||0} săptămâni, ${j.news?.length||0} știri. Înregistrările existente pe aceleași date sunt suprascrise. Continui?`)) return;
-    await upsertChunks('do_daily', clean(j.daily), 'user_id,pair,day');
-    await upsertChunks('do_weekly', clean(j.weekly), 'user_id,pair,year,week');
-    await upsertChunks('do_news', clean(j.news), 'user_id,currency,day');
+    await upsertChunks('do_daily', clean(j.daily), 'pair,day');
+    await upsertChunks('do_weekly', clean(j.weekly), 'pair,year,week');
+    await upsertChunks('do_news', clean(j.news), 'currency,day');
     await loadAll(); dataDlg.close(); render(); toast('Backup importat');
   }catch(e){ console.error(e); toast('Import eșuat: ' + e.message); }
 };
@@ -854,7 +817,7 @@ function parseDateLoose(s){
 document.getElementById('csvFile').onchange = async ev => {
   const f = ev.target.files[0]; ev.target.value = ''; if(!f) return;
   try{
-    const p = S.pair, uid = S.user.id, rows = parseCSV(await f.text());
+    const p = S.pair, rows = parseCSV(await f.text());
     const norm = s => String(s||'').toLowerCase().replace(/\s+/g,'');
     const hi = rows.findIndex(r => r.some(c => norm(c) === 'date'));
     if(hi < 0) throw new Error('nu am găsit coloana "Date" în header');
@@ -868,7 +831,7 @@ document.getElementById('csvFile').onchange = async ev => {
     for(const r of rows.slice(hi+1)){
       const day = parseDateLoose(r[dI]); if(!day) continue;
       const val = k => { const i = col(MAP[k]); if(i < 0) return null; const v = (r[i]||'').trim(); return v==='' || v==='-' ? null : v; };
-      const row = { user_id:uid, pair:p, day };
+      const row = { pair:p, day };
       for(const f of TEXT_F) row[f] = val(f);
       for(const f of NUM_F.filter(f => f!=='daily_change')) row[f] = parseNum(val(f));
       if(row.result){ const u = row.result.toUpperCase(); row.result = u.startsWith('W') ? 'W' : u.startsWith('L') ? 'L' : u.startsWith('B') ? 'BE' : row.result; }
@@ -876,19 +839,19 @@ document.getElementById('csvFile').onchange = async ev => {
       const m = (row.daily_obs||'').match(/closed[^\d+\-−]*([+\-−]?\d+(?:[.,]\d+)?)\s*%/i);
       row.daily_change = m ? parseNum(m[1]) : null;
       if([...TEXT_F, ...NUM_F].some(f => row[f] != null)) daily.push(row);
-      for(const nc of newsCols){ const v = (r[nc.i]||'').trim(); if(v && v !== '-') news.push({ user_id:uid, currency:nc.cur, day, events:v }); }
+      for(const nc of newsCols){ const v = (r[nc.i]||'').trim(); if(v && v !== '-') news.push({ currency:nc.cur, day, events:v }); }
       const ft = fI >= 0 ? (r[fI]||'').trim() : '';
       if(ft){ const w = isoWeek(parseISO(day)), k = `${w.year}|${w.week}`;
-        if(!weekly.has(k)) weekly.set(k, { user_id:uid, pair:p, year:w.year, week:w.week, fundamentals:ft,
+        if(!weekly.has(k)) weekly.set(k, { pair:p, year:w.year, week:w.week, fundamentals:ft,
           bias: /two[- ]?sided/i.test(ft) ? 'two-sided' : /bear/i.test(ft) ? 'bearish' : /bull/i.test(ft) ? 'bullish' : /neutral/i.test(ft) ? 'neutral' : null,
           conviction: /high/i.test(ft) ? 'high' : /mild|low|slight/i.test(ft) ? 'low' : /strength|medium|moderate/i.test(ft) ? 'medium' : null }); }
     }
     const dedupe = (arr, key) => [...new Map(arr.map(x => [key(x), x])).values()];
     const nws = dedupe(news, n => n.currency+n.day);
     if(!confirm(`Import în ${p}: ${daily.length} zile, ${weekly.size} săptămâni cu fundamentale, ${nws.length} știri (${[...new Set(nws.map(n=>n.currency))].join(', ') || '—'}). Zilele deja existente sunt suprascrise. Continui?`)) return;
-    await upsertChunks('do_daily', dedupe(daily, d => d.day), 'user_id,pair,day');
-    await upsertChunks('do_weekly', [...weekly.values()], 'user_id,pair,year,week');
-    await upsertChunks('do_news', nws, 'user_id,currency,day');
+    await upsertChunks('do_daily', dedupe(daily, d => d.day), 'pair,day');
+    await upsertChunks('do_weekly', [...weekly.values()], 'pair,year,week');
+    await upsertChunks('do_news', nws, 'currency,day');
     await loadAll(); dataDlg.close();
     if(daily.length){ S.month = firstOfMonth(parseISO(daily[0].day)); S.view = 'journal'; }
     render(); toast(`Importat: ${daily.length} zile în ${p}`);
@@ -898,8 +861,8 @@ document.getElementById('csvFile').onchange = async ev => {
 /* ---------- boot ---------- */
 (async () => {
   if(CONFIGURED){
-    const { data } = await sb.auth.getSession();
-    if(data.session){ await afterLogin(data.session.user); return; }
+    document.getElementById('app').innerHTML = '<p class="muted" style="padding:24px">Se încarcă datele…</p>';
+    try{ await loadAll(); }catch(e){ console.error(e); toast('Nu am putut încărca datele: ' + e.message); }
   }
   render();
 })();
