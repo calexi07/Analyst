@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ro">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -319,22 +319,30 @@
   .sres-h .sl{ margin-left:auto; font-size:11px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
   .sres-t{ font-size:13px; color:var(--muted); }
   .sres-t mark{ background:color-mix(in srgb,var(--accent) 35%,transparent); color:var(--ink); border-radius:3px; padding:0 2px; }
+  .cd-hold{ font-size:11.5px; font-weight:800; padding:1px 7px; border-radius:6px; align-self:flex-start; border:1px dashed currentColor; opacity:.9; }
+  .cd-hold.long{ color:var(--pos); } .cd-hold.short{ color:var(--neg); }
+  .cd-hold.hx-W{ color:var(--pos); border-style:solid; } .cd-hold.hx-L{ color:var(--neg); border-style:solid; } .cd-hold.hx-BE{ color:var(--muted); border-style:solid; }
+  .holdcard{ display:block; width:calc(100% - 32px); margin:0 16px 16px; text-align:left; padding:12px 14px; border-radius:14px; border:1px dashed var(--line); background:var(--surface-2); color:var(--ink); }
+  .holdcard b{ display:block; font-family:'Bricolage Grotesque',sans-serif; font-size:18px; margin:2px 0; }
+  .holdcard.long b{ color:var(--pos); } .holdcard.short b{ color:var(--neg); }
+  .holdcard:hover{ border-color:var(--accent); }
+  @media (max-width:720px){ .cd-hold{ font-size:9.5px; padding:0 4px; } }
 </style>
 </head>
 <body>
 <div id="app"></div>
 <div id="toast" class="toast" hidden></div>
 
-<dialog id="acctDlg" class="panel" aria-label="Cont"></dialog>
-<dialog id="searchDlg" class="panel" aria-label="Căutare" style="width:min(720px,96vw)"></dialog>
+<dialog id="acctDlg" class="panel" aria-label="Account"></dialog>
+<dialog id="searchDlg" class="panel" aria-label="Search" style="width:min(720px,96vw)"></dialog>
 
 <!-- Data dialog -->
 <dialog id="dataDlg" class="panel" aria-labelledby="dataTitle" style="width:min(620px,96vw)">
-  <div class="dlg-head"><h2 id="dataTitle" class="cond" style="font-size:20px;font-weight:600">Import și export</h2></div>
+  <div class="dlg-head"><h2 id="dataTitle" class="cond" style="font-size:20px;font-weight:600">Import & export</h2></div>
   <div class="dlg-body" style="display:grid;gap:14px">
     <div>
-      <h3 class="cond" style="font-weight:600;font-size:16px">Import din Google Sheets</h3>
-      <p class="muted" style="font-size:13px">În sheet: Fișier → Descărcare → CSV, din tab-ul perechii. Rândurile sunt importate în perechea selectată acum (<b id="impPair"></b>). Coloanele sunt recunoscute după numele din header (Date, Trade, Session, Long/Short, W/L, USD News, EUR News, Daily Observations etc.). Procentul de închidere e extras automat din „Price closed ±x%”.</p>
+      <h3 class="cond" style="font-weight:600;font-size:16px">Import from Google Sheets</h3>
+      <p class="muted" style="font-size:13px">In Google Sheets: File → Download → CSV, from the pair's tab. Rows are imported into the currently selected pair (<b id="impPair"></b>). Columns are matched by header name (Date, Trade, Session, Long/Short, W/L, USD News, EUR News, Daily Observations etc.). The daily close % is extracted automatically from „Price closed ±x%”.</p>
       <input type="file" id="csvFile" accept=".csv,text/csv" class="btn" style="margin-top:6px">
     </div>
     <div>
@@ -342,19 +350,19 @@
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
         <button class="btn" id="expJson">Export backup JSON</button>
         <label class="btn" style="cursor:pointer">Import backup JSON<input type="file" id="jsonFile" accept=".json,application/json" hidden></label>
-        <button class="btn" id="expCsv">Export CSV pereche</button>
+        <button class="btn" id="expCsv">Export pair CSV</button>
       </div>
     </div>
     <div>
-      <h3 class="cond" style="font-weight:600;font-size:16px">Perechi proprii</h3>
+      <h3 class="cond" style="font-weight:600;font-size:16px">Custom pairs</h3>
       <div style="display:flex;gap:8px;margin-top:6px">
-        <input id="newPair" class="btn" style="width:140px;text-transform:uppercase" maxlength="6" placeholder="XAUUSD" aria-label="Simbol nou">
-        <button class="btn" id="addPair">Adaugă</button>
+        <input id="newPair" class="btn" style="width:140px;text-transform:uppercase" maxlength="6" placeholder="XAUUSD" aria-label="New symbol">
+        <button class="btn" id="addPair">Add</button>
       </div>
       <p class="hint" id="extraList"></p>
     </div>
   </div>
-  <div class="dlg-foot"><button class="btn" id="dataClose">Închide</button></div>
+  <div class="dlg-foot"><button class="btn" id="dataClose">Close</button></div>
 </dialog>
 
 <datalist id="dl_status"><option>No trade</option><option>Wait</option><option>Setup formed</option><option>YES</option><option>In trade</option><option>Closed trade</option></datalist>
@@ -364,7 +372,7 @@
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 
-/* ====== CONFIG — pune datele proiectului tău Supabase ====== */
+/* ====== CONFIG — your Supabase project ====== */
 const SUPABASE_URL = 'https://aomjflbzlqqhsreuhxak.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvbWpmbGJ6bHFxaHNyZXVoeGFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1OTYxNTcsImV4cCI6MjEwNjE3MjE1N30.OHhPdKW3bXAUVzzLJFFMfOjsyqZXq4ZLAASYmWsh4Rc';
 /* =========================================================== */
@@ -381,11 +389,31 @@ const PAIRS = [
   'CADJPY','CADCHF','CHFJPY'
 ];
 const GROUP_BREAKS = new Set(['EURGBP','GBPJPY','AUDJPY','NZDJPY','CADJPY']);
-const MONTHS = ['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'];
-const WD = ['Duminică','Luni','Marți','Miercuri','Joi','Vineri','Sâmbătă'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const WD = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const BIAS_LBL = { bullish:'Bullish', bearish:'Bearish', 'two-sided':'Two-sided', neutral:'Neutral' };
 const CONV_LBL = { low:'mild', medium:'medium conviction', high:'high conviction' };
-const TEXT_F = ['trade_status','session','direction','result','entry_time','exit_time','duration','daily_obs','h4_obs','h1_obs','tv_daily','tv_4h','tv_1h','action'];
+const TEXT_F = ['trade_status','session','direction','result','entry_time','exit_time','duration','daily_obs','h4_obs','h1_obs','tv_daily','tv_4h','tv_1h','action','setup_tf','exit_date'];
+const exitDay = e => e.exit_date || e.day;
+function fmtDur(mins){ if(mins==null || mins<0) return ''; const d = Math.floor(mins/1440), h = Math.floor(mins%1440/60), m = mins%60;
+  return [d ? d+'d' : '', h ? h+'h' : '', (!d && m) ? String(m).padStart(2,'0')+'m' : ''].filter(Boolean).join(' ') || '0m'; }
+function tradeMinutes(e){
+  if(!e.entry_time || !e.exit_time) return null;
+  const a = new Date(`${e.day}T${e.entry_time}`), b = new Date(`${exitDay(e)}T${e.exit_time}`);
+  const m = Math.round((b-a)/60000); return m >= 0 ? m : null;
+}
+/* open / multi-day trades: map of date -> trade row that is held on that date (after entry day) */
+function holdingMap(pair){
+  const map = {}, today = iso(new Date());
+  S.daily.forEach(e => {
+    if(e.pair!==pair || !e.direction) return;
+    const open = !e.exit_date && !e.result;
+    const end = e.exit_date || (open ? today : null); if(!end || end <= e.day) return;
+    const d = parseISO(e.day); d.setDate(d.getDate()+1);
+    while(iso(d) <= end){ map[iso(d)] = { t:e, exit: iso(d)===e.exit_date }; d.setDate(d.getDate()+1); }
+  });
+  return map;
+}
 const NUM_F  = ['r_multiple','risk','profit','entry_price','sl','tp','pips','daily_change'];
 
 /* ---------- safe localStorage ---------- */
@@ -418,7 +446,7 @@ function mondayOf(y, w){ const j4 = new Date(y,0,4); const m = new Date(y,0,4 - 
 function prevWeek(y, w){ const m = mondayOf(y,w); m.setDate(m.getDate()-7); return isoWeek(m); }
 const esc = s => s==null ? '' : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function parseNum(v){ if(v==null) return null; const s = String(v).trim().replace('−','-').replace(/[^\d,.\-+]/g,'').replace(',','.'); if(s==='' || s==='-' || s==='+') return null; const n = parseFloat(s); return isFinite(n) ? n : null; }
-const fmt = (n, d=2) => n==null ? '' : Number(n).toLocaleString('ro-RO', { maximumFractionDigits:d });
+const fmt = (n, d=2) => n==null ? '' : Number(n).toLocaleString('en-US', { maximumFractionDigits:d });
 const sgn = n => n==null ? '' : (n>0 ? 'pos' : n<0 ? 'neg' : '');
 const pct = n => n==null ? '' : `${n>0?'+':''}${Number(n).toFixed(2)}%`;
 const pipSize = p => p.startsWith('XAU') ? 0.1 : p.includes('JPY') ? 0.01 : p.startsWith('XAG') ? 0.01 : 0.0001;
@@ -466,19 +494,19 @@ function render(){
     <header class="app">
       <div class="topbar">
         <div class="brand"><span class="mark" aria-hidden="true"></span>Daily Observer <small>by EaglePips</small></div>
-        <nav class="tabs" role="tablist" aria-label="Secțiuni">
-          ${[['journal','Jurnal'],['analysis','Analiză'],['overview','Toate perechile'],['accounts','Conturi']].map(([v,l]) =>
+        <nav class="tabs" role="tablist" aria-label="Sections">
+          ${[['journal','Journal'],['analysis','Analytics'],['overview','All pairs'],['accounts','Accounts']].map(([v,l]) =>
             `<button class="tab" role="tab" aria-selected="${S.view===v}" data-view="${v}">${l}</button>`).join('')}
         </nav>
         <div class="tools">
-          <button class="searchbtn" id="searchBtn" aria-label="Caută"><span aria-hidden="true" style="font-size:15px">⌕</span><span class="t">Caută…</span><kbd>/</kbd></button>
-          <button class="iconbtn" id="themeBtn" aria-label="${light ? 'Temă întunecată' : 'Temă luminoasă'}" title="${light ? 'Temă întunecată' : 'Temă luminoasă'}">${light ? '☾' : '☀'}</button>
+          <button class="searchbtn" id="searchBtn" aria-label="Search"><span aria-hidden="true" style="font-size:15px">⌕</span><span class="t">Search…</span><kbd>/</kbd></button>
+          <button class="iconbtn" id="themeBtn" aria-label="${light ? 'Dark theme' : 'Light theme'}" title="${light ? 'Dark theme' : 'Light theme'}">${light ? '☾' : '☀'}</button>
           <button class="hbtn" id="openData">Import / export</button>
         </div>
       </div>
-      <div class="strip" role="navigation" aria-label="Perechi">
+      <div class="strip" role="navigation" aria-label="Pairs">
         ${allPairs().map(p => `${GROUP_BREAKS.has(p) || (!PAIRS.includes(p) && p===S.extra[0]) ? '<span class="stripsep" aria-hidden="true"></span>' : ''}
-          <button class="chip b-${currentWeekBias(p)}" data-pair="${p}" aria-current="${p===S.pair}" title="${p}${currentWeekBias(p) ? ' – săptămâna asta: '+BIAS_LBL[currentWeekBias(p)] : ''}">${p}</button>`).join('')}
+          <button class="chip b-${currentWeekBias(p)}" data-pair="${p}" aria-current="${p===S.pair}" title="${p}${currentWeekBias(p) ? ' – this week: '+BIAS_LBL[currentWeekBias(p)] : ''}">${p}</button>`).join('')}
       </div>
     </header>
     <main id="main" class="wrap"></main>`;
@@ -499,14 +527,14 @@ function renderMain(){
 }
 function setupScreen(){
   return `<div class="max-w-xl mx-auto p-8"><h1 class="pairtitle mb-4">Daily Observer</h1>
-    <div class="card"><p>Aplicația nu e conectată încă la Supabase.</p>
-    <p class="mt-2 muted">1) Rulează <b>schema.sql</b> în Supabase → SQL Editor. 2) Pune <b>SUPABASE_URL</b> și <b>SUPABASE_ANON_KEY</b> în secțiunea CONFIG din index.html.</p></div></div>`;
+    <div class="card"><p>The app is not connected to Supabase yet.</p>
+    <p class="mt-2 muted">1) Run <b>schema.sql</b> in Supabase → SQL Editor. 2) Put <b>SUPABASE_URL</b> and <b>SUPABASE_ANON_KEY</b> in the CONFIG section of index.html.</p></div></div>`;
 }
 /* ---------- journal (calendar + view/edit panel) ---------- */
 const STATUSES = ['No trade','Wait','Setup formed','YES','In trade','Closed trade'];
 const SESSIONS = ['Asia','London','New York','Asia / London','London / New York'];
 const ACTIONS = ['Wait','Entry','Look for long tomorrow','Look for short tomorrow','Manage trade'];
-const WD_SHORT = ['Du','Lu','Ma','Mi','Jo','Vi','Sâ'];
+const WD_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 function statusKey(s){
   const v = (s||'').toLowerCase().trim(); if(!v) return '';
   if(v==='yes') return 'yes'; if(v.startsWith('in trade')) return 'in'; if(v.startsWith('closed')) return 'closed';
@@ -517,7 +545,7 @@ function defaultDay(){ const d = new Date(); while(d.getDay()===0 || d.getDay()=
 if(!S.sel) S.sel = { type:'day', day: defaultDay() };
 S.mode = ls.get('do_mode', 'view');
 const narrow = () => window.matchMedia('(max-width:1150px)').matches;
-const convDots = c => c ? `<span class="conv conv-${c}" title="Convingere">${{low:'Conv. mică',medium:'Conv. medie',high:'Conv. mare'}[c]}</span>` : '';
+const convDots = c => c ? `<span class="conv conv-${c}" title="Conviction">${{low:'Low conv.',medium:'Med conv.',high:'High conv.'}[c]}</span>` : '';
 const biasText = wr => wr?.bias ? `${BIAS_LBL[wr.bias]}${wr.conviction ? ', ' + CONV_LBL[wr.conviction] : ''}` : '';
 const TVRX = /https?:\/\/(?:[a-z]+\.)?tradingview\.com\/x\/[A-Za-z0-9]+\/?/gi;
 function tvSnap(url){ const m = (url||'').match(/tradingview\.com\/x\/([A-Za-z0-9]+)/); return m ? `https://s3.tradingview.com/snapshots/${m[1][0].toLowerCase()}/${m[1]}.png` : null; }
@@ -546,18 +574,18 @@ function renderJournal(){
           <div><div class="pairtitle">${p}</div><div class="muted mt-1" style="font-weight:600">${base(p)} / ${quote(p)} · <span id="mStats"></span></div></div>
           <div class="flex items-center gap-2 ml-auto">
             <div class="monthnav">
-              <button class="ib" id="mPrev" aria-label="Luna anterioară">‹</button>
+              <button class="ib" id="mPrev" aria-label="Previous month">‹</button>
               <div class="mlabel">${MONTHS[S.month.getMonth()]} ${S.month.getFullYear()}</div>
-              <button class="ib" id="mNext" aria-label="Luna următoare">›</button>
+              <button class="ib" id="mNext" aria-label="Next month">›</button>
             </div>
-            <button class="btn btn-primary" id="goToday">Azi</button>
+            <button class="btn btn-primary" id="goToday">Today</button>
           </div>
         </div>
         <div id="cal" class="cal"></div>
         <div class="legend">
           ${stBadge('YES')}${stBadge('In trade')}${stBadge('Wait')}${stBadge('Setup formed')}${stBadge('No trade')}
-          <span>linie jos: <b class="pos">W</b> / <b class="neg">L</b></span>
-          <span class="odots" style="margin-left:0"><span class="on"></span><span class="on"></span><span></span></span><span>D · 4H · 1H completate</span>
+          <span>bottom line: <b class="pos">W</b> / <b class="neg">L</b></span>
+          <span class="odots" style="margin-left:0"><span class="on"></span><span class="on"></span><span></span></span><span>D · 4H · 1H filled</span>
         </div>
       </section>
       <aside id="panel" class="panel-side" aria-live="polite"></aside>
@@ -575,13 +603,13 @@ function renderJournal(){
 
 function renderCalendar(){
   const cal = document.getElementById('cal'); if(!cal) return;
-  const p = S.pair, b = base(p), q = quote(p), today = iso(new Date()), m = S.month.getMonth();
-  let h = `<div class="cal-h wkh">Săptămâna</div>${['Luni','Marți','Miercuri','Joi','Vineri'].map(d => `<div class="cal-h">${d}</div>`).join('')}`;
+  const p = S.pair, b = base(p), q = quote(p), today = iso(new Date()), m = S.month.getMonth(), hold = holdingMap(p);
+  let h = `<div class="cal-h wkh">Week</div>${['Monday','Tuesday','Wednesday','Thursday','Friday'].map(d => `<div class="cal-h">${d}</div>`).join('')}`;
   for(const days of calendarWeeks()){
     const w = isoWeek(days[0]), wr = S.weekly.get(wk(p, w.year, w.week)), re = weekRealized(p, w.year, w.week);
     const wsel = S.sel.type==='week' && S.sel.y===w.year && S.sel.w===w.week;
-    h += `<button class="cw bias-${wr?.bias || 'none'} ${wsel ? 'sel':''}" data-week="${w.year}|${w.week}" aria-label="Săptămâna ${w.week}${wr?.bias ? ', '+BIAS_LBL[wr.bias] : ''}">
-      <span class="cw-n">S${w.week}</span>
+    h += `<button class="cw bias-${wr?.bias || 'none'} ${wsel ? 'sel':''}" data-week="${w.year}|${w.week}" aria-label="Week ${w.week}${wr?.bias ? ', '+BIAS_LBL[wr.bias] : ''}">
+      <span class="cw-n">W${w.week}</span>
       <span class="cw-b">${wr?.bias ? BIAS_LBL[wr.bias] : '<span class="muted" style="font-weight:600">+ bias</span>'} ${convDots(wr?.conviction)}</span>
       ${re ? `<span class="cw-s ${sgn(re.sum)}">${pct(re.sum)}</span>` : ''}
     </button>`;
@@ -589,12 +617,13 @@ function renderCalendar(){
       const ds = iso(dt), e = S.daily.get(dk(p, ds)) || {};
       const news = [[b, S.news.get(nk(b,ds))], [q, S.news.get(nk(q,ds))]].filter(([,n]) => n);
       const sel = S.sel.type==='day' && S.sel.day===ds;
-      const trade = e.direction ? `<div class="cd-trade ${e.direction.toLowerCase()}">${e.direction==='Long' ? '▲' : '▼'}<span class="t-full"> ${e.direction}</span>${e.result ? ` · ${e.result}` : ''}${e.pips!=null ? `<span class="t-full num"> · ${e.pips>0?'+':''}${fmt(e.pips,1)}p</span>` : ''}</div>` : '';
+      const trade = e.direction ? `<div class="cd-trade ${e.direction.toLowerCase()}">${e.direction==='Long' ? '▲' : '▼'}<span class="t-full"> ${e.direction}${e.setup_tf ? ' '+e.setup_tf : ''}</span>${e.result ? ` · ${e.result}` : ''}${e.pips!=null ? `<span class="t-full num"> · ${e.pips>0?'+':''}${fmt(e.pips,1)}p</span>` : ''}</div>` : '';
       h += `<button class="cd ${dt.getMonth()!==m ? 'out':''} ${sel ? 'sel':''} ${ds===today ? 'today':''} ${e.result ? 'res-'+e.result : ''}" data-day="${ds}"
           aria-label="${WD[dt.getDay()]} ${dt.getDate()} ${MONTHS[dt.getMonth()]}${e.trade_status ? ', '+esc(e.trade_status) : ''}" aria-pressed="${sel}">
         <div class="cd-top"><span class="cd-n">${dt.getDate()}</span>${e.daily_change!=null ? `<span class="cd-c ${sgn(e.daily_change)}">${pct(e.daily_change)}</span>` : ''}</div>
         ${stBadge(e.trade_status)}
         ${trade}
+        ${!e.direction && hold[ds] ? `<div class="cd-hold ${hold[ds].t.direction.toLowerCase()} ${hold[ds].exit && hold[ds].t.result ? 'hx-'+hold[ds].t.result : ''}">${hold[ds].exit ? `⇥ Exit${hold[ds].t.result ? ' · '+hold[ds].t.result : ''}${hold[ds].t.pips!=null ? `<span class="t-full"> · ${hold[ds].t.pips>0?'+':''}${fmt(hold[ds].t.pips,1)}p</span>` : ''}` : `⋯ Holding <span class="t-full">${hold[ds].t.direction}</span>`}</div>` : ''}
         ${e.action && !e.direction ? `<div class="cd-act">→ ${esc(e.action)}</div>` : ''}
         <div class="cd-foot">${news.map(([c,n]) => `<span class="nchip" title="${esc(n.events)}">${c}</span>`).join('')}
           ${e.id ? `<span class="odots" aria-hidden="true">${['daily_obs','h4_obs','h1_obs'].map(f => `<span class="${e[f] ? 'on':''}"></span>`).join('')}</span>` : ''}</div>
@@ -609,9 +638,9 @@ function monthStats(){
   const y = S.month.getFullYear(), m = S.month.getMonth();
   const es = [...S.daily.values()].filter(e => e.pair===S.pair && parseISO(e.day).getFullYear()===y && parseISO(e.day).getMonth()===m);
   const tr = es.filter(e => ['W','L','BE'].includes(e.result));
-  if(!es.length) return 'nicio observație luna asta';
+  if(!es.length) return 'no observations this month';
   const w = tr.filter(e => e.result==='W').length, l = tr.filter(e => e.result==='L').length, pips = tr.reduce((s,e) => s+(e.pips||0), 0);
-  return `${es.length} zile · ${tr.length} trade-uri${tr.length ? ` · ${w}W/${l}L · ${pips>0?'+':''}${fmt(pips,1)} pips` : ''}`;
+  return `${es.length} day${es.length===1?'':'s'} · ${tr.length} trade${tr.length===1?'':'s'}${tr.length ? ` · ${w}W/${l}L · ${pips>0?'+':''}${fmt(pips,1)} pips` : ''}`;
 }
 
 /* selection + mode */
@@ -637,9 +666,9 @@ async function setMode(m){ await flushSave(); S.mode = m; ls.set('do_mode', m); 
 let pending = null, timer = null;
 function setSave(state, msg){
   const el = document.getElementById('saveState'); if(!el) return;
-  el.textContent = { dirty:'modificat…', saving:'se salvează…', ok:'salvat ✓', err:'eroare la salvare' }[state] || '';
+  el.textContent = { dirty:'edited…', saving:'saving…', ok:'saved ✓', err:'save failed' }[state] || '';
   el.style.color = state==='err' ? 'var(--neg)' : state==='ok' ? 'var(--pos)' : '';
-  if(state==='err') toast('Nu s-a salvat: ' + (msg||''));
+  if(state==='err') toast('Not saved: ' + (msg||''));
 }
 function schedule(fn, delay=700){ pending = fn(); clearTimeout(timer); setSave('dirty'); timer = setTimeout(flushSave, delay); }
 async function flushSave(){
@@ -666,9 +695,9 @@ function bindChips(root, attr, onChange){
 function panelHead(title, sub){
   return `<div class="ps-head">
     <div style="min-width:0"><h2>${title}</h2><div class="sub">${sub}</div></div>
-    <div class="ps-nav"><button class="ib" id="navPrev" aria-label="Anterior">‹</button><button class="ib" id="navNext" aria-label="Următor">›</button></div>
-    <div class="seg mode" role="group" aria-label="Mod panou">
-      <button data-mode="view" aria-pressed="${S.mode==='view'}">Vizualizare</button><button data-mode="edit" aria-pressed="${S.mode==='edit'}">Editare</button>
+    <div class="ps-nav"><button class="ib" id="navPrev" aria-label="Previous">‹</button><button class="ib" id="navNext" aria-label="Next">›</button></div>
+    <div class="seg mode" role="group" aria-label="Panel mode">
+      <button data-mode="view" aria-pressed="${S.mode==='view'}">View</button><button data-mode="edit" aria-pressed="${S.mode==='edit'}">Edit</button>
     </div></div>`;
 }
 function bindHead(panel, prev, next){
@@ -686,11 +715,11 @@ function renderPanel(){
   bindHead(panel, () => step(-1), () => step(1));
   panel.querySelector('#wkBanner').onclick = () => selectWeek(w.year, w.week);
 }
-function dayTitle(ctx){ return `${WD[ctx.dt.getDay()]}, ${ctx.dt.getDate()} ${MONTHS[ctx.dt.getMonth()].toLowerCase()}`; }
+function dayTitle(ctx){ return `${WD[ctx.dt.getDay()]}, ${ctx.dt.getDate()} ${MONTHS[ctx.dt.getMonth()]}`; }
 function wkBanner(ctx){
   const wr = ctx.wr;
   return `<button class="wkbanner bias-${wr?.bias || 'none'}" id="wkBanner">
-    <span class="bl">Săpt. ${ctx.w.week} · ${wr?.bias ? biasText(wr) : '<span class="muted">bias nesetat</span>'}</span> ${convDots(wr?.conviction)}
+    <span class="bl">Week ${ctx.w.week} · ${wr?.bias ? biasText(wr) : '<span class="muted">no bias set</span>'}</span> ${convDots(wr?.conviction)}
     ${wr?.fundamentals ? `<p>${esc(wr.fundamentals)}</p>` : ''}</button>`;
 }
 
@@ -698,31 +727,34 @@ function wkBanner(ctx){
 function dayView(panel, ctx){
   const { p, ds, e, b, q } = ctx;
   const bn = S.news.get(nk(b,ds))?.events, qn = S.news.get(nk(q,ds))?.events;
-  const empty = !e.id && !bn && !qn;
+  const held = holdingMap(p)[ds], empty = !e.id && !bn && !qn && !held;
   const tfs = [['Daily','daily_obs','tv_daily'],['4H','h4_obs','tv_4h'],['1H','h1_obs','tv_1h']].filter(([,o,t]) => e[o] || e[t]);
   const stats = [['Entry', e.entry_price], ['SL', e.sl], ['TP', e.tp],
     ['Pips', e.pips!=null ? `${e.pips>0?'+':''}${fmt(e.pips,1)}` : null, sgn(e.pips)], ['R', e.r_multiple!=null ? fmt(e.r_multiple) : null, sgn(e.r_multiple)],
-    ['Risk', e.risk!=null ? fmt(e.risk)+'%' : null], ['Profit', e.profit!=null ? `${e.profit>0?'+':''}${fmt(e.profit)}$` : null, sgn(e.profit)], ['Durată', e.duration]]
+    ['Risk', e.risk!=null ? fmt(e.risk)+'%' : null], ['Profit', e.profit!=null ? `${e.profit>0?'+':''}${fmt(e.profit)}$` : null, sgn(e.profit)], ['Duration', e.duration]]
     .filter(([,v]) => v!=null && v!=='');
   panel.innerHTML = `<div class="ps">
     ${panelHead(dayTitle(ctx), `${p} · ${ctx.dt.getFullYear()}`)}
     ${wkBanner(ctx)}
-    ${empty ? `<div class="empty"><div class="orb" aria-hidden="true"></div><p>Nicio observație pentru ziua asta.</p><button class="btn btn-primary" id="startEdit">Începe observația</button></div>` : `
+    ${empty ? `<div class="empty"><div class="orb" aria-hidden="true"></div><p>No observations for this day yet.</p><button class="btn btn-primary" id="startEdit">Start observing</button></div>` : `
       <div class="hero">
         <div class="hero-row">
-          <div>${e.trade_status ? stBadge(e.trade_status, true) : '<span class="muted">fără status</span>'}</div>
-          ${e.daily_change!=null ? `<div style="text-align:right"><span class="kick">Închidere</span><span class="bigval ${sgn(e.daily_change)}">${pct(e.daily_change)}</span></div>` : ''}
+          <div>${e.trade_status ? stBadge(e.trade_status, true) : '<span class="muted">no status</span>'}</div>
+          ${e.daily_change!=null ? `<div style="text-align:right"><span class="kick">Daily close</span><span class="bigval ${sgn(e.daily_change)}">${pct(e.daily_change)}</span></div>` : ''}
         </div>
         ${tagPills(e.tags)}
         ${e.action ? `<div class="next"><span class="kick">Plan</span>${esc(e.action)}</div>` : ''}
       </div>
+      ${held ? `<button class="holdcard ${held.t.direction.toLowerCase()}" id="goEntry"><span class="kick">${held.exit ? 'Trade closed today' : 'Open trade'}</span>
+        <b>${held.t.direction==='Long' ? '▲' : '▼'} ${held.t.direction}${held.t.setup_tf ? ' · '+esc(held.t.setup_tf)+' setup' : ''}</b>
+        <span class="muted">entered ${fmtDayShort(held.t.day)}${held.exit && held.t.result ? ` · <span class="${held.t.result==='W' ? 'pos' : held.t.result==='L' ? 'neg' : ''}">${held.t.result}</span>` : ''} — view entry ›</span></button>` : ''}
       ${e.direction ? `<div class="ticket ${e.direction.toLowerCase()} ${e.result ? 'res-'+e.result : ''}">
-        <div class="tk-top"><span class="tk-dir">${e.direction==='Long' ? '▲' : '▼'} ${e.direction}</span>${e.session ? `<span class="muted" style="font-weight:700">${esc(e.session)}</span>` : ''}${e.account_id && S.accounts.get(e.account_id) ? `<span class="accst">${esc(S.accounts.get(e.account_id).name)}</span>` : ''}
+        <div class="tk-top"><span class="tk-dir">${e.direction==='Long' ? '▲' : '▼'} ${e.direction}</span>${e.setup_tf ? `<span class="tfl">${esc(e.setup_tf)} setup</span>` : ''}${e.session ? `<span class="muted" style="font-weight:700">${esc(e.session)}</span>` : ''}${e.account_id && S.accounts.get(e.account_id) ? `<span class="accst">${esc(S.accounts.get(e.account_id).name)}</span>` : ''}
           ${e.result ? `<span class="tk-res r-${e.result}">${{W:'Win',L:'Loss',BE:'Break-even'}[e.result] || esc(e.result)}</span>` : ''}</div>
         ${stats.length ? `<div class="tk-grid">${stats.map(([l,v,c]) => `<div><span class="kick">${l}</span><b class="${c||''}">${esc(v)}</b></div>`).join('')}</div>` : ''}
-        ${e.entry_time || e.exit_time ? `<div class="tk-time">⏱ ${esc(e.entry_time || '?')} → ${esc(e.exit_time || 'deschis')}</div>` : ''}
+        <div class="tk-time">⏱ ${fmtDayShort(e.day)}${e.entry_time ? ' '+esc(e.entry_time) : ''} → ${e.exit_date || e.exit_time ? `${fmtDayShort(exitDay(e))}${e.exit_time ? ' '+esc(e.exit_time) : ''}` : (e.result ? 'closed' : 'still open')}${e.duration ? ` · ${esc(e.duration)}` : ''}</div>
       </div>` : ''}
-      ${bn || qn ? `<div class="vsec"><h4>Știri</h4><div class="news2">
+      ${bn || qn ? `<div class="vsec"><h4>News</h4><div class="news2">
         ${[[b,bn],[q,qn]].map(([c,t]) => `<div><span class="ncur">${c}</span>${t ? `<ul class="nl">${newsList(t)}</ul>` : '<p class="muted" style="font-size:13px">—</p>'}</div>`).join('')}
       </div></div>` : ''}
       <div class="vsec"><h4>Top-down</h4>
@@ -733,13 +765,15 @@ function dayView(panel, ctx){
           <div class="tfv-h"><span class="tfl">${l}</span>${links[0] ? `<a class="tvlink" href="${esc(links[0])}" target="_blank" rel="noopener">TradingView ↗</a>` : ''}</div>
           ${text ? `<p>${esc(text)}</p>` : ''}
           ${links.map(u => { const snap = tvSnap(u); return snap
-            ? `<a class="snap" href="${esc(u)}" target="_blank" rel="noopener"><img src="${snap}" alt="Chart ${l} ${p}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'tvlink',textContent:'Previzualizare indisponibilă — deschide chart-ul ↗'}))"></a>`
+            ? `<a class="snap" href="${esc(u)}" target="_blank" rel="noopener"><img src="${snap}" alt="Chart ${l} ${p}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'tvlink',textContent:'Preview unavailable — open chart ↗'}))"></a>`
             : `<a class="tvlink" style="display:block;margin-top:8px;word-break:break-all" href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>`; }).join('')}
-        </article>`; }).join('') : '<p class="muted">Fără observații pe timeframe-uri.</p>'}
+        </article>`; }).join('') : '<p class="muted">No timeframe observations.</p>'}
       </div>`}
   </div>`;
   panel.querySelector('#startEdit')?.addEventListener('click', () => setMode('edit'));
+  panel.querySelector('#goEntry')?.addEventListener('click', () => selectDay(held.t.day));
 }
+function fmtDayShort(ds){ const d = parseISO(ds); return `${WD_SHORT[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)}`; }
 
 /* ---- day: edit ---- */
 function dayEdit(panel, ctx){
@@ -747,48 +781,51 @@ function dayEdit(panel, ctx){
   const hasTrade = !!(e.direction || ['yes','in','closed'].includes(statusKey(e.trade_status)));
   const v = f => esc(e[f] ?? '');
   const tf = (label, obs, tv, extra='') => `<div class="tf"><div class="tf-h"><span class="tfl">${label}</span>${extra}</div>
-      <textarea class="inp" data-f="${obs}" rows="2" aria-label="Observații ${label}" placeholder="Ce vezi pe ${label}…">${v(obs)}</textarea>
+      <textarea class="inp" data-f="${obs}" rows="2" aria-label="${label} observations" placeholder="What do you see on ${label}…">${v(obs)}</textarea>
       <input class="inp" style="margin-top:6px;font-size:12.5px" data-f="${tv}" type="url" value="${v(tv)}" aria-label="Link TradingView ${label}" placeholder="Link TradingView ${label}"></div>`;
   const numIn = (f, l, type='text') => `<div><label class="lbl" for="i_${f}">${l}</label><input id="i_${f}" class="inp num" data-f="${f}" ${type==='time' ? 'type="time"' : 'inputmode="decimal"'} value="${v(f)}"></div>`;
   panel.innerHTML = `<div class="ps">
-    ${panelHead(dayTitle(ctx), `${p} · <span id="saveState" class="save">${e.id ? 'salvat ✓' : 'se salvează automat'}</span>`)}
+    ${panelHead(dayTitle(ctx), `${p} · <span id="saveState" class="save">${e.id ? 'saved ✓' : 'autosaves'}</span>`)}
     ${wkBanner(ctx)}
-    <div class="sec" style="border-top:none;margin-top:4px"><h4>Status zi</h4>${chipGroup('trade_status', STATUSES, e.trade_status)}</div>
-    <div class="sec"><h4>Etichete setup <small>alege oricâte</small></h4>
+    <div class="sec" style="border-top:none;margin-top:4px"><h4>Day status</h4>${chipGroup('trade_status', STATUSES, e.trade_status)}</div>
+    <div class="sec"><h4>Setup tags <small>pick any</small></h4>
       <div class="chips" id="tagBox">${allTags(e.tags||[]).map(t => `<button type="button" class="ch tag" data-t="${esc(t)}" aria-pressed="${(e.tags||[]).includes(t)}">${esc(t)}</button>`).join('')}</div>
-      <div class="dyn" style="margin-top:8px"><input class="inp" id="newTag" placeholder="etichetă nouă…" aria-label="Etichetă nouă"><button type="button" class="btn" id="addTag">Adaugă</button></div></div>
-    <div class="sec"><h4>Știri <small>comune pe monedă</small></h4>
+      <div class="dyn" style="margin-top:8px"><input class="inp" id="newTag" placeholder="new tag…" aria-label="New tag"><button type="button" class="btn" id="addTag">Add</button></div></div>
+    <div class="sec"><h4>News <small>shared per currency</small></h4>
       <div class="g3" style="grid-template-columns:1fr 1fr">
         <div><label class="lbl" for="nb">${b}</label><textarea id="nb" class="inp" data-news="base" rows="2" placeholder="15:30 CPI">${esc(S.news.get(nk(b,ds))?.events || '')}</textarea></div>
         <div><label class="lbl" for="nq">${q}</label><textarea id="nq" class="inp" data-news="quote" rows="2" placeholder="12:00 GDP">${esc(S.news.get(nk(q,ds))?.events || '')}</textarea></div>
-      </div><p class="hint">O știre pe rând, cu ora în față: „15:30 CPI”.</p></div>
+      </div><p class="hint">One event per line, time first: "15:30 CPI".</p></div>
     <div class="sec"><h4>Top-down</h4>
-      ${tf('Daily','daily_obs','tv_daily', `<label class="muted" style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px;margin-left:auto">Închidere <input class="inp num" data-f="daily_change" inputmode="decimal" value="${v('daily_change')}" placeholder="-0.19" style="width:80px;padding:4px 8px">%</label>`)}
+      ${tf('Daily','daily_obs','tv_daily', `<label class="muted" style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px;margin-left:auto">Close <input class="inp num" data-f="daily_change" inputmode="decimal" value="${v('daily_change')}" placeholder="-0.19" style="width:80px;padding:4px 8px">%</label>`)}
       ${tf('4H','h4_obs','tv_4h')}
       ${tf('1H','h1_obs','tv_1h')}
     </div>
-    <details class="sec trade" ${hasTrade ? 'open' : ''}><summary><h4>Tranzacție <small>${e.direction ? esc(e.direction) + (e.result ? ' · '+esc(e.result) : '') : 'opțional'}</small></h4></summary>
+    <details class="sec trade" ${hasTrade ? 'open' : ''}><summary><h4>Trade <small>${e.direction ? esc(e.direction) + (e.result ? ' · '+esc(e.result) : '') : 'optional'}</small></h4></summary>
       <div style="display:grid;gap:12px">
-        <div><span class="lbl">Direcție</span>${chipGroup('direction', ['Long','Short'], e.direction)}</div>
-        <div><span class="lbl">Sesiune</span>${chipGroup('session', SESSIONS, e.session)}</div>
-        <div><span class="lbl">Rezultat</span>${chipGroup('result', ['W','L','BE'], e.result, o => o)}</div>
-        <div><span class="lbl">Cont</span>${(() => { const accs = [...S.accounts.values()].filter(a => a.status==='active' || a.id===e.account_id);
+        <div><span class="lbl">Direction</span>${chipGroup('direction', ['Long','Short'], e.direction)}</div>
+        <div><span class="lbl">Setup timeframe</span>${chipGroup('setup_tf', ['1H','4H'], e.setup_tf)}</div>
+        <div><span class="lbl">Session</span>${chipGroup('session', SESSIONS, e.session)}</div>
+        <div><span class="lbl">Result</span>${chipGroup('result', ['W','L','BE'], e.result, o => o)}</div>
+        <div><span class="lbl">Account</span>${(() => { const accs = [...S.accounts.values()].filter(a => a.status==='active' || a.id===e.account_id);
           return accs.length ? `<div class="chips" id="acctBox">${accs.map(a => `<button type="button" class="ch" data-a="${a.id}" aria-pressed="${a.id===e.account_id}">${esc(a.name)}</button>`).join('')}</div>`
-            : '<p class="hint" style="margin:0">Adaugă un cont din tab-ul Conturi ca să legi trade-ul de un challenge.</p>'; })()}
+            : '<p class="hint" style="margin:0">Add an account in the Accounts tab to link this trade to a challenge.</p>'; })()}
           <input type="hidden" id="acctHid" value="${esc(e.account_id||'')}"></div>
         <div class="g3">
           ${numIn('entry_price','Entry')}${numIn('sl','SL')}${numIn('tp','TP')}
-          ${numIn('entry_time','Entry hour','time')}${numIn('exit_time','Exit hour','time')}
+          ${numIn('entry_time','Entry hour','time')}
+          <div><label class="lbl" for="i_exit_date">Exit date</label><input id="i_exit_date" class="inp num" data-f="exit_date" type="date" min="${ds}" value="${v('exit_date')}"></div>
+          ${numIn('exit_time','Exit hour','time')}
           <div><label class="lbl" for="i_duration">Duration</label><input id="i_duration" class="inp" data-f="duration" value="${v('duration')}" placeholder="auto"></div>
           ${numIn('pips','Pips')}${numIn('r_multiple','R')}${numIn('risk','Risk %')}${numIn('profit','Profit $')}
         </div>
         <p class="hint" id="rrHint" style="margin:0"></p>
       </div></details>
-    <div class="sec"><h4>Plan pentru mâine</h4>${chipGroup('action', ACTIONS, e.action)}
-      <input class="inp" style="margin-top:8px" data-f-alt="action" placeholder="sau scrie altă acțiune…" aria-label="Acțiune personalizată"></div>
+    <div class="sec"><h4>Plan for tomorrow</h4>${chipGroup('action', ACTIONS, e.action)}
+      <input class="inp" style="margin-top:8px" data-f-alt="action" placeholder="or type a custom action…" aria-label="Custom action"></div>
     <div class="editfoot">
-      ${e.id ? '<button class="linkbtn" id="pDel">Șterge ziua</button>' : ''}
-      <button class="btn btn-primary" style="margin-left:auto" id="doneEdit">Gata ✓</button>
+      ${e.id ? '<button class="linkbtn" id="pDel">Delete day</button>' : ''}
+      <button class="btn btn-primary" style="margin-left:auto" id="doneEdit">Done ✓</button>
     </div>
   </div>`;
 
@@ -798,7 +835,7 @@ function dayEdit(panel, ctx){
     ta.addEventListener('input', () => {
       const m = ta.value.match(TVRX); if(!m || li.value.trim()) return;
       li.value = m[0]; ta.value = ta.value.replace(m[0], '').replace(/\n{3,}/g, '\n\n').trim(); autosize(ta);
-      toast('Link-ul TradingView a fost mutat în câmpul de chart');
+      toast('TradingView link moved to the chart field');
     });
   });
   const save = () => schedule(() => collectDay(panel));
@@ -832,20 +869,19 @@ function dayEdit(panel, ctx){
   };
   ['entry_price','sl','tp'].forEach(f => panel.querySelector(`[data-f="${f}"]`).addEventListener('input', rr)); rr();
   const dur = panel.querySelector('[data-f="duration"]');
-  ['entry_time','exit_time'].forEach(f => panel.querySelector(`[data-f="${f}"]`).addEventListener('change', () => {
-    const a = panel.querySelector('[data-f="entry_time"]').value, bb = panel.querySelector('[data-f="exit_time"]').value;
-    if(!a || !bb || (dur.value && !dur.dataset.auto)) return;
-    const [ah,am] = a.split(':').map(Number), [bh,bm] = bb.split(':').map(Number);
-    let mins = (bh*60+bm)-(ah*60+am); if(mins < 0) mins += 1440;
-    dur.value = `${Math.floor(mins/60)}h ${String(mins%60).padStart(2,'0')}m`; dur.dataset.auto = '1'; save();
+  ['entry_time','exit_time','exit_date'].forEach(f => panel.querySelector(`[data-f="${f}"]`).addEventListener('change', () => {
+    if(dur.value && !dur.dataset.auto) return;
+    const g = f => panel.querySelector(`[data-f="${f}"]`).value;
+    const m = tradeMinutes({ day:ds, entry_time:g('entry_time'), exit_time:g('exit_time'), exit_date:g('exit_date') });
+    if(m==null) return; dur.value = fmtDur(m); dur.dataset.auto = '1'; save();
   }));
   dur.addEventListener('input', () => delete dur.dataset.auto);
   panel.querySelector('#doneEdit').onclick = () => setMode('view');
   panel.querySelector('#pDel')?.addEventListener('click', async () => {
-    const cur = S.daily.get(dk(p, ds)); if(!cur || !confirm('Ștergi observațiile și trade-ul din ziua asta? Știrile rămân, fiind comune pe monedă.')) return;
+    const cur = S.daily.get(dk(p, ds)); if(!cur || !confirm('Delete this day\'s observations and trade? News stays, since it is shared per currency.')) return;
     pending = null; clearTimeout(timer);
     const { error } = await sb.from('do_daily').delete().eq('id', cur.id); if(error) return toast(error.message);
-    S.daily.delete(dk(p, ds)); renderCalendar(); renderPanel(); toast('Zi ștearsă');
+    S.daily.delete(dk(p, ds)); renderCalendar(); renderPanel(); toast('Day deleted');
   });
 }
 function collectDay(panel){
@@ -876,7 +912,7 @@ function weekRealized(p, y, w){
 function weekHeadInfo(){
   const p = S.pair, { y, w } = S.sel, m = mondayOf(y, w), f = new Date(m); f.setDate(m.getDate()+4);
   return { p, y, w, m, f, r: S.weekly.get(wk(p, y, w)) || {}, re: weekRealized(p, y, w),
-    range: `${m.getDate()} ${MONTHS[m.getMonth()].toLowerCase().slice(0,3)} – ${f.getDate()} ${MONTHS[f.getMonth()].toLowerCase().slice(0,3)} ${f.getFullYear()}`,
+    range: `${m.getDate()} ${MONTHS[m.getMonth()].slice(0,3)} – ${f.getDate()} ${MONTHS[f.getMonth()].slice(0,3)} ${f.getFullYear()}`,
     days: [0,1,2,3,4].map(i => { const d = new Date(m); d.setDate(m.getDate()+i); return d; }) };
 }
 function bindWeekNav(panel, y, w){
@@ -904,50 +940,50 @@ function weekView(panel){
   const d = det(r), b = base(p), q = quote(p);
   const tr = days.map(x => S.daily.get(dk(p, iso(x)))).filter(e => e && ['W','L','BE'].includes(e.result));
   const div = d.base_score!=null && d.quote_score!=null ? Math.abs(d.base_score - d.quote_score) : null;
-  const mini = [['Deja în preț', d.priced], ['Invalidare', d.invalidation], ['Orizont', d.horizon]].filter(([,v]) => v);
+  const mini = [['Already priced', d.priced], ['Invalidation', d.invalidation], ['Horizon', d.horizon]].filter(([,v]) => v);
   panel.innerHTML = `<div class="ps">
-    ${panelHead(`Săptămâna ${w}`, `${p} · ${range}`)}
-    ${!r.id ? `<div class="empty"><div class="orb" aria-hidden="true"></div><p>Analiza fundamentală a săptămânii nu e completată.</p><button class="btn btn-primary" id="startEdit">Completează fundamentalele</button></div>` : `
+    ${panelHead(`Week ${w}`, `${p} · ${range}`)}
+    ${!r.id ? `<div class="empty"><div class="orb" aria-hidden="true"></div><p>No fundamental analysis for this week yet.</p><button class="btn btn-primary" id="startEdit">Add fundamentals</button></div>` : `
       <div class="wkhero">
         <div class="hero-row">
           <div><span class="kick">Bias</span><span class="bigval ${r.bias || ''}">${r.bias ? BIAS_LBL[r.bias] : '—'}</span>
             ${r.conviction ? `<div class="muted" style="font-weight:700;margin-top:4px">${convDots(r.conviction)}</div>` : ''}</div>
-          ${re ? `<div style="text-align:right"><span class="kick">Realizat</span><span class="bigval ${sgn(re.sum)}">${pct(re.sum)}</span>
-            <div class="muted" style="font-size:12px;font-weight:600">${re.n} închideri</div></div>` : ''}
+          ${re ? `<div style="text-align:right"><span class="kick">Realized</span><span class="bigval ${sgn(re.sum)}">${pct(re.sum)}</span>
+            <div class="muted" style="font-size:12px;font-weight:600">${re.n} daily closes</div></div>` : ''}
         </div>
         ${r.fundamentals ? `<p class="quote" style="margin-top:14px">${esc(r.fundamentals)}</p>` : ''}
       </div>
       ${d.base_state || d.quote_state || d.base_score!=null || d.quote_score!=null ? `<div class="vsec"><h4>${b} vs ${q}</h4>
         <div class="vs">
           <div class="vs-side"><span class="ncur">${b}</span><b class="${stateCls(d.base_state)}">${esc(d.base_state || '—')}</b><span class="vs-score ${sgn(d.base_score)}">${scoreTxt(d.base_score)}</span></div>
-          <div class="vs-mid">${div!=null ? `<span class="kick">Divergență</span><b>${div}</b>` : 'vs'}</div>
+          <div class="vs-mid">${div!=null ? `<span class="kick">Divergence</span><b>${div}</b>` : 'vs'}</div>
           <div class="vs-side" style="text-align:right"><span class="ncur">${q}</span><b class="${stateCls(d.quote_state)}">${esc(d.quote_state || '—')}</b><span class="vs-score ${sgn(d.quote_score)}">${scoreTxt(d.quote_score)}</span></div>
         </div>
         ${div!=null ? `<div class="meter"><span style="width:${Math.min(100, div/20*100)}%"></span></div>` : ''}
       </div>` : ''}
-      ${d.main_driver || d.drivers?.length ? `<div class="vsec"><h4>Drivere</h4>
+      ${d.main_driver || d.drivers?.length ? `<div class="vsec"><h4>Drivers</h4>
         ${d.main_driver ? `<p style="font-weight:600">${esc(d.main_driver)}</p>` : ''}
         ${d.drivers?.length ? `<ul class="drv">${d.drivers.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}</div>` : ''}
-      ${d.catalysts?.length ? `<div class="vsec"><h4>Catalizatori</h4><div class="cats">
+      ${d.catalysts?.length ? `<div class="vsec"><h4>Catalysts</h4><div class="cats">
         ${d.catalysts.map(c => `<div class="cat"><time>${esc(c.date || '—')}</time><span>${esc(c.event || '')}</span>${c.imp ? `<span class="imp ${impCls(c.imp)}">${esc(c.imp)}</span>` : ''}</div>`).join('')}</div></div>` : ''}
-      ${mini.length || d.alignment ? `<div class="vsec"><h4>Evaluare</h4><div class="minis">
-        ${d.alignment ? `<div class="mini wide"><span class="kick">Preț vs fundamental</span><span class="alg alg-${d.alignment.toLowerCase().replace(/\s+/g,'-')}">${esc(d.alignment)}</span>${d.alignment_note ? `<p>${esc(d.alignment_note)}</p>` : ''}</div>` : ''}
-        ${mini.map(([l,v]) => `<div class="mini ${l==='Orizont' ? '' : 'wide'}"><span class="kick">${l}</span><p>${esc(v)}</p></div>`).join('')}
+      ${mini.length || d.alignment ? `<div class="vsec"><h4>Assessment</h4><div class="minis">
+        ${d.alignment ? `<div class="mini wide"><span class="kick">Price vs fundamentals</span><span class="alg alg-${d.alignment.toLowerCase().replace(/\s+/g,'-')}">${esc(d.alignment)}</span>${d.alignment_note ? `<p>${esc(d.alignment_note)}</p>` : ''}</div>` : ''}
+        ${mini.map(([l,v]) => `<div class="mini ${l==='Horizon' ? '' : 'wide'}"><span class="kick">${l}</span><p>${esc(v)}</p></div>`).join('')}
       </div></div>` : ''}
       ${d.changed ? `<div class="vsec"><h4>Ce s-a schimbat</h4><p style="white-space:pre-line">${esc(d.changed)}</p></div>` : ''}`}
-    <div class="vsec"><h4>Zilele săptămânii ${tr.length ? `<span class="muted" style="font-weight:600;font-size:12px">· ${tr.filter(t=>t.result==='W').length}W / ${tr.filter(t=>t.result==='L').length}L</span>` : ''}</h4>${weekDays(p, days)}</div>
+    <div class="vsec"><h4>Days of the week ${tr.length ? `<span class="muted" style="font-weight:600;font-size:12px">· ${tr.filter(t=>t.result==='W').length}W / ${tr.filter(t=>t.result==='L').length}L</span>` : ''}</h4>${weekDays(p, days)}</div>
     ${r.review ? `<div class="vsec"><h4>Review</h4><p style="white-space:pre-line">${esc(r.review)}</p></div>` : ''}
   </div>`;
   bindWeekNav(panel, y, w);
   panel.querySelector('#startEdit')?.addEventListener('click', () => setMode('edit'));
 }
 
-const driverRow = v => `<div class="dyn"><input class="inp" value="${esc(v||'')}" placeholder="ex. Confirmed hawkish Fed hike" aria-label="Driver"><button type="button" class="rm" aria-label="Șterge">×</button></div>`;
+const driverRow = v => `<div class="dyn"><input class="inp" value="${esc(v||'')}" placeholder="e.g. Confirmed hawkish Fed hike" aria-label="Driver"><button type="button" class="rm" aria-label="Remove">×</button></div>`;
 const catRow = c => `<div class="dyn catrow">
-  <input class="inp" data-c="date" value="${esc(c?.date||'')}" placeholder="29 Sep" aria-label="Dată" style="max-width:92px">
+  <input class="inp" data-c="date" value="${esc(c?.date||'')}" placeholder="29 Sep" aria-label="Date" style="max-width:92px">
   <input class="inp" data-c="event" value="${esc(c?.event||'')}" placeholder="RBA decision" aria-label="Eveniment">
-  <select class="inp" data-c="imp" aria-label="Importanță" style="max-width:112px"><option value="">–</option>${IMPS.map(i => `<option ${c?.imp===i ? 'selected' : ''}>${i}</option>`).join('')}</select>
-  <button type="button" class="rm" aria-label="Șterge">×</button></div>`;
+  <select class="inp" data-c="imp" aria-label="Importance" style="max-width:112px"><option value="">–</option>${IMPS.map(i => `<option ${c?.imp===i ? 'selected' : ''}>${i}</option>`).join('')}</select>
+  <button type="button" class="rm" aria-label="Remove">×</button></div>`;
 const hChips = (key, attr, opts, val, lbl = o => o, cls = () => '') =>
   `<div class="chips" role="group" data-hchips="${key}" data-attr="${attr}">${opts.map(o => `<button type="button" class="ch ${cls(o)}" data-v="${esc(o)}" aria-pressed="${o===val}">${esc(lbl(o))}</button>`).join('')}</div>
    <input type="hidden" ${attr}="${key}" value="${esc(val||'')}">`;
@@ -957,48 +993,48 @@ function weekEdit(panel){
   const d = det(r), b = base(p), q = quote(p), v = k => esc(d[k] ?? '');
   const ta = (k, ph, rows=2) => `<textarea class="inp" data-d="${k}" rows="${rows}" placeholder="${ph}">${v(k)}</textarea>`;
   panel.innerHTML = `<div class="ps">
-    ${panelHead(`Săptămâna ${w}`, `${p} · ${range} · <span id="saveState" class="save">${r.id ? 'salvat ✓' : 'se salvează automat'}</span>`)}
-    <div class="sec" style="border-top:none"><h4>Bias fundamental</h4>
+    ${panelHead(`Week ${w}`, `${p} · ${range} · <span id="saveState" class="save">${r.id ? 'saved ✓' : 'autosaves'}</span>`)}
+    <div class="sec" style="border-top:none"><h4>Fundamental bias</h4>
       ${hChips('bias', 'data-w', Object.keys(BIAS_LBL), r.bias, o => BIAS_LBL[o], o => 'b-'+o)}
-      <span class="lbl" style="margin-top:12px">Convingere</span>
+      <span class="lbl" style="margin-top:12px">Conviction</span>
       ${hChips('conviction', 'data-w', ['low','medium','high'], r.conviction, o => ({low:'Low / mild',medium:'Medium',high:'High'}[o]))}
-      <label class="lbl" for="wf" style="margin-top:12px">Rezumat (apare în calendar)</label>
+      <label class="lbl" for="wf" style="margin-top:12px">Summary (shown on the calendar)</label>
       <textarea id="wf" class="inp" data-w="fundamentals" rows="2" placeholder="Bearish (EUR +0 vs USD +9)">${esc(r.fundamentals||'')}</textarea>
-      <button class="btn" id="wCopy" style="margin-top:10px">Copiază tot din săptămâna trecută</button>
+      <button class="btn" id="wCopy" style="margin-top:10px">Copy everything from last week</button>
     </div>
-    <div class="sec"><h4>${b} vs ${q} <small>stare și scor</small></h4>
+    <div class="sec"><h4>${b} vs ${q} <small>state & score</small></h4>
       <div class="g3" style="grid-template-columns:1fr 1fr;gap:14px">
         ${[[b,'base'],[q,'quote']].map(([c,k]) => `<div>
-          <span class="lbl">${c} — stare</span>${hChips(k+'_state', 'data-d', CCY_STATES, d[k+'_state'])}
-          <label class="lbl" style="margin-top:8px" for="sc_${k}">${c} — scor</label>
+          <span class="lbl">${c} — state</span>${hChips(k+'_state', 'data-d', CCY_STATES, d[k+'_state'])}
+          <label class="lbl" style="margin-top:8px" for="sc_${k}">${c} — score</label>
           <input id="sc_${k}" class="inp num" data-d="${k}_score" data-num="1" inputmode="numeric" value="${v(k+'_score')}" placeholder="+9" style="max-width:90px"></div>`).join('')}
       </div><p class="hint" id="divHint"></p></div>
-    <div class="sec"><h4>Drivere</h4>
-      <label class="lbl">Driver principal</label>${ta('main_driver','ce împinge perechea săptămâna asta')}
-      <span class="lbl" style="margin-top:10px">Drivere secundare</span>
+    <div class="sec"><h4>Drivers</h4>
+      <label class="lbl">Main driver</label>${ta('main_driver','what is driving the pair this week')}
+      <span class="lbl" style="margin-top:10px">Secondary drivers</span>
       <div data-list="drivers" style="display:grid;gap:6px">${(d.drivers?.length ? d.drivers : ['']).map(driverRow).join('')}</div>
-      <button type="button" class="btn" data-add="drivers" style="margin-top:8px">+ Adaugă driver</button></div>
-    <div class="sec"><h4>Catalizatori</h4>
+      <button type="button" class="btn" data-add="drivers" style="margin-top:8px">+ Add driver</button></div>
+    <div class="sec"><h4>Catalysts</h4>
       <div data-list="catalysts" style="display:grid;gap:6px">${(d.catalysts?.length ? d.catalysts : [null]).map(catRow).join('')}</div>
-      <button type="button" class="btn" data-add="catalysts" style="margin-top:8px">+ Adaugă catalizator</button></div>
-    <div class="sec"><h4>Evaluare</h4>
-      <span class="lbl">Preț vs fundamental</span>${hChips('alignment', 'data-d', ALIGNS, d.alignment)}
-      <input class="inp" data-d="alignment_note" value="${v('alignment_note')}" placeholder="explicație scurtă" style="margin-top:8px">
-      <label class="lbl" style="margin-top:10px">Deja în preț</label>${ta('priced','ce a absorbit deja piața')}
-      <label class="lbl" style="margin-top:10px">Invalidare</label>${ta('invalidation','ce ar anula teza')}
-      <label class="lbl" style="margin-top:10px">Orizont</label><input class="inp" data-d="horizon" value="${v('horizon')}" placeholder="Swing: mild bearish">
+      <button type="button" class="btn" data-add="catalysts" style="margin-top:8px">+ Add catalyst</button></div>
+    <div class="sec"><h4>Assessment</h4>
+      <span class="lbl">Price vs fundamentals</span>${hChips('alignment', 'data-d', ALIGNS, d.alignment)}
+      <input class="inp" data-d="alignment_note" value="${v('alignment_note')}" placeholder="short explanation" style="margin-top:8px">
+      <label class="lbl" style="margin-top:10px">Already priced</label>${ta('priced','what the market has already absorbed')}
+      <label class="lbl" style="margin-top:10px">Invalidation</label>${ta('invalidation','what would kill the thesis')}
+      <label class="lbl" style="margin-top:10px">Horizon</label><input class="inp" data-d="horizon" value="${v('horizon')}" placeholder="Swing: mild bearish">
     </div>
-    <div class="sec"><h4>Ce s-a schimbat față de săptămâna trecută</h4>${ta('changed','upgrade / downgrade / neschimbat și de ce')}</div>
+    <div class="sec"><h4>What changed vs last week</h4>${ta('changed','upgraded / downgraded / unchanged, and why')}</div>
     <div class="sec"><h4>Review</h4>
-      <textarea class="inp" data-w="review" rows="3" aria-label="Review săptămână" placeholder="Ce s-a întâmplat față de ce ai anticipat…">${esc(r.review||'')}</textarea></div>
+      <textarea class="inp" data-w="review" rows="3" aria-label="Weekly review" placeholder="What happened vs what you expected…">${esc(r.review||'')}</textarea></div>
     <div class="editfoot">
-      ${r.id ? '<button class="linkbtn" id="wDel">Șterge săptămâna</button>' : ''}
-      <button class="btn btn-primary" style="margin-left:auto" id="doneEdit">Gata ✓</button>
+      ${r.id ? '<button class="linkbtn" id="wDel">Delete week</button>' : ''}
+      <button class="btn btn-primary" style="margin-left:auto" id="doneEdit">Done ✓</button>
     </div>
   </div>`;
   const save = () => schedule(() => collectWeek(panel));
   const divHint = () => { const a = parseNum(panel.querySelector('[data-d="base_score"]').value), c = parseNum(panel.querySelector('[data-d="quote_score"]').value);
-    panel.querySelector('#divHint').textContent = a!=null && c!=null ? `Divergență: ${Math.abs(a-c)} · ${a>c ? b+' mai puternic → bias bullish '+p : a<c ? q+' mai puternic → bias bearish '+p : 'egal'}` : ''; };
+    panel.querySelector('#divHint').textContent = a!=null && c!=null ? `Divergence: ${Math.abs(a-c)} · ${a>c ? b+' stronger → bullish '+p : a<c ? q+' stronger → bearish '+p : 'equal'}` : ''; };
   const wire = root => {
     root.querySelectorAll('textarea').forEach(t => { autosize(t); t.addEventListener('input', () => autosize(t)); });
     root.querySelectorAll('input:not([type=hidden]), textarea, select').forEach(el => el.addEventListener(el.tagName==='SELECT' ? 'change' : 'input', save));
@@ -1021,18 +1057,18 @@ function weekEdit(panel){
   bindWeekNav(panel, y, w);
   panel.querySelector('#doneEdit').onclick = () => setMode('view');
   panel.querySelector('#wCopy').onclick = async () => {
-    const pw = prevWeek(y, w), pr = S.weekly.get(wk(p, pw.year, pw.week)); if(!pr) return toast('Săptămâna trecută nu e completată');
-    if(r.id && !confirm('Înlocuiești conținutul săptămânii curente cu cel din săptămâna trecută? Review-ul rămâne.')) return;
+    const pw = prevWeek(y, w), pr = S.weekly.get(wk(p, pw.year, pw.week)); if(!pr) return toast('Last week has no analysis');
+    if(r.id && !confirm('Replace this week\'s analysis with last week\'s? The review is kept.')) return;
     const row = { pair:p, year:y, week:w, bias:pr.bias, conviction:pr.conviction, fundamentals:pr.fundamentals, review:r.review || null,
       details:{ ...det(pr), changed: undefined } };
     delete row.details.changed;
     pending = null; clearTimeout(timer);
     const { data, error } = await sb.from('do_weekly').upsert(row, { onConflict:'pair,year,week' }).select().single();
-    if(error) return toast('Nu s-a copiat: ' + error.message);
-    S.weekly.set(wk(p, y, w), data); renderCalendar(); renderPanel(); toast('Copiat din săptămâna trecută');
+    if(error) return toast('Copy failed: ' + error.message);
+    S.weekly.set(wk(p, y, w), data); renderCalendar(); renderPanel(); toast('Copied from last week');
   };
   panel.querySelector('#wDel')?.addEventListener('click', async () => {
-    const cur = S.weekly.get(wk(p, y, w)); if(!cur || !confirm('Ștergi toată analiza fundamentală a acestei săptămâni?')) return;
+    const cur = S.weekly.get(wk(p, y, w)); if(!cur || !confirm('Delete this week\'s entire fundamental analysis?')) return;
     pending = null; clearTimeout(timer);
     const { error } = await sb.from('do_weekly').delete().eq('id', cur.id); if(error) return toast(error.message);
     S.weekly.delete(wk(p, y, w)); renderCalendar(); renderPanel();
@@ -1064,14 +1100,14 @@ function allTags(extra = []){
 const tagPills = tags => (tags||[]).length ? `<div class="tagrow">${tags.map(t => `<span class="tagp">#${esc(t)}</span>`).join('')}</div>` : '';
 
 /* ---------- prop firm accounts ---------- */
-const PHASES = ['Challenge – Faza 1','Challenge – Faza 2','Challenge – Faza 3','Funded','Personal'];
-const ACC_STATUS = { active:'Activ', passed:'Trecut', failed:'Picat', archived:'Arhivat' };
-const money = n => n==null ? '–' : `${n<0 ? '−' : ''}$${Math.abs(n).toLocaleString('ro-RO',{ maximumFractionDigits:0 })}`;
+const PHASES = ['Challenge – Phase 1','Challenge – Phase 2','Challenge – Phase 3','Funded','Personal'];
+const ACC_STATUS = { active:'Active', passed:'Passed', failed:'Failed', archived:'Archived' };
+const money = n => n==null ? '–' : `${n<0 ? '−' : ''}$${Math.abs(n).toLocaleString('en-US',{ maximumFractionDigits:0 })}`;
 function acctStats(a){
   const size = Number(a.size) || 0;
-  const tr = [...S.daily.values()].filter(e => e.account_id===a.id && e.profit!=null).sort((x,y) => x.day.localeCompare(y.day));
+  const tr = [...S.daily.values()].filter(e => e.account_id===a.id && e.profit!=null).sort((x,y) => exitDay(x).localeCompare(exitDay(y)));
   let bal = size, low = size; const curve = [{ day:a.start_date || (tr[0]?.day ?? ''), bal:size }], byDay = {};
-  tr.forEach(t => { bal += Number(t.profit); low = Math.min(low, bal); curve.push({ day:t.day, bal }); byDay[t.day] = (byDay[t.day]||0) + Number(t.profit); });
+  tr.forEach(t => { bal += Number(t.profit); low = Math.min(low, bal); curve.push({ day:exitDay(t), bal }); byDay[exitDay(t)] = (byDay[exitDay(t)]||0) + Number(t.profit); });
   const pnl = bal - size;
   const target = a.target_pct ? size*a.target_pct/100 : null, maxLoss = a.max_loss_pct ? size*a.max_loss_pct/100 : null, dailyLim = a.daily_loss_pct ? size*a.daily_loss_pct/100 : null;
   const floor = maxLoss!=null ? size - maxLoss : null, today = byDay[iso(new Date())] || 0;
@@ -1094,23 +1130,23 @@ function renderAccounts(){
   const sel = S.selAcct ? S.accounts.get(S.selAcct) : null;
   document.getElementById('main').innerHTML = `
     <div class="flex flex-wrap items-end gap-4 mb-4">
-      <div><div class="pairtitle">Conturi</div><div class="muted mt-1" style="font-weight:600">Challenge-uri și conturi funded — P/L din trade-urile legate de fiecare cont</div></div>
-      <button class="btn btn-primary ml-auto" id="newAcct">+ Cont nou</button>
+      <div><div class="pairtitle">Accounts</div><div class="muted mt-1" style="font-weight:600">Challenges and funded accounts — P/L from the trades linked to each account</div></div>
+      <button class="btn btn-primary ml-auto" id="newAcct">+ New account</button>
     </div>
     ${accs.length ? `<div class="agrid">${accs.map(a => { const s = acctStats(a);
-      const alert = s.breachMax ? 'Max loss atins' : s.breachDaily ? 'Daily loss încălcat' : s.passed && a.status==='active' ? 'Target atins 🎯' : '';
+      const alert = s.breachMax ? 'Max loss hit' : s.breachDaily ? 'Daily loss breached' : s.passed && a.status==='active' ? 'Target reached 🎯' : '';
       return `<article class="acard ${S.selAcct===a.id ? 'sel' : ''} st-acc-${a.status||'active'}" data-acc="${a.id}" tabindex="0">
         <div class="acard-top"><div style="min-width:0"><h3>${esc(a.name)}</h3><div class="muted" style="font-size:12.5px;font-weight:600">${esc([a.firm, a.phase].filter(Boolean).join(' · '))}</div></div>
           <span class="accst">${ACC_STATUS[a.status||'active']}</span></div>
         ${alert ? `<div class="aalert ${s.passed && !s.breachMax && !s.breachDaily ? 'ok' : ''}">${alert}</div>` : ''}
-        <div class="abal"><div><span class="kick">Sold</span><span class="bigval">${money(s.bal)}</span></div>
+        <div class="abal"><div><span class="kick">Balance</span><span class="bigval">${money(s.bal)}</span></div>
           <div style="text-align:right"><span class="kick">P/L</span><b class="${sgn(s.pnl)}" style="font-size:18px">${s.pnl>0?'+':''}${money(s.pnl)}</b>
           <div class="muted num" style="font-size:12px;font-weight:700">${a.size ? `${s.pnl>0?'+':''}${fmt(s.pnl/a.size*100)}%` : ''}</div></div></div>
         ${s.target!=null ? bar('Target profit', Math.max(0,s.pnl), s.target, 'b-pos', `${money(Math.max(0,s.pnl))} / ${money(s.target)}`) : ''}
-        ${s.maxLoss!=null ? bar('Max loss folosit', Math.max(0, a.size - s.bal), s.maxLoss, 'b-neg', `rămas ${money(s.room)}`) : ''}
-        ${s.dailyLim!=null ? bar('Daily loss azi', Math.max(0,-s.today), s.dailyLim, 'b-amb', `${money(Math.max(0,-s.today))} / ${money(s.dailyLim)}`) : ''}
-        <div class="afoot"><span>${s.tr.length} trade-uri${s.w+s.l ? ` · ${s.w}W/${s.l}L` : ''}</span><span>cea mai slabă zi ${money(s.worstDay)}</span></div>
-      </article>`; }).join('')}</div>` : `<div class="card empty"><div class="orb" aria-hidden="true"></div><p>Niciun cont încă. Adaugă un challenge sau un cont funded, apoi alege-l în secțiunea Tranzacție a unei zile.</p><button class="btn btn-primary" id="newAcct2">+ Cont nou</button></div>`}
+        ${s.maxLoss!=null ? bar('Max loss used', Math.max(0, a.size - s.bal), s.maxLoss, 'b-neg', `${money(s.room)} left`) : ''}
+        ${s.dailyLim!=null ? bar('Daily loss today', Math.max(0,-s.today), s.dailyLim, 'b-amb', `${money(Math.max(0,-s.today))} / ${money(s.dailyLim)}`) : ''}
+        <div class="afoot"><span>${s.tr.length} trades${s.w+s.l ? ` · ${s.w}W/${s.l}L` : ''}</span><span>worst day ${money(s.worstDay)}</span></div>
+      </article>`; }).join('')}</div>` : `<div class="card empty"><div class="orb" aria-hidden="true"></div><p>No accounts yet. Add a challenge or funded account, then pick it in the Trade section of a day.</p><button class="btn btn-primary" id="newAcct2">+ New account</button></div>`}
     ${sel ? acctDetail(sel) : ''}`;
   const open = id => { S.selAcct = S.selAcct===id ? null : id; renderMain(); if(S.selAcct) document.getElementById('acctDetail')?.scrollIntoView({ behavior:'smooth', block:'start' }); };
   document.querySelectorAll('[data-acc]').forEach(c => { c.onclick = () => open(c.dataset.acc); c.onkeydown = e => { if(e.key==='Enter') open(c.dataset.acc); }; });
@@ -1130,43 +1166,43 @@ function acctDetail(a){
   const s = acctStats(a);
   return `<section id="acctDetail" class="card" style="margin-top:18px">
     <div class="flex flex-wrap items-center gap-3 mb-3"><h3 style="margin:0;font-size:20px">${esc(a.name)}</h3>
-      <span class="muted" style="font-weight:600">cont ${money(Number(a.size))}${a.start_date ? ' · start ' + a.start_date.split('-').reverse().join('.') : ''}</span>
-      <button class="btn ml-auto" id="editAcct">Editează contul</button></div>
-    <div class="chartbox"><canvas id="c_acct" aria-label="Evoluția soldului"></canvas></div>
-    <p class="hint">Linia verde punctată = target, linia roșie = pragul de max loss. Limitele sunt calculate din soldul inițial.</p>
+      <span class="muted" style="font-weight:600">${money(Number(a.size))} account${a.start_date ? ' · start ' + a.start_date.split('-').reverse().join('.') : ''}</span>
+      <button class="btn ml-auto" id="editAcct">Edit account</button></div>
+    <div class="chartbox"><canvas id="c_acct" aria-label="Balance curve"></canvas></div>
+    <p class="hint">Dotted green line = profit target, red line = max loss floor. Limits are calculated from the starting balance.</p>
     ${a.notes ? `<p class="quote" style="margin-top:12px">${esc(a.notes)}</p>` : ''}
-    <div style="overflow-x:auto;margin-top:14px"><table class="sumtable"><thead><tr><th>Data</th><th>Pereche</th><th>Direcție</th><th>Rezultat</th><th>Pips</th><th>Profit</th><th>Sold după</th></tr></thead><tbody>
+    <div style="overflow-x:auto;margin-top:14px"><table class="sumtable"><thead><tr><th>Exit date</th><th>Pair</th><th>Direction</th><th>Result</th><th>Pips</th><th>Profit</th><th>Balance after</th></tr></thead><tbody>
       ${s.tr.length ? s.tr.map((t,i) => `<tr class="click" data-goday-acc="${t.pair}|${t.day}"><td class="num">${t.day.split('-').reverse().join('.')}</td><td style="font-weight:700">${t.pair}</td>
         <td class="${t.direction==='Long' ? 'pos' : t.direction==='Short' ? 'neg' : ''}">${esc(t.direction||'–')}</td><td>${esc(t.result||'–')}</td>
         <td class="num ${sgn(t.pips)}">${t.pips!=null ? fmt(t.pips,1) : '–'}</td><td class="num ${sgn(t.profit)}">${money(Number(t.profit))}</td>
-        <td class="num">${money(s.curve[i+1].bal)}</td></tr>`).reverse().join('') : '<tr><td colspan="7" class="muted">Niciun trade cu profit legat de acest cont.</td></tr>'}
+        <td class="num">${money(s.curve[i+1].bal)}</td></tr>`).reverse().join('') : '<tr><td colspan="7" class="muted">No trades with profit linked to this account yet.</td></tr>'}
     </tbody></table></div></section>`;
 }
 const acctDlg = document.getElementById('acctDlg');
 function openAcct(a){
   const v = k => esc(a?.[k] ?? '');
   acctDlg.innerHTML = `<form id="acctForm" method="dialog">
-    <div class="dlg-head"><h2>${a ? 'Editează contul' : 'Cont nou'}</h2></div>
+    <div class="dlg-head"><h2>${a ? 'Edit account' : 'New account'}</h2></div>
     <div class="dlg-body" style="display:grid;gap:10px">
       <div class="g3" style="grid-template-columns:1fr 1fr">
-        <div><label class="lbl" for="a_name">Nume</label><input id="a_name" class="inp" name="name" required value="${v('name')}" placeholder="The5ers 100K #1"></div>
-        <div><label class="lbl" for="a_firm">Firmă</label><input id="a_firm" class="inp" name="firm" value="${v('firm')}" placeholder="The5ers" list="dl_firms"></div>
-        <div><label class="lbl" for="a_phase">Fază</label><select id="a_phase" class="inp" name="phase">${PHASES.map(p => `<option ${a?.phase===p ? 'selected' : ''}>${p}</option>`).join('')}</select></div>
+        <div><label class="lbl" for="a_name">Name</label><input id="a_name" class="inp" name="name" required value="${v('name')}" placeholder="The5ers 100K #1"></div>
+        <div><label class="lbl" for="a_firm">Firm</label><input id="a_firm" class="inp" name="firm" value="${v('firm')}" placeholder="The5ers" list="dl_firms"></div>
+        <div><label class="lbl" for="a_phase">Phase</label><select id="a_phase" class="inp" name="phase">${[...PHASES, ...(a?.phase && !PHASES.includes(a.phase) ? [a.phase] : [])].map(p => `<option ${a?.phase===p ? 'selected' : ''}>${p}</option>`).join('')}</select></div>
         <div><label class="lbl" for="a_status">Status</label><select id="a_status" class="inp" name="status">${Object.entries(ACC_STATUS).map(([k,l]) => `<option value="${k}" ${(a?.status||'active')===k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-        <div><label class="lbl" for="a_size">Mărime cont ($)</label><input id="a_size" class="inp num" name="size" inputmode="decimal" required value="${v('size')}" placeholder="100000"></div>
-        <div><label class="lbl" for="a_start">Data start</label><input id="a_start" class="inp" name="start_date" type="date" value="${v('start_date')}"></div>
+        <div><label class="lbl" for="a_size">Account size ($)</label><input id="a_size" class="inp num" name="size" inputmode="decimal" required value="${v('size')}" placeholder="100000"></div>
+        <div><label class="lbl" for="a_start">Start date</label><input id="a_start" class="inp" name="start_date" type="date" value="${v('start_date')}"></div>
       </div>
       <div class="g3">
-        <div><label class="lbl" for="a_t">Target profit %</label><input id="a_t" class="inp num" name="target_pct" inputmode="decimal" value="${v('target_pct')}" placeholder="8"></div>
+        <div><label class="lbl" for="a_t">Profit target %</label><input id="a_t" class="inp num" name="target_pct" inputmode="decimal" value="${v('target_pct')}" placeholder="8"></div>
         <div><label class="lbl" for="a_d">Daily loss %</label><input id="a_d" class="inp num" name="daily_loss_pct" inputmode="decimal" value="${v('daily_loss_pct')}" placeholder="5"></div>
         <div><label class="lbl" for="a_m">Max loss %</label><input id="a_m" class="inp num" name="max_loss_pct" inputmode="decimal" value="${v('max_loss_pct')}" placeholder="10"></div>
       </div>
-      <div><label class="lbl" for="a_notes">Note</label><textarea id="a_notes" class="inp" name="notes" rows="2" placeholder="reguli speciale, termene, payout…">${v('notes')}</textarea></div>
+      <div><label class="lbl" for="a_notes">Notes</label><textarea id="a_notes" class="inp" name="notes" rows="2" placeholder="special rules, deadlines, payouts…">${v('notes')}</textarea></div>
       <datalist id="dl_firms"><option>The5ers</option><option>FTMO</option><option>FundingPips</option><option>Funded Next</option><option>Alpha Capital</option></datalist>
     </div>
     <div class="dlg-foot">
-      ${a ? '<button type="button" class="btn btn-danger" id="acctDel" style="margin-right:auto">Șterge</button>' : ''}
-      <button type="button" class="btn" id="acctCancel">Anulează</button><button type="submit" class="btn btn-primary">Salvează</button>
+      ${a ? '<button type="button" class="btn btn-danger" id="acctDel" style="margin-right:auto">Delete</button>' : ''}
+      <button type="button" class="btn" id="acctCancel">Cancel</button><button type="submit" class="btn btn-primary">Save</button>
     </div></form>`;
   const f = acctDlg.querySelector('#acctForm');
   f.onsubmit = async ev => {
@@ -1174,14 +1210,14 @@ function openAcct(a){
     const el = f.elements, row = { name:el.name.value.trim(), firm:el.firm.value.trim() || null, phase:el.phase.value, status:el.status.value,
       size:parseNum(el.size.value), start_date:el.start_date.value || null, target_pct:parseNum(el.target_pct.value),
       daily_loss_pct:parseNum(el.daily_loss_pct.value), max_loss_pct:parseNum(el.max_loss_pct.value), notes:el.notes.value.trim() || null };
-    if(!row.name || row.size==null) return toast('Completează numele și mărimea contului');
+    if(!row.name || row.size==null) return toast('Fill in the account name and size');
     const q = a ? sb.from('do_accounts').update(row).eq('id', a.id).select().single() : sb.from('do_accounts').insert(row).select().single();
-    const { data, error } = await q; if(error) return toast('Nu s-a salvat: ' + error.message);
-    S.accounts.set(data.id, data); S.selAcct = data.id; acctDlg.close(); renderMain(); toast('Cont salvat');
+    const { data, error } = await q; if(error) return toast('Not saved: ' + error.message);
+    S.accounts.set(data.id, data); S.selAcct = data.id; acctDlg.close(); renderMain(); toast('Account saved');
   };
   acctDlg.querySelector('#acctCancel').onclick = () => acctDlg.close();
   acctDlg.querySelector('#acctDel')?.addEventListener('click', async () => {
-    if(!confirm('Ștergi contul? Trade-urile rămân în jurnal, doar fără cont asociat.')) return;
+    if(!confirm('Delete this account? Trades stay in the journal, just unlinked.')) return;
     const { error } = await sb.from('do_accounts').delete().eq('id', a.id); if(error) return toast(error.message);
     S.accounts.delete(a.id); S.daily.forEach(e => { if(e.account_id===a.id) e.account_id = null; });
     S.selAcct = null; acctDlg.close(); renderMain();
@@ -1200,10 +1236,10 @@ async function goTo(pair, sel){
 const searchDlg = document.getElementById('searchDlg');
 function openSearch(){
   searchDlg.innerHTML = `<div class="dlg-head" style="padding-bottom:8px">
-      <input id="sq" class="inp" type="search" placeholder="Caută în observații, știri, fundamentale, etichete…" aria-label="Căutare" style="font-size:15px;padding:10px 12px">
-      <div class="chips" id="sFilter" style="margin-top:10px">${[['all','Tot'],['obs','Observații'],['news','Știri'],['fund','Fundamentale'],['tag','Etichete']].map(([k,l],i) => `<button type="button" class="ch" data-sf="${k}" aria-pressed="${i===0}">${l}</button>`).join('')}</div>
+      <input id="sq" class="inp" type="search" placeholder="Search observations, news, fundamentals, tags…" aria-label="Search" style="font-size:15px;padding:10px 12px">
+      <div class="chips" id="sFilter" style="margin-top:10px">${[['all','All'],['obs','Observations'],['news','News'],['fund','Fundamentals'],['tag','Tags']].map(([k,l],i) => `<button type="button" class="ch" data-sf="${k}" aria-pressed="${i===0}">${l}</button>`).join('')}</div>
     </div>
-    <div class="dlg-body" id="sres" style="max-height:62vh;overflow:auto;padding-bottom:16px"><p class="muted">Scrie cel puțin 2 caractere.</p></div>`;
+    <div class="dlg-body" id="sres" style="max-height:62vh;overflow:auto;padding-bottom:16px"><p class="muted">Type at least 2 characters.</p></div>`;
   const inp = searchDlg.querySelector('#sq'); let filt = 'all';
   const run = () => renderResults(inp.value, filt);
   inp.addEventListener('input', run);
@@ -1223,26 +1259,26 @@ function snippet(text, q){
 }
 function renderResults(raw, filt){
   const box = searchDlg.querySelector('#sres'), q = raw.trim().toLowerCase();
-  if(q.length < 2){ box.innerHTML = '<p class="muted">Scrie cel puțin 2 caractere.</p>'; return; }
+  if(q.length < 2){ box.innerHTML = '<p class="muted">Type at least 2 characters.</p>'; return; }
   const res = [];
-  const DF = { daily_obs:'Daily', h4_obs:'4H', h1_obs:'1H', action:'Plan', trade_status:'Status', session:'Sesiune' };
+  const DF = { daily_obs:'Daily', h4_obs:'4H', h1_obs:'1H', action:'Plan', trade_status:'Status', session:'Session' };
   if(filt==='all' || filt==='obs' || filt==='tag') S.daily.forEach(e => {
     if(filt!=='tag') for(const [f,l] of Object.entries(DF)){ const sn = e[f] && snippet(e[f], q); if(sn) res.push({ sort:e.day, go:`day|${e.pair}|${e.day}`, pair:e.pair, when:e.day, label:l, sn }); }
-    if(filt!=='obs'){ const t = (e.tags||[]).find(t => t.toLowerCase().includes(q)); if(t) res.push({ sort:e.day, go:`day|${e.pair}|${e.day}`, pair:e.pair, when:e.day, label:'Etichetă', sn:snippet('#'+t, q) }); }
+    if(filt!=='obs'){ const t = (e.tags||[]).find(t => t.toLowerCase().includes(q)); if(t) res.push({ sort:e.day, go:`day|${e.pair}|${e.day}`, pair:e.pair, when:e.day, label:'Tag', sn:snippet('#'+t, q) }); }
   });
   if(filt==='all' || filt==='news') S.news.forEach(n => { const sn = snippet(n.events, q); if(!sn) return;
     const pairs = allPairs().filter(p => base(p)===n.currency || quote(p)===n.currency);
     const pair = pairs.includes(S.pair) ? S.pair : pairs[0] || S.pair;
-    res.push({ sort:n.day, go:`day|${pair}|${n.day}`, pair:n.currency, when:n.day, label:'Știre', sn }); });
+    res.push({ sort:n.day, go:`day|${pair}|${n.day}`, pair:n.currency, when:n.day, label:'News', sn }); });
   if(filt==='all' || filt==='fund') S.weekly.forEach(w => {
-    const d = det(w), fields = { 'Rezumat':w.fundamentals, 'Review':w.review, 'Driver':d.main_driver, 'Drivere':(d.drivers||[]).join(' · '),
-      'Catalizatori':(d.catalysts||[]).map(c => `${c.date} ${c.event}`).join(' · '), 'În preț':d.priced, 'Invalidare':d.invalidation, 'Schimbări':d.changed, 'Aliniere':d.alignment_note };
-    for(const [l,v] of Object.entries(fields)){ const sn = v && snippet(v, q); if(sn){ res.push({ sort:iso(mondayOf(w.year,w.week)), go:`week|${w.pair}|${w.year}|${w.week}`, pair:w.pair, when:`S${w.week} ${w.year}`, label:l, sn }); break; } }
+    const d = det(w), fields = { 'Summary':w.fundamentals, 'Review':w.review, 'Driver':d.main_driver, 'Drivers':(d.drivers||[]).join(' · '),
+      'Catalysts':(d.catalysts||[]).map(c => `${c.date} ${c.event}`).join(' · '), 'Priced':d.priced, 'Invalidation':d.invalidation, 'Changes':d.changed, 'Alignment':d.alignment_note };
+    for(const [l,v] of Object.entries(fields)){ const sn = v && snippet(v, q); if(sn){ res.push({ sort:iso(mondayOf(w.year,w.week)), go:`week|${w.pair}|${w.year}|${w.week}`, pair:w.pair, when:`W${w.week} ${w.year}`, label:l, sn }); break; } }
   });
   res.sort((a,b) => b.sort.localeCompare(a.sort));
-  box.innerHTML = res.length ? `<p class="muted" style="font-size:12px;margin-bottom:8px">${res.length} rezultate${res.length>80 ? ' · primele 80' : ''}</p>` +
+  box.innerHTML = res.length ? `<p class="muted" style="font-size:12px;margin-bottom:8px">${res.length} results${res.length>80 ? ' · first 80' : ''}</p>` +
     res.slice(0,80).map(r => `<button class="sres" data-go="${r.go}"><div class="sres-h"><b>${r.pair}</b><span class="num">${r.when.includes('-') ? r.when.split('-').reverse().join('.') : r.when}</span><span class="sl">${r.label}</span></div><div class="sres-t">${r.sn}</div></button>`).join('')
-    : '<p class="muted">Niciun rezultat.</p>';
+    : '<p class="muted">No results.</p>';
 }
 document.addEventListener('keydown', e => {
   if(e.key==='/' && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName) && CONFIGURED){ e.preventDefault(); openSearch(); }
@@ -1263,9 +1299,9 @@ function scoped(){
 function biasFor(e){ const w = isoWeek(parseISO(e.day)); return S.weekly.get(wk(e.pair, w.year, w.week))?.bias || ''; }
 function alignment(e){
   const b = biasFor(e);
-  if(b==='bullish') return e.direction==='Long' ? 'Cu bias-ul' : 'Contra bias';
-  if(b==='bearish') return e.direction==='Short' ? 'Cu bias-ul' : 'Contra bias';
-  return 'Fără bias direcțional';
+  if(b==='bullish') return e.direction==='Long' ? 'With bias' : 'Against bias';
+  if(b==='bearish') return e.direction==='Short' ? 'With bias' : 'Against bias';
+  return 'No directional bias';
 }
 function groupStats(trades, keyFn, order){
   const g = {};
@@ -1310,16 +1346,16 @@ function renderAnalysis(){
   const main = document.getElementById('main');
   main.innerHTML = `
     <div class="flex flex-wrap items-end gap-4 mb-4">
-      <div><div class="pairtitle">${S.scope==='all' ? 'Toate perechile' : S.pair}</div><div class="muted mt-1">${es.length} zile observate în perioadă</div></div>
-      <div class="seg" role="group" aria-label="Aria analizei">
-        <button data-scope="pair" aria-pressed="${S.scope==='pair'}">${S.pair}</button><button data-scope="all" aria-pressed="${S.scope==='all'}">Toate</button></div>
-      <div class="seg" role="group" aria-label="Perioadă">
-        ${[['30','30 zile'],['90','90 zile'],['ytd','Anul acesta'],['all','Tot']].map(([v,l]) => `<button data-period="${v}" aria-pressed="${S.period===v}">${l}</button>`).join('')}</div>
-      ${S.accounts.size ? `<select class="inp" id="acctSel" aria-label="Cont" style="width:auto;border-radius:12px">
-        <option value="all">Toate conturile</option><option value="none" ${S.acct==='none' ? 'selected' : ''}>Fără cont</option>
+      <div><div class="pairtitle">${S.scope==='all' ? 'All pairs' : S.pair}</div><div class="muted mt-1">${es.length} observed days in period</div></div>
+      <div class="seg" role="group" aria-label="Scope">
+        <button data-scope="pair" aria-pressed="${S.scope==='pair'}">${S.pair}</button><button data-scope="all" aria-pressed="${S.scope==='all'}">All</button></div>
+      <div class="seg" role="group" aria-label="Period">
+        ${[['30','30 days'],['90','90 days'],['ytd','This year'],['all','All time']].map(([v,l]) => `<button data-period="${v}" aria-pressed="${S.period===v}">${l}</button>`).join('')}</div>
+      ${S.accounts.size ? `<select class="inp" id="acctSel" aria-label="Account" style="width:auto;border-radius:12px">
+        <option value="all">All accounts</option><option value="none" ${S.acct==='none' ? 'selected' : ''}>No account</option>
         ${[...S.accounts.values()].map(a => `<option value="${a.id}" ${S.acct===a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select>` : ''}
     </div>
-    <table class="sumtable kpi mb-4"><thead><tr><th>Trade-uri</th><th>Win rate</th><th>Pips</th><th>Profit</th><th>R mediu</th><th>Profit factor</th><th>Bias săpt. corect</th></tr></thead>
+    <table class="sumtable kpi mb-4"><thead><tr><th>Trades</th><th>Win rate</th><th>Pips</th><th>Profit</th><th>Avg R</th><th>Profit factor</th><th>Weekly bias hit</th></tr></thead>
       <tbody><tr>
         <td>${trades.length}<span class="muted" style="font-size:13px;font-weight:400"> ${W.length}W ${L.length}L</span></td>
         <td>${wr!=null ? fmt(wr,1)+'%' : '–'}</td>
@@ -1327,33 +1363,34 @@ function renderAnalysis(){
         <td class="${sgn(profit)}">${fmt(profit)}</td>
         <td>${avgR!=null ? fmt(avgR) : '–'}</td>
         <td>${pf!=null ? fmt(pf) : '–'}</td>
-        <td>${hitRate!=null ? fmt(hitRate,0)+'%' : '–'}<span class="muted" style="font-size:13px;font-weight:400"> ${weeks.length} săpt.</span></td>
+        <td>${hitRate!=null ? fmt(hitRate,0)+'%' : '–'}<span class="muted" style="font-size:13px;font-weight:400"> ${weeks.length} wks</span></td>
       </tr></tbody></table>
-    ${trades.length ? '' : '<div class="card mb-4"><p>Nicio tranzacție închisă în perioada aleasă. Setează W/L, Long/Short și pips la ziua de intrare din jurnal și statisticile apar aici.</p></div>'}
+    ${trades.length ? '' : '<div class="card mb-4"><p>No closed trades in this period. Set W/L, Long/Short and pips on the entry day in the journal and stats will show up here.</p></div>'}
     <div class="grid gap-4" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr))">
-      <div class="card" style="grid-column:1/-1"><div class="flex items-center gap-3"><h3 style="margin:0">Evoluție cumulată</h3>
-        <div class="seg ml-auto" role="group" aria-label="Metrică"><button data-metric="pips" aria-pressed="${S.metric==='pips'}">Pips</button><button data-metric="profit" aria-pressed="${S.metric==='profit'}">Profit</button></div></div>
-        <div class="chartbox mt-2"><canvas id="c_eq" aria-label="Curba cumulată"></canvas></div></div>
-      <div class="card"><h3>Win rate pe sesiune</h3><div class="chartbox"><canvas id="c_sess"></canvas></div></div>
-      <div class="card"><h3>Win rate pe zi a săptămânii</h3><div class="chartbox"><canvas id="c_wd"></canvas></div></div>
-      <div class="card"><h3>Pips pe direcție</h3><div class="chartbox"><canvas id="c_dir"></canvas></div></div>
-      <div class="card"><h3>Trade-uri față de bias-ul săptămânal</h3><div class="chartbox"><canvas id="c_align"></canvas></div></div>
-      ${S.scope==='all' ? '<div class="card"><h3>Pips pe pereche</h3><div class="chartbox"><canvas id="c_pair"></canvas></div></div>' : ''}
-      <div class="card"><h3>Win rate pe etichetă de setup</h3>${tagStats.length ? '<div class="chartbox"><canvas id="c_tags"></canvas></div>' : '<p class="muted">Adaugă etichete la zilele cu trade ca să vezi ce setup-uri funcționează.</p>'}</div>
-      <div class="card"><h3>Ce ai făcut în zilele observate</h3><div class="chartbox"><canvas id="c_status"></canvas></div></div>
-      <div class="card"><h3>Știri și mișcare</h3>
-        <table class="sumtable"><thead><tr><th></th><th>Zile</th><th>|Închidere| medie</th></tr></thead><tbody>
-          <tr><td>Cu știri</td><td class="num">${nY.length}</td><td class="num">${nY.length ? fmt(avgAbs(nY),3)+'%' : '–'}</td></tr>
-          <tr><td>Fără știri</td><td class="num">${nN.length}</td><td class="num">${nN.length ? fmt(avgAbs(nN),3)+'%' : '–'}</td></tr>
+      <div class="card" style="grid-column:1/-1"><div class="flex items-center gap-3"><h3 style="margin:0">Cumulative performance</h3>
+        <div class="seg ml-auto" role="group" aria-label="Metric"><button data-metric="pips" aria-pressed="${S.metric==='pips'}">Pips</button><button data-metric="profit" aria-pressed="${S.metric==='profit'}">Profit</button></div></div>
+        <div class="chartbox mt-2"><canvas id="c_eq" aria-label="Cumulative curve"></canvas></div></div>
+      <div class="card"><h3>Win rate by session</h3><div class="chartbox"><canvas id="c_sess"></canvas></div></div>
+      <div class="card"><h3>Win rate by weekday</h3><div class="chartbox"><canvas id="c_wd"></canvas></div></div>
+      <div class="card"><h3>Win rate by setup timeframe</h3><div class="chartbox"><canvas id="c_tf"></canvas></div></div>
+      <div class="card"><h3>Pips by direction</h3><div class="chartbox"><canvas id="c_dir"></canvas></div></div>
+      <div class="card"><h3>Trades vs weekly bias</h3><div class="chartbox"><canvas id="c_align"></canvas></div></div>
+      ${S.scope==='all' ? '<div class="card"><h3>Pips by pair</h3><div class="chartbox"><canvas id="c_pair"></canvas></div></div>' : ''}
+      <div class="card"><h3>Win rate by setup tag</h3>${tagStats.length ? '<div class="chartbox"><canvas id="c_tags"></canvas></div>' : '<p class="muted">Add tags to your trade days to see which setups work.</p>'}</div>
+      <div class="card"><h3>What you did on observed days</h3><div class="chartbox"><canvas id="c_status"></canvas></div></div>
+      <div class="card"><h3>News vs movement</h3>
+        <table class="sumtable"><thead><tr><th></th><th>Days</th><th>Avg |close|</th></tr></thead><tbody>
+          <tr><td>With news</td><td class="num">${nY.length}</td><td class="num">${nY.length ? fmt(avgAbs(nY),3)+'%' : '–'}</td></tr>
+          <tr><td>No news</td><td class="num">${nN.length}</td><td class="num">${nN.length ? fmt(avgAbs(nN),3)+'%' : '–'}</td></tr>
         </tbody></table>
-        <p class="hint">Compară cât se mișcă prețul în zilele cu evenimente notate pe oricare dintre cele două monede.</p></div>
-      <div class="card" style="grid-column:1/-1"><h3>Bias săptămânal vs. realizat</h3>
-        ${weeks.length ? `<div style="overflow-x:auto"><table class="sumtable"><thead><tr><th>Săptămâna</th>${S.scope==='all' ? '<th>Pereche</th>' : ''}<th>Bias</th><th>Fundamentals</th><th>Realizat</th><th>Rezultat</th></tr></thead><tbody>
+        <p class="hint">Compares price movement on days with logged events for either currency.</p></div>
+      <div class="card" style="grid-column:1/-1"><h3>Weekly bias vs realized</h3>
+        ${weeks.length ? `<div style="overflow-x:auto"><table class="sumtable"><thead><tr><th>Week</th>${S.scope==='all' ? '<th>Pair</th>' : ''}<th>Bias</th><th>Fundamentals</th><th>Realized</th><th>Result</th></tr></thead><tbody>
           ${weeks.slice(0,26).map(w => `<tr class="click" data-goweek="${w.pair}|${w.year}|${w.week}"><td class="num">${w.year} / S${w.week}</td>${S.scope==='all' ? `<td>${w.pair}</td>` : ''}
             <td><span class="bias-${w.bias}" style="padding:2px 8px;border-radius:4px">${BIAS_LBL[w.bias]}${w.conviction ? ', '+CONV_LBL[w.conviction] : ''}</span></td>
             <td style="max-width:360px">${esc(w.fundamentals||'')}</td><td class="num ${sgn(w.re.sum)}">${pct(w.re.sum)}</td>
-            <td class="${w.hit ? 'pos' : 'neg'}" style="font-weight:600">${w.hit ? 'Corect' : 'Greșit'}</td></tr>`).join('')}
-          </tbody></table></div>` : '<p class="muted">Setează bias bullish/bearish pe săptămâni și notează închiderea zilnică (%) ca să vezi aici cât de des ai citit corect direcția.</p>'}
+            <td class="${w.hit ? 'pos' : 'neg'}" style="font-weight:600">${w.hit ? 'Correct' : 'Wrong'}</td></tr>`).join('')}
+          </tbody></table></div>` : '<p class="muted">Set a bullish/bearish weekly bias and log daily closes (%) to see how often you read the direction correctly.</p>'}
       </div>
     </div>`;
 
@@ -1371,11 +1408,12 @@ function renderAnalysis(){
   const wrBar = (id, gs) => mkChart(id, 'bar', gs.map(g => g.k), [{ data:gs.map(g => +g.wr.toFixed(1)), backgroundColor:pos, borderRadius:3 }],
     { y:{ min:0, max:100 }, tooltip:{ callbacks:{ label:c => { const g = gs[c.dataIndex]; return `${g.wr.toFixed(1)}% · ${g.w}W ${g.l}L · ${fmt(g.pips,1)} pips`; } } } });
   wrBar('c_sess', groupStats(trades, t => t.session));
-  wrBar('c_wd', groupStats(trades, t => WD[parseISO(t.day).getDay()], ['Luni','Marți','Miercuri','Joi','Vineri']));
-  wrBar('c_align', groupStats(trades, alignment, ['Cu bias-ul','Contra bias','Fără bias direcțional']));
+  wrBar('c_tf', groupStats(trades, t => t.setup_tf ? t.setup_tf+' setup' : 'Not set', ['1H setup','4H setup']));
+  wrBar('c_wd', groupStats(trades, t => WD[parseISO(t.day).getDay()], ['Monday','Tuesday','Wednesday','Thursday','Friday']));
+  wrBar('c_align', groupStats(trades, alignment, ['With bias','Against bias','No directional bias']));
   const dir = groupStats(trades, t => t.direction, ['Long','Short']);
   mkChart('c_dir','bar', dir.map(g => g.k), [{ data:dir.map(g => +g.pips.toFixed(1)), backgroundColor:dir.map(g => g.pips>=0 ? pos : neg), borderRadius:3 }],
-    { tooltip:{ callbacks:{ label:c => { const g = dir[c.dataIndex]; return `${fmt(g.pips,1)} pips · ${g.n} trade-uri · WR ${g.wr.toFixed(1)}%`; } } } });
+    { tooltip:{ callbacks:{ label:c => { const g = dir[c.dataIndex]; return `${fmt(g.pips,1)} pips · ${g.n} trades · WR ${g.wr.toFixed(1)}%`; } } } });
   if(S.scope==='all'){
     const bp = groupStats(trades, t => t.pair).sort((a,b) => b.pips-a.pips);
     mkChart('c_pair','bar', bp.map(g => g.k), [{ data:bp.map(g => +g.pips.toFixed(1)), backgroundColor:bp.map(g => g.pips>=0 ? pos : neg), borderRadius:3 }]);
@@ -1397,12 +1435,12 @@ function renderOverview(){
     return { p, es:es.length, tr:tr.length, w, l, pips:tr.reduce((s,e) => s+(e.pips||0), 0), last, wr };
   });
   document.getElementById('main').innerHTML = `
-    <div class="mb-4"><div class="pairtitle">Toate perechile</div><div class="muted mt-1">Săptămâna ${cw.week} · click pe o pereche pentru jurnal</div></div>
+    <div class="mb-4"><div class="pairtitle">All pairs</div><div class="muted mt-1">Week ${cw.week} · click a pair to open its journal</div></div>
     <div style="overflow-x:auto"><table class="sumtable" style="min-width:820px"><thead><tr>
-      <th>Pereche</th><th>Bias săptămâna asta</th><th>Fundamentals</th><th>Ultima observație</th><th>Zile</th><th>Trade-uri</th><th>W / L</th><th>Pips</th></tr></thead>
+      <th>Pair</th><th>This week's bias</th><th>Fundamentals</th><th>Last observation</th><th>Days</th><th>Trades</th><th>W / L</th><th>Pips</th></tr></thead>
       <tbody>${rows.map(r => `<tr class="click" data-pair-go="${r.p}">
         <td class="cond" style="font-weight:600;font-size:15px">${r.p}</td>
-        <td>${r.wr?.bias ? `<span class="bias-${r.wr.bias}" style="padding:2px 8px;border-radius:4px">${BIAS_LBL[r.wr.bias]}${r.wr.conviction ? ', '+CONV_LBL[r.wr.conviction] : ''}</span>` : '<span class="muted">nesetat</span>'}</td>
+        <td>${r.wr?.bias ? `<span class="bias-${r.wr.bias}" style="padding:2px 8px;border-radius:4px">${BIAS_LBL[r.wr.bias]}${r.wr.conviction ? ', '+CONV_LBL[r.wr.conviction] : ''}</span>` : '<span class="muted">not set</span>'}</td>
         <td style="max-width:320px">${esc(r.wr?.fundamentals || '')}</td>
         <td class="num">${r.last ? r.last.split('-').reverse().join('.') : '<span class="muted">–</span>'}</td>
         <td class="num">${r.es}</td><td class="num">${r.tr}</td><td class="num">${r.tr ? `${r.w} / ${r.l}` : '–'}</td>
@@ -1415,15 +1453,15 @@ function renderOverview(){
 const dataDlg = document.getElementById('dataDlg');
 function openData(){
   document.getElementById('impPair').textContent = S.pair;
-  document.getElementById('extraList').textContent = S.extra.length ? 'Adăugate: ' + S.extra.join(', ') : '';
+  document.getElementById('extraList').textContent = S.extra.length ? 'Added: ' + S.extra.join(', ') : '';
   dataDlg.showModal();
 }
 document.getElementById('dataClose').onclick = () => dataDlg.close();
 document.getElementById('addPair').onclick = () => {
   const v = document.getElementById('newPair').value.trim().toUpperCase();
-  if(!/^[A-Z]{6}$/.test(v)) return toast('Simbolul trebuie să aibă 6 litere, ex. XAUUSD');
-  if(allPairs().includes(v)) return toast(`${v} există deja`);
-  S.extra.push(v); ls.set('do_extra_pairs', S.extra); dataDlg.close(); render(); toast(`${v} adăugat`);
+  if(!/^[A-Z]{6}$/.test(v)) return toast('Symbol must have 6 letters, e.g. XAUUSD');
+  if(allPairs().includes(v)) return toast(`${v} already exists`);
+  S.extra.push(v); ls.set('do_extra_pairs', S.extra); dataDlg.close(); render(); toast(`${v} added`);
 };
 function download(name, text, type){
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
@@ -1444,13 +1482,13 @@ document.getElementById('jsonFile').onchange = async ev => {
   try{
     const j = JSON.parse(await f.text());
     const clean = arr => (arr||[]).map(({ id, created_at, updated_at, user_id, ...r }) => r);
-    if(!confirm(`Import: ${j.daily?.length||0} zile, ${j.weekly?.length||0} săptămâni, ${j.news?.length||0} știri. Înregistrările existente pe aceleași date sunt suprascrise. Continui?`)) return;
+    if(!confirm(`Import: ${j.daily?.length||0} days, ${j.weekly?.length||0} weeks, ${j.news?.length||0} news items. Existing records on the same dates will be overwritten. Continue?`)) return;
     if(j.accounts?.length) await upsertChunks('do_accounts', j.accounts.map(({ created_at, ...r }) => r), 'id');
     await upsertChunks('do_daily', clean(j.daily), 'pair,day');
     await upsertChunks('do_weekly', clean(j.weekly), 'pair,year,week');
     await upsertChunks('do_news', clean(j.news), 'currency,day');
-    await loadAll(); dataDlg.close(); render(); toast('Backup importat');
-  }catch(e){ console.error(e); toast('Import eșuat: ' + e.message); }
+    await loadAll(); dataDlg.close(); render(); toast('Backup imported');
+  }catch(e){ console.error(e); toast('Import failed: ' + e.message); }
 };
 
 function parseCSV(text){
@@ -1482,7 +1520,7 @@ document.getElementById('csvFile').onchange = async ev => {
     const p = S.pair, rows = parseCSV(await f.text());
     const norm = s => String(s||'').toLowerCase().replace(/\s+/g,'');
     const hi = rows.findIndex(r => r.some(c => norm(c) === 'date'));
-    if(hi < 0) throw new Error('nu am găsit coloana "Date" în header');
+    if(hi < 0) throw new Error('could not find a "Date" column in the header');
     const H = rows[hi].map(norm), col = n => H.indexOf(n);
     const MAP = { trade_status:'trade', session:'session', direction:'long/short', result:'w/l', r_multiple:'r', risk:'risk', profit:'profit',
       entry_time:'entryhour', exit_time:'exithour', duration:'duration', entry_price:'entry', sl:'sl', tp:'tp', pips:'pips',
@@ -1510,21 +1548,21 @@ document.getElementById('csvFile').onchange = async ev => {
     }
     const dedupe = (arr, key) => [...new Map(arr.map(x => [key(x), x])).values()];
     const nws = dedupe(news, n => n.currency+n.day);
-    if(!confirm(`Import în ${p}: ${daily.length} zile, ${weekly.size} săptămâni cu fundamentale, ${nws.length} știri (${[...new Set(nws.map(n=>n.currency))].join(', ') || '—'}). Zilele deja existente sunt suprascrise. Continui?`)) return;
+    if(!confirm(`Import into ${p}: ${daily.length} days, ${weekly.size} weeks with fundamentals, ${nws.length} news items (${[...new Set(nws.map(n=>n.currency))].join(', ') || '—'}). Existing days will be overwritten. Continue?`)) return;
     await upsertChunks('do_daily', dedupe(daily, d => d.day), 'pair,day');
     await upsertChunks('do_weekly', [...weekly.values()], 'pair,year,week');
     await upsertChunks('do_news', nws, 'currency,day');
     await loadAll(); dataDlg.close();
     if(daily.length){ S.month = firstOfMonth(parseISO(daily[0].day)); S.view = 'journal'; S.sel = { type:'day', day:daily[0].day }; }
-    render(); toast(`Importat: ${daily.length} zile în ${p}`);
-  }catch(e){ console.error(e); toast('Import CSV eșuat: ' + e.message); }
+    render(); toast(`Imported ${daily.length} days into ${p}`);
+  }catch(e){ console.error(e); toast('CSV import failed: ' + e.message); }
 };
 
 /* ---------- boot ---------- */
 (async () => {
   if(CONFIGURED){
-    document.getElementById('app').innerHTML = '<p class="muted" style="padding:24px">Se încarcă datele…</p>';
-    try{ await loadAll(); }catch(e){ console.error(e); toast('Nu am putut încărca datele: ' + e.message); }
+    document.getElementById('app').innerHTML = '<p class="muted" style="padding:24px">Loading data…</p>';
+    try{ await loadAll(); }catch(e){ console.error(e); toast('Could not load data: ' + e.message); }
   }
   render();
 })();
