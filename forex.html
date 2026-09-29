@@ -122,7 +122,9 @@
   .cw-n{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:21px; line-height:1; letter-spacing:-.02em; }
   .cw-b{ font-size:12px; font-weight:700; }
   .cw-s{ font-size:12.5px; font-weight:800; font-variant-numeric:tabular-nums; }
-  .conv{ letter-spacing:2px; font-size:9px; opacity:.85; }
+  .conv{ display:inline-block; font-size:10px; font-weight:800; padding:1px 6px; border-radius:6px; background:rgba(255,255,255,.10); letter-spacing:.02em; vertical-align:middle; }
+  :root[data-theme="light"] .conv{ background:rgba(27,25,52,.08); }
+  .conv-high{ box-shadow:inset 0 0 0 1px currentColor; }
   .cd{ min-height:126px; text-align:left; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:9px 10px 11px;
        display:flex; flex-direction:column; gap:6px; color:var(--ink); position:relative; overflow:hidden; transition:transform .12s, border-color .12s, box-shadow .12s; }
   .cd:hover{ transform:translateY(-1px); border-color:color-mix(in srgb,var(--accent) 45%,var(--line)); }
@@ -471,7 +473,7 @@ function defaultDay(){ const d = new Date(); while(d.getDay()===0 || d.getDay()=
 if(!S.sel) S.sel = { type:'day', day: defaultDay() };
 S.mode = ls.get('do_mode', 'view');
 const narrow = () => window.matchMedia('(max-width:1150px)').matches;
-const convDots = c => c ? `<span class="conv" aria-label="convingere ${c}">${{low:'●○○',medium:'●●○',high:'●●●'}[c]}</span>` : '';
+const convDots = c => c ? `<span class="conv conv-${c}" title="Convingere">${{low:'Conv. mică',medium:'Conv. medie',high:'Conv. mare'}[c]}</span>` : '';
 const biasText = wr => wr?.bias ? `${BIAS_LBL[wr.bias]}${wr.conviction ? ', ' + CONV_LBL[wr.conviction] : ''}` : '';
 const TVRX = /https?:\/\/(?:[a-z]+\.)?tradingview\.com\/x\/[A-Za-z0-9]+\/?/gi;
 function tvSnap(url){ const m = (url||'').match(/tradingview\.com\/x\/([A-Za-z0-9]+)/); return m ? `https://s3.tradingview.com/snapshots/${m[1][0].toLowerCase()}/${m[1]}.png` : null; }
@@ -843,7 +845,7 @@ function weekView(panel){
       <div class="wkhero">
         <div class="hero-row">
           <div><span class="kick">Bias</span><span class="bigval ${r.bias || ''}">${r.bias ? BIAS_LBL[r.bias] : '—'}</span>
-            ${r.conviction ? `<div class="muted" style="font-weight:700;margin-top:4px">${convDots(r.conviction)} ${CONV_LBL[r.conviction]}</div>` : ''}</div>
+            ${r.conviction ? `<div class="muted" style="font-weight:700;margin-top:4px">${convDots(r.conviction)}</div>` : ''}</div>
           ${re ? `<div style="text-align:right"><span class="kick">Realizat</span><span class="bigval ${sgn(re.sum)}">${pct(re.sum)}</span>
             <div class="muted" style="font-size:12px;font-weight:600">${re.n} închideri</div></div>` : ''}
         </div>
