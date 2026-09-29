@@ -7,217 +7,248 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦅</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Manrope:wght@400..800&display=swap" rel="stylesheet">
+<script>try{document.documentElement.dataset.theme=JSON.parse(localStorage.getItem("do_theme"))||"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
   :root{
-    --paper:#F5F6F2; --surface:#FFFFFF; --ink:#1B211D; --muted:#5E6963; --line:#D8DDD6; --hover:#F0F4EC;
-    --sheet:#274E13; --sheet-2:#3A6B20; --pos:#1E7B34; --neg:#C5221F; --focus:#2F6FDE;
-    --bull:#D9EAD3; --bear:#F4CCCC; --two:#FCE5CD; --neu:#ECEEEA; --today:#FFF8D6;
-    color-scheme: light;
+    --bg:#0E0F1F; --bg-2:#131430; --surface:#171933; --surface-2:#1F2145; --field:#111230; --line:#2B2E5A; --ink:#EEEDFF; --muted:#9C9EC8;
+    --accent:#D4FF4F; --on-accent:#14142B; --pos:#3DF2B0; --neg:#FF5C8A; --amber:#FFC857; --info:#7AA2FF; --violet:#B69CFF;
+    --bull:rgba(61,242,176,.14); --bear:rgba(255,92,138,.15); --two:rgba(255,200,87,.15); --neu:rgba(156,158,200,.11);
+    --hover:rgba(255,255,255,.04); --shadow:0 18px 40px rgba(0,0,0,.35); --focus:#D4FF4F; --glow1:rgba(182,156,255,.20); --glow2:rgba(61,242,176,.10);
+    --sheet:var(--accent); --sheet-2:var(--accent);
+    color-scheme:dark;
   }
-  @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]){
-      --paper:#111613; --surface:#181E1A; --ink:#E4EAE5; --muted:#98A49D; --line:#2B342E; --hover:#1F2822;
-      --sheet:#2C5A17; --sheet-2:#3B7420; --pos:#62C57F; --neg:#F07D73; --focus:#7AA7FF;
-      --bull:#22402A; --bear:#4A2724; --two:#4A3920; --neu:#252B27; --today:#2E2B18;
-      color-scheme: dark;
-    }
+  :root[data-theme="light"]{
+    --bg:#F6F4FF; --bg-2:#EEEAFE; --surface:#FFFFFF; --surface-2:#F4F2FD; --field:#FAF9FF; --line:#E4E0F5; --ink:#1B1934; --muted:#6D6B8F;
+    --accent:#6A4CFF; --on-accent:#FFFFFF; --pos:#0E9F7A; --neg:#E0386A; --amber:#C98300; --info:#3563E9; --violet:#8B5CF6;
+    --bull:rgba(14,159,122,.12); --bear:rgba(224,56,106,.12); --two:rgba(201,131,0,.13); --neu:rgba(109,107,143,.09);
+    --hover:rgba(27,25,52,.035); --shadow:0 18px 40px rgba(70,50,160,.10); --focus:#6A4CFF; --glow1:rgba(106,76,255,.12); --glow2:rgba(14,159,122,.08);
+    color-scheme:light;
   }
-  :root[data-theme="dark"]{
-    --paper:#111613; --surface:#181E1A; --ink:#E4EAE5; --muted:#98A49D; --line:#2B342E; --hover:#1F2822;
-    --sheet:#2C5A17; --sheet-2:#3B7420; --pos:#62C57F; --neg:#F07D73; --focus:#7AA7FF;
-    --bull:#22402A; --bear:#4A2724; --two:#4A3920; --neu:#252B27; --today:#2E2B18;
-    color-scheme: dark;
-  }
+  *,*::before,*::after{ box-sizing:border-box; }
   :root{ box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
   html{ scroll-padding-top:env(safe-area-inset-top,0px); }
-  html,body{ background:var(--paper); color:var(--ink); }
-  body{ font-family:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; font-size:14px; line-height:1.45; }
-  .cond{ font-family:'IBM Plex Sans Condensed','IBM Plex Sans','Arial Narrow',sans-serif; }
+  html,body{ background:var(--bg); color:var(--ink); }
+  body{ font-family:'Manrope',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; font-size:14px; line-height:1.5; min-height:100vh;
+        background:radial-gradient(900px 520px at 8% -12%, var(--glow1), transparent 60%), radial-gradient(760px 480px at 102% -6%, var(--glow2), transparent 60%), var(--bg);
+        background-attachment:fixed; }
+  button{ font:inherit; cursor:pointer; }
+  .cond, .disp{ font-family:'Bricolage Grotesque','Manrope',sans-serif; }
   .num{ font-variant-numeric:tabular-nums; }
   .muted{ color:var(--muted); }
   .pos{ color:var(--pos); } .neg{ color:var(--neg); }
   :focus-visible{ outline:2px solid var(--focus); outline-offset:2px; }
   @media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
 
-  header.app{ background:var(--sheet); color:#fff; }
-  header.app .brand{ font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:600; font-size:20px; letter-spacing:-.01em; }
-  .tab{ padding:6px 12px; border-radius:6px; color:rgba(255,255,255,.8); font-weight:500; }
-  .tab:hover{ color:#fff; background:rgba(255,255,255,.08); }
-  .tab[aria-selected="true"]{ background:#fff; color:var(--sheet); }
-  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .tab[aria-selected="true"]{ background:var(--paper); color:var(--ink); } }
-  .hbtn{ padding:6px 10px; border-radius:6px; border:1px solid rgba(255,255,255,.3); color:#fff; font-size:13px; }
-  .hbtn:hover{ background:rgba(255,255,255,.1); }
+  /* header */
+  .topbar{ display:flex; flex-wrap:wrap; align-items:center; gap:12px 20px; padding:14px 20px 10px; }
+  .brand{ display:flex; align-items:center; gap:10px; font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:21px; letter-spacing:-.02em; }
+  .brand small{ font-family:'Manrope',sans-serif; font-weight:600; font-size:12px; color:var(--muted); letter-spacing:0; }
+  .mark{ width:22px; height:22px; border-radius:50%; background:conic-gradient(from 200deg, var(--accent), var(--pos), var(--info), var(--violet), var(--neg), var(--accent)); box-shadow:0 0 18px color-mix(in srgb,var(--accent) 45%,transparent); }
+  .tabs{ display:flex; gap:2px; padding:4px; background:var(--surface); border:1px solid var(--line); border-radius:14px; }
+  .tab{ padding:7px 14px; border-radius:10px; color:var(--muted); font-weight:700; font-size:13.5px; border:none; background:transparent; }
+  .tab:hover{ color:var(--ink); }
+  .tab[aria-selected="true"]{ background:var(--accent); color:var(--on-accent); }
+  .tools{ margin-left:auto; display:flex; gap:8px; align-items:center; }
+  .hbtn, .iconbtn{ padding:7px 12px; border-radius:12px; border:1px solid var(--line); background:var(--surface); color:var(--ink); font-weight:600; font-size:13px; }
+  .iconbtn{ width:38px; padding:7px 0; font-size:16px; }
+  .hbtn:hover, .iconbtn:hover{ border-color:var(--muted); }
 
-  /* Pair strip — the signature element: every pair colored by this week's bias */
-  .strip{ display:flex; gap:4px; overflow-x:auto; padding:8px 16px; background:var(--surface); border-bottom:1px solid var(--line); scrollbar-width:thin; }
-  .chip{ flex:0 0 auto; font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:600; font-size:13px; padding:5px 9px 5px 8px;
-         border-radius:5px; border:1px solid var(--line); background:var(--surface); color:var(--ink); border-left-width:4px; }
-  .chip:hover{ background:var(--hover); }
-  .chip.b-bullish{ border-left-color:var(--pos); } .chip.b-bearish{ border-left-color:var(--neg); }
-  .chip.b-two-sided{ border-left-color:#D9922E; } .chip.b-neutral{ border-left-color:var(--muted); }
-  .chip[aria-current="true"]{ background:var(--sheet); color:#fff; border-color:var(--sheet); }
-  .chip.b-bullish[aria-current="true"]{ border-left-color:#8BE0A0; } .chip.b-bearish[aria-current="true"]{ border-left-color:#FF9A91; }
-  .chip.b-two-sided[aria-current="true"]{ border-left-color:#F5C27A; }
-  .stripsep{ flex:0 0 1px; background:var(--line); margin:2px 4px; }
+  .strip{ display:flex; gap:6px; overflow-x:auto; padding:6px 20px 12px; scrollbar-width:thin; }
+  .chip{ flex:0 0 auto; display:inline-flex; align-items:center; gap:7px; font-weight:700; font-size:12.5px; padding:6px 11px; border-radius:999px;
+         border:1px solid var(--line); background:var(--surface); color:var(--ink); }
+  .chip::before{ content:''; width:8px; height:8px; border-radius:50%; background:var(--line); }
+  .chip.b-bullish::before{ background:var(--pos); box-shadow:0 0 8px var(--pos); } .chip.b-bearish::before{ background:var(--neg); box-shadow:0 0 8px var(--neg); }
+  .chip.b-two-sided::before{ background:var(--amber); } .chip.b-neutral::before{ background:var(--muted); }
+  .chip:hover{ border-color:var(--muted); }
+  .chip[aria-current="true"]{ background:var(--accent); color:var(--on-accent); border-color:transparent; }
+  .stripsep{ flex:0 0 1px; background:var(--line); margin:4px 4px; }
+  .wrap{ padding:6px 20px 28px; }
 
-  .btn{ border:1px solid var(--line); background:var(--surface); color:var(--ink); padding:6px 12px; border-radius:6px; font-weight:500; font-size:13px; }
-  .btn:hover{ background:var(--hover); }
-  .btn-primary{ background:var(--sheet); color:#fff; border-color:var(--sheet); }
-  .btn-primary:hover{ background:var(--sheet-2); }
+  .btn{ border:1px solid var(--line); background:var(--surface); color:var(--ink); padding:7px 14px; border-radius:12px; font-weight:700; font-size:13px; }
+  .btn:hover{ border-color:var(--muted); }
+  .btn-primary{ background:var(--accent); color:var(--on-accent); border-color:transparent; }
+  .btn-primary:hover{ filter:brightness(1.06); border-color:transparent; }
   .btn-danger{ color:var(--neg); }
+  .pairtitle{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:36px; line-height:1; letter-spacing:-.03em; }
 
-  .pairtitle{ font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:600; font-size:30px; line-height:1; letter-spacing:-.02em; }
-
-  .grid-wrap{ overflow:auto; max-height:calc(100vh - 215px); border:1px solid var(--line); background:var(--surface); border-radius:6px; }
-  table.sheet{ border-collapse:separate; border-spacing:0; min-width:2350px; font-size:12.5px; }
-  table.sheet th{ position:sticky; top:0; z-index:2; background:var(--sheet); color:#fff; font-family:'IBM Plex Sans Condensed',sans-serif;
-                  font-weight:600; font-size:13px; padding:8px 6px; text-align:center; border-right:1px solid rgba(255,255,255,.14); white-space:nowrap; }
-  table.sheet td{ border-right:1px solid var(--line); border-bottom:1px solid var(--line); padding:6px 8px; vertical-align:middle;
-                  text-align:center; white-space:pre-line; }
-  table.sheet td.txt{ min-width:190px; max-width:260px; }
-  table.sheet td.news{ min-width:170px; max-width:220px; }
-  tr.day{ cursor:pointer; }
-  tr.day:hover td:not(.wk), tr.day:focus-visible td:not(.wk){ background:var(--hover); }
-  tr.day.today td:not(.wk){ background:var(--today); }
-  tr.day.trade td:not(.wk){ font-weight:600; }
-  tr.day.blank td.dt{ color:var(--muted); }
-  td.wk{ cursor:pointer; }
-  td.wk:hover{ filter:brightness(.97); }
-  td.fund{ min-width:190px; max-width:230px; }
-  .bias-bullish{ background:var(--bull); } .bias-bearish{ background:var(--bear); }
-  .bias-two-sided{ background:var(--two); } .bias-neutral{ background:var(--neu); }
-  .biaslbl{ font-weight:600; margin-bottom:2px; }
-  .tv a{ display:inline-block; padding:1px 6px; margin:1px; border:1px solid var(--line); border-radius:4px; color:var(--focus); font-weight:500; }
-  .tv a:hover{ background:var(--hover); }
-  .dash{ color:var(--line); }
-
-  dialog.panel{ width:min(940px,96vw); max-height:92vh; border:none; border-radius:10px; padding:0; background:var(--surface); color:var(--ink);
-                box-shadow:0 24px 60px rgba(0,0,0,.28); }
-  dialog.panel::backdrop{ background:rgba(8,18,10,.5); }
-  .dlg-head{ background:var(--sheet); color:#fff; padding:14px 20px; display:flex; align-items:baseline; gap:12px; position:sticky; top:0; z-index:1; }
-  .dlg-body{ padding:16px 20px 8px; }
-  .dlg-foot{ padding:12px 20px 16px; display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; border-top:1px solid var(--line); position:sticky; bottom:0; background:var(--surface); }
-  fieldset{ border:1px solid var(--line); border-radius:8px; padding:10px 12px 12px; margin-bottom:14px; }
-  legend{ font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:600; padding:0 6px; font-size:14px; }
-  .fgrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; }
-  .fgrid.wide{ grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); }
-  .f label{ display:block; font-size:12px; color:var(--muted); margin-bottom:3px; }
-  .f input,.f select,.f textarea{ width:100%; border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:6px; padding:6px 8px; font-size:13px; }
-  .f textarea{ min-height:64px; resize:vertical; }
-  .hint{ font-size:12px; color:var(--muted); margin-top:6px; }
-
-  .sumtable{ border-collapse:separate; border-spacing:0; width:100%; border:1px solid var(--line); border-radius:6px; overflow:hidden; background:var(--surface); }
-  .sumtable th{ background:var(--sheet); color:#fff; font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:600; padding:7px 10px; text-align:left; font-size:13px; }
-  .sumtable td{ padding:8px 10px; border-top:1px solid var(--line); }
-  .sumtable.kpi td{ font-size:20px; font-weight:600; font-variant-numeric:tabular-nums; }
-  .card{ background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:14px; }
-  .card h3{ font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:600; font-size:16px; margin-bottom:8px; }
+  /* generic */
+  .card{ background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:16px; box-shadow:var(--shadow); }
+  .card h3{ font-family:'Bricolage Grotesque',sans-serif; font-weight:700; font-size:16px; margin-bottom:10px; }
   .chartbox{ position:relative; height:240px; }
-  .seg{ display:inline-flex; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
-  .seg button{ padding:5px 10px; font-size:13px; background:var(--surface); color:var(--ink); }
-  .seg button[aria-pressed="true"]{ background:var(--sheet); color:#fff; }
-  .toast{ position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); background:var(--ink); color:var(--paper);
-          padding:9px 16px; border-radius:6px; font-size:13px; z-index:50; }
+  .seg{ display:inline-flex; padding:3px; background:var(--surface); border:1px solid var(--line); border-radius:12px; gap:2px; }
+  .seg button{ padding:6px 12px; border-radius:9px; font-weight:700; font-size:13px; color:var(--muted); background:transparent; border:none; }
+  .seg button[aria-pressed="true"]{ background:var(--accent); color:var(--on-accent); }
+  .sumtable{ border-collapse:separate; border-spacing:0; width:100%; border:1px solid var(--line); border-radius:16px; overflow:hidden; background:var(--surface); }
+  .sumtable th{ background:var(--surface-2); color:var(--muted); font-weight:700; padding:9px 12px; text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; }
+  .sumtable td{ padding:10px 12px; border-top:1px solid var(--line); }
+  .sumtable.kpi td{ font-family:'Bricolage Grotesque',sans-serif; font-size:24px; font-weight:700; font-variant-numeric:tabular-nums; }
   tr.click{ cursor:pointer; } tr.click:hover td{ background:var(--hover); }
-  /* ===== Calendar journal ===== */
-  :root{ --info-bg:#DCE8FB; --info-ink:#1D4E9E; --amber:#B7791F; }
-  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --info-bg:#1E2D48; --info-ink:#9CC0FF; --amber:#E0A94F; } }
-  :root[data-theme="dark"]{ --info-bg:#1E2D48; --info-ink:#9CC0FF; --amber:#E0A94F; }
+  .bias-bullish{ background:var(--bull); } .bias-bearish{ background:var(--bear); } .bias-two-sided{ background:var(--two); } .bias-neutral{ background:var(--neu); }
+  .toast{ position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); background:var(--ink); color:var(--bg);
+          padding:10px 18px; border-radius:12px; font-size:13px; font-weight:600; z-index:50; box-shadow:var(--shadow); }
+  .hint{ font-size:12px; color:var(--muted); margin-top:6px; }
+  .f label{ display:block; font-size:12px; color:var(--muted); margin-bottom:3px; }
 
-  .jr{ display:grid; gap:16px; grid-template-columns:minmax(0,1fr) 460px; align-items:start; }
-  @media (max-width:1100px){ .jr{ grid-template-columns:1fr; } }
-  .panel-side{ position:sticky; top:12px; max-height:calc(100vh - 24px); overflow:auto; border-radius:10px; }
-  @media (max-width:1100px){ .panel-side{ position:static; max-height:none; } }
+  dialog.panel{ width:min(620px,96vw); max-height:92vh; border:1px solid var(--line); border-radius:20px; padding:0; background:var(--surface); color:var(--ink); box-shadow:var(--shadow); }
+  dialog.panel::backdrop{ background:rgba(6,6,20,.6); backdrop-filter:blur(3px); }
+  .dlg-head{ padding:18px 20px 10px; }
+  .dlg-head h2{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800 !important; font-size:22px !important; }
+  .dlg-body{ padding:6px 20px 12px; }
+  .dlg-foot{ padding:12px 20px 18px; display:flex; gap:8px; justify-content:flex-end; border-top:1px solid var(--line); }
 
-  .cal{ display:grid; grid-template-columns:118px repeat(5,minmax(0,1fr)); gap:6px; }
-  .cal-h{ font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:600; font-size:13px; color:var(--muted); text-align:center; padding:2px 0; }
-  .cw{ border-radius:8px; padding:8px 10px; text-align:left; display:flex; flex-direction:column; gap:3px; border:1px solid var(--line); background:var(--neu); color:var(--ink); }
-  .cw.bias-bullish{ background:var(--bull); } .cw.bias-bearish{ background:var(--bear); }
-  .cw.bias-two-sided{ background:var(--two); } .cw.bias-neutral{ background:var(--neu); }
-  .cw.bias-bullish .cw-n{ color:var(--pos); } .cw.bias-bearish .cw-n{ color:var(--neg); }
-  .cw:hover{ filter:brightness(.97); }
-  .cw.sel{ outline:2px solid var(--sheet); outline-offset:1px; }
-  .cw-n{ font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:600; font-size:17px; line-height:1; }
-  .cw-b{ font-size:12px; font-weight:600; }
-  .cw-s{ font-size:12px; font-variant-numeric:tabular-nums; }
-  .conv{ letter-spacing:2px; font-size:10px; }
-  .cd{ min-height:120px; text-align:left; background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:7px 8px;
-       display:flex; flex-direction:column; gap:5px; color:var(--ink); position:relative; overflow:hidden; }
-  .cd:hover{ border-color:var(--muted); }
-  .cd.out{ opacity:.42; }
-  .cd.sel{ border-color:var(--sheet); box-shadow:0 0 0 2px var(--sheet) inset; }
-  .cd.res-W{ border-left:4px solid var(--pos); } .cd.res-L{ border-left:4px solid var(--neg); } .cd.res-BE{ border-left:4px solid var(--muted); }
+  /* journal layout */
+  .jr{ display:grid; gap:20px; grid-template-columns:minmax(0,1fr) 470px; align-items:start; }
+  @media (max-width:1150px){ .jr{ grid-template-columns:1fr; } }
+  .panel-side{ position:sticky; top:12px; max-height:calc(100vh - 24px); overflow:auto; border-radius:20px; scrollbar-width:thin; }
+  @media (max-width:1150px){ .panel-side{ position:static; max-height:none; } }
+  .monthnav{ display:flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:4px; }
+  .monthnav .ib{ border:none; background:transparent; }
+  .monthnav .ib:hover{ background:var(--surface-2); }
+  .mlabel{ font-family:'Bricolage Grotesque',sans-serif; font-weight:700; font-size:17px; min-width:160px; text-align:center; }
+
+  /* calendar */
+  .cal{ display:grid; grid-template-columns:124px repeat(5,minmax(0,1fr)); gap:8px; }
+  .cal-h{ font-size:11px; font-weight:800; color:var(--muted); text-align:center; text-transform:uppercase; letter-spacing:.08em; padding:2px 0 2px; }
+  .cw{ border-radius:16px; padding:11px 12px; text-align:left; display:flex; flex-direction:column; gap:3px; border:1px solid var(--line); background:var(--surface); color:var(--ink); transition:transform .12s; }
+  .cw:hover{ transform:translateY(-1px); }
+  .cw.bias-bullish{ background:linear-gradient(160deg, color-mix(in srgb,var(--pos) 30%,transparent), color-mix(in srgb,var(--pos) 5%,transparent)); border-color:color-mix(in srgb,var(--pos) 40%,transparent); }
+  .cw.bias-bearish{ background:linear-gradient(160deg, color-mix(in srgb,var(--neg) 30%,transparent), color-mix(in srgb,var(--neg) 5%,transparent)); border-color:color-mix(in srgb,var(--neg) 40%,transparent); }
+  .cw.bias-two-sided{ background:linear-gradient(160deg, color-mix(in srgb,var(--amber) 28%,transparent), color-mix(in srgb,var(--amber) 5%,transparent)); border-color:color-mix(in srgb,var(--amber) 40%,transparent); }
+  .cw.bias-neutral{ background:linear-gradient(160deg, color-mix(in srgb,var(--muted) 22%,transparent), transparent); }
+  .cw.sel{ box-shadow:0 0 0 2px var(--accent); }
+  .cw-n{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:21px; line-height:1; letter-spacing:-.02em; }
+  .cw-b{ font-size:12px; font-weight:700; }
+  .cw-s{ font-size:12.5px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .conv{ letter-spacing:2px; font-size:9px; opacity:.85; }
+  .cd{ min-height:126px; text-align:left; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:9px 10px 11px;
+       display:flex; flex-direction:column; gap:6px; color:var(--ink); position:relative; overflow:hidden; transition:transform .12s, border-color .12s, box-shadow .12s; }
+  .cd:hover{ transform:translateY(-1px); border-color:color-mix(in srgb,var(--accent) 45%,var(--line)); }
+  .cd.out{ opacity:.35; }
+  .cd.sel{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent), 0 10px 26px color-mix(in srgb,var(--accent) 22%,transparent); }
+  .cd::after{ content:''; position:absolute; left:12px; right:12px; bottom:0; height:3px; border-radius:3px 3px 0 0; background:transparent; }
+  .cd.res-W::after{ background:var(--pos); box-shadow:0 0 12px var(--pos); } .cd.res-L::after{ background:var(--neg); box-shadow:0 0 12px var(--neg); } .cd.res-BE::after{ background:var(--muted); }
   .cd-top{ display:flex; align-items:center; justify-content:space-between; gap:4px; }
-  .cd-n{ font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:600; font-size:17px; line-height:1.2; font-variant-numeric:tabular-nums; }
-  .cd.today .cd-n{ background:var(--sheet); color:#fff; border-radius:999px; padding:0 7px; }
-  .cd-c{ font-size:12.5px; font-weight:600; font-variant-numeric:tabular-nums; }
-  .cd-trade{ font-size:12px; font-weight:600; }
+  .cd-n{ font-family:'Bricolage Grotesque',sans-serif; font-weight:700; font-size:18px; line-height:1.25; font-variant-numeric:tabular-nums; }
+  .cd.today .cd-n{ background:var(--accent); color:var(--on-accent); border-radius:999px; padding:0 8px; }
+  .cd-c{ font-size:12px; font-weight:800; font-variant-numeric:tabular-nums; padding:1px 6px; border-radius:7px; }
+  .cd-c.pos{ background:color-mix(in srgb,var(--pos) 14%,transparent); } .cd-c.neg{ background:color-mix(in srgb,var(--neg) 14%,transparent); }
+  .cd-trade{ font-size:12px; font-weight:800; }
+  .cd-trade.long{ color:var(--pos); } .cd-trade.short{ color:var(--neg); }
   .cd-act{ font-size:11.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .cd-foot{ margin-top:auto; display:flex; flex-wrap:wrap; gap:3px; align-items:center; }
-  .nchip{ font-size:10.5px; font-weight:600; padding:0 5px; border-radius:4px; background:var(--info-bg); color:var(--info-ink); }
-  .odots{ margin-left:auto; display:flex; gap:2px; }
-  .odots span{ font-size:9.5px; font-weight:600; padding:0 3px; border-radius:3px; border:1px solid var(--line); color:var(--muted); }
-  .odots span.on{ background:var(--sheet); border-color:var(--sheet); color:#fff; }
-  .pill{ font-size:11.5px; font-weight:600; padding:1px 8px; border-radius:999px; align-self:flex-start; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
-  .st-yes{ background:var(--sheet); color:#fff; }
-  .st-in{ border:1px solid var(--sheet); color:var(--sheet); }
-  .st-closed{ background:var(--ink); color:var(--surface); }
-  .st-wait{ background:var(--two); color:var(--ink); }
-  .st-setup{ background:var(--info-bg); color:var(--info-ink); }
+  .cd-foot{ margin-top:auto; display:flex; flex-wrap:wrap; gap:4px; align-items:center; }
+  .nchip{ font-size:10.5px; font-weight:800; padding:1px 6px; border-radius:6px; background:color-mix(in srgb,var(--info) 16%,transparent); color:var(--info); letter-spacing:.03em; }
+  .odots{ margin-left:auto; display:flex; gap:3px; }
+  .odots span{ width:12px; height:4px; border-radius:2px; background:var(--line); }
+  .odots span.on{ background:var(--accent); }
+  .st{ display:inline-flex; align-items:center; gap:6px; font-weight:800; font-size:11.5px; padding:2px 9px; border-radius:999px; align-self:flex-start; white-space:nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis; }
+  .st i{ width:6px; height:6px; border-radius:50%; background:currentColor; flex:0 0 auto; }
+  .st-yes{ background:color-mix(in srgb,var(--accent) 20%,transparent); color:var(--accent); }
+  :root[data-theme="light"] .st-yes{ background:color-mix(in srgb,var(--accent) 14%,transparent); }
+  .st-in{ background:color-mix(in srgb,var(--pos) 16%,transparent); color:var(--pos); }
+  .st-closed{ background:color-mix(in srgb,var(--ink) 12%,transparent); color:var(--ink); }
+  .st-wait{ background:color-mix(in srgb,var(--amber) 18%,transparent); color:var(--amber); }
+  .st-setup{ background:color-mix(in srgb,var(--violet) 18%,transparent); color:var(--violet); }
   .st-no, .st-other{ background:var(--neu); color:var(--muted); }
-  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .st-in{ color:#8BE0A0; border-color:#8BE0A0; } }
-  .legend{ display:flex; flex-wrap:wrap; gap:12px; font-size:12px; color:var(--muted); margin-top:10px; align-items:center; }
-  @media (max-width:700px){
-    .cal{ grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; }
+  .st.big{ font-size:13.5px; padding:6px 13px; }
+  .st.big i{ width:8px; height:8px; box-shadow:0 0 10px currentColor; }
+  .legend{ display:flex; flex-wrap:wrap; gap:8px 14px; font-size:12px; color:var(--muted); margin-top:14px; align-items:center; }
+  @media (max-width:720px){
+    .wrap{ padding:4px 12px 24px; } .topbar{ padding:12px 12px 8px; } .strip{ padding:6px 12px 10px; }
+    .cal{ grid-template-columns:repeat(5,minmax(0,1fr)); gap:5px; }
     .cal-h.wkh{ display:none; }
-    .cw{ grid-column:1/-1; flex-direction:row; align-items:center; gap:10px; padding:6px 10px; margin-top:6px; }
-    .cd{ min-height:78px; padding:5px; gap:3px; }
-    .cd .pill{ font-size:10px; padding:0 5px; }
+    .cw{ grid-column:1/-1; flex-direction:row; align-items:center; gap:10px; padding:7px 12px; margin-top:8px; border-radius:12px; }
+    .cd{ min-height:80px; padding:6px; gap:4px; border-radius:12px; }
+    .cd .st{ font-size:9.5px; padding:1px 5px; } .cd .st span{ display:none; }
     .cd-trade .t-full, .cd-act, .nchip, .odots{ display:none; }
-    .cd-n{ font-size:15px; } .cd-c{ font-size:11px; }
+    .cd-n{ font-size:15px; } .cd-c{ font-size:10.5px; padding:0 3px; }
+    .pairtitle{ font-size:30px; }
   }
 
   /* side panel */
-  .ps{ background:var(--surface); border:1px solid var(--line); border-radius:10px; }
-  .ps-head{ background:var(--sheet); color:#fff; padding:12px 14px; border-radius:10px 10px 0 0; display:flex; align-items:center; gap:8px; position:sticky; top:0; z-index:2; }
-  .ps-head h2{ font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:600; font-size:19px; line-height:1.15; }
-  .ps-head .sub{ font-size:12.5px; opacity:.8; }
-  .ib{ width:32px; height:32px; border-radius:6px; border:1px solid rgba(255,255,255,.3); color:#fff; flex:0 0 auto; }
-  .ib:hover{ background:rgba(255,255,255,.1); }
-  .save{ font-size:12px; opacity:.85; white-space:nowrap; }
-  .sec{ padding:12px 14px; border-top:1px solid var(--line); }
-  .sec:first-of-type{ border-top:none; }
-  .sec h4{ font-family:'IBM Plex Sans Condensed',sans-serif; font-weight:600; font-size:15px; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
-  .sec h4 small{ font-family:'IBM Plex Sans',sans-serif; font-weight:400; font-size:12px; color:var(--muted); }
+  .ps{ background:var(--surface); border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow); overflow:clip; }
+  .ps-head{ padding:16px 16px 12px; display:grid; grid-template-columns:1fr auto; gap:12px; align-items:start; border-bottom:1px solid var(--line);
+            position:sticky; top:0; z-index:3; background:color-mix(in srgb,var(--surface) 92%,transparent); backdrop-filter:blur(8px); }
+  .ps-head h2{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:23px; line-height:1.1; letter-spacing:-.02em; }
+  .ps-head .sub{ font-size:12.5px; color:var(--muted); margin-top:4px; }
+  .ps-nav{ display:flex; gap:6px; }
+  .ib{ width:34px; height:34px; border-radius:10px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-size:16px; }
+  .ib:hover{ border-color:var(--muted); }
+  .seg.mode{ grid-column:1/-1; display:flex; background:var(--surface-2); }
+  .seg.mode button{ flex:1; }
+  .save{ font-weight:700; }
+  .wkbanner{ display:block; width:calc(100% - 32px); margin:14px 16px 0; text-align:left; padding:10px 12px; border-radius:14px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); }
+  .wkbanner .bl{ font-weight:800; font-size:13px; }
+  .wkbanner p{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+  .bias-bullish .bl, .bl.bullish{ color:var(--pos); } .bias-bearish .bl, .bl.bearish{ color:var(--neg); } .bias-two-sided .bl, .bl.two-sided{ color:var(--amber); }
+
+  /* view mode */
+  .hero{ padding:16px; }
+  .hero-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .kick{ display:block; font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.09em; font-weight:800; }
+  .bigval{ font-family:'Bricolage Grotesque',sans-serif; font-size:32px; font-weight:800; line-height:1; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+  .next{ margin-top:14px; padding:11px 13px; border-radius:14px; background:linear-gradient(120deg, color-mix(in srgb,var(--accent) 16%,transparent), transparent 80%); border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line)); font-weight:700; }
+  .ticket{ margin:0 16px 16px; border-radius:16px; padding:14px 14px 14px 18px; background:linear-gradient(135deg,var(--surface-2),var(--surface)); border:1px solid var(--line); position:relative; overflow:hidden; }
+  .ticket::before{ content:''; position:absolute; inset:0 auto 0 0; width:5px; background:var(--muted); }
+  .ticket.res-W::before{ background:var(--pos); } .ticket.res-L::before{ background:var(--neg); }
+  .tk-top{ display:flex; align-items:center; gap:10px; }
+  .tk-dir{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:21px; letter-spacing:-.02em; }
+  .ticket.long .tk-dir{ color:var(--pos); } .ticket.short .tk-dir{ color:var(--neg); }
+  .tk-res{ margin-left:auto; font-weight:800; font-size:12px; padding:4px 11px; border-radius:999px; }
+  .r-W{ background:var(--pos); color:#04241A; } .r-L{ background:var(--neg); color:#fff; } .r-BE{ background:var(--neu); color:var(--ink); }
+  .tk-grid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px 10px; margin-top:14px; }
+  .tk-grid b{ display:block; font-variant-numeric:tabular-nums; font-size:15px; font-weight:800; }
+  .tk-time{ margin-top:12px; font-size:12.5px; color:var(--muted); font-weight:600; }
+  .vsec{ padding:14px 16px 16px; border-top:1px solid var(--line); }
+  .vsec h4{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:15px; margin-bottom:10px; letter-spacing:-.01em; }
+  .news2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .ncur{ display:inline-block; font-weight:800; font-size:11px; letter-spacing:.08em; color:var(--info); margin-bottom:6px; }
+  .nl{ display:grid; gap:7px; list-style:none; padding:0; margin:0; }
+  .nl li{ display:flex; gap:8px; font-size:13px; align-items:flex-start; }
+  .nl time{ font-variant-numeric:tabular-nums; font-weight:800; font-size:11.5px; color:var(--info); background:color-mix(in srgb,var(--info) 15%,transparent); padding:1px 6px; border-radius:6px; flex:0 0 auto; }
+  .tfv{ border:1px solid var(--line); border-radius:16px; padding:12px; margin-top:10px; background:var(--surface-2); }
+  .tfv:first-of-type{ margin-top:0; }
+  .tfv-h{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .tfl{ font-weight:800; font-size:11.5px; padding:2px 9px; border-radius:7px; background:var(--accent); color:var(--on-accent); letter-spacing:.03em; }
+  .tfv p{ white-space:pre-line; font-size:13.5px; }
+  .tvlink{ margin-left:auto; color:var(--info); font-weight:700; font-size:12.5px; }
+  .snap{ display:block; margin-top:10px; }
+  .snap img{ border-radius:12px; width:100%; border:1px solid var(--line); background:var(--field); }
+  .quote{ border-left:3px solid var(--accent); padding:4px 0 4px 12px; white-space:pre-line; }
+  .empty{ padding:44px 20px; text-align:center; }
+  .empty .orb{ width:56px; height:56px; margin:0 auto 14px; border-radius:50%; background:conic-gradient(from 90deg, var(--accent), var(--pos), var(--info), var(--violet), var(--accent)); opacity:.85; filter:blur(.3px); box-shadow:0 0 30px color-mix(in srgb,var(--accent) 40%,transparent); }
+  .empty p{ color:var(--muted); margin-bottom:14px; }
+  .wkday{ display:flex; width:100%; gap:10px; padding:9px 10px; border-radius:12px; text-align:left; align-items:center; color:var(--ink); border:none; background:transparent; }
+  .wkday:hover{ background:var(--surface-2); }
+  .wkhero{ padding:18px 16px; }
+  .wkhero .bigval.bullish{ color:var(--pos); } .wkhero .bigval.bearish{ color:var(--neg); } .wkhero .bigval.two-sided{ color:var(--amber); }
+
+  /* edit mode */
+  .sec{ padding:14px 16px; border-top:1px solid var(--line); }
+  .sec h4{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:15px; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+  .sec h4 small{ font-family:'Manrope',sans-serif; font-weight:600; font-size:12px; color:var(--muted); }
   .chips{ display:flex; flex-wrap:wrap; gap:6px; }
-  .ch{ border:1px solid var(--line); border-radius:999px; padding:4px 11px; font-size:13px; background:var(--surface); color:var(--ink); }
-  .ch:hover{ background:var(--hover); }
-  .ch[aria-pressed="true"]{ background:var(--sheet); border-color:var(--sheet); color:#fff; }
-  .ch.W[aria-pressed="true"]{ background:var(--pos); border-color:var(--pos); }
-  .ch.L[aria-pressed="true"]{ background:var(--neg); border-color:var(--neg); }
-  .ch.b-bullish[aria-pressed="true"]{ background:var(--bull); color:var(--ink); border-color:var(--pos); }
-  .ch.b-bearish[aria-pressed="true"]{ background:var(--bear); color:var(--ink); border-color:var(--neg); }
-  .ch.b-two-sided[aria-pressed="true"]{ background:var(--two); color:var(--ink); border-color:var(--amber); }
-  .ch.b-neutral[aria-pressed="true"]{ background:var(--neu); color:var(--ink); border-color:var(--muted); }
-  .inp{ width:100%; border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:6px; padding:6px 8px; font-size:13.5px; }
-  textarea.inp{ resize:none; overflow:hidden; min-height:40px; line-height:1.45; }
-  .tf{ border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin-top:8px; }
-  .tf-h{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-  .tf-h b{ font-family:'IBM Plex Sans Condensed',sans-serif; font-size:14px; min-width:44px; }
-  .tvlink{ font-size:12.5px; color:var(--focus); font-weight:500; margin-left:auto; }
-  .lbl{ display:block; font-size:12px; color:var(--muted); margin-bottom:3px; }
+  .ch{ border:1px solid var(--line); border-radius:999px; padding:5px 12px; font-size:13px; font-weight:600; background:var(--surface-2); color:var(--ink); }
+  .ch:hover{ border-color:var(--muted); }
+  .ch[aria-pressed="true"]{ background:var(--accent); border-color:transparent; color:var(--on-accent); }
+  .ch.W[aria-pressed="true"]{ background:var(--pos); color:#04241A; } .ch.L[aria-pressed="true"]{ background:var(--neg); color:#fff; }
+  .ch.b-bullish[aria-pressed="true"]{ background:var(--pos); color:#04241A; } .ch.b-bearish[aria-pressed="true"]{ background:var(--neg); color:#fff; }
+  .ch.b-two-sided[aria-pressed="true"]{ background:var(--amber); color:#241800; } .ch.b-neutral[aria-pressed="true"]{ background:var(--muted); color:var(--bg); }
+  .inp, .f input, .f select, .f textarea{ width:100%; border:1px solid var(--line); background:var(--field); color:var(--ink); border-radius:10px; padding:7px 10px; font-size:13.5px; }
+  .inp:focus{ border-color:var(--accent); outline:none; box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent); }
+  textarea.inp{ resize:none; overflow:hidden; min-height:42px; line-height:1.5; }
+  .tf{ border:1px solid var(--line); border-radius:14px; padding:10px 12px; margin-top:8px; background:var(--surface-2); }
+  .tf-h{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .lbl{ display:block; font-size:11.5px; color:var(--muted); margin-bottom:4px; font-weight:700; }
   .g3{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
   details.trade summary{ cursor:pointer; list-style:none; }
   details.trade summary::-webkit-details-marker{ display:none; }
-  details.trade summary h4::after{ content:'▸'; margin-left:auto; color:var(--muted); }
-  details.trade[open] summary h4::after{ content:'▾'; }
-  .wkday{ border:none; background:transparent; display:flex; width:100%; gap:8px; padding:7px 8px; border-radius:6px; text-align:left; align-items:center; color:var(--ink); }
-  .wkday:hover{ background:var(--hover); }
-  .linkbtn{ border:none; background:none; color:var(--neg); font-size:13px; }
-  .biaschip{ font-size:12px; padding:2px 8px; border-radius:999px; font-weight:600; color:var(--ink); border:none; }
+  details.trade summary h4::after{ content:'+'; margin-left:auto; color:var(--muted); font-size:18px; }
+  details.trade[open] summary h4::after{ content:'–'; }
+  .linkbtn{ border:none; background:none; color:var(--neg); font-size:13px; font-weight:700; }
+  .editfoot{ padding:14px 16px 16px; border-top:1px solid var(--line); display:flex; gap:10px; align-items:center; }
 </style>
 </head>
 <body>
@@ -356,26 +387,29 @@ async function upsertChunks(table, rows, onConflict){
 function render(){
   const app = document.getElementById('app');
   if(!CONFIGURED){ app.innerHTML = setupScreen(); return; }
+  const light = document.documentElement.dataset.theme === 'light';
   app.innerHTML = `
     <header class="app">
-      <div class="flex flex-wrap items-center gap-3 px-4 py-3">
-        <div class="brand">Daily Observer <span style="opacity:.6;font-weight:500">EaglePips</span></div>
-        <nav class="flex gap-1" role="tablist" aria-label="Secțiuni">
+      <div class="topbar">
+        <div class="brand"><span class="mark" aria-hidden="true"></span>Daily Observer <small>by EaglePips</small></div>
+        <nav class="tabs" role="tablist" aria-label="Secțiuni">
           ${[['journal','Jurnal'],['analysis','Analiză'],['overview','Toate perechile']].map(([v,l]) =>
             `<button class="tab" role="tab" aria-selected="${S.view===v}" data-view="${v}">${l}</button>`).join('')}
         </nav>
-        <div class="ml-auto flex items-center gap-2">
+        <div class="tools">
+          <button class="iconbtn" id="themeBtn" aria-label="${light ? 'Temă întunecată' : 'Temă luminoasă'}" title="${light ? 'Temă întunecată' : 'Temă luminoasă'}">${light ? '☾' : '☀'}</button>
           <button class="hbtn" id="openData">Import / export</button>
         </div>
       </div>
+      <div class="strip" role="navigation" aria-label="Perechi">
+        ${allPairs().map(p => `${GROUP_BREAKS.has(p) || (!PAIRS.includes(p) && p===S.extra[0]) ? '<span class="stripsep" aria-hidden="true"></span>' : ''}
+          <button class="chip b-${currentWeekBias(p)}" data-pair="${p}" aria-current="${p===S.pair}" title="${p}${currentWeekBias(p) ? ' – săptămâna asta: '+BIAS_LBL[currentWeekBias(p)] : ''}">${p}</button>`).join('')}
+      </div>
     </header>
-    <div class="strip" role="navigation" aria-label="Perechi">
-      ${allPairs().map(p => `${GROUP_BREAKS.has(p) || (!PAIRS.includes(p) && p===S.extra[0]) ? '<span class="stripsep" aria-hidden="true"></span>' : ''}
-        <button class="chip b-${currentWeekBias(p)}" data-pair="${p}" aria-current="${p===S.pair}" title="${p}${currentWeekBias(p) ? ' – săptămâna asta: '+BIAS_LBL[currentWeekBias(p)] : ''}">${p}</button>`).join('')}
-    </div>
-    <main id="main" class="px-4 py-4"></main>`;
-  app.querySelectorAll('[data-view]').forEach(b => b.onclick = () => { S.view = b.dataset.view; ls.set('do_view', S.view); render(); });
-  app.querySelectorAll('[data-pair]').forEach(b => b.onclick = () => { S.pair = b.dataset.pair; ls.set('do_pair', S.pair); render(); });
+    <main id="main" class="wrap"></main>`;
+  app.querySelectorAll('[data-view]').forEach(b => b.onclick = async () => { await flushSave(); S.view = b.dataset.view; ls.set('do_view', S.view); render(); });
+  app.querySelectorAll('[data-pair]').forEach(b => b.onclick = async () => { await flushSave(); S.pair = b.dataset.pair; ls.set('do_pair', S.pair); render(); });
+  document.getElementById('themeBtn').onclick = () => { const t = light ? 'dark' : 'light'; document.documentElement.dataset.theme = t; ls.set('do_theme', t); render(); };
   document.getElementById('openData').onclick = openData;
   renderMain();
   app.querySelector('.chip[aria-current="true"]')?.scrollIntoView({ block:'nearest', inline:'center' });
@@ -391,7 +425,7 @@ function setupScreen(){
     <div class="card"><p>Aplicația nu e conectată încă la Supabase.</p>
     <p class="mt-2 muted">1) Rulează <b>schema.sql</b> în Supabase → SQL Editor. 2) Pune <b>SUPABASE_URL</b> și <b>SUPABASE_ANON_KEY</b> în secțiunea CONFIG din index.html.</p></div></div>`;
 }
-/* ---------- journal (calendar + side panel) ---------- */
+/* ---------- journal (calendar + view/edit panel) ---------- */
 const STATUSES = ['No trade','Wait','Setup formed','YES','In trade','Closed trade'];
 const SESSIONS = ['Asia','London','New York','Asia / London','London / New York'];
 const ACTIONS = ['Wait','Entry','Look for long tomorrow','Look for short tomorrow','Manage trade'];
@@ -401,9 +435,20 @@ function statusKey(s){
   if(v==='yes') return 'yes'; if(v.startsWith('in trade')) return 'in'; if(v.startsWith('closed')) return 'closed';
   if(v.startsWith('wait')) return 'wait'; if(v.startsWith('setup')) return 'setup'; if(v.startsWith('no')) return 'no'; return 'other';
 }
+const stBadge = (s, big) => s ? `<span class="st ${big ? 'big' : ''} st-${statusKey(s)}"><i></i><span>${esc(s)}</span></span>` : '';
 function defaultDay(){ const d = new Date(); while(d.getDay()===0 || d.getDay()===6) d.setDate(d.getDate()-1); return iso(d); }
 if(!S.sel) S.sel = { type:'day', day: defaultDay() };
-const narrow = () => window.matchMedia('(max-width:1100px)').matches;
+S.mode = ls.get('do_mode', 'view');
+const narrow = () => window.matchMedia('(max-width:1150px)').matches;
+const convDots = c => c ? `<span class="conv" aria-label="convingere ${c}">${{low:'●○○',medium:'●●○',high:'●●●'}[c]}</span>` : '';
+const biasText = wr => wr?.bias ? `${BIAS_LBL[wr.bias]}${wr.conviction ? ', ' + CONV_LBL[wr.conviction] : ''}` : '';
+function tvSnap(url){ const m = (url||'').match(/tradingview\.com\/x\/([A-Za-z0-9]+)/); return m ? `https://s3.tradingview.com/snapshots/${m[1][0].toLowerCase()}/${m[1]}.png` : null; }
+function newsList(text){
+  return (text||'').split(/\n+/).map(l => l.trim()).filter(Boolean).map(l => {
+    const m = l.match(/^(\d{1,2}[:.]\d{2})\s*[-–:]?\s*(.*)$/);
+    return `<li>${m ? `<time>${m[1].replace('.',':')}</time><span>${esc(m[2])}</span>` : `<span>${esc(l)}</span>`}</li>`;
+  }).join('');
+}
 
 function calendarWeeks(){
   const y = S.month.getFullYear(), m = S.month.getMonth(), first = new Date(y,m,1), last = new Date(y,m+1,0);
@@ -413,37 +458,36 @@ function calendarWeeks(){
   while(mon <= last){ weeks.push([0,1,2,3,4].map(i => { const d = new Date(mon); d.setDate(mon.getDate()+i); return d; })); mon.setDate(mon.getDate()+7); }
   return weeks;
 }
-const convDots = c => c ? `<span class="conv" aria-label="convingere ${c}">${{low:'●○○',medium:'●●○',high:'●●●'}[c]}</span>` : '';
 
 function renderJournal(){
   const p = S.pair;
   document.getElementById('main').innerHTML = `
     <div class="jr">
       <section>
-        <div class="flex flex-wrap items-end gap-x-6 gap-y-3 mb-3">
-          <div><div class="pairtitle">${p}</div><div class="muted mt-1">${base(p)} / ${quote(p)}</div></div>
-          <div class="flex items-center gap-2">
-            <button class="btn" id="mPrev" aria-label="Luna anterioară">‹</button>
-            <div class="cond" style="font-size:18px;font-weight:600;min-width:150px;text-align:center">${MONTHS[S.month.getMonth()]} ${S.month.getFullYear()}</div>
-            <button class="btn" id="mNext" aria-label="Luna următoare">›</button>
+        <div class="flex flex-wrap items-end gap-x-5 gap-y-3 mb-4">
+          <div><div class="pairtitle">${p}</div><div class="muted mt-1" style="font-weight:600">${base(p)} / ${quote(p)} · <span id="mStats"></span></div></div>
+          <div class="flex items-center gap-2 ml-auto">
+            <div class="monthnav">
+              <button class="ib" id="mPrev" aria-label="Luna anterioară">‹</button>
+              <div class="mlabel">${MONTHS[S.month.getMonth()]} ${S.month.getFullYear()}</div>
+              <button class="ib" id="mNext" aria-label="Luna următoare">›</button>
+            </div>
+            <button class="btn btn-primary" id="goToday">Azi</button>
           </div>
-          <div class="muted num" style="font-size:13px" id="mStats"></div>
-          <button class="btn btn-primary ml-auto" id="goToday">Azi</button>
         </div>
         <div id="cal" class="cal"></div>
         <div class="legend">
-          <span><span class="pill st-yes">YES</span></span><span><span class="pill st-in">In trade</span></span><span><span class="pill st-wait">Wait</span></span>
-          <span><span class="pill st-setup">Setup</span></span><span><span class="pill st-no">No trade</span></span>
-          <span>Bara din stânga: <b class="pos">W</b> / <b class="neg">L</b></span>
-          <span class="odots" style="margin-left:0"><span class="on">D</span><span class="on">4H</span><span>1H</span></span><span>observații completate</span>
+          ${stBadge('YES')}${stBadge('In trade')}${stBadge('Wait')}${stBadge('Setup formed')}${stBadge('No trade')}
+          <span>linie jos: <b class="pos">W</b> / <b class="neg">L</b></span>
+          <span class="odots" style="margin-left:0"><span class="on"></span><span class="on"></span><span></span></span><span>D · 4H · 1H completate</span>
         </div>
       </section>
-      <aside id="panel" class="panel-side"></aside>
+      <aside id="panel" class="panel-side" aria-live="polite"></aside>
     </div>`;
-  const shift = async n => { S.month = new Date(S.month.getFullYear(), S.month.getMonth()+n, 1); renderMain(); };
+  const shift = async n => { await flushSave(); S.month = new Date(S.month.getFullYear(), S.month.getMonth()+n, 1); renderMain(); };
   document.getElementById('mPrev').onclick = () => shift(-1);
   document.getElementById('mNext').onclick = () => shift(1);
-  document.getElementById('goToday').onclick = () => { S.month = firstOfMonth(new Date()); selectDay(defaultDay()); };
+  document.getElementById('goToday').onclick = () => selectDay(defaultDay());
   document.getElementById('cal').addEventListener('click', ev => {
     const d = ev.target.closest('[data-day]'); if(d) return selectDay(d.dataset.day);
     const w = ev.target.closest('[data-week]'); if(w){ const [y,n] = w.dataset.week.split('|').map(Number); selectWeek(y,n); }
@@ -458,24 +502,24 @@ function renderCalendar(){
   for(const days of calendarWeeks()){
     const w = isoWeek(days[0]), wr = S.weekly.get(wk(p, w.year, w.week)), re = weekRealized(p, w.year, w.week);
     const wsel = S.sel.type==='week' && S.sel.y===w.year && S.sel.w===w.week;
-    h += `<button class="cw bias-${wr?.bias || 'none'} ${wsel ? 'sel':''}" data-week="${w.year}|${w.week}" aria-label="Săptămâna ${w.week}">
+    h += `<button class="cw bias-${wr?.bias || 'none'} ${wsel ? 'sel':''}" data-week="${w.year}|${w.week}" aria-label="Săptămâna ${w.week}${wr?.bias ? ', '+BIAS_LBL[wr.bias] : ''}">
       <span class="cw-n">S${w.week}</span>
-      <span class="cw-b">${wr?.bias ? BIAS_LBL[wr.bias] : '<span class="muted" style="font-weight:400">Setează bias</span>'} ${convDots(wr?.conviction)}</span>
+      <span class="cw-b">${wr?.bias ? BIAS_LBL[wr.bias] : '<span class="muted" style="font-weight:600">+ bias</span>'} ${convDots(wr?.conviction)}</span>
       ${re ? `<span class="cw-s ${sgn(re.sum)}">${pct(re.sum)}</span>` : ''}
     </button>`;
     for(const dt of days){
-      const ds = iso(dt), e = S.daily.get(dk(p, ds)) || {}, sk = statusKey(e.trade_status);
+      const ds = iso(dt), e = S.daily.get(dk(p, ds)) || {};
       const news = [[b, S.news.get(nk(b,ds))], [q, S.news.get(nk(q,ds))]].filter(([,n]) => n);
       const sel = S.sel.type==='day' && S.sel.day===ds;
-      const trade = e.direction ? `<div class="cd-trade">${e.direction==='Long' ? '▲' : '▼'}<span class="t-full"> ${e.direction}</span>${e.result ? ` <span class="${e.result==='W' ? 'pos' : e.result==='L' ? 'neg' : 'muted'}">${e.result}</span>` : ''}${e.pips!=null ? `<span class="t-full num ${sgn(e.pips)}"> ${e.pips>0?'+':''}${fmt(e.pips,1)}p</span>` : ''}</div>` : '';
+      const trade = e.direction ? `<div class="cd-trade ${e.direction.toLowerCase()}">${e.direction==='Long' ? '▲' : '▼'}<span class="t-full"> ${e.direction}</span>${e.result ? ` · ${e.result}` : ''}${e.pips!=null ? `<span class="t-full num"> · ${e.pips>0?'+':''}${fmt(e.pips,1)}p</span>` : ''}</div>` : '';
       h += `<button class="cd ${dt.getMonth()!==m ? 'out':''} ${sel ? 'sel':''} ${ds===today ? 'today':''} ${e.result ? 'res-'+e.result : ''}" data-day="${ds}"
           aria-label="${WD[dt.getDay()]} ${dt.getDate()} ${MONTHS[dt.getMonth()]}${e.trade_status ? ', '+esc(e.trade_status) : ''}" aria-pressed="${sel}">
         <div class="cd-top"><span class="cd-n">${dt.getDate()}</span>${e.daily_change!=null ? `<span class="cd-c ${sgn(e.daily_change)}">${pct(e.daily_change)}</span>` : ''}</div>
-        ${e.trade_status ? `<span class="pill st-${sk}">${esc(e.trade_status)}</span>` : ''}
+        ${stBadge(e.trade_status)}
         ${trade}
         ${e.action && !e.direction ? `<div class="cd-act">→ ${esc(e.action)}</div>` : ''}
         <div class="cd-foot">${news.map(([c,n]) => `<span class="nchip" title="${esc(n.events)}">${c}</span>`).join('')}
-          ${e.id ? `<span class="odots">${[['D','daily_obs'],['4H','h4_obs'],['1H','h1_obs']].map(([l,f]) => `<span class="${e[f] ? 'on':''}">${l}</span>`).join('')}</span>` : ''}</div>
+          ${e.id ? `<span class="odots" aria-hidden="true">${['daily_obs','h4_obs','h1_obs'].map(f => `<span class="${e[f] ? 'on':''}"></span>`).join('')}</span>` : ''}</div>
       </button>`;
     }
   }
@@ -487,12 +531,12 @@ function monthStats(){
   const y = S.month.getFullYear(), m = S.month.getMonth();
   const es = [...S.daily.values()].filter(e => e.pair===S.pair && parseISO(e.day).getFullYear()===y && parseISO(e.day).getMonth()===m);
   const tr = es.filter(e => ['W','L','BE'].includes(e.result));
-  if(!es.length) return 'Nicio observație luna aceasta';
+  if(!es.length) return 'nicio observație luna asta';
   const w = tr.filter(e => e.result==='W').length, l = tr.filter(e => e.result==='L').length, pips = tr.reduce((s,e) => s+(e.pips||0), 0);
-  return `${es.length} zile observate · ${tr.length} trade-uri${tr.length ? ` · ${w}W / ${l}L · ${fmt(pips,1)} pips` : ''}`;
+  return `${es.length} zile · ${tr.length} trade-uri${tr.length ? ` · ${w}W/${l}L · ${pips>0?'+':''}${fmt(pips,1)} pips` : ''}`;
 }
 
-/* selection */
+/* selection + mode */
 async function selectDay(ds){
   await flushSave();
   S.sel = { type:'day', day:ds };
@@ -503,16 +547,21 @@ async function selectDay(ds){
 }
 async function selectWeek(y, w){
   await flushSave();
-  S.sel = { type:'week', y, w }; renderCalendar(); renderPanel();
+  S.sel = { type:'week', y, w };
+  const d = mondayOf(y, w);
+  if(firstOfMonth(d).getTime() !== S.month.getTime() && firstOfMonth(new Date(d.getFullYear(), d.getMonth(), d.getDate()+4)).getTime() !== S.month.getTime()){ S.month = firstOfMonth(d); renderMain(); }
+  else { renderCalendar(); renderPanel(); }
   if(narrow()) document.getElementById('panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
 }
+async function setMode(m){ await flushSave(); S.mode = m; ls.set('do_mode', m); renderPanel(); }
 
 /* autosave */
 let pending = null, timer = null;
 function setSave(state, msg){
   const el = document.getElementById('saveState'); if(!el) return;
-  el.textContent = { dirty:'Modificat…', saving:'Se salvează…', ok:'Salvat ✓', err:'Eroare la salvare' }[state] || '';
-  if(state==='err'){ el.title = msg||''; toast('Nu s-a salvat: ' + (msg||'')); }
+  el.textContent = { dirty:'modificat…', saving:'se salvează…', ok:'salvat ✓', err:'eroare la salvare' }[state] || '';
+  el.style.color = state==='err' ? 'var(--neg)' : state==='ok' ? 'var(--pos)' : '';
+  if(state==='err') toast('Nu s-a salvat: ' + (msg||''));
 }
 function schedule(fn, delay=700){ pending = fn(); clearTimeout(timer); setSave('dirty'); timer = setTimeout(flushSave, delay); }
 async function flushSave(){
@@ -522,85 +571,144 @@ async function flushSave(){
 window.addEventListener('beforeunload', ev => { if(pending){ flushSave(); ev.preventDefault(); } });
 
 function autosize(t){ t.style.height = 'auto'; t.style.height = (t.scrollHeight+2) + 'px'; }
-function chipGroup(field, options, value, extraCls = v => ''){
+function chipGroup(field, options, value, extraCls = () => ''){
   const opts = [...options]; if(value && !opts.includes(value)) opts.push(value);
   return `<div class="chips" role="group" data-chips="${field}">${opts.map(o => `<button type="button" class="ch ${extraCls(o)}" data-v="${esc(o)}" aria-pressed="${o===value}">${esc(o)}</button>`).join('')}</div>
     <input type="hidden" data-f="${field}" value="${esc(value||'')}">`;
 }
-function bindChips(root, onChange){
+function bindChips(root, attr, onChange){
   root.querySelectorAll('[data-chips]').forEach(g => g.addEventListener('click', ev => {
     const btn = ev.target.closest('.ch'); if(!btn) return;
-    const hid = g.nextElementSibling, on = btn.getAttribute('aria-pressed') !== 'true';
+    const hid = root.querySelector(`[${attr}="${g.dataset.chips}"]`), on = btn.getAttribute('aria-pressed') !== 'true';
     g.querySelectorAll('.ch').forEach(c => c.setAttribute('aria-pressed', 'false'));
     btn.setAttribute('aria-pressed', String(on)); hid.value = on ? btn.dataset.v : '';
     onChange(g.dataset.chips);
   }));
 }
+function panelHead(title, sub){
+  return `<div class="ps-head">
+    <div style="min-width:0"><h2>${title}</h2><div class="sub">${sub}</div></div>
+    <div class="ps-nav"><button class="ib" id="navPrev" aria-label="Anterior">‹</button><button class="ib" id="navNext" aria-label="Următor">›</button></div>
+    <div class="seg mode" role="group" aria-label="Mod panou">
+      <button data-mode="view" aria-pressed="${S.mode==='view'}">Vizualizare</button><button data-mode="edit" aria-pressed="${S.mode==='edit'}">Editare</button>
+    </div></div>`;
+}
+function bindHead(panel, prev, next){
+  panel.querySelector('#navPrev').onclick = prev; panel.querySelector('#navNext').onclick = next;
+  panel.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+}
 
 function renderPanel(){
   const panel = document.getElementById('panel'); if(!panel) return;
-  if(S.sel.type==='week') return renderWeekPanel(panel);
-  const p = S.pair, ds = S.sel.day, dt = parseISO(ds), e = S.daily.get(dk(p, ds)) || {};
-  const b = base(p), q = quote(p), w = isoWeek(dt), wr = S.weekly.get(wk(p, w.year, w.week));
+  if(S.sel.type==='week') return S.mode==='edit' ? weekEdit(panel) : weekView(panel);
+  const p = S.pair, ds = S.sel.day, dt = parseISO(ds), w = isoWeek(dt);
+  const ctx = { p, ds, dt, w, e: S.daily.get(dk(p, ds)) || {}, b: base(p), q: quote(p), wr: S.weekly.get(wk(p, w.year, w.week)) };
+  S.mode==='edit' ? dayEdit(panel, ctx) : dayView(panel, ctx);
+  const step = n => { const d = parseISO(ds); do { d.setDate(d.getDate()+n); } while(d.getDay()===0 || d.getDay()===6); selectDay(iso(d)); };
+  bindHead(panel, () => step(-1), () => step(1));
+  panel.querySelector('#wkBanner').onclick = () => selectWeek(w.year, w.week);
+}
+function dayTitle(ctx){ return `${WD[ctx.dt.getDay()]}, ${ctx.dt.getDate()} ${MONTHS[ctx.dt.getMonth()].toLowerCase()}`; }
+function wkBanner(ctx){
+  const wr = ctx.wr;
+  return `<button class="wkbanner bias-${wr?.bias || 'none'}" id="wkBanner">
+    <span class="bl">Săpt. ${ctx.w.week} · ${wr?.bias ? biasText(wr) : '<span class="muted">bias nesetat</span>'}</span> ${convDots(wr?.conviction)}
+    ${wr?.fundamentals ? `<p>${esc(wr.fundamentals)}</p>` : ''}</button>`;
+}
+
+/* ---- day: view ---- */
+function dayView(panel, ctx){
+  const { p, ds, e, b, q } = ctx;
+  const bn = S.news.get(nk(b,ds))?.events, qn = S.news.get(nk(q,ds))?.events;
+  const empty = !e.id && !bn && !qn;
+  const tfs = [['Daily','daily_obs','tv_daily'],['4H','h4_obs','tv_4h'],['1H','h1_obs','tv_1h']].filter(([,o,t]) => e[o] || e[t]);
+  const stats = [['Entry', e.entry_price], ['SL', e.sl], ['TP', e.tp],
+    ['Pips', e.pips!=null ? `${e.pips>0?'+':''}${fmt(e.pips,1)}` : null, sgn(e.pips)], ['R', e.r_multiple!=null ? fmt(e.r_multiple) : null, sgn(e.r_multiple)],
+    ['Risk', e.risk!=null ? fmt(e.risk)+'%' : null], ['Profit', e.profit!=null ? `${e.profit>0?'+':''}${fmt(e.profit)}$` : null, sgn(e.profit)], ['Durată', e.duration]]
+    .filter(([,v]) => v!=null && v!=='');
+  panel.innerHTML = `<div class="ps">
+    ${panelHead(dayTitle(ctx), `${p} · ${ctx.dt.getFullYear()}`)}
+    ${wkBanner(ctx)}
+    ${empty ? `<div class="empty"><div class="orb" aria-hidden="true"></div><p>Nicio observație pentru ziua asta.</p><button class="btn btn-primary" id="startEdit">Începe observația</button></div>` : `
+      <div class="hero">
+        <div class="hero-row">
+          <div>${e.trade_status ? stBadge(e.trade_status, true) : '<span class="muted">fără status</span>'}</div>
+          ${e.daily_change!=null ? `<div style="text-align:right"><span class="kick">Închidere</span><span class="bigval ${sgn(e.daily_change)}">${pct(e.daily_change)}</span></div>` : ''}
+        </div>
+        ${e.action ? `<div class="next"><span class="kick">Plan</span>${esc(e.action)}</div>` : ''}
+      </div>
+      ${e.direction ? `<div class="ticket ${e.direction.toLowerCase()} ${e.result ? 'res-'+e.result : ''}">
+        <div class="tk-top"><span class="tk-dir">${e.direction==='Long' ? '▲' : '▼'} ${e.direction}</span>${e.session ? `<span class="muted" style="font-weight:700">${esc(e.session)}</span>` : ''}
+          ${e.result ? `<span class="tk-res r-${e.result}">${{W:'Win',L:'Loss',BE:'Break-even'}[e.result] || esc(e.result)}</span>` : ''}</div>
+        ${stats.length ? `<div class="tk-grid">${stats.map(([l,v,c]) => `<div><span class="kick">${l}</span><b class="${c||''}">${esc(v)}</b></div>`).join('')}</div>` : ''}
+        ${e.entry_time || e.exit_time ? `<div class="tk-time">⏱ ${esc(e.entry_time || '?')} → ${esc(e.exit_time || 'deschis')}</div>` : ''}
+      </div>` : ''}
+      ${bn || qn ? `<div class="vsec"><h4>Știri</h4><div class="news2">
+        ${[[b,bn],[q,qn]].map(([c,t]) => `<div><span class="ncur">${c}</span>${t ? `<ul class="nl">${newsList(t)}</ul>` : '<p class="muted" style="font-size:13px">—</p>'}</div>`).join('')}
+      </div></div>` : ''}
+      <div class="vsec"><h4>Top-down</h4>
+        ${tfs.length ? tfs.map(([l,o,t]) => { const snap = tvSnap(e[t]); return `<article class="tfv">
+          <div class="tfv-h"><span class="tfl">${l}</span>${e[t] ? `<a class="tvlink" href="${esc(e[t])}" target="_blank" rel="noopener">TradingView ↗</a>` : ''}</div>
+          ${e[o] ? `<p>${esc(e[o])}</p>` : ''}
+          ${snap ? `<a class="snap" href="${esc(e[t])}" target="_blank" rel="noopener"><img src="${snap}" alt="Chart ${l} ${p}" loading="lazy" onerror="this.parentElement.remove()"></a>` : ''}
+        </article>`; }).join('') : '<p class="muted">Fără observații pe timeframe-uri.</p>'}
+      </div>`}
+  </div>`;
+  panel.querySelector('#startEdit')?.addEventListener('click', () => setMode('edit'));
+}
+
+/* ---- day: edit ---- */
+function dayEdit(panel, ctx){
+  const { p, ds, e, b, q } = ctx;
   const hasTrade = !!(e.direction || ['yes','in','closed'].includes(statusKey(e.trade_status)));
   const v = f => esc(e[f] ?? '');
-  const tf = (label, obs, tv, extra='') => `<div class="tf"><div class="tf-h"><b>${label}</b>${extra}
-      ${e[tv] ? `<a class="tvlink" href="${esc(e[tv])}" target="_blank" rel="noopener">Deschide chart ↗</a>` : ''}</div>
+  const tf = (label, obs, tv, extra='') => `<div class="tf"><div class="tf-h"><span class="tfl">${label}</span>${extra}</div>
       <textarea class="inp" data-f="${obs}" rows="2" aria-label="Observații ${label}" placeholder="Ce vezi pe ${label}…">${v(obs)}</textarea>
       <input class="inp" style="margin-top:6px;font-size:12.5px" data-f="${tv}" type="url" value="${v(tv)}" aria-label="Link TradingView ${label}" placeholder="Link TradingView ${label}"></div>`;
+  const numIn = (f, l, type='text') => `<div><label class="lbl" for="i_${f}">${l}</label><input id="i_${f}" class="inp num" data-f="${f}" ${type==='time' ? 'type="time"' : 'inputmode="decimal"'} value="${v(f)}"></div>`;
   panel.innerHTML = `<div class="ps">
-    <div class="ps-head">
-      <button class="ib" id="pPrev" aria-label="Ziua anterioară">‹</button>
-      <div style="flex:1;min-width:0"><h2>${WD[dt.getDay()]}, ${dt.getDate()} ${MONTHS[dt.getMonth()].toLowerCase()}</h2>
-        <div class="sub">${p} · <span id="saveState" class="save">${e.id ? 'Salvat ✓' : 'Zi goală — scrie și se salvează singur'}</span></div></div>
-      <button class="ib" id="pNext" aria-label="Ziua următoare">›</button>
-    </div>
-    <div class="sec" style="border-top:none">
-      <button class="biaschip bias-${wr?.bias || 'neutral'}" id="pWeek">Săpt. ${w.week}: ${wr?.bias ? BIAS_LBL[wr.bias] + (wr.conviction ? ', '+CONV_LBL[wr.conviction] : '') : 'bias nesetat'} ›</button>
-      ${wr?.fundamentals ? `<p class="muted" style="font-size:12.5px;margin-top:6px">${esc(wr.fundamentals)}</p>` : ''}
-    </div>
-    <div class="sec"><h4>Status zi</h4>${chipGroup('trade_status', STATUSES, e.trade_status)}</div>
+    ${panelHead(dayTitle(ctx), `${p} · <span id="saveState" class="save">${e.id ? 'salvat ✓' : 'se salvează automat'}</span>`)}
+    ${wkBanner(ctx)}
+    <div class="sec" style="border-top:none;margin-top:4px"><h4>Status zi</h4>${chipGroup('trade_status', STATUSES, e.trade_status)}</div>
     <div class="sec"><h4>Știri <small>comune pe monedă</small></h4>
       <div class="g3" style="grid-template-columns:1fr 1fr">
         <div><label class="lbl" for="nb">${b}</label><textarea id="nb" class="inp" data-news="base" rows="2" placeholder="15:30 CPI">${esc(S.news.get(nk(b,ds))?.events || '')}</textarea></div>
-        <div><label class="lbl" for="nq">${q}</label><textarea id="nq" class="inp" data-news="quote" rows="2">${esc(S.news.get(nk(q,ds))?.events || '')}</textarea></div>
-      </div></div>
+        <div><label class="lbl" for="nq">${q}</label><textarea id="nq" class="inp" data-news="quote" rows="2" placeholder="12:00 GDP">${esc(S.news.get(nk(q,ds))?.events || '')}</textarea></div>
+      </div><p class="hint">O știre pe rând, cu ora în față: „15:30 CPI”.</p></div>
     <div class="sec"><h4>Top-down</h4>
-      ${tf('Daily','daily_obs','tv_daily', `<label class="muted" style="font-size:12px;display:flex;align-items:center;gap:4px">Închidere <input class="inp num" data-f="daily_change" inputmode="decimal" value="${v('daily_change')}" placeholder="-0.19" style="width:78px;padding:3px 6px">%</label>`)}
+      ${tf('Daily','daily_obs','tv_daily', `<label class="muted" style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px;margin-left:auto">Închidere <input class="inp num" data-f="daily_change" inputmode="decimal" value="${v('daily_change')}" placeholder="-0.19" style="width:80px;padding:4px 8px">%</label>`)}
       ${tf('4H','h4_obs','tv_4h')}
       ${tf('1H','h1_obs','tv_1h')}
     </div>
-    <details class="sec trade" ${hasTrade ? 'open' : ''}><summary><h4>Tranzacție ${e.direction ? `<small>${esc(e.direction)}${e.result ? ' · '+esc(e.result) : ''}</small>` : '<small>opțional</small>'}</h4></summary>
-      <div style="display:grid;gap:10px">
+    <details class="sec trade" ${hasTrade ? 'open' : ''}><summary><h4>Tranzacție <small>${e.direction ? esc(e.direction) + (e.result ? ' · '+esc(e.result) : '') : 'opțional'}</small></h4></summary>
+      <div style="display:grid;gap:12px">
         <div><span class="lbl">Direcție</span>${chipGroup('direction', ['Long','Short'], e.direction)}</div>
         <div><span class="lbl">Sesiune</span>${chipGroup('session', SESSIONS, e.session)}</div>
         <div><span class="lbl">Rezultat</span>${chipGroup('result', ['W','L','BE'], e.result, o => o)}</div>
         <div class="g3">
-          <div><label class="lbl">Entry</label><input class="inp num" data-f="entry_price" inputmode="decimal" value="${v('entry_price')}"></div>
-          <div><label class="lbl">SL</label><input class="inp num" data-f="sl" inputmode="decimal" value="${v('sl')}"></div>
-          <div><label class="lbl">TP</label><input class="inp num" data-f="tp" inputmode="decimal" value="${v('tp')}"></div>
-          <div><label class="lbl">Entry hour</label><input class="inp num" data-f="entry_time" type="time" value="${v('entry_time')}"></div>
-          <div><label class="lbl">Exit hour</label><input class="inp num" data-f="exit_time" type="time" value="${v('exit_time')}"></div>
-          <div><label class="lbl">Duration</label><input class="inp" data-f="duration" value="${v('duration')}" placeholder="auto"></div>
-          <div><label class="lbl">Pips</label><input class="inp num" data-f="pips" inputmode="decimal" value="${v('pips')}"></div>
-          <div><label class="lbl">R</label><input class="inp num" data-f="r_multiple" inputmode="decimal" value="${v('r_multiple')}"></div>
-          <div><label class="lbl">Risk %</label><input class="inp num" data-f="risk" inputmode="decimal" value="${v('risk')}"></div>
-          <div><label class="lbl">Profit $</label><input class="inp num" data-f="profit" inputmode="decimal" value="${v('profit')}"></div>
+          ${numIn('entry_price','Entry')}${numIn('sl','SL')}${numIn('tp','TP')}
+          ${numIn('entry_time','Entry hour','time')}${numIn('exit_time','Exit hour','time')}
+          <div><label class="lbl" for="i_duration">Duration</label><input id="i_duration" class="inp" data-f="duration" value="${v('duration')}" placeholder="auto"></div>
+          ${numIn('pips','Pips')}${numIn('r_multiple','R')}${numIn('risk','Risk %')}${numIn('profit','Profit $')}
         </div>
         <p class="hint" id="rrHint" style="margin:0"></p>
       </div></details>
-    <div class="sec"><h4>Acțiune</h4>${chipGroup('action', ACTIONS, e.action)}
-      <input class="inp" style="margin-top:8px" data-f-alt="action" placeholder="sau scrie altă acțiune…" aria-label="Acțiune personalizată" value=""></div>
-    <div class="sec" style="display:flex;justify-content:space-between;align-items:center">
-      ${e.id ? '<button class="linkbtn" id="pDel">Șterge ziua</button>' : '<span></span>'}
-      <span class="muted" style="font-size:12px">Se salvează automat</span>
+    <div class="sec"><h4>Plan pentru mâine</h4>${chipGroup('action', ACTIONS, e.action)}
+      <input class="inp" style="margin-top:8px" data-f-alt="action" placeholder="sau scrie altă acțiune…" aria-label="Acțiune personalizată"></div>
+    <div class="editfoot">
+      ${e.id ? '<button class="linkbtn" id="pDel">Șterge ziua</button>' : ''}
+      <button class="btn btn-primary" style="margin-left:auto" id="doneEdit">Gata ✓</button>
     </div>
   </div>`;
 
   panel.querySelectorAll('textarea').forEach(t => { autosize(t); t.addEventListener('input', () => autosize(t)); });
   const save = () => schedule(() => collectDay(panel));
   panel.querySelectorAll('[data-f], [data-news]').forEach(el => el.addEventListener('input', save));
-  bindChips(panel, field => { if(field==='trade_status' && ['YES','In trade','Closed trade'].includes(panel.querySelector('[data-f="trade_status"]').value)) panel.querySelector('details.trade').open = true; save(); flushSave(); });
+  bindChips(panel, 'data-f', field => {
+    if(field==='trade_status' && ['YES','In trade','Closed trade'].includes(panel.querySelector('[data-f="trade_status"]').value)) panel.querySelector('details.trade').open = true;
+    if(field==='action') panel.querySelector('[data-f-alt="action"]').value = '';
+    save(); flushSave();
+  });
   const alt = panel.querySelector('[data-f-alt="action"]');
   alt.addEventListener('input', () => { const h = panel.querySelector('[data-f="action"]'); h.value = alt.value.trim();
     panel.querySelectorAll('[data-chips="action"] .ch').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.v === h.value))); save(); });
@@ -621,10 +729,7 @@ function renderPanel(){
     dur.value = `${Math.floor(mins/60)}h ${String(mins%60).padStart(2,'0')}m`; dur.dataset.auto = '1'; save();
   }));
   dur.addEventListener('input', () => delete dur.dataset.auto);
-  const step = n => { const d = parseISO(ds); do { d.setDate(d.getDate()+n); } while(d.getDay()===0 || d.getDay()===6); selectDay(iso(d)); };
-  panel.querySelector('#pPrev').onclick = () => step(-1);
-  panel.querySelector('#pNext').onclick = () => step(1);
-  panel.querySelector('#pWeek').onclick = () => selectWeek(w.year, w.week);
+  panel.querySelector('#doneEdit').onclick = () => setMode('view');
   panel.querySelector('#pDel')?.addEventListener('click', async () => {
     const cur = S.daily.get(dk(p, ds)); if(!cur || !confirm('Ștergi observațiile și trade-ul din ziua asta? Știrile rămân, fiind comune pe monedă.')) return;
     pending = null; clearTimeout(timer);
@@ -649,64 +754,92 @@ function collectDay(panel){
   }};
 }
 
-/* week panel */
+/* ---- week ---- */
 function weekRealized(p, y, w){
   const m = mondayOf(y, w); let sum = 0, n = 0;
   for(let i = 0; i < 7; i++){ const d = new Date(m); d.setDate(m.getDate()+i); const e = S.daily.get(dk(p, iso(d))); if(e?.daily_change != null){ sum += Number(e.daily_change); n++; } }
   return n ? { sum, n } : null;
 }
-function renderWeekPanel(panel){
-  const p = S.pair, { y, w } = S.sel, r = S.weekly.get(wk(p, y, w)) || {}, m = mondayOf(y, w), f = new Date(m); f.setDate(m.getDate()+4);
-  const re = weekRealized(p, y, w);
-  const days = [0,1,2,3,4].map(i => { const d = new Date(m); d.setDate(m.getDate()+i); return d; });
+function weekHeadInfo(){
+  const p = S.pair, { y, w } = S.sel, m = mondayOf(y, w), f = new Date(m); f.setDate(m.getDate()+4);
+  return { p, y, w, m, f, r: S.weekly.get(wk(p, y, w)) || {}, re: weekRealized(p, y, w),
+    range: `${m.getDate()} ${MONTHS[m.getMonth()].toLowerCase().slice(0,3)} – ${f.getDate()} ${MONTHS[f.getMonth()].toLowerCase().slice(0,3)} ${f.getFullYear()}`,
+    days: [0,1,2,3,4].map(i => { const d = new Date(m); d.setDate(m.getDate()+i); return d; }) };
+}
+function bindWeekNav(panel, y, w){
+  const go = n => { const d = mondayOf(y, w); d.setDate(d.getDate()+7*n); const nw = isoWeek(d); selectWeek(nw.year, nw.week); };
+  bindHead(panel, () => go(-1), () => go(1));
+  panel.querySelectorAll('[data-goday]').forEach(bn => bn.onclick = () => selectDay(bn.dataset.goday));
+}
+function weekDays(p, days){
+  return days.map(d => { const ds = iso(d), e = S.daily.get(dk(p, ds)) || {}; return `<button class="wkday" data-goday="${ds}">
+    <span class="disp" style="font-weight:700;width:48px">${WD_SHORT[d.getDay()]} ${d.getDate()}</span>
+    ${e.trade_status ? stBadge(e.trade_status) : '<span class="muted" style="font-size:12.5px">—</span>'}
+    ${e.direction ? `<span style="font-size:12.5px;font-weight:800" class="${e.direction==='Long' ? 'pos' : 'neg'}">${e.direction==='Long' ? '▲' : '▼'}${e.result ? ' '+e.result : ''}</span>` : ''}
+    <span class="num ${sgn(e.daily_change)}" style="margin-left:auto;font-size:12.5px;font-weight:800">${e.daily_change!=null ? pct(e.daily_change) : ''}</span></button>`; }).join('');
+}
+function weekView(panel){
+  const { p, y, w, r, re, range, days } = weekHeadInfo();
+  const tr = days.map(d => S.daily.get(dk(p, iso(d)))).filter(e => e && ['W','L','BE'].includes(e.result));
+  const empty = !r.id;
   panel.innerHTML = `<div class="ps">
-    <div class="ps-head">
-      <button class="ib" id="wPrev" aria-label="Săptămâna anterioară">‹</button>
-      <div style="flex:1;min-width:0"><h2>Săptămâna ${w}</h2>
-        <div class="sub">${p} · ${m.getDate()} ${MONTHS[m.getMonth()].toLowerCase().slice(0,3)} – ${f.getDate()} ${MONTHS[f.getMonth()].toLowerCase().slice(0,3)} ${f.getFullYear()} · <span id="saveState" class="save">${r.id ? 'Salvat ✓' : ''}</span></div></div>
-      <button class="ib" id="wNext" aria-label="Săptămâna următoare">›</button>
-    </div>
+    ${panelHead(`Săptămâna ${w}`, `${p} · ${range}`)}
+    ${empty ? `<div class="empty"><div class="orb" aria-hidden="true"></div><p>Bias-ul săptămânii nu e setat.</p><button class="btn btn-primary" id="startEdit">Setează bias-ul</button></div>` : `
+      <div class="wkhero">
+        <div class="hero-row">
+          <div><span class="kick">Bias</span><span class="bigval ${r.bias || ''}">${r.bias ? BIAS_LBL[r.bias] : '—'}</span>
+            ${r.conviction ? `<div class="muted" style="font-weight:700;margin-top:4px">${convDots(r.conviction)} ${CONV_LBL[r.conviction]}</div>` : ''}</div>
+          ${re ? `<div style="text-align:right"><span class="kick">Realizat</span><span class="bigval ${sgn(re.sum)}">${pct(re.sum)}</span>
+            <div class="muted" style="font-size:12px;font-weight:600">${re.n} închideri</div></div>` : ''}
+        </div>
+        ${r.fundamentals ? `<p class="quote" style="margin-top:14px">${esc(r.fundamentals)}</p>` : ''}
+      </div>`}
+    <div class="vsec"><h4>Zilele săptămânii ${tr.length ? `<span class="muted" style="font-weight:600;font-size:12px">· ${tr.filter(t=>t.result==='W').length}W / ${tr.filter(t=>t.result==='L').length}L</span>` : ''}</h4>${weekDays(p, days)}</div>
+    ${r.review ? `<div class="vsec"><h4>Review</h4><p style="white-space:pre-line">${esc(r.review)}</p></div>` : ''}
+  </div>`;
+  bindWeekNav(panel, y, w);
+  panel.querySelector('#startEdit')?.addEventListener('click', () => setMode('edit'));
+}
+function weekEdit(panel){
+  const { p, y, w, r, re, range, days } = weekHeadInfo();
+  panel.innerHTML = `<div class="ps">
+    ${panelHead(`Săptămâna ${w}`, `${p} · ${range} · <span id="saveState" class="save">${r.id ? 'salvat ✓' : 'se salvează automat'}</span>`)}
     <div class="sec" style="border-top:none"><h4>Bias fundamental</h4>
       <div class="chips" role="group" data-chips="bias">${Object.entries(BIAS_LBL).map(([k,l]) => `<button type="button" class="ch b-${k}" data-v="${k}" aria-pressed="${r.bias===k}">${l}</button>`).join('')}</div>
       <input type="hidden" data-w="bias" value="${esc(r.bias||'')}">
-      <span class="lbl" style="margin-top:10px">Convingere</span>
+      <span class="lbl" style="margin-top:12px">Convingere</span>
       <div class="chips" role="group" data-chips="conviction">${[['low','Low / mild'],['medium','Medium'],['high','High']].map(([k,l]) => `<button type="button" class="ch" data-v="${k}" aria-pressed="${r.conviction===k}">${l}</button>`).join('')}</div>
       <input type="hidden" data-w="conviction" value="${esc(r.conviction||'')}">
-      <label class="lbl" for="wf" style="margin-top:10px">Fundamentals</label>
+      <label class="lbl" for="wf" style="margin-top:12px">Fundamentals</label>
       <textarea id="wf" class="inp" data-w="fundamentals" rows="2" placeholder="Bearish EUR/USD lean, strengthening">${esc(r.fundamentals||'')}</textarea>
-      <button class="btn" id="wCopy" style="margin-top:8px">Copiază din săptămâna trecută</button>
+      <button class="btn" id="wCopy" style="margin-top:10px">Copiază din săptămâna trecută</button>
     </div>
-    <div class="sec"><h4>Zilele săptămânii ${re ? `<small class="${sgn(re.sum)}" style="font-weight:600">${pct(re.sum)} realizat</small>` : ''}</h4>
-      ${days.map(d => { const ds = iso(d), e = S.daily.get(dk(p, ds)) || {}; return `<button class="wkday" data-goday="${ds}">
-        <span class="cond" style="font-weight:600;width:52px">${WD_SHORT[d.getDay()]} ${d.getDate()}</span>
-        ${e.trade_status ? `<span class="pill st-${statusKey(e.trade_status)}">${esc(e.trade_status)}</span>` : '<span class="muted" style="font-size:12.5px">—</span>'}
-        ${e.direction ? `<span style="font-size:12.5px;font-weight:600">${e.direction}${e.result ? ` <span class="${e.result==='W'?'pos':e.result==='L'?'neg':''}">${e.result}</span>` : ''}</span>` : ''}
-        <span class="num ${sgn(e.daily_change)}" style="margin-left:auto;font-size:12.5px;font-weight:600">${e.daily_change!=null ? pct(e.daily_change) : ''}</span></button>`; }).join('')}
-    </div>
+    <div class="sec"><h4>Zilele săptămânii ${re ? `<small class="${sgn(re.sum)}" style="font-weight:800">${pct(re.sum)} realizat</small>` : ''}</h4>${weekDays(p, days)}</div>
     <div class="sec"><h4>Review</h4>
       <textarea class="inp" data-w="review" rows="3" aria-label="Review săptămână" placeholder="Ce s-a întâmplat față de ce ai anticipat…">${esc(r.review||'')}</textarea></div>
+    <div class="editfoot">
+      ${r.id ? '<button class="linkbtn" id="wDel">Șterge săptămâna</button>' : ''}
+      <button class="btn btn-primary" style="margin-left:auto" id="doneEdit">Gata ✓</button>
+    </div>
   </div>`;
   panel.querySelectorAll('textarea').forEach(t => { autosize(t); t.addEventListener('input', () => autosize(t)); });
   const save = () => schedule(() => collectWeek(panel));
   panel.querySelectorAll('textarea[data-w]').forEach(el => el.addEventListener('input', save));
-  panel.querySelectorAll('[data-chips]').forEach(g => g.addEventListener('click', ev => {
-    const btn = ev.target.closest('.ch'); if(!btn) return;
-    const on = btn.getAttribute('aria-pressed') !== 'true';
-    g.querySelectorAll('.ch').forEach(c => c.setAttribute('aria-pressed','false')); btn.setAttribute('aria-pressed', String(on));
-    panel.querySelector(`[data-w="${g.dataset.chips}"]`).value = on ? btn.dataset.v : '';
-    save(); flushSave();
-  }));
-  panel.querySelectorAll('[data-goday]').forEach(bn => bn.onclick = () => selectDay(bn.dataset.goday));
-  const go = n => { const d = mondayOf(y, w); d.setDate(d.getDate()+7*n); const nw = isoWeek(d);
-    if(firstOfMonth(d).getTime() !== S.month.getTime()){ S.month = firstOfMonth(d); S.sel = { type:'week', y:nw.year, w:nw.week }; flushSave().then(renderMain); } else selectWeek(nw.year, nw.week); };
-  panel.querySelector('#wPrev').onclick = () => go(-1);
-  panel.querySelector('#wNext').onclick = () => go(1);
+  bindChips(panel, 'data-w', () => { save(); flushSave(); });
+  bindWeekNav(panel, y, w);
+  panel.querySelector('#doneEdit').onclick = () => setMode('view');
   panel.querySelector('#wCopy').onclick = () => {
     const pw = prevWeek(y, w), pr = S.weekly.get(wk(p, pw.year, pw.week)); if(!pr) return toast('Săptămâna trecută nu are bias salvat');
     ['bias','conviction','fundamentals'].forEach(k => panel.querySelector(`[data-w="${k}"]`).value = pr[k] || '');
     ['bias','conviction'].forEach(k => panel.querySelectorAll(`[data-chips="${k}"] .ch`).forEach(c => c.setAttribute('aria-pressed', String(c.dataset.v === pr[k]))));
     autosize(panel.querySelector('#wf')); save(); flushSave();
   };
+  panel.querySelector('#wDel')?.addEventListener('click', async () => {
+    const cur = S.weekly.get(wk(p, y, w)); if(!cur || !confirm('Ștergi bias-ul și review-ul acestei săptămâni?')) return;
+    pending = null; clearTimeout(timer);
+    const { error } = await sb.from('do_weekly').delete().eq('id', cur.id); if(error) return toast(error.message);
+    S.weekly.delete(wk(p, y, w)); renderCalendar(); renderPanel();
+  });
 }
 function collectWeek(panel){
   const p = S.pair, { y, w } = S.sel, row = { pair:p, year:y, week:w };
