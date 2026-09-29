@@ -249,6 +249,37 @@
   details.trade[open] summary h4::after{ content:'–'; }
   .linkbtn{ border:none; background:none; color:var(--neg); font-size:13px; font-weight:700; }
   .editfoot{ padding:14px 16px 16px; border-top:1px solid var(--line); display:flex; gap:10px; align-items:center; }
+  /* week fundamentals */
+  .vs{ display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:center; }
+  .vs-side b{ display:block; font-family:'Bricolage Grotesque',sans-serif; font-size:17px; font-weight:800; }
+  .vs-side b.muted{ color:var(--muted); }
+  .vs-score{ font-family:'Bricolage Grotesque',sans-serif; font-size:26px; font-weight:800; font-variant-numeric:tabular-nums; line-height:1.1; }
+  .vs-mid{ text-align:center; color:var(--muted); font-weight:700; }
+  .vs-mid b{ display:block; font-family:'Bricolage Grotesque',sans-serif; font-size:22px; color:var(--accent); }
+  .meter{ height:6px; border-radius:6px; background:var(--surface-2); margin-top:12px; overflow:hidden; }
+  .meter span{ display:block; height:100%; border-radius:6px; background:linear-gradient(90deg, var(--info), var(--accent)); }
+  .drv{ list-style:none; padding:0; margin:8px 0 0; display:grid; gap:7px; }
+  .drv li{ position:relative; padding-left:16px; font-size:13.5px; }
+  .drv li::before{ content:''; position:absolute; left:2px; top:.6em; width:6px; height:6px; border-radius:50%; background:var(--accent); }
+  .cats{ display:grid; gap:6px; }
+  .cat{ display:flex; gap:10px; align-items:center; padding:8px 10px; border-radius:12px; background:var(--surface-2); font-size:13px; }
+  .cat time{ font-weight:800; font-size:12px; color:var(--info); white-space:nowrap; min-width:54px; }
+  .cat span:nth-child(2){ flex:1; }
+  .imp{ font-size:10.5px; font-weight:800; padding:2px 7px; border-radius:6px; letter-spacing:.04em; }
+  .imp-crit{ background:var(--neg); color:#fff; } .imp-high{ background:color-mix(in srgb,var(--amber) 22%,transparent); color:var(--amber); }
+  .imp-med{ background:color-mix(in srgb,var(--info) 18%,transparent); color:var(--info); } .imp-low{ background:var(--neu); color:var(--muted); }
+  .minis{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .mini{ background:var(--surface-2); border-radius:12px; padding:10px 12px; }
+  .mini.wide{ grid-column:1/-1; }
+  .mini p{ font-size:13px; margin-top:3px; white-space:pre-line; }
+  .alg{ display:inline-block; font-weight:800; font-size:12px; padding:2px 9px; border-radius:999px; margin-top:2px; }
+  .alg-aligned{ background:color-mix(in srgb,var(--pos) 18%,transparent); color:var(--pos); }
+  .alg-partial-conflict{ background:color-mix(in srgb,var(--amber) 18%,transparent); color:var(--amber); }
+  .alg-conflicting{ background:color-mix(in srgb,var(--neg) 18%,transparent); color:var(--neg); }
+  .alg-neutral{ background:var(--neu); color:var(--muted); }
+  .dyn{ display:flex; gap:6px; align-items:center; }
+  .rm{ flex:0 0 auto; width:30px; height:30px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--muted); font-size:16px; }
+  .rm:hover{ color:var(--neg); border-color:var(--neg); }
 </style>
 </head>
 <body>
@@ -442,6 +473,7 @@ S.mode = ls.get('do_mode', 'view');
 const narrow = () => window.matchMedia('(max-width:1150px)').matches;
 const convDots = c => c ? `<span class="conv" aria-label="convingere ${c}">${{low:'●○○',medium:'●●○',high:'●●●'}[c]}</span>` : '';
 const biasText = wr => wr?.bias ? `${BIAS_LBL[wr.bias]}${wr.conviction ? ', ' + CONV_LBL[wr.conviction] : ''}` : '';
+const TVRX = /https?:\/\/(?:[a-z]+\.)?tradingview\.com\/x\/[A-Za-z0-9]+\/?/gi;
 function tvSnap(url){ const m = (url||'').match(/tradingview\.com\/x\/([A-Za-z0-9]+)/); return m ? `https://s3.tradingview.com/snapshots/${m[1][0].toLowerCase()}/${m[1]}.png` : null; }
 function newsList(text){
   return (text||'').split(/\n+/).map(l => l.trim()).filter(Boolean).map(l => {
@@ -647,10 +679,15 @@ function dayView(panel, ctx){
         ${[[b,bn],[q,qn]].map(([c,t]) => `<div><span class="ncur">${c}</span>${t ? `<ul class="nl">${newsList(t)}</ul>` : '<p class="muted" style="font-size:13px">—</p>'}</div>`).join('')}
       </div></div>` : ''}
       <div class="vsec"><h4>Top-down</h4>
-        ${tfs.length ? tfs.map(([l,o,t]) => { const snap = tvSnap(e[t]); return `<article class="tfv">
-          <div class="tfv-h"><span class="tfl">${l}</span>${e[t] ? `<a class="tvlink" href="${esc(e[t])}" target="_blank" rel="noopener">TradingView ↗</a>` : ''}</div>
-          ${e[o] ? `<p>${esc(e[o])}</p>` : ''}
-          ${snap ? `<a class="snap" href="${esc(e[t])}" target="_blank" rel="noopener"><img src="${snap}" alt="Chart ${l} ${p}" loading="lazy" onerror="this.parentElement.remove()"></a>` : ''}
+        ${tfs.length ? tfs.map(([l,o,t]) => {
+          const links = [...new Set([e[t], ...((e[o]||'').match(TVRX) || [])].filter(Boolean))];
+          const text = (e[o]||'').replace(TVRX, '').trim();
+          return `<article class="tfv">
+          <div class="tfv-h"><span class="tfl">${l}</span>${links[0] ? `<a class="tvlink" href="${esc(links[0])}" target="_blank" rel="noopener">TradingView ↗</a>` : ''}</div>
+          ${text ? `<p>${esc(text)}</p>` : ''}
+          ${links.map(u => { const snap = tvSnap(u); return snap
+            ? `<a class="snap" href="${esc(u)}" target="_blank" rel="noopener"><img src="${snap}" alt="Chart ${l} ${p}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'tvlink',textContent:'Previzualizare indisponibilă — deschide chart-ul ↗'}))"></a>`
+            : `<a class="tvlink" style="display:block;margin-top:8px;word-break:break-all" href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>`; }).join('')}
         </article>`; }).join('') : '<p class="muted">Fără observații pe timeframe-uri.</p>'}
       </div>`}
   </div>`;
@@ -702,6 +739,14 @@ function dayEdit(panel, ctx){
   </div>`;
 
   panel.querySelectorAll('textarea').forEach(t => { autosize(t); t.addEventListener('input', () => autosize(t)); });
+  [['daily_obs','tv_daily'],['h4_obs','tv_4h'],['h1_obs','tv_1h']].forEach(([o,t]) => {
+    const ta = panel.querySelector(`[data-f="${o}"]`), li = panel.querySelector(`[data-f="${t}"]`);
+    ta.addEventListener('input', () => {
+      const m = ta.value.match(TVRX); if(!m || li.value.trim()) return;
+      li.value = m[0]; ta.value = ta.value.replace(m[0], '').replace(/\n{3,}/g, '\n\n').trim(); autosize(ta);
+      toast('Link-ul TradingView a fost mutat în câmpul de chart');
+    });
+  });
   const save = () => schedule(() => collectDay(panel));
   panel.querySelectorAll('[data-f], [data-news]').forEach(el => el.addEventListener('input', save));
   bindChips(panel, 'data-f', field => {
@@ -778,13 +823,23 @@ function weekDays(p, days){
     ${e.direction ? `<span style="font-size:12.5px;font-weight:800" class="${e.direction==='Long' ? 'pos' : 'neg'}">${e.direction==='Long' ? '▲' : '▼'}${e.result ? ' '+e.result : ''}</span>` : ''}
     <span class="num ${sgn(e.daily_change)}" style="margin-left:auto;font-size:12.5px;font-weight:800">${e.daily_change!=null ? pct(e.daily_change) : ''}</span></button>`; }).join('');
 }
+const CCY_STATES = ['Strong','Improving','Neutral','Weakening','Weak'];
+const ALIGNS = ['Aligned','Partial conflict','Conflicting','Neutral'];
+const IMPS = ['LOW','MEDIUM','HIGH','CRITICAL'];
+const impCls = i => ({ CRITICAL:'imp-crit', HIGH:'imp-high', MEDIUM:'imp-med', LOW:'imp-low' }[i] || 'imp-low');
+const stateCls = s => /strong|improv/i.test(s||'') ? 'pos' : /weak/i.test(s||'') ? 'neg' : 'muted';
+const scoreTxt = n => n==null ? '' : `${n>0?'+':''}${n}`;
+function det(r){ return (r && typeof r.details === 'object' && r.details) ? r.details : {}; }
+
 function weekView(panel){
   const { p, y, w, r, re, range, days } = weekHeadInfo();
-  const tr = days.map(d => S.daily.get(dk(p, iso(d)))).filter(e => e && ['W','L','BE'].includes(e.result));
-  const empty = !r.id;
+  const d = det(r), b = base(p), q = quote(p);
+  const tr = days.map(x => S.daily.get(dk(p, iso(x)))).filter(e => e && ['W','L','BE'].includes(e.result));
+  const div = d.base_score!=null && d.quote_score!=null ? Math.abs(d.base_score - d.quote_score) : null;
+  const mini = [['Deja în preț', d.priced], ['Invalidare', d.invalidation], ['Orizont', d.horizon]].filter(([,v]) => v);
   panel.innerHTML = `<div class="ps">
     ${panelHead(`Săptămâna ${w}`, `${p} · ${range}`)}
-    ${empty ? `<div class="empty"><div class="orb" aria-hidden="true"></div><p>Bias-ul săptămânii nu e setat.</p><button class="btn btn-primary" id="startEdit">Setează bias-ul</button></div>` : `
+    ${!r.id ? `<div class="empty"><div class="orb" aria-hidden="true"></div><p>Analiza fundamentală a săptămânii nu e completată.</p><button class="btn btn-primary" id="startEdit">Completează fundamentalele</button></div>` : `
       <div class="wkhero">
         <div class="hero-row">
           <div><span class="kick">Bias</span><span class="bigval ${r.bias || ''}">${r.bias ? BIAS_LBL[r.bias] : '—'}</span>
@@ -793,28 +848,79 @@ function weekView(panel){
             <div class="muted" style="font-size:12px;font-weight:600">${re.n} închideri</div></div>` : ''}
         </div>
         ${r.fundamentals ? `<p class="quote" style="margin-top:14px">${esc(r.fundamentals)}</p>` : ''}
-      </div>`}
+      </div>
+      ${d.base_state || d.quote_state || d.base_score!=null || d.quote_score!=null ? `<div class="vsec"><h4>${b} vs ${q}</h4>
+        <div class="vs">
+          <div class="vs-side"><span class="ncur">${b}</span><b class="${stateCls(d.base_state)}">${esc(d.base_state || '—')}</b><span class="vs-score ${sgn(d.base_score)}">${scoreTxt(d.base_score)}</span></div>
+          <div class="vs-mid">${div!=null ? `<span class="kick">Divergență</span><b>${div}</b>` : 'vs'}</div>
+          <div class="vs-side" style="text-align:right"><span class="ncur">${q}</span><b class="${stateCls(d.quote_state)}">${esc(d.quote_state || '—')}</b><span class="vs-score ${sgn(d.quote_score)}">${scoreTxt(d.quote_score)}</span></div>
+        </div>
+        ${div!=null ? `<div class="meter"><span style="width:${Math.min(100, div/20*100)}%"></span></div>` : ''}
+      </div>` : ''}
+      ${d.main_driver || d.drivers?.length ? `<div class="vsec"><h4>Drivere</h4>
+        ${d.main_driver ? `<p style="font-weight:600">${esc(d.main_driver)}</p>` : ''}
+        ${d.drivers?.length ? `<ul class="drv">${d.drivers.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}</div>` : ''}
+      ${d.catalysts?.length ? `<div class="vsec"><h4>Catalizatori</h4><div class="cats">
+        ${d.catalysts.map(c => `<div class="cat"><time>${esc(c.date || '—')}</time><span>${esc(c.event || '')}</span>${c.imp ? `<span class="imp ${impCls(c.imp)}">${esc(c.imp)}</span>` : ''}</div>`).join('')}</div></div>` : ''}
+      ${mini.length || d.alignment ? `<div class="vsec"><h4>Evaluare</h4><div class="minis">
+        ${d.alignment ? `<div class="mini wide"><span class="kick">Preț vs fundamental</span><span class="alg alg-${d.alignment.toLowerCase().replace(/\s+/g,'-')}">${esc(d.alignment)}</span>${d.alignment_note ? `<p>${esc(d.alignment_note)}</p>` : ''}</div>` : ''}
+        ${mini.map(([l,v]) => `<div class="mini ${l==='Orizont' ? '' : 'wide'}"><span class="kick">${l}</span><p>${esc(v)}</p></div>`).join('')}
+      </div></div>` : ''}
+      ${d.changed ? `<div class="vsec"><h4>Ce s-a schimbat</h4><p style="white-space:pre-line">${esc(d.changed)}</p></div>` : ''}`}
     <div class="vsec"><h4>Zilele săptămânii ${tr.length ? `<span class="muted" style="font-weight:600;font-size:12px">· ${tr.filter(t=>t.result==='W').length}W / ${tr.filter(t=>t.result==='L').length}L</span>` : ''}</h4>${weekDays(p, days)}</div>
     ${r.review ? `<div class="vsec"><h4>Review</h4><p style="white-space:pre-line">${esc(r.review)}</p></div>` : ''}
   </div>`;
   bindWeekNav(panel, y, w);
   panel.querySelector('#startEdit')?.addEventListener('click', () => setMode('edit'));
 }
+
+const driverRow = v => `<div class="dyn"><input class="inp" value="${esc(v||'')}" placeholder="ex. Confirmed hawkish Fed hike" aria-label="Driver"><button type="button" class="rm" aria-label="Șterge">×</button></div>`;
+const catRow = c => `<div class="dyn catrow">
+  <input class="inp" data-c="date" value="${esc(c?.date||'')}" placeholder="29 Sep" aria-label="Dată" style="max-width:92px">
+  <input class="inp" data-c="event" value="${esc(c?.event||'')}" placeholder="RBA decision" aria-label="Eveniment">
+  <select class="inp" data-c="imp" aria-label="Importanță" style="max-width:112px"><option value="">–</option>${IMPS.map(i => `<option ${c?.imp===i ? 'selected' : ''}>${i}</option>`).join('')}</select>
+  <button type="button" class="rm" aria-label="Șterge">×</button></div>`;
+const hChips = (key, attr, opts, val, lbl = o => o, cls = () => '') =>
+  `<div class="chips" role="group" data-hchips="${key}" data-attr="${attr}">${opts.map(o => `<button type="button" class="ch ${cls(o)}" data-v="${esc(o)}" aria-pressed="${o===val}">${esc(lbl(o))}</button>`).join('')}</div>
+   <input type="hidden" ${attr}="${key}" value="${esc(val||'')}">`;
+
 function weekEdit(panel){
-  const { p, y, w, r, re, range, days } = weekHeadInfo();
+  const { p, y, w, r, range } = weekHeadInfo();
+  const d = det(r), b = base(p), q = quote(p), v = k => esc(d[k] ?? '');
+  const ta = (k, ph, rows=2) => `<textarea class="inp" data-d="${k}" rows="${rows}" placeholder="${ph}">${v(k)}</textarea>`;
   panel.innerHTML = `<div class="ps">
     ${panelHead(`Săptămâna ${w}`, `${p} · ${range} · <span id="saveState" class="save">${r.id ? 'salvat ✓' : 'se salvează automat'}</span>`)}
     <div class="sec" style="border-top:none"><h4>Bias fundamental</h4>
-      <div class="chips" role="group" data-chips="bias">${Object.entries(BIAS_LBL).map(([k,l]) => `<button type="button" class="ch b-${k}" data-v="${k}" aria-pressed="${r.bias===k}">${l}</button>`).join('')}</div>
-      <input type="hidden" data-w="bias" value="${esc(r.bias||'')}">
+      ${hChips('bias', 'data-w', Object.keys(BIAS_LBL), r.bias, o => BIAS_LBL[o], o => 'b-'+o)}
       <span class="lbl" style="margin-top:12px">Convingere</span>
-      <div class="chips" role="group" data-chips="conviction">${[['low','Low / mild'],['medium','Medium'],['high','High']].map(([k,l]) => `<button type="button" class="ch" data-v="${k}" aria-pressed="${r.conviction===k}">${l}</button>`).join('')}</div>
-      <input type="hidden" data-w="conviction" value="${esc(r.conviction||'')}">
-      <label class="lbl" for="wf" style="margin-top:12px">Fundamentals</label>
-      <textarea id="wf" class="inp" data-w="fundamentals" rows="2" placeholder="Bearish EUR/USD lean, strengthening">${esc(r.fundamentals||'')}</textarea>
-      <button class="btn" id="wCopy" style="margin-top:10px">Copiază din săptămâna trecută</button>
+      ${hChips('conviction', 'data-w', ['low','medium','high'], r.conviction, o => ({low:'Low / mild',medium:'Medium',high:'High'}[o]))}
+      <label class="lbl" for="wf" style="margin-top:12px">Rezumat (apare în calendar)</label>
+      <textarea id="wf" class="inp" data-w="fundamentals" rows="2" placeholder="Bearish (EUR +0 vs USD +9)">${esc(r.fundamentals||'')}</textarea>
+      <button class="btn" id="wCopy" style="margin-top:10px">Copiază tot din săptămâna trecută</button>
     </div>
-    <div class="sec"><h4>Zilele săptămânii ${re ? `<small class="${sgn(re.sum)}" style="font-weight:800">${pct(re.sum)} realizat</small>` : ''}</h4>${weekDays(p, days)}</div>
+    <div class="sec"><h4>${b} vs ${q} <small>stare și scor</small></h4>
+      <div class="g3" style="grid-template-columns:1fr 1fr;gap:14px">
+        ${[[b,'base'],[q,'quote']].map(([c,k]) => `<div>
+          <span class="lbl">${c} — stare</span>${hChips(k+'_state', 'data-d', CCY_STATES, d[k+'_state'])}
+          <label class="lbl" style="margin-top:8px" for="sc_${k}">${c} — scor</label>
+          <input id="sc_${k}" class="inp num" data-d="${k}_score" data-num="1" inputmode="numeric" value="${v(k+'_score')}" placeholder="+9" style="max-width:90px"></div>`).join('')}
+      </div><p class="hint" id="divHint"></p></div>
+    <div class="sec"><h4>Drivere</h4>
+      <label class="lbl">Driver principal</label>${ta('main_driver','ce împinge perechea săptămâna asta')}
+      <span class="lbl" style="margin-top:10px">Drivere secundare</span>
+      <div data-list="drivers" style="display:grid;gap:6px">${(d.drivers?.length ? d.drivers : ['']).map(driverRow).join('')}</div>
+      <button type="button" class="btn" data-add="drivers" style="margin-top:8px">+ Adaugă driver</button></div>
+    <div class="sec"><h4>Catalizatori</h4>
+      <div data-list="catalysts" style="display:grid;gap:6px">${(d.catalysts?.length ? d.catalysts : [null]).map(catRow).join('')}</div>
+      <button type="button" class="btn" data-add="catalysts" style="margin-top:8px">+ Adaugă catalizator</button></div>
+    <div class="sec"><h4>Evaluare</h4>
+      <span class="lbl">Preț vs fundamental</span>${hChips('alignment', 'data-d', ALIGNS, d.alignment)}
+      <input class="inp" data-d="alignment_note" value="${v('alignment_note')}" placeholder="explicație scurtă" style="margin-top:8px">
+      <label class="lbl" style="margin-top:10px">Deja în preț</label>${ta('priced','ce a absorbit deja piața')}
+      <label class="lbl" style="margin-top:10px">Invalidare</label>${ta('invalidation','ce ar anula teza')}
+      <label class="lbl" style="margin-top:10px">Orizont</label><input class="inp" data-d="horizon" value="${v('horizon')}" placeholder="Swing: mild bearish">
+    </div>
+    <div class="sec"><h4>Ce s-a schimbat față de săptămâna trecută</h4>${ta('changed','upgrade / downgrade / neschimbat și de ce')}</div>
     <div class="sec"><h4>Review</h4>
       <textarea class="inp" data-w="review" rows="3" aria-label="Review săptămână" placeholder="Ce s-a întâmplat față de ce ai anticipat…">${esc(r.review||'')}</textarea></div>
     <div class="editfoot">
@@ -822,30 +928,60 @@ function weekEdit(panel){
       <button class="btn btn-primary" style="margin-left:auto" id="doneEdit">Gata ✓</button>
     </div>
   </div>`;
-  panel.querySelectorAll('textarea').forEach(t => { autosize(t); t.addEventListener('input', () => autosize(t)); });
   const save = () => schedule(() => collectWeek(panel));
-  panel.querySelectorAll('textarea[data-w]').forEach(el => el.addEventListener('input', save));
-  bindChips(panel, 'data-w', () => { save(); flushSave(); });
+  const divHint = () => { const a = parseNum(panel.querySelector('[data-d="base_score"]').value), c = parseNum(panel.querySelector('[data-d="quote_score"]').value);
+    panel.querySelector('#divHint').textContent = a!=null && c!=null ? `Divergență: ${Math.abs(a-c)} · ${a>c ? b+' mai puternic → bias bullish '+p : a<c ? q+' mai puternic → bias bearish '+p : 'egal'}` : ''; };
+  const wire = root => {
+    root.querySelectorAll('textarea').forEach(t => { autosize(t); t.addEventListener('input', () => autosize(t)); });
+    root.querySelectorAll('input:not([type=hidden]), textarea, select').forEach(el => el.addEventListener(el.tagName==='SELECT' ? 'change' : 'input', save));
+    root.querySelectorAll('.rm').forEach(bn => bn.onclick = () => { bn.closest('.dyn').remove(); save(); });
+  };
+  wire(panel); divHint();
+  ['base_score','quote_score'].forEach(k => panel.querySelector(`[data-d="${k}"]`).addEventListener('input', divHint));
+  panel.querySelectorAll('[data-hchips]').forEach(g => g.addEventListener('click', ev => {
+    const btn = ev.target.closest('.ch'); if(!btn) return;
+    const on = btn.getAttribute('aria-pressed') !== 'true';
+    g.querySelectorAll('.ch').forEach(c => c.setAttribute('aria-pressed','false')); btn.setAttribute('aria-pressed', String(on));
+    panel.querySelector(`[${g.dataset.attr}="${g.dataset.hchips}"]`).value = on ? btn.dataset.v : '';
+    save(); flushSave();
+  }));
+  panel.querySelectorAll('[data-add]').forEach(bn => bn.onclick = () => {
+    const list = panel.querySelector(`[data-list="${bn.dataset.add}"]`), tmp = document.createElement('div');
+    tmp.innerHTML = bn.dataset.add==='drivers' ? driverRow('') : catRow(null);
+    const row = tmp.firstElementChild; list.appendChild(row); wire(row); row.querySelector('input').focus();
+  });
   bindWeekNav(panel, y, w);
   panel.querySelector('#doneEdit').onclick = () => setMode('view');
-  panel.querySelector('#wCopy').onclick = () => {
-    const pw = prevWeek(y, w), pr = S.weekly.get(wk(p, pw.year, pw.week)); if(!pr) return toast('Săptămâna trecută nu are bias salvat');
-    ['bias','conviction','fundamentals'].forEach(k => panel.querySelector(`[data-w="${k}"]`).value = pr[k] || '');
-    ['bias','conviction'].forEach(k => panel.querySelectorAll(`[data-chips="${k}"] .ch`).forEach(c => c.setAttribute('aria-pressed', String(c.dataset.v === pr[k]))));
-    autosize(panel.querySelector('#wf')); save(); flushSave();
+  panel.querySelector('#wCopy').onclick = async () => {
+    const pw = prevWeek(y, w), pr = S.weekly.get(wk(p, pw.year, pw.week)); if(!pr) return toast('Săptămâna trecută nu e completată');
+    if(r.id && !confirm('Înlocuiești conținutul săptămânii curente cu cel din săptămâna trecută? Review-ul rămâne.')) return;
+    const row = { pair:p, year:y, week:w, bias:pr.bias, conviction:pr.conviction, fundamentals:pr.fundamentals, review:r.review || null,
+      details:{ ...det(pr), changed: undefined } };
+    delete row.details.changed;
+    pending = null; clearTimeout(timer);
+    const { data, error } = await sb.from('do_weekly').upsert(row, { onConflict:'pair,year,week' }).select().single();
+    if(error) return toast('Nu s-a copiat: ' + error.message);
+    S.weekly.set(wk(p, y, w), data); renderCalendar(); renderPanel(); toast('Copiat din săptămâna trecută');
   };
   panel.querySelector('#wDel')?.addEventListener('click', async () => {
-    const cur = S.weekly.get(wk(p, y, w)); if(!cur || !confirm('Ștergi bias-ul și review-ul acestei săptămâni?')) return;
+    const cur = S.weekly.get(wk(p, y, w)); if(!cur || !confirm('Ștergi toată analiza fundamentală a acestei săptămâni?')) return;
     pending = null; clearTimeout(timer);
     const { error } = await sb.from('do_weekly').delete().eq('id', cur.id); if(error) return toast(error.message);
     S.weekly.delete(wk(p, y, w)); renderCalendar(); renderPanel();
   });
 }
 function collectWeek(panel){
-  const p = S.pair, { y, w } = S.sel, row = { pair:p, year:y, week:w };
+  const p = S.pair, { y, w } = S.sel, row = { pair:p, year:y, week:w }, d = {};
   ['bias','conviction','fundamentals','review'].forEach(k => row[k] = panel.querySelector(`[data-w="${k}"]`).value.trim() || null);
+  panel.querySelectorAll('[data-d]').forEach(el => { const v = el.value.trim(); if(v !== '') d[el.dataset.d] = el.dataset.num ? parseNum(v) : v; });
+  const drivers = [...panel.querySelectorAll('[data-list="drivers"] input')].map(i => i.value.trim()).filter(Boolean);
+  const catalysts = [...panel.querySelectorAll('[data-list="catalysts"] .catrow')].map(r => ({
+    date: r.querySelector('[data-c="date"]').value.trim(), event: r.querySelector('[data-c="event"]').value.trim(), imp: r.querySelector('[data-c="imp"]').value }))
+    .filter(c => c.date || c.event);
+  if(drivers.length) d.drivers = drivers; if(catalysts.length) d.catalysts = catalysts;
+  row.details = d;
   return { run: async () => {
-    const ex = S.weekly.get(wk(p, y, w)), has = ['bias','conviction','fundamentals','review'].some(k => row[k]);
+    const ex = S.weekly.get(wk(p, y, w)), has = ['bias','conviction','fundamentals','review'].some(k => row[k]) || Object.keys(d).length;
     if(has){ const { data, error } = await sb.from('do_weekly').upsert(row, { onConflict:'pair,year,week' }).select().single(); if(error) throw error; S.weekly.set(wk(p, y, w), data); }
     else if(ex){ const { error } = await sb.from('do_weekly').delete().eq('id', ex.id); if(error) throw error; S.weekly.delete(wk(p, y, w)); }
   }};
