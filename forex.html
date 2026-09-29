@@ -282,11 +282,51 @@
   .dyn{ display:flex; gap:6px; align-items:center; }
   .rm{ flex:0 0 auto; width:30px; height:30px; border-radius:8px; border:1px solid var(--line); background:var(--surface-2); color:var(--muted); font-size:16px; }
   .rm:hover{ color:var(--neg); border-color:var(--neg); }
+  /* tags */
+  .tagrow{ display:flex; flex-wrap:wrap; gap:5px; margin-top:12px; }
+  .tagp{ font-size:12px; font-weight:700; padding:2px 9px; border-radius:999px; background:color-mix(in srgb,var(--violet) 16%,transparent); color:var(--violet); }
+  .ch.tag[aria-pressed="true"]{ background:var(--violet); color:#fff; }
+  /* accounts */
+  .agrid{ display:grid; gap:14px; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); }
+  .acard{ background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:12px; cursor:pointer; box-shadow:var(--shadow); transition:transform .12s, border-color .12s; }
+  .acard:hover{ transform:translateY(-2px); border-color:var(--muted); }
+  .acard.sel{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent), var(--shadow); }
+  .acard.st-acc-failed, .acard.st-acc-archived{ opacity:.6; }
+  .acard-top{ display:flex; gap:10px; align-items:flex-start; justify-content:space-between; }
+  .acard h3{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:18px; }
+  .accst{ font-size:11px; font-weight:800; padding:2px 9px; border-radius:999px; background:var(--surface-2); color:var(--muted); white-space:nowrap; }
+  .st-acc-active .accst{ background:color-mix(in srgb,var(--accent) 20%,transparent); color:var(--accent); }
+  .st-acc-passed .accst{ background:color-mix(in srgb,var(--pos) 18%,transparent); color:var(--pos); }
+  .st-acc-failed .accst{ background:color-mix(in srgb,var(--neg) 18%,transparent); color:var(--neg); }
+  .aalert{ font-size:12.5px; font-weight:800; padding:6px 10px; border-radius:10px; background:color-mix(in srgb,var(--neg) 16%,transparent); color:var(--neg); }
+  .aalert.ok{ background:color-mix(in srgb,var(--pos) 16%,transparent); color:var(--pos); }
+  .abal{ display:flex; justify-content:space-between; align-items:flex-end; gap:10px; }
+  .abar-h{ display:flex; justify-content:space-between; font-size:12px; font-weight:700; color:var(--muted); margin-bottom:4px; }
+  .abar-t{ height:7px; border-radius:7px; background:var(--surface-2); overflow:hidden; }
+  .abar-t span{ display:block; height:100%; border-radius:7px; }
+  .b-pos{ background:linear-gradient(90deg, color-mix(in srgb,var(--pos) 60%,transparent), var(--pos)); }
+  .b-neg{ background:linear-gradient(90deg, color-mix(in srgb,var(--neg) 60%,transparent), var(--neg)); }
+  .b-amb{ background:linear-gradient(90deg, color-mix(in srgb,var(--amber) 60%,transparent), var(--amber)); }
+  .afoot{ display:flex; justify-content:space-between; gap:8px; font-size:12px; color:var(--muted); font-weight:600; border-top:1px solid var(--line); padding-top:10px; }
+  /* search */
+  .searchbtn{ display:flex; align-items:center; gap:10px; min-width:220px; padding:7px 12px; border-radius:12px; border:1px solid var(--line); background:var(--surface); color:var(--muted); font-weight:600; font-size:13px; }
+  .searchbtn:hover{ border-color:var(--muted); }
+  .searchbtn kbd{ margin-left:auto; font-family:inherit; font-size:11px; padding:0 6px; border-radius:6px; border:1px solid var(--line); }
+  @media (max-width:720px){ .searchbtn{ min-width:0; } .searchbtn .t, .searchbtn kbd{ display:none; } }
+  .sres{ display:block; width:100%; text-align:left; padding:10px 12px; border-radius:12px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); margin-bottom:6px; }
+  .sres:hover{ border-color:var(--accent); }
+  .sres-h{ display:flex; gap:10px; align-items:center; font-size:12.5px; margin-bottom:3px; }
+  .sres-h .sl{ margin-left:auto; font-size:11px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  .sres-t{ font-size:13px; color:var(--muted); }
+  .sres-t mark{ background:color-mix(in srgb,var(--accent) 35%,transparent); color:var(--ink); border-radius:3px; padding:0 2px; }
 </style>
 </head>
 <body>
 <div id="app"></div>
 <div id="toast" class="toast" hidden></div>
+
+<dialog id="acctDlg" class="panel" aria-label="Cont"></dialog>
+<dialog id="searchDlg" class="panel" aria-label="Căutare" style="width:min(720px,96vw)"></dialog>
 
 <!-- Data dialog -->
 <dialog id="dataDlg" class="panel" aria-labelledby="dataTitle" style="width:min(620px,96vw)">
@@ -358,7 +398,7 @@ const S = {
   view: ls.get('do_view','journal'), pair: ls.get('do_pair','EURUSD'),
   month: firstOfMonth(new Date()), scope: ls.get('do_scope','pair'), period: ls.get('do_period','all'), metric:'pips',
   daily:new Map(), weekly:new Map(), news:new Map(), charts:[], extra: ls.get('do_extra_pairs', []),
-  sel:null
+  sel:null, accounts:new Map(), selAcct:null, acct: ls.get('do_acct','all')
 };
 const allPairs = () => [...PAIRS, ...S.extra.filter(p => !PAIRS.includes(p))];
 const base = p => p.slice(0,3), quote = p => p.slice(3,6);
@@ -397,7 +437,8 @@ async function fetchAll(table){
   return out;
 }
 async function loadAll(){
-  const [d, w, n] = await Promise.all([fetchAll('do_daily'), fetchAll('do_weekly'), fetchAll('do_news')]);
+  const [d, w, n, a] = await Promise.all([fetchAll('do_daily'), fetchAll('do_weekly'), fetchAll('do_news'), fetchAll('do_accounts').catch(e => { console.warn(e); return []; })]);
+  S.accounts = new Map(a.map(r => [r.id, r]));
   S.daily = new Map(d.map(r => [dk(r.pair, r.day), r]));
   S.weekly = new Map(w.map(r => [wk(r.pair, r.year, r.week), r]));
   S.news = new Map(n.map(r => [nk(r.currency, r.day), r]));
@@ -426,10 +467,11 @@ function render(){
       <div class="topbar">
         <div class="brand"><span class="mark" aria-hidden="true"></span>Daily Observer <small>by EaglePips</small></div>
         <nav class="tabs" role="tablist" aria-label="Secțiuni">
-          ${[['journal','Jurnal'],['analysis','Analiză'],['overview','Toate perechile']].map(([v,l]) =>
+          ${[['journal','Jurnal'],['analysis','Analiză'],['overview','Toate perechile'],['accounts','Conturi']].map(([v,l]) =>
             `<button class="tab" role="tab" aria-selected="${S.view===v}" data-view="${v}">${l}</button>`).join('')}
         </nav>
         <div class="tools">
+          <button class="searchbtn" id="searchBtn" aria-label="Caută"><span aria-hidden="true" style="font-size:15px">⌕</span><span class="t">Caută…</span><kbd>/</kbd></button>
           <button class="iconbtn" id="themeBtn" aria-label="${light ? 'Temă întunecată' : 'Temă luminoasă'}" title="${light ? 'Temă întunecată' : 'Temă luminoasă'}">${light ? '☾' : '☀'}</button>
           <button class="hbtn" id="openData">Import / export</button>
         </div>
@@ -444,6 +486,7 @@ function render(){
   app.querySelectorAll('[data-pair]').forEach(b => b.onclick = async () => { await flushSave(); S.pair = b.dataset.pair; ls.set('do_pair', S.pair); render(); });
   document.getElementById('themeBtn').onclick = () => { const t = light ? 'dark' : 'light'; document.documentElement.dataset.theme = t; ls.set('do_theme', t); render(); };
   document.getElementById('openData').onclick = openData;
+  document.getElementById('searchBtn').onclick = openSearch;
   renderMain();
   app.querySelector('.chip[aria-current="true"]')?.scrollIntoView({ block:'nearest', inline:'center' });
 }
@@ -451,6 +494,7 @@ function renderMain(){
   S.charts.forEach(c => c.destroy()); S.charts = [];
   if(S.view === 'analysis') renderAnalysis();
   else if(S.view === 'overview') renderOverview();
+  else if(S.view === 'accounts') renderAccounts();
   else renderJournal();
 }
 function setupScreen(){
@@ -669,10 +713,11 @@ function dayView(panel, ctx){
           <div>${e.trade_status ? stBadge(e.trade_status, true) : '<span class="muted">fără status</span>'}</div>
           ${e.daily_change!=null ? `<div style="text-align:right"><span class="kick">Închidere</span><span class="bigval ${sgn(e.daily_change)}">${pct(e.daily_change)}</span></div>` : ''}
         </div>
+        ${tagPills(e.tags)}
         ${e.action ? `<div class="next"><span class="kick">Plan</span>${esc(e.action)}</div>` : ''}
       </div>
       ${e.direction ? `<div class="ticket ${e.direction.toLowerCase()} ${e.result ? 'res-'+e.result : ''}">
-        <div class="tk-top"><span class="tk-dir">${e.direction==='Long' ? '▲' : '▼'} ${e.direction}</span>${e.session ? `<span class="muted" style="font-weight:700">${esc(e.session)}</span>` : ''}
+        <div class="tk-top"><span class="tk-dir">${e.direction==='Long' ? '▲' : '▼'} ${e.direction}</span>${e.session ? `<span class="muted" style="font-weight:700">${esc(e.session)}</span>` : ''}${e.account_id && S.accounts.get(e.account_id) ? `<span class="accst">${esc(S.accounts.get(e.account_id).name)}</span>` : ''}
           ${e.result ? `<span class="tk-res r-${e.result}">${{W:'Win',L:'Loss',BE:'Break-even'}[e.result] || esc(e.result)}</span>` : ''}</div>
         ${stats.length ? `<div class="tk-grid">${stats.map(([l,v,c]) => `<div><span class="kick">${l}</span><b class="${c||''}">${esc(v)}</b></div>`).join('')}</div>` : ''}
         ${e.entry_time || e.exit_time ? `<div class="tk-time">⏱ ${esc(e.entry_time || '?')} → ${esc(e.exit_time || 'deschis')}</div>` : ''}
@@ -709,6 +754,9 @@ function dayEdit(panel, ctx){
     ${panelHead(dayTitle(ctx), `${p} · <span id="saveState" class="save">${e.id ? 'salvat ✓' : 'se salvează automat'}</span>`)}
     ${wkBanner(ctx)}
     <div class="sec" style="border-top:none;margin-top:4px"><h4>Status zi</h4>${chipGroup('trade_status', STATUSES, e.trade_status)}</div>
+    <div class="sec"><h4>Etichete setup <small>alege oricâte</small></h4>
+      <div class="chips" id="tagBox">${allTags(e.tags||[]).map(t => `<button type="button" class="ch tag" data-t="${esc(t)}" aria-pressed="${(e.tags||[]).includes(t)}">${esc(t)}</button>`).join('')}</div>
+      <div class="dyn" style="margin-top:8px"><input class="inp" id="newTag" placeholder="etichetă nouă…" aria-label="Etichetă nouă"><button type="button" class="btn" id="addTag">Adaugă</button></div></div>
     <div class="sec"><h4>Știri <small>comune pe monedă</small></h4>
       <div class="g3" style="grid-template-columns:1fr 1fr">
         <div><label class="lbl" for="nb">${b}</label><textarea id="nb" class="inp" data-news="base" rows="2" placeholder="15:30 CPI">${esc(S.news.get(nk(b,ds))?.events || '')}</textarea></div>
@@ -724,6 +772,10 @@ function dayEdit(panel, ctx){
         <div><span class="lbl">Direcție</span>${chipGroup('direction', ['Long','Short'], e.direction)}</div>
         <div><span class="lbl">Sesiune</span>${chipGroup('session', SESSIONS, e.session)}</div>
         <div><span class="lbl">Rezultat</span>${chipGroup('result', ['W','L','BE'], e.result, o => o)}</div>
+        <div><span class="lbl">Cont</span>${(() => { const accs = [...S.accounts.values()].filter(a => a.status==='active' || a.id===e.account_id);
+          return accs.length ? `<div class="chips" id="acctBox">${accs.map(a => `<button type="button" class="ch" data-a="${a.id}" aria-pressed="${a.id===e.account_id}">${esc(a.name)}</button>`).join('')}</div>`
+            : '<p class="hint" style="margin:0">Adaugă un cont din tab-ul Conturi ca să legi trade-ul de un challenge.</p>'; })()}
+          <input type="hidden" id="acctHid" value="${esc(e.account_id||'')}"></div>
         <div class="g3">
           ${numIn('entry_price','Entry')}${numIn('sl','SL')}${numIn('tp','TP')}
           ${numIn('entry_time','Entry hour','time')}${numIn('exit_time','Exit hour','time')}
@@ -756,6 +808,18 @@ function dayEdit(panel, ctx){
     if(field==='action') panel.querySelector('[data-f-alt="action"]').value = '';
     save(); flushSave();
   });
+  panel.querySelector('#tagBox').addEventListener('click', ev => { const b = ev.target.closest('[data-t]'); if(!b) return;
+    b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed')!=='true')); save(); flushSave(); });
+  const addTag = () => { const inp = panel.querySelector('#newTag'), t = inp.value.trim(); if(!t) return;
+    let b = [...panel.querySelectorAll('#tagBox [data-t]')].find(x => x.dataset.t.toLowerCase()===t.toLowerCase());
+    if(!b){ panel.querySelector('#tagBox').insertAdjacentHTML('beforeend', `<button type="button" class="ch tag" data-t="${esc(t)}" aria-pressed="true">${esc(t)}</button>`); }
+    else b.setAttribute('aria-pressed','true');
+    inp.value = ''; save(); flushSave(); };
+  panel.querySelector('#addTag').onclick = addTag;
+  panel.querySelector('#newTag').addEventListener('keydown', ev => { if(ev.key==='Enter'){ ev.preventDefault(); addTag(); } });
+  panel.querySelector('#acctBox')?.addEventListener('click', ev => { const b = ev.target.closest('[data-a]'); if(!b) return;
+    const on = b.getAttribute('aria-pressed')!=='true'; panel.querySelectorAll('#acctBox [data-a]').forEach(x => x.setAttribute('aria-pressed','false'));
+    b.setAttribute('aria-pressed', String(on)); panel.querySelector('#acctHid').value = on ? b.dataset.a : ''; save(); flushSave(); });
   const alt = panel.querySelector('[data-f-alt="action"]');
   alt.addEventListener('input', () => { const h = panel.querySelector('[data-f="action"]'); h.value = alt.value.trim();
     panel.querySelectorAll('[data-chips="action"] .ch').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.v === h.value))); save(); });
@@ -788,9 +852,11 @@ function collectDay(panel){
   const p = S.pair, ds = S.sel.day, row = { pair:p, day:ds };
   for(const f of TEXT_F){ const el = panel.querySelector(`[data-f="${f}"]`); row[f] = el ? (el.value.trim() || null) : null; }
   for(const f of NUM_F){ const el = panel.querySelector(`[data-f="${f}"]`); row[f] = el ? parseNum(el.value) : null; }
+  row.tags = [...panel.querySelectorAll('#tagBox [data-t][aria-pressed="true"]')].map(b => b.dataset.t);
+  row.account_id = panel.querySelector('#acctHid')?.value || null;
   const bn = panel.querySelector('[data-news="base"]').value, qn = panel.querySelector('[data-news="quote"]').value;
   return { run: async () => {
-    const has = [...TEXT_F, ...NUM_F].some(f => row[f] != null), ex = S.daily.get(dk(p, ds));
+    const has = [...TEXT_F, ...NUM_F].some(f => row[f] != null) || row.tags.length || row.account_id, ex = S.daily.get(dk(p, ds));
     if(has){
       const { data, error } = await sb.from('do_daily').upsert(row, { onConflict:'pair,day' }).select().single();
       if(error) throw error; S.daily.set(dk(p, ds), data);
@@ -989,6 +1055,199 @@ function collectWeek(panel){
   }};
 }
 
+/* ---------- tags ---------- */
+const TAG_DEFAULTS = ['Liquidity grab','Fractal change','MA break','Supply / Demand','Order block','FVG','BOS / CHoCH','Wedge','News spike','Trend continuation','Reversal'];
+function allTags(extra = []){
+  const used = new Set(); S.daily.forEach(e => (e.tags||[]).forEach(t => used.add(t)));
+  return [...new Set([...TAG_DEFAULTS, ...used, ...extra])];
+}
+const tagPills = tags => (tags||[]).length ? `<div class="tagrow">${tags.map(t => `<span class="tagp">#${esc(t)}</span>`).join('')}</div>` : '';
+
+/* ---------- prop firm accounts ---------- */
+const PHASES = ['Challenge – Faza 1','Challenge – Faza 2','Challenge – Faza 3','Funded','Personal'];
+const ACC_STATUS = { active:'Activ', passed:'Trecut', failed:'Picat', archived:'Arhivat' };
+const money = n => n==null ? '–' : `${n<0 ? '−' : ''}$${Math.abs(n).toLocaleString('ro-RO',{ maximumFractionDigits:0 })}`;
+function acctStats(a){
+  const size = Number(a.size) || 0;
+  const tr = [...S.daily.values()].filter(e => e.account_id===a.id && e.profit!=null).sort((x,y) => x.day.localeCompare(y.day));
+  let bal = size, low = size; const curve = [{ day:a.start_date || (tr[0]?.day ?? ''), bal:size }], byDay = {};
+  tr.forEach(t => { bal += Number(t.profit); low = Math.min(low, bal); curve.push({ day:t.day, bal }); byDay[t.day] = (byDay[t.day]||0) + Number(t.profit); });
+  const pnl = bal - size;
+  const target = a.target_pct ? size*a.target_pct/100 : null, maxLoss = a.max_loss_pct ? size*a.max_loss_pct/100 : null, dailyLim = a.daily_loss_pct ? size*a.daily_loss_pct/100 : null;
+  const floor = maxLoss!=null ? size - maxLoss : null, today = byDay[iso(new Date())] || 0;
+  const worstDay = Object.values(byDay).length ? Math.min(...Object.values(byDay)) : 0;
+  const tradesR = tr.filter(t => ['W','L','BE'].includes(t.result));
+  return { tr, bal, pnl, target, maxLoss, dailyLim, floor, today, worstDay, curve, low,
+    room: floor!=null ? bal - floor : null,
+    breachDaily: dailyLim!=null && Object.values(byDay).some(v => -v >= dailyLim),
+    breachMax: floor!=null && low <= floor,
+    passed: target!=null && pnl >= target,
+    w: tradesR.filter(t => t.result==='W').length, l: tradesR.filter(t => t.result==='L').length };
+}
+function bar(label, val, max, cls, right){
+  const w = max ? Math.max(0, Math.min(100, val/max*100)) : 0;
+  return `<div class="abar"><div class="abar-h"><span>${label}</span><span class="num">${right}</span></div><div class="abar-t"><span class="${cls}" style="width:${w}%"></span></div></div>`;
+}
+function renderAccounts(){
+  const accs = [...S.accounts.values()].sort((a,b) => (a.status==='active' ? 0 : 1) - (b.status==='active' ? 0 : 1) || (a.name||'').localeCompare(b.name||''));
+  if(S.selAcct && !S.accounts.has(S.selAcct)) S.selAcct = null;
+  const sel = S.selAcct ? S.accounts.get(S.selAcct) : null;
+  document.getElementById('main').innerHTML = `
+    <div class="flex flex-wrap items-end gap-4 mb-4">
+      <div><div class="pairtitle">Conturi</div><div class="muted mt-1" style="font-weight:600">Challenge-uri și conturi funded — P/L din trade-urile legate de fiecare cont</div></div>
+      <button class="btn btn-primary ml-auto" id="newAcct">+ Cont nou</button>
+    </div>
+    ${accs.length ? `<div class="agrid">${accs.map(a => { const s = acctStats(a);
+      const alert = s.breachMax ? 'Max loss atins' : s.breachDaily ? 'Daily loss încălcat' : s.passed && a.status==='active' ? 'Target atins 🎯' : '';
+      return `<article class="acard ${S.selAcct===a.id ? 'sel' : ''} st-acc-${a.status||'active'}" data-acc="${a.id}" tabindex="0">
+        <div class="acard-top"><div style="min-width:0"><h3>${esc(a.name)}</h3><div class="muted" style="font-size:12.5px;font-weight:600">${esc([a.firm, a.phase].filter(Boolean).join(' · '))}</div></div>
+          <span class="accst">${ACC_STATUS[a.status||'active']}</span></div>
+        ${alert ? `<div class="aalert ${s.passed && !s.breachMax && !s.breachDaily ? 'ok' : ''}">${alert}</div>` : ''}
+        <div class="abal"><div><span class="kick">Sold</span><span class="bigval">${money(s.bal)}</span></div>
+          <div style="text-align:right"><span class="kick">P/L</span><b class="${sgn(s.pnl)}" style="font-size:18px">${s.pnl>0?'+':''}${money(s.pnl)}</b>
+          <div class="muted num" style="font-size:12px;font-weight:700">${a.size ? `${s.pnl>0?'+':''}${fmt(s.pnl/a.size*100)}%` : ''}</div></div></div>
+        ${s.target!=null ? bar('Target profit', Math.max(0,s.pnl), s.target, 'b-pos', `${money(Math.max(0,s.pnl))} / ${money(s.target)}`) : ''}
+        ${s.maxLoss!=null ? bar('Max loss folosit', Math.max(0, a.size - s.bal), s.maxLoss, 'b-neg', `rămas ${money(s.room)}`) : ''}
+        ${s.dailyLim!=null ? bar('Daily loss azi', Math.max(0,-s.today), s.dailyLim, 'b-amb', `${money(Math.max(0,-s.today))} / ${money(s.dailyLim)}`) : ''}
+        <div class="afoot"><span>${s.tr.length} trade-uri${s.w+s.l ? ` · ${s.w}W/${s.l}L` : ''}</span><span>cea mai slabă zi ${money(s.worstDay)}</span></div>
+      </article>`; }).join('')}</div>` : `<div class="card empty"><div class="orb" aria-hidden="true"></div><p>Niciun cont încă. Adaugă un challenge sau un cont funded, apoi alege-l în secțiunea Tranzacție a unei zile.</p><button class="btn btn-primary" id="newAcct2">+ Cont nou</button></div>`}
+    ${sel ? acctDetail(sel) : ''}`;
+  const open = id => { S.selAcct = S.selAcct===id ? null : id; renderMain(); if(S.selAcct) document.getElementById('acctDetail')?.scrollIntoView({ behavior:'smooth', block:'start' }); };
+  document.querySelectorAll('[data-acc]').forEach(c => { c.onclick = () => open(c.dataset.acc); c.onkeydown = e => { if(e.key==='Enter') open(c.dataset.acc); }; });
+  document.getElementById('newAcct')?.addEventListener('click', () => openAcct());
+  document.getElementById('newAcct2')?.addEventListener('click', () => openAcct());
+  if(sel){
+    document.getElementById('editAcct').onclick = () => openAcct(sel);
+    document.querySelectorAll('[data-goday-acc]').forEach(r => r.onclick = () => { const [p, d] = r.dataset.godayAcc.split('|'); goTo(p, { type:'day', day:d }); });
+    const s = acctStats(sel), ink = cssv('--accent');
+    const lines = [{ data:s.curve.map(c => +c.bal.toFixed(2)), borderColor:ink, backgroundColor:ink, pointRadius:s.curve.length > 60 ? 0 : 3, tension:.2, borderWidth:2 }];
+    if(s.target!=null) lines.push({ data:s.curve.map(() => sel.size*1 + s.target), borderColor:cssv('--pos'), borderDash:[6,4], pointRadius:0, borderWidth:1.5 });
+    if(s.floor!=null) lines.push({ data:s.curve.map(() => s.floor), borderColor:cssv('--neg'), borderDash:[6,4], pointRadius:0, borderWidth:1.5 });
+    mkChart('c_acct', 'line', s.curve.map((c,i) => i===0 ? 'Start' : c.day.slice(5)), lines);
+  }
+}
+function acctDetail(a){
+  const s = acctStats(a);
+  return `<section id="acctDetail" class="card" style="margin-top:18px">
+    <div class="flex flex-wrap items-center gap-3 mb-3"><h3 style="margin:0;font-size:20px">${esc(a.name)}</h3>
+      <span class="muted" style="font-weight:600">cont ${money(Number(a.size))}${a.start_date ? ' · start ' + a.start_date.split('-').reverse().join('.') : ''}</span>
+      <button class="btn ml-auto" id="editAcct">Editează contul</button></div>
+    <div class="chartbox"><canvas id="c_acct" aria-label="Evoluția soldului"></canvas></div>
+    <p class="hint">Linia verde punctată = target, linia roșie = pragul de max loss. Limitele sunt calculate din soldul inițial.</p>
+    ${a.notes ? `<p class="quote" style="margin-top:12px">${esc(a.notes)}</p>` : ''}
+    <div style="overflow-x:auto;margin-top:14px"><table class="sumtable"><thead><tr><th>Data</th><th>Pereche</th><th>Direcție</th><th>Rezultat</th><th>Pips</th><th>Profit</th><th>Sold după</th></tr></thead><tbody>
+      ${s.tr.length ? s.tr.map((t,i) => `<tr class="click" data-goday-acc="${t.pair}|${t.day}"><td class="num">${t.day.split('-').reverse().join('.')}</td><td style="font-weight:700">${t.pair}</td>
+        <td class="${t.direction==='Long' ? 'pos' : t.direction==='Short' ? 'neg' : ''}">${esc(t.direction||'–')}</td><td>${esc(t.result||'–')}</td>
+        <td class="num ${sgn(t.pips)}">${t.pips!=null ? fmt(t.pips,1) : '–'}</td><td class="num ${sgn(t.profit)}">${money(Number(t.profit))}</td>
+        <td class="num">${money(s.curve[i+1].bal)}</td></tr>`).reverse().join('') : '<tr><td colspan="7" class="muted">Niciun trade cu profit legat de acest cont.</td></tr>'}
+    </tbody></table></div></section>`;
+}
+const acctDlg = document.getElementById('acctDlg');
+function openAcct(a){
+  const v = k => esc(a?.[k] ?? '');
+  acctDlg.innerHTML = `<form id="acctForm" method="dialog">
+    <div class="dlg-head"><h2>${a ? 'Editează contul' : 'Cont nou'}</h2></div>
+    <div class="dlg-body" style="display:grid;gap:10px">
+      <div class="g3" style="grid-template-columns:1fr 1fr">
+        <div><label class="lbl" for="a_name">Nume</label><input id="a_name" class="inp" name="name" required value="${v('name')}" placeholder="The5ers 100K #1"></div>
+        <div><label class="lbl" for="a_firm">Firmă</label><input id="a_firm" class="inp" name="firm" value="${v('firm')}" placeholder="The5ers" list="dl_firms"></div>
+        <div><label class="lbl" for="a_phase">Fază</label><select id="a_phase" class="inp" name="phase">${PHASES.map(p => `<option ${a?.phase===p ? 'selected' : ''}>${p}</option>`).join('')}</select></div>
+        <div><label class="lbl" for="a_status">Status</label><select id="a_status" class="inp" name="status">${Object.entries(ACC_STATUS).map(([k,l]) => `<option value="${k}" ${(a?.status||'active')===k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        <div><label class="lbl" for="a_size">Mărime cont ($)</label><input id="a_size" class="inp num" name="size" inputmode="decimal" required value="${v('size')}" placeholder="100000"></div>
+        <div><label class="lbl" for="a_start">Data start</label><input id="a_start" class="inp" name="start_date" type="date" value="${v('start_date')}"></div>
+      </div>
+      <div class="g3">
+        <div><label class="lbl" for="a_t">Target profit %</label><input id="a_t" class="inp num" name="target_pct" inputmode="decimal" value="${v('target_pct')}" placeholder="8"></div>
+        <div><label class="lbl" for="a_d">Daily loss %</label><input id="a_d" class="inp num" name="daily_loss_pct" inputmode="decimal" value="${v('daily_loss_pct')}" placeholder="5"></div>
+        <div><label class="lbl" for="a_m">Max loss %</label><input id="a_m" class="inp num" name="max_loss_pct" inputmode="decimal" value="${v('max_loss_pct')}" placeholder="10"></div>
+      </div>
+      <div><label class="lbl" for="a_notes">Note</label><textarea id="a_notes" class="inp" name="notes" rows="2" placeholder="reguli speciale, termene, payout…">${v('notes')}</textarea></div>
+      <datalist id="dl_firms"><option>The5ers</option><option>FTMO</option><option>FundingPips</option><option>Funded Next</option><option>Alpha Capital</option></datalist>
+    </div>
+    <div class="dlg-foot">
+      ${a ? '<button type="button" class="btn btn-danger" id="acctDel" style="margin-right:auto">Șterge</button>' : ''}
+      <button type="button" class="btn" id="acctCancel">Anulează</button><button type="submit" class="btn btn-primary">Salvează</button>
+    </div></form>`;
+  const f = acctDlg.querySelector('#acctForm');
+  f.onsubmit = async ev => {
+    ev.preventDefault();
+    const el = f.elements, row = { name:el.name.value.trim(), firm:el.firm.value.trim() || null, phase:el.phase.value, status:el.status.value,
+      size:parseNum(el.size.value), start_date:el.start_date.value || null, target_pct:parseNum(el.target_pct.value),
+      daily_loss_pct:parseNum(el.daily_loss_pct.value), max_loss_pct:parseNum(el.max_loss_pct.value), notes:el.notes.value.trim() || null };
+    if(!row.name || row.size==null) return toast('Completează numele și mărimea contului');
+    const q = a ? sb.from('do_accounts').update(row).eq('id', a.id).select().single() : sb.from('do_accounts').insert(row).select().single();
+    const { data, error } = await q; if(error) return toast('Nu s-a salvat: ' + error.message);
+    S.accounts.set(data.id, data); S.selAcct = data.id; acctDlg.close(); renderMain(); toast('Cont salvat');
+  };
+  acctDlg.querySelector('#acctCancel').onclick = () => acctDlg.close();
+  acctDlg.querySelector('#acctDel')?.addEventListener('click', async () => {
+    if(!confirm('Ștergi contul? Trade-urile rămân în jurnal, doar fără cont asociat.')) return;
+    const { error } = await sb.from('do_accounts').delete().eq('id', a.id); if(error) return toast(error.message);
+    S.accounts.delete(a.id); S.daily.forEach(e => { if(e.account_id===a.id) e.account_id = null; });
+    S.selAcct = null; acctDlg.close(); renderMain();
+  });
+  acctDlg.showModal();
+}
+
+/* ---------- global search ---------- */
+async function goTo(pair, sel){
+  await flushSave();
+  S.pair = pair; S.view = 'journal'; S.sel = sel; S.mode = 'view';
+  ls.set('do_pair', pair); ls.set('do_view', 'journal'); ls.set('do_mode', 'view');
+  S.month = firstOfMonth(sel.type==='day' ? parseISO(sel.day) : mondayOf(sel.y, sel.w));
+  render();
+}
+const searchDlg = document.getElementById('searchDlg');
+function openSearch(){
+  searchDlg.innerHTML = `<div class="dlg-head" style="padding-bottom:8px">
+      <input id="sq" class="inp" type="search" placeholder="Caută în observații, știri, fundamentale, etichete…" aria-label="Căutare" style="font-size:15px;padding:10px 12px">
+      <div class="chips" id="sFilter" style="margin-top:10px">${[['all','Tot'],['obs','Observații'],['news','Știri'],['fund','Fundamentale'],['tag','Etichete']].map(([k,l],i) => `<button type="button" class="ch" data-sf="${k}" aria-pressed="${i===0}">${l}</button>`).join('')}</div>
+    </div>
+    <div class="dlg-body" id="sres" style="max-height:62vh;overflow:auto;padding-bottom:16px"><p class="muted">Scrie cel puțin 2 caractere.</p></div>`;
+  const inp = searchDlg.querySelector('#sq'); let filt = 'all';
+  const run = () => renderResults(inp.value, filt);
+  inp.addEventListener('input', run);
+  searchDlg.querySelector('#sFilter').addEventListener('click', ev => { const b = ev.target.closest('[data-sf]'); if(!b) return;
+    searchDlg.querySelectorAll('[data-sf]').forEach(x => x.setAttribute('aria-pressed', String(x===b))); filt = b.dataset.sf; run(); });
+  searchDlg.querySelector('#sres').addEventListener('click', ev => {
+    const r = ev.target.closest('[data-go]'); if(!r) return;
+    const [kind, pair, a, b] = r.dataset.go.split('|'); searchDlg.close();
+    goTo(pair, kind==='week' ? { type:'week', y:+a, w:+b } : { type:'day', day:a });
+  });
+  searchDlg.showModal(); inp.focus();
+}
+function snippet(text, q){
+  const t = String(text), i = t.toLowerCase().indexOf(q); if(i < 0) return null;
+  const s = Math.max(0, i-50), e = Math.min(t.length, i+q.length+80);
+  return `${s>0 ? '…' : ''}${esc(t.slice(s,i))}<mark>${esc(t.slice(i,i+q.length))}</mark>${esc(t.slice(i+q.length,e))}${e<t.length ? '…' : ''}`;
+}
+function renderResults(raw, filt){
+  const box = searchDlg.querySelector('#sres'), q = raw.trim().toLowerCase();
+  if(q.length < 2){ box.innerHTML = '<p class="muted">Scrie cel puțin 2 caractere.</p>'; return; }
+  const res = [];
+  const DF = { daily_obs:'Daily', h4_obs:'4H', h1_obs:'1H', action:'Plan', trade_status:'Status', session:'Sesiune' };
+  if(filt==='all' || filt==='obs' || filt==='tag') S.daily.forEach(e => {
+    if(filt!=='tag') for(const [f,l] of Object.entries(DF)){ const sn = e[f] && snippet(e[f], q); if(sn) res.push({ sort:e.day, go:`day|${e.pair}|${e.day}`, pair:e.pair, when:e.day, label:l, sn }); }
+    if(filt!=='obs'){ const t = (e.tags||[]).find(t => t.toLowerCase().includes(q)); if(t) res.push({ sort:e.day, go:`day|${e.pair}|${e.day}`, pair:e.pair, when:e.day, label:'Etichetă', sn:snippet('#'+t, q) }); }
+  });
+  if(filt==='all' || filt==='news') S.news.forEach(n => { const sn = snippet(n.events, q); if(!sn) return;
+    const pairs = allPairs().filter(p => base(p)===n.currency || quote(p)===n.currency);
+    const pair = pairs.includes(S.pair) ? S.pair : pairs[0] || S.pair;
+    res.push({ sort:n.day, go:`day|${pair}|${n.day}`, pair:n.currency, when:n.day, label:'Știre', sn }); });
+  if(filt==='all' || filt==='fund') S.weekly.forEach(w => {
+    const d = det(w), fields = { 'Rezumat':w.fundamentals, 'Review':w.review, 'Driver':d.main_driver, 'Drivere':(d.drivers||[]).join(' · '),
+      'Catalizatori':(d.catalysts||[]).map(c => `${c.date} ${c.event}`).join(' · '), 'În preț':d.priced, 'Invalidare':d.invalidation, 'Schimbări':d.changed, 'Aliniere':d.alignment_note };
+    for(const [l,v] of Object.entries(fields)){ const sn = v && snippet(v, q); if(sn){ res.push({ sort:iso(mondayOf(w.year,w.week)), go:`week|${w.pair}|${w.year}|${w.week}`, pair:w.pair, when:`S${w.week} ${w.year}`, label:l, sn }); break; } }
+  });
+  res.sort((a,b) => b.sort.localeCompare(a.sort));
+  box.innerHTML = res.length ? `<p class="muted" style="font-size:12px;margin-bottom:8px">${res.length} rezultate${res.length>80 ? ' · primele 80' : ''}</p>` +
+    res.slice(0,80).map(r => `<button class="sres" data-go="${r.go}"><div class="sres-h"><b>${r.pair}</b><span class="num">${r.when.includes('-') ? r.when.split('-').reverse().join('.') : r.when}</span><span class="sl">${r.label}</span></div><div class="sres-t">${r.sn}</div></button>`).join('')
+    : '<p class="muted">Niciun rezultat.</p>';
+}
+document.addEventListener('keydown', e => {
+  if(e.key==='/' && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName) && CONFIGURED){ e.preventDefault(); openSearch(); }
+});
+
 /* ---------- analysis ---------- */
 function periodStart(){
   const now = new Date();
@@ -1024,7 +1283,8 @@ function mkChart(id, type, labels, datasets, opts={}){
       scales:{ x:{ ticks:{ color:tc, maxRotation:0, autoSkip:true }, grid:{ color:gc } }, y:{ ticks:{ color:tc }, grid:{ color:gc }, ...(opts.y||{}) } } } }));
 }
 function renderAnalysis(){
-  const es = scoped(), trades = es.filter(e => ['W','L','BE'].includes(e.result));
+  const es = scoped(), trades = es.filter(e => ['W','L','BE'].includes(e.result) && (S.acct==='all' || (S.acct==='none' ? !e.account_id : e.account_id===S.acct)));
+  const tagStats = groupStats(trades.flatMap(t => (t.tags||[]).map(tag => ({ ...t, _tag:tag }))), t => t._tag).sort((a,b) => b.n-a.n).slice(0,14);
   const W = trades.filter(t => t.result==='W'), L = trades.filter(t => t.result==='L');
   const pips = trades.reduce((s,t) => s+(t.pips||0), 0), profit = trades.reduce((s,t) => s+(t.profit||0), 0);
   const rs = trades.filter(t => t.r_multiple!=null), avgR = rs.length ? rs.reduce((s,t) => s+Number(t.r_multiple), 0)/rs.length : null;
@@ -1055,6 +1315,9 @@ function renderAnalysis(){
         <button data-scope="pair" aria-pressed="${S.scope==='pair'}">${S.pair}</button><button data-scope="all" aria-pressed="${S.scope==='all'}">Toate</button></div>
       <div class="seg" role="group" aria-label="Perioadă">
         ${[['30','30 zile'],['90','90 zile'],['ytd','Anul acesta'],['all','Tot']].map(([v,l]) => `<button data-period="${v}" aria-pressed="${S.period===v}">${l}</button>`).join('')}</div>
+      ${S.accounts.size ? `<select class="inp" id="acctSel" aria-label="Cont" style="width:auto;border-radius:12px">
+        <option value="all">Toate conturile</option><option value="none" ${S.acct==='none' ? 'selected' : ''}>Fără cont</option>
+        ${[...S.accounts.values()].map(a => `<option value="${a.id}" ${S.acct===a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select>` : ''}
     </div>
     <table class="sumtable kpi mb-4"><thead><tr><th>Trade-uri</th><th>Win rate</th><th>Pips</th><th>Profit</th><th>R mediu</th><th>Profit factor</th><th>Bias săpt. corect</th></tr></thead>
       <tbody><tr>
@@ -1076,6 +1339,7 @@ function renderAnalysis(){
       <div class="card"><h3>Pips pe direcție</h3><div class="chartbox"><canvas id="c_dir"></canvas></div></div>
       <div class="card"><h3>Trade-uri față de bias-ul săptămânal</h3><div class="chartbox"><canvas id="c_align"></canvas></div></div>
       ${S.scope==='all' ? '<div class="card"><h3>Pips pe pereche</h3><div class="chartbox"><canvas id="c_pair"></canvas></div></div>' : ''}
+      <div class="card"><h3>Win rate pe etichetă de setup</h3>${tagStats.length ? '<div class="chartbox"><canvas id="c_tags"></canvas></div>' : '<p class="muted">Adaugă etichete la zilele cu trade ca să vezi ce setup-uri funcționează.</p>'}</div>
       <div class="card"><h3>Ce ai făcut în zilele observate</h3><div class="chartbox"><canvas id="c_status"></canvas></div></div>
       <div class="card"><h3>Știri și mișcare</h3>
         <table class="sumtable"><thead><tr><th></th><th>Zile</th><th>|Închidere| medie</th></tr></thead><tbody>
@@ -1116,6 +1380,8 @@ function renderAnalysis(){
     const bp = groupStats(trades, t => t.pair).sort((a,b) => b.pips-a.pips);
     mkChart('c_pair','bar', bp.map(g => g.k), [{ data:bp.map(g => +g.pips.toFixed(1)), backgroundColor:bp.map(g => g.pips>=0 ? pos : neg), borderRadius:3 }]);
   }
+  if(tagStats.length) wrBar('c_tags', tagStats);
+  document.getElementById('acctSel')?.addEventListener('change', ev => { S.acct = ev.target.value; ls.set('do_acct', S.acct); renderMain(); });
   mkChart('c_status','bar', statuses.map(s => s.k), [{ data:statuses.map(s => s.n), backgroundColor:cssv('--muted'), borderRadius:3 }], { indexAxis:'y' });
 }
 
@@ -1163,7 +1429,7 @@ function download(name, text, type){
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 document.getElementById('expJson').onclick = () => download(`daily-observer-backup-${iso(new Date())}.json`,
-  JSON.stringify({ version:1, daily:[...S.daily.values()], weekly:[...S.weekly.values()], news:[...S.news.values()] }, null, 1), 'application/json');
+  JSON.stringify({ version:2, daily:[...S.daily.values()], weekly:[...S.weekly.values()], news:[...S.news.values()], accounts:[...S.accounts.values()] }, null, 1), 'application/json');
 document.getElementById('expCsv').onclick = () => {
   const p = S.pair, cols = ['day',...TEXT_F.slice(0,7),'r_multiple','risk','profit','entry_price','sl','tp','pips','daily_change','daily_obs','h4_obs','h1_obs','tv_daily','tv_4h','tv_1h','action'];
   const q = v => v==null ? '' : /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g,'""')}"` : String(v);
@@ -1179,6 +1445,7 @@ document.getElementById('jsonFile').onchange = async ev => {
     const j = JSON.parse(await f.text());
     const clean = arr => (arr||[]).map(({ id, created_at, updated_at, user_id, ...r }) => r);
     if(!confirm(`Import: ${j.daily?.length||0} zile, ${j.weekly?.length||0} săptămâni, ${j.news?.length||0} știri. Înregistrările existente pe aceleași date sunt suprascrise. Continui?`)) return;
+    if(j.accounts?.length) await upsertChunks('do_accounts', j.accounts.map(({ created_at, ...r }) => r), 'id');
     await upsertChunks('do_daily', clean(j.daily), 'pair,day');
     await upsertChunks('do_weekly', clean(j.weekly), 'pair,year,week');
     await upsertChunks('do_news', clean(j.news), 'currency,day');
