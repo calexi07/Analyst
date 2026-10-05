@@ -455,6 +455,7 @@
   .fdot.bullish{ background:var(--pos); } .fdot.bearish{ background:var(--neg); } .fdot.two-sided{ background:var(--amber); } .fdot.neutral{ background:var(--muted); }
   .ch[aria-pressed="true"] .fdot{ box-shadow:0 0 0 2px var(--on-accent); }
   .fhas{ font-weight:900; }
+  .fundbox.exp{ border-color:color-mix(in srgb,var(--info) 40%,var(--line)); background:color-mix(in srgb,var(--info) 6%,var(--surface)); }
 </style>
 </head>
 <body>
@@ -474,6 +475,14 @@
       <p class="muted" style="font-size:13px">Paste the <b>Daily Observer import</b> block from the bottom of your Fundamental Bias Engine report. Next you choose the week, the pairs and the sections.</p>
       <textarea id="fundPaste" class="inp" rows="4" placeholder='{ "format": "daily-observer-fundamentals", "valid_week": { … }, "pairs": [ … ] }' style="margin-top:8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;resize:vertical"></textarea>
       <div class="flex items-center gap-3" style="margin-top:8px"><button class="btn btn-primary" id="fundGo">Continue →</button><span id="fundMsg" class="neg" style="font-size:12.5px;font-weight:600"></span></div>
+    </div>
+    <div class="fundbox exp">
+      <h3 class="cond" style="font-weight:600;font-size:16px">📤 Export for AI weekly review</h3>
+      <p class="muted" style="font-size:13px">Everything the tool knows about a week — your thesis per pair, daily closes, observations, trades, logged news, your review and the pairs where the thesis was wrong. Give it to the AI together with the weekly review prompt.</p>
+      <div class="flex flex-wrap items-center gap-2" style="margin-top:8px">
+        <input class="inp" type="week" id="revWeek" style="width:auto" aria-label="Week to export">
+        <button class="btn btn-primary" id="revCopy">Copy to clipboard</button><button class="btn" id="revDl">Download .json</button>
+      </div><p class="hint" id="revInfo"></p>
     </div>
     <div>
       <h3 class="cond" style="font-weight:600;font-size:16px">Import from Google Sheets</h3>
@@ -1899,6 +1908,60 @@ document.getElementById('fundGo').onclick = () => {
   catch(e){ msg.textContent = 'Could not read it: ' + e.message + '. Copy the whole block from the report\'s "Daily Observer import" section.'; }
 };
 
+/* ---------- export for the AI weekly review ---------- */
+function reviewDefaultWeek(){ const d = new Date(); if(!(d.getDay()===0 || d.getDay()===6)) d.setDate(d.getDate()-7); return isoWeek(d); }
+function buildReviewExport(y, w){
+  const [from, to] = weekRange(y, w), days = [0,1,2,3,4].map(i => { const d = parseISO(from); d.setDate(d.getDate()+i); return iso(d); });
+  const inW = d => d >= from && d <= to;
+  const strip = o => Object.fromEntries(Object.entries(o).filter(([,v]) => v!=null && v!=='' && !(Array.isArray(v) && !v.length)));
+  const pairs = [], ccy = {};
+  for(const p of allPairs()){
+    const r = S.weekly.get(wk(p, y, w)), d = det(r);
+    const dayRows = days.map(ds => { const e = S.daily.get(dk(p, ds)); if(!e) return null;
+      return strip({ date:ds, weekday:WD[parseISO(ds).getDay()], close_pct:e.daily_change, status:e.trade_status, daily:e.daily_obs, h4:e.h4_obs, h1:e.h1_obs, plan:e.action, tags:e.tags }); }).filter(Boolean);
+    const closes = dayRows.filter(x => x.close_pct!=null), wsum = closes.length ? +closes.reduce((t,x) => t + Number(x.close_pct), 0).toFixed(2) : null;
+    const trades = [...S.daily.values()].filter(e => e.pair===p && e.direction && (inW(e.day) || inW(exitDay(e))))
+      .map(e => strip({ entry:e.day, exit:e.exit_date || null, direction:e.direction, setup_tf:e.setup_tf, session:e.session, result:e.result, pips:e.pips, r:e.r_multiple, tags:e.tags }));
+    if(!r && !dayRows.length && !trades.length) continue;
+    let check = 'no_price_data';
+    if(wsum!=null && r?.bias){
+      if(r.bias==='bullish') check = wsum > 0.1 ? 'correct' : wsum < -0.1 ? 'wrong' : 'flat';
+      else if(r.bias==='bearish') check = wsum < -0.1 ? 'correct' : wsum > 0.1 ? 'wrong' : 'flat';
+      else check = Math.abs(wsum) <= 0.5 ? 'correct (range)' : `moved ${wsum>0 ? 'up' : 'down'} despite neutral bias`;
+    }
+    if(wsum!=null){ [[base(p), 1], [quote(p), -1]].forEach(([c, s]) => { (ccy[c] ||= { sum:0, n:0, pairs:[] }); ccy[c].sum += s*wsum; ccy[c].n++; ccy[c].pairs.push(p); }); }
+    pairs.push(strip({ pair:p,
+      thesis: r ? strip({ bias:r.bias, conviction:r.conviction, summary:r.fundamentals, base_score:d.base_score, quote_score:d.quote_score, main_driver:d.main_driver,
+        invalidation:d.invalidation, horizon:d.horizon, alignment:d.alignment, catalysts:d.catalysts }) : null,
+      week_close_pct:wsum, closes_logged:`${closes.length}/5`, thesis_check:check, days:dayRows, trades, my_review:r?.review }));
+  }
+  const news = [...S.news.values()].filter(n => inW(n.day)).sort((a,b) => a.day.localeCompare(b.day) || a.currency.localeCompare(b.currency)).map(n => ({ date:n.day, currency:n.currency, events:n.events }));
+  const realized = Object.fromEntries(Object.entries(ccy).sort((a,b) => b[1].sum/b[1].n - a[1].sum/a[1].n)
+    .map(([c, v]) => [c, { avg_signed_move_pct: +(v.sum/v.n).toFixed(2), pairs_used: v.pairs }]));
+  const withCloses = pairs.filter(p => p.week_close_pct!=null).length;
+  return {
+    format:'daily-observer-weekly-review', version:1, generated_at:new Date().toISOString(),
+    week:{ year:y, week:w, from, to:days[4] },
+    coverage:{ pairs_with_thesis: pairs.filter(p => p.thesis).length, pairs_with_daily_closes: withCloses,
+      note: withCloses < pairs.length ? 'Daily closes are only logged for some pairs — fetch real weekly price data for the rest before judging the thesis.' : 'Daily closes logged for every pair in this export.' },
+    realized_currency_strength_from_logged_closes: realized,
+    thesis_misses: pairs.filter(p => /wrong|despite/.test(p.thesis_check||'')).map(p => ({ pair:p.pair, bias:p.thesis?.bias, conviction:p.thesis?.conviction, week_close_pct:p.week_close_pct, check:p.thesis_check })),
+    pairs, news_logged:news };
+}
+function initReviewExport(){
+  const inp = document.getElementById('revWeek'), info = document.getElementById('revInfo'); if(!inp) return;
+  const dw = reviewDefaultWeek(); if(!inp.value) inp.value = `${dw.year}-W${String(dw.week).padStart(2,'0')}`;
+  const get = () => { const m = inp.value.match(/(\d{4})-?W(\d{1,2})/i); return m ? { y:+m[1], w:+m[2] } : null; };
+  const upd = () => { const k = get(); if(!k){ info.textContent = 'Pick a week (format 2026-W41).'; return; }
+    const x = buildReviewExport(k.y, k.w);
+    info.textContent = `Week ${k.w} · ${fmtDayShort(x.week.from)} – ${fmtDayShort(x.week.to)} · ${x.pairs.length} pairs · ${x.coverage.pairs_with_daily_closes} with daily closes · ${x.thesis_misses.length} thesis misses · ${x.news_logged.length} news days`; };
+  inp.oninput = upd; upd();
+  document.getElementById('revCopy').onclick = async () => { const k = get(); if(!k) return; const txt = JSON.stringify(buildReviewExport(k.y, k.w), null, 1);
+    try{ await navigator.clipboard.writeText(txt); toast('Weekly review export copied — paste it to the AI with the review prompt'); }
+    catch{ download(`weekly-review-W${k.w}-${k.y}.json`, txt, 'application/json'); toast('Clipboard blocked — downloaded the file instead'); } };
+  document.getElementById('revDl').onclick = () => { const k = get(); if(!k) return; download(`weekly-review-W${k.w}-${k.y}.json`, JSON.stringify(buildReviewExport(k.y, k.w), null, 1), 'application/json'); };
+}
+
 /* ---------- analysis ---------- */
 function periodStart(){
   const now = new Date();
@@ -2070,6 +2133,7 @@ const dataDlg = document.getElementById('dataDlg');
 function openData(){
   document.getElementById('impPair').textContent = S.pair;
   document.getElementById('extraList').textContent = S.extra.length ? 'Added: ' + S.extra.join(', ') : '';
+  initReviewExport();
   dataDlg.showModal();
 }
 document.getElementById('dataClose').onclick = () => dataDlg.close();
