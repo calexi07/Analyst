@@ -415,6 +415,12 @@
   .gstats{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
   .gstats b{ font-family:'Bricolage Grotesque',sans-serif; font-size:22px; }
   .gideas{ display:flex; flex-wrap:wrap; gap:6px; }
+  .fundbox{ padding:14px; border-radius:14px; border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line)); background:color-mix(in srgb,var(--accent) 6%,var(--surface)); }
+  .fpair{ display:inline-flex; align-items:center; gap:6px; }
+  .fdot{ width:7px; height:7px; border-radius:50%; background:var(--line); }
+  .fdot.bullish{ background:var(--pos); } .fdot.bearish{ background:var(--neg); } .fdot.two-sided{ background:var(--amber); } .fdot.neutral{ background:var(--muted); }
+  .ch[aria-pressed="true"] .fdot{ box-shadow:0 0 0 2px var(--on-accent); }
+  .fhas{ font-weight:900; }
 </style>
 </head>
 <body>
@@ -425,9 +431,16 @@
 <dialog id="searchDlg" class="panel" aria-label="Search" style="width:min(720px,96vw)"></dialog>
 
 <!-- Data dialog -->
+<dialog id="fundDlg" class="panel" aria-label="Import fundamental analysis" style="width:min(780px,96vw)"></dialog>
 <dialog id="dataDlg" class="panel" aria-labelledby="dataTitle" style="width:min(620px,96vw)">
   <div class="dlg-head"><h2 id="dataTitle" class="cond" style="font-size:20px;font-weight:600">Import & export</h2></div>
   <div class="dlg-body" style="display:grid;gap:14px">
+    <div class="fundbox">
+      <h3 class="cond" style="font-weight:600;font-size:16px">📥 Import fundamental analysis</h3>
+      <p class="muted" style="font-size:13px">Paste the <b>Daily Observer import</b> block from the bottom of your Fundamental Bias Engine report. Next you choose the week, the pairs and the sections.</p>
+      <textarea id="fundPaste" class="inp" rows="4" placeholder='{ "format": "daily-observer-fundamentals", "valid_week": { … }, "pairs": [ … ] }' style="margin-top:8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;resize:vertical"></textarea>
+      <div class="flex items-center gap-3" style="margin-top:8px"><button class="btn btn-primary" id="fundGo">Continue →</button><span id="fundMsg" class="neg" style="font-size:12.5px;font-weight:600"></span></div>
+    </div>
     <div>
       <h3 class="cond" style="font-weight:600;font-size:16px">Import from Google Sheets</h3>
       <p class="muted" style="font-size:13px">In Google Sheets: File → Download → CSV, from the pair's tab. Rows are imported into the currently selected pair (<b id="impPair"></b>). Columns are matched by header name (Date, Trade, Session, Long/Short, W/L, USD News, EUR News, Daily Observations etc.). The daily close % is extracted automatically from „Price closed ±x%”.</p>
@@ -1699,6 +1712,139 @@ function bindGoals(){
   });
   syncSrc();
 }
+
+/* ---------- fundamental analysis import (paste from the Bias Engine report) ---------- */
+const FUND_SECTIONS = [
+  ['bias','Bias & conviction'], ['summary','Summary line'], ['scores','Currency states & scores'], ['drivers','Drivers'],
+  ['catalysts','Catalysts'], ['assessment','Assessment (priced · invalidation · horizon · alignment)'], ['changed','What changed'], ['news','Calendar → daily news'] ];
+const normPair = p => String(p||'').replace(/[^A-Za-z]/g,'').toUpperCase();
+const normBias = b => { b = String(b||'').toLowerCase(); return /two/.test(b) ? 'two-sided' : /bull/.test(b) ? 'bullish' : /bear/.test(b) ? 'bearish' : /neutral/.test(b) ? 'neutral' : null; };
+const normConv = c => { c = String(c||'').toLowerCase(); return /high/.test(c) ? 'high' : /med/.test(c) ? 'medium' : /low|mild/.test(c) ? 'low' : null; };
+const normState = (s, sc) => { const f = CCY_STATES.find(x => String(s||'').toLowerCase().startsWith(x.toLowerCase())); if(f) return f;
+  return sc==null ? null : sc >= 3 ? 'Strong' : sc <= -3 ? 'Weak' : 'Neutral'; };
+const normAlign = a => { a = String(a||'').toLowerCase(); return /^align/.test(a) ? 'Aligned' : /partial/.test(a) ? 'Partial conflict' : /conflict/.test(a) ? 'Conflicting' : /neutral/.test(a) ? 'Neutral' : null; };
+const normImp = i => { i = String(i||'').toUpperCase(); return IMPS.find(x => i.startsWith(x.slice(0,3))) || ''; };
+function parseFundPaste(txt){
+  let t = String(txt||'').trim().replace(/^```(?:json)?/i, '').replace(/```\s*$/, '');
+  const a = t.indexOf('{'), b = t.lastIndexOf('}');
+  if(a < 0 || b <= a) throw new Error('no JSON block found in the pasted text');
+  let j; try{ j = JSON.parse(t.slice(a, b+1)); }catch(e){ throw new Error('the JSON is not valid (' + e.message + ')'); }
+  if(!Array.isArray(j.pairs) || !j.pairs.length) throw new Error('the block has no "pairs" list');
+  j.pairs = j.pairs.map(p => ({ ...p, pair: normPair(p.pair) })).filter(p => p.pair.length===6);
+  return j;
+}
+const fundDlg = document.getElementById('fundDlg');
+function openFundImport(j){
+  const cur = isoWeek(new Date()), nxt = isoWeek(new Date(Date.now() + 7*864e5));
+  const vw = j.valid_week && j.valid_week.year && j.valid_week.week ? j.valid_week : cur;
+  const wkVal = (y, w) => `${y}-W${String(w).padStart(2,'0')}`;
+  let selPairs = new Set(j.pairs.map(p => p.pair)), selSecs = new Set(FUND_SECTIONS.map(s => s[0]).filter(k => k!=='news' || j.news?.length));
+  fundDlg.innerHTML = `<form id="fundForm" method="dialog">
+    <div class="dlg-head"><h2>Import fundamental analysis</h2>
+      <p class="muted" style="margin-top:4px;font-weight:600">${esc(j.report_title || 'Fundamental report')}${j.report_date ? ' · ' + esc(j.report_date) : ''} · ${j.pairs.length} pairs${j.news?.length ? ` · ${j.news.length} calendar events` : ''}</p></div>
+    <div class="dlg-body" style="display:grid;gap:16px">
+      <div><span class="lbl">Valid for week</span>
+        <div class="flex flex-wrap items-center gap-2">
+          <input class="inp" type="week" id="fWeek" value="${wkVal(vw.year, vw.week)}" style="width:auto">
+          <button type="button" class="ch" data-fw="${wkVal(vw.year, vw.week)}">Report week (W${vw.week})</button>
+          <button type="button" class="ch" data-fw="${wkVal(cur.year, cur.week)}">This week (W${cur.week})</button>
+          <button type="button" class="ch" data-fw="${wkVal(nxt.year, nxt.week)}">Next week (W${nxt.week})</button>
+        </div><p class="hint" id="fWeekInfo"></p></div>
+      <div><div class="flex items-center gap-2" style="margin-bottom:6px"><span class="lbl" style="margin:0">Pairs</span>
+          <button type="button" class="ch" id="fAllP">All</button><button type="button" class="ch" id="fNoP">None</button>
+          <span class="muted" style="font-size:12px;font-weight:700;margin-left:auto" id="fPCount"></span></div>
+        <div class="chips" id="fPairs">${j.pairs.map(p => { const bi = normBias(p.bias); return `<button type="button" class="ch fpair" data-fp="${p.pair}" aria-pressed="true"><i class="fdot ${bi || ''}"></i>${p.pair}<span class="fhas" data-has="${p.pair}"></span></button>`; }).join('')}</div></div>
+      <div><div class="flex items-center gap-2" style="margin-bottom:6px"><span class="lbl" style="margin:0">Sections</span>
+          <button type="button" class="ch" id="fAllS">All</button><button type="button" class="ch" id="fNoS">None</button></div>
+        <div class="chips" id="fSecs">${FUND_SECTIONS.filter(([k]) => k!=='news' || j.news?.length).map(([k,l]) => `<button type="button" class="ch" data-fs="${k}" aria-pressed="true">${l}</button>`).join('')}</div></div>
+      <div><span class="lbl">If the week already has data for a pair</span>
+        <div class="seg" role="group" id="fMode"><button type="button" data-m="overwrite" aria-pressed="true">Overwrite the selected sections</button><button type="button" data-m="fill" aria-pressed="false">Only fill empty fields</button></div>
+        <p class="hint">Your own review and any section you don't select are always kept.</p></div>
+    </div>
+    <div class="dlg-foot"><button type="button" class="btn" id="fCancel">Cancel</button><button type="submit" class="btn btn-primary" id="fGo">Import</button></div></form>`;
+  const f = fundDlg.querySelector('#fundForm'); let mode = 'overwrite';
+  const getWeek = () => { const m = (f.querySelector('#fWeek').value || '').match(/(\d{4})-?W(\d{1,2})/i); return m ? { y:+m[1], w:+m[2] } : null; };
+  const refresh = () => {
+    const wk2 = getWeek(), info = f.querySelector('#fWeekInfo');
+    if(wk2){ const [a, b] = weekRange(wk2.y, wk2.w); info.textContent = `Week ${wk2.w} · ${fmtDayShort(a)} – ${fmtDayShort(iso(new Date(parseISO(b).getTime() - 2*864e5)))} ${wk2.y}`; }
+    else info.textContent = 'Pick a week (format 2026-W41).';
+    f.querySelectorAll('[data-has]').forEach(s => s.textContent = wk2 && S.weekly.has(wk(s.dataset.has, wk2.y, wk2.w)) ? ' •' : '');
+    f.querySelectorAll('[data-fp]').forEach(b => b.setAttribute('aria-pressed', String(selPairs.has(b.dataset.fp))));
+    f.querySelectorAll('[data-fs]').forEach(b => b.setAttribute('aria-pressed', String(selSecs.has(b.dataset.fs))));
+    f.querySelector('#fPCount').textContent = `${selPairs.size} selected · • = week already has data`;
+    f.querySelector('#fGo').textContent = `Import ${selPairs.size} pair${selPairs.size===1?'':'s'}`;
+    f.querySelector('#fGo').disabled = !wk2 || !selSecs.size || (!selPairs.size && !selSecs.has('news'));
+  };
+  f.querySelector('#fWeek').addEventListener('input', refresh);
+  f.querySelectorAll('[data-fw]').forEach(b => b.onclick = () => { f.querySelector('#fWeek').value = b.dataset.fw; refresh(); });
+  f.querySelector('#fPairs').onclick = ev => { const b = ev.target.closest('[data-fp]'); if(!b) return; selPairs.has(b.dataset.fp) ? selPairs.delete(b.dataset.fp) : selPairs.add(b.dataset.fp); refresh(); };
+  f.querySelector('#fSecs').onclick = ev => { const b = ev.target.closest('[data-fs]'); if(!b) return; selSecs.has(b.dataset.fs) ? selSecs.delete(b.dataset.fs) : selSecs.add(b.dataset.fs); refresh(); };
+  f.querySelector('#fAllP').onclick = () => { selPairs = new Set(j.pairs.map(p => p.pair)); refresh(); };
+  f.querySelector('#fNoP').onclick = () => { selPairs.clear(); refresh(); };
+  f.querySelector('#fAllS').onclick = () => { f.querySelectorAll('[data-fs]').forEach(b => selSecs.add(b.dataset.fs)); refresh(); };
+  f.querySelector('#fNoS').onclick = () => { selSecs.clear(); refresh(); };
+  f.querySelectorAll('#fMode [data-m]').forEach(b => b.onclick = () => { mode = b.dataset.m; f.querySelectorAll('#fMode [data-m]').forEach(x => x.setAttribute('aria-pressed', String(x===b))); });
+  f.querySelector('#fCancel').onclick = () => fundDlg.close();
+  f.onsubmit = async ev => {
+    ev.preventDefault(); const wk2 = getWeek(); if(!wk2) return;
+    const btn = f.querySelector('#fGo'); btn.disabled = true; btn.textContent = 'Importing…';
+    try{ const r = await runFundImport(j, wk2, [...selPairs], selSecs, mode); fundDlg.close();
+      toast(`Imported ${r.pairs} pair${r.pairs===1?'':'s'} into week ${wk2.w}${r.news ? ` · ${r.news} news days` : ''}${r.added ? ` · ${r.added} new pair${r.added===1?'':'s'} added` : ''}`);
+      render();
+    }catch(e){ console.error(e); toast('Import failed: ' + e.message); btn.disabled = false; refresh(); }
+  };
+  refresh(); fundDlg.showModal();
+}
+async function runFundImport(j, { y, w }, pairs, secs, mode){
+  const empty = v => v==null || v==='' || (Array.isArray(v) && !v.length);
+  const put = (obj, k, v) => { if(empty(v)) return; if(mode==='fill' && !empty(obj[k])) return; obj[k] = v; };
+  const src = Object.fromEntries(j.pairs.map(p => [p.pair, p]));
+  const added = pairs.filter(p => !allPairs().includes(p));
+  if(added.length){ S.extra.push(...added); ls.set('do_extra_pairs', S.extra); }
+  const rows = pairs.map(p => {
+    const s = src[p], ex = S.weekly.get(wk(p, y, w)) || {}, d = { ...det(ex) };
+    const row = { pair:p, year:y, week:w, bias:ex.bias ?? null, conviction:ex.conviction ?? null, fundamentals:ex.fundamentals ?? null, review:ex.review ?? null };
+    if(secs.has('bias')){ put(row, 'bias', normBias(s.bias)); put(row, 'conviction', normConv(s.conviction)); }
+    if(secs.has('summary')) put(row, 'fundamentals', s.summary);
+    if(secs.has('scores')){
+      const bs = s.base_score ?? j.currencies?.[base(p)]?.score, qs = s.quote_score ?? j.currencies?.[quote(p)]?.score;
+      put(d, 'base_score', bs==null ? null : Number(bs)); put(d, 'quote_score', qs==null ? null : Number(qs));
+      put(d, 'base_state', normState(s.base_state ?? j.currencies?.[base(p)]?.state, bs)); put(d, 'quote_state', normState(s.quote_state ?? j.currencies?.[quote(p)]?.state, qs));
+    }
+    if(secs.has('drivers')){ put(d, 'main_driver', s.main_driver); put(d, 'drivers', (s.drivers||[]).filter(Boolean)); }
+    if(secs.has('catalysts')) put(d, 'catalysts', (s.catalysts||[]).map(c => typeof c==='string' ? { date:'', event:c, imp:'' } : { date:c.date||'', event:c.event||'', imp:normImp(c.imp || c.importance) }).filter(c => c.date || c.event));
+    if(secs.has('assessment')){ put(d, 'priced', s.priced); put(d, 'invalidation', s.invalidation); put(d, 'horizon', s.horizon); put(d, 'alignment', normAlign(s.alignment)); put(d, 'alignment_note', s.alignment_note); }
+    if(secs.has('changed')) put(d, 'changed', s.changed);
+    row.details = d;
+    return row;
+  });
+  if(rows.length){
+    for(let i = 0; i < rows.length; i += 200){
+      const { data, error } = await sb.from('do_weekly').upsert(rows.slice(i, i+200), { onConflict:'pair,year,week' }).select();
+      if(error) throw error; (data||[]).forEach(r => S.weekly.set(wk(r.pair, r.year, r.week), r));
+    }
+  }
+  let newsDays = 0;
+  if(secs.has('news') && j.news?.length){
+    const ccys = new Set(pairs.flatMap(p => [base(p), quote(p)]));
+    const byKey = {};
+    j.news.forEach(n => { const day = String(n.date||'').slice(0,10), c = String(n.currency||'').toUpperCase();
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(day) || !c || (pairs.length && !ccys.has(c))) return;
+      const line = `${n.time ? n.time+' ' : ''}${n.event || ''}${n.importance ? ' ['+String(n.importance).toUpperCase()+']' : ''}`.trim(); if(!line) return;
+      (byKey[nk(c, day)] ||= { currency:c, day, lines:[] }).lines.push(line); });
+    const out = Object.values(byKey).map(k => { const ex = S.news.get(nk(k.currency, k.day))?.events || '';
+      const lines = ex ? ex.split('\n') : []; k.lines.forEach(l => { if(!lines.some(x => x.trim().toLowerCase()===l.toLowerCase())) lines.push(l); });
+      return { currency:k.currency, day:k.day, events:lines.join('\n') }; });
+    if(out.length){ const { data, error } = await sb.from('do_news').upsert(out, { onConflict:'currency,day' }).select(); if(error) throw error;
+      (data||[]).forEach(r => S.news.set(nk(r.currency, r.day), r)); newsDays = out.length; }
+  }
+  return { pairs: rows.length, news: newsDays, added: added.length };
+}
+document.getElementById('fundGo').onclick = () => {
+  const box = document.getElementById('fundPaste'), msg = document.getElementById('fundMsg');
+  try{ const j = parseFundPaste(box.value); msg.textContent = ''; dataDlg.close(); openFundImport(j); box.value = ''; }
+  catch(e){ msg.textContent = 'Could not read it: ' + e.message + '. Copy the whole block from the report\'s "Daily Observer import" section.'; }
+};
 
 /* ---------- analysis ---------- */
 function periodStart(){
