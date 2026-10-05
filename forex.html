@@ -377,6 +377,44 @@
   .inp.ro{ opacity:.75; cursor:not-allowed; }
   .tk-accts{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
   .tk-acc{ font-size:12px; font-weight:700; padding:3px 10px; border-radius:999px; background:var(--surface); border:1px solid var(--line); }
+  /* goals */
+  .ggrid{ display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:20px; align-items:start; }
+  @media (max-width:1000px){ .ggrid{ grid-template-columns:1fr; } }
+  .gscore{ display:flex; gap:20px; align-items:center; }
+  .gring{ --p:0; width:92px; height:92px; flex:0 0 auto; border-radius:50%; display:grid; place-items:center;
+          background:conic-gradient(var(--accent) calc(var(--p)*1%), var(--surface-2) 0); position:relative; }
+  .gring::before{ content:''; position:absolute; inset:9px; border-radius:50%; background:var(--surface); }
+  .gring span{ position:relative; font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:21px; }
+  .glist{ display:grid; gap:10px; margin-top:14px; }
+  .gcard{ display:flex; gap:14px; align-items:flex-start; padding:14px; border-radius:16px; background:var(--surface); border:1px solid var(--line); box-shadow:var(--shadow); }
+  .gcard.done{ border-color:color-mix(in srgb,var(--pos) 50%,var(--line)); background:linear-gradient(120deg, color-mix(in srgb,var(--pos) 10%,var(--surface)), var(--surface) 70%); }
+  .gcard.done .gc-t b{ color:var(--pos); }
+  .gemo{ font-size:24px; width:34px; text-align:center; line-height:1.2; }
+  .mschk.big{ width:34px; height:34px; border-radius:10px; font-size:17px; }
+  .gc-b{ flex:1; min-width:0; display:grid; gap:6px; }
+  .gc-t{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:15px; }
+  .gtag{ font-size:10.5px; font-weight:800; padding:1px 7px; border-radius:6px; background:var(--surface-2); color:var(--muted); }
+  .gbar{ height:9px; border-radius:9px; background:var(--surface-2); overflow:hidden; }
+  .gbar span{ display:block; height:100%; border-radius:9px; background:linear-gradient(90deg, var(--info), var(--accent)); transition:width .3s; }
+  .gbar span.full{ background:linear-gradient(90deg, var(--accent), var(--pos)); box-shadow:0 0 12px var(--pos); }
+  .gc-v{ display:flex; align-items:center; gap:12px; font-size:13px; flex-wrap:wrap; }
+  .gval{ width:110px; padding:4px 8px; margin-left:auto; }
+  .gc-a{ display:flex; gap:6px; }
+  .gform{ margin-top:14px; display:grid; gap:12px; }
+  .gform .seg{ justify-self:start; }
+  [hidden]{ display:none !important; }
+  .gform h3{ margin:0; }
+  .gf-row{ display:flex; gap:8px; }
+  .ghist{ display:grid; grid-template-columns:repeat(10,1fr); gap:6px; align-items:end; height:130px; }
+  .gh{ display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; border:none; background:transparent; color:var(--muted); padding:0; }
+  .gh-b{ flex:1; width:100%; border-radius:8px; background:var(--surface-2); display:flex; align-items:flex-end; overflow:hidden; }
+  .gh-b i{ width:100%; background:var(--info); border-radius:8px 8px 0 0; }
+  .gh-b i.full{ background:var(--accent); }
+  .gh.sel .gh-b{ outline:2px solid var(--accent); }
+  .gh-l{ font-size:10.5px; font-weight:800; }
+  .gstats{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+  .gstats b{ font-family:'Bricolage Grotesque',sans-serif; font-size:22px; }
+  .gideas{ display:flex; flex-wrap:wrap; gap:6px; }
 </style>
 </head>
 <body>
@@ -481,7 +519,7 @@ const S = {
   view: ls.get('do_view','journal'), pair: ls.get('do_pair','EURUSD'),
   month: firstOfMonth(new Date()), scope: ls.get('do_scope','pair'), period: ls.get('do_period','all'), metric:'pips',
   daily:new Map(), weekly:new Map(), news:new Map(), charts:[], extra: ls.get('do_extra_pairs', []),
-  sel:null, accounts:new Map(), selAcct:null, acct: ls.get('do_acct','all')
+  sel:null, goals:new Map(), gw:null, accounts:new Map(), selAcct:null, acct: ls.get('do_acct','all')
 };
 const allPairs = () => [...PAIRS, ...S.extra.filter(p => !PAIRS.includes(p))];
 const base = p => p.slice(0,3), quote = p => p.slice(3,6);
@@ -522,6 +560,8 @@ async function fetchAll(table){
 async function loadAll(){
   const [d, w, n, a] = await Promise.all([fetchAll('do_daily'), fetchAll('do_weekly'), fetchAll('do_news'), fetchAll('do_accounts').catch(e => { console.warn(e); return []; })]);
   S.accounts = new Map(a.map(r => [r.id, r]));
+  const g = await fetchAll('do_goals').catch(e => { console.warn(e); return []; });
+  S.goals = new Map(g.map(r => [r.id, r]));
   S.daily = new Map(d.map(r => [dk(r.pair, r.day), r]));
   S.weekly = new Map(w.map(r => [wk(r.pair, r.year, r.week), r]));
   S.news = new Map(n.map(r => [nk(r.currency, r.day), r]));
@@ -550,7 +590,7 @@ function render(){
       <div class="topbar">
         <div class="brand"><span class="mark" aria-hidden="true"></span>Daily Observer <small>by EaglePips</small></div>
         <nav class="tabs" role="tablist" aria-label="Sections">
-          ${[['journal','Journal'],['analysis','Analytics'],['overview','All pairs'],['accounts','Accounts']].map(([v,l]) =>
+          ${[['journal','Journal'],['analysis','Analytics'],['overview','All pairs'],['accounts','Accounts'],['goals','Goals']].map(([v,l]) =>
             `<button class="tab" role="tab" aria-selected="${S.view===v}" data-view="${v}">${l}</button>`).join('')}
         </nav>
         <div class="tools">
@@ -589,6 +629,7 @@ function renderMain(){
   if(S.view === 'analysis') renderAnalysis();
   else if(S.view === 'overview') renderOverview();
   else if(S.view === 'accounts') renderAccounts();
+  else if(S.view === 'goals') renderGoals();
   else renderJournal();
 }
 function setupScreen(){
@@ -1482,6 +1523,183 @@ document.addEventListener('keydown', e => {
   if(e.key==='/' && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName) && CONFIGURED){ e.preventDefault(); openSearch(); }
 });
 
+/* ---------- weekly goals / ambitions ---------- */
+const GOAL_SOURCES = {
+  manual:      ['Manual', ''],
+  acct_pct:    ['Account % gain this week', '%'],
+  acct_usd:    ['Account $ profit this week', '$'],
+  profit_week: ['Total profit this week', '$'],
+  pips_week:   ['Total pips this week', 'pips'],
+  trades_week: ['Trades taken this week', 'trades'],
+  days_week:   ['Days observed this week', 'days'],
+};
+const GOAL_EMOJIS = ['🎯','💸','🏆','📈','🧠','📚','💪','🧘','⚡','🏠','💡','🔥','🛡️','⏰','✅'];
+const goalWeek = () => { if(!S.gw){ const w = isoWeek(new Date()); S.gw = { y:w.year, w:w.week }; } return S.gw; };
+function weekRange(y, w){ const m = mondayOf(y, w), e = new Date(m); e.setDate(m.getDate()+6); return [iso(m), iso(e)]; }
+function goalAuto(g, y, w){
+  const [a, b] = weekRange(y, w), inW = d => d >= a && d <= b;
+  const trades = [...S.daily.values()].filter(e => e.direction);
+  switch(g.source){
+    case 'acct_pct': case 'acct_usd': {
+      const acc = S.accounts.get(g.account_id); if(!acc) return null;
+      const sum = trades.filter(e => inW(exitDay(e))).reduce((t,e) => { const x = tradeAccts(e).find(k => k.id===acc.id); return t + (x && x.profit!=null ? Number(x.profit) : 0); }, 0);
+      return g.source==='acct_usd' ? +sum.toFixed(2) : (acc.size ? +(sum/acc.size*100).toFixed(2) : null);
+    }
+    case 'profit_week': return +trades.filter(e => inW(exitDay(e)) && e.profit!=null).reduce((t,e) => t + Number(e.profit), 0).toFixed(2);
+    case 'pips_week':   return +trades.filter(e => inW(exitDay(e)) && e.pips!=null).reduce((t,e) => t + Number(e.pips), 0).toFixed(1);
+    case 'trades_week': return trades.filter(e => inW(e.day)).length;
+    case 'days_week':   return new Set([...S.daily.values()].filter(e => inW(e.day)).map(e => e.day)).size;
+  }
+  return null;
+}
+function goalState(g){
+  if(g.kind==='check') return { val:null, pct: g.done ? 1 : 0, done: !!g.done };
+  const val = g.source && g.source!=='manual' ? goalAuto(g, g.year, g.week) : (g.value ?? null);
+  const t = Number(g.target);
+  const pct = t > 0 && val!=null ? Math.max(0, Math.min(1, val / t)) : (g.done ? 1 : 0);
+  return { val, pct, done: pct >= 1 || !!g.done };
+}
+const weekGoals = (y, w) => [...S.goals.values()].filter(g => g.year===y && g.week===w).sort((a,b) => (a.sort ?? 0) - (b.sort ?? 0) || (a.created_at||'').localeCompare(b.created_at||''));
+function weekScore(y, w){ const gs = weekGoals(y, w); if(!gs.length) return null; const st = gs.map(goalState);
+  return { n:gs.length, done:st.filter(s => s.done).length, pct: st.reduce((t,s) => t + s.pct, 0) / gs.length }; }
+const goalUnit = g => g.unit || GOAL_SOURCES[g.source||'manual']?.[1] || '';
+const fmtGoal = (v, u) => v==null ? '–' : u==='$' ? money(v) : `${fmt(v, 2)}${u==='%' ? '%' : u ? ' '+u : ''}`;
+function mood(p){ return p >= 1 ? 'Week crushed. All goals done 🔥' : p >= .75 ? 'Almost there — finish strong 💪' : p >= .4 ? 'Halfway. Keep pushing ⚡' : p > 0 ? 'Good start. Stay on it 🎯' : 'Fresh week. Make it count 🚀'; }
+
+function renderGoals(){
+  const { y, w } = goalWeek(), [a, b] = weekRange(y, w), gs = weekGoals(y, w), sc = weekScore(y, w);
+  const prev = isoWeek(new Date(mondayOf(y, w).getTime() - 7*864e5)), recurring = weekGoals(prev.year, prev.week).filter(g => g.recurring);
+  const hist = [], cur = isoWeek(new Date());
+  for(let i = 9; i >= 0; i--){ const d = mondayOf(cur.year, cur.week); d.setDate(d.getDate() - 7*i); const k = isoWeek(d); hist.push({ ...k, s:weekScore(k.year, k.week) }); }
+  let streak = 0; for(let i = hist.length-1; i >= 0; i--){ const s = hist[i].s; if(i===hist.length-1 && (!s || s.pct < 1)) continue; if(s && s.pct >= 1) streak++; else break; }
+  const total = [...S.goals.values()].filter(g => goalState(g).done).length;
+  const ring = Math.round((sc?.pct || 0) * 100);
+  const accts = [...S.accounts.values()].filter(x => (x.status||'active')==='active');
+  document.getElementById('main').innerHTML = `
+    <div class="flex flex-wrap items-end gap-4 mb-4">
+      <div><div class="pairtitle">Goals</div><div class="muted mt-1" style="font-weight:600">Weekly ambitions — trading, money, life. Whatever keeps you hungry.</div></div>
+      <div class="flex items-center gap-2 ml-auto">
+        <div class="monthnav"><button class="ib" id="gPrev" aria-label="Previous week">‹</button>
+          <div class="mlabel">Week ${w} <span class="muted" style="font-size:13px;font-weight:600">· ${fmtDayShort(a)} – ${fmtDayShort(b)}</span></div>
+          <button class="ib" id="gNext" aria-label="Next week">›</button></div>
+        <button class="btn btn-primary" id="gNow">This week</button>
+      </div>
+    </div>
+    <div class="ggrid">
+      <section>
+        <div class="gscore card">
+          <div class="gring" style="--p:${ring}"><span>${ring}%</span></div>
+          <div style="min-width:0"><div class="bigval">${sc ? `${sc.done} / ${sc.n}` : '0'} <span class="muted" style="font-size:15px;font-weight:700">goals done</span></div>
+            <p style="font-weight:700;margin-top:4px">${mood(sc?.pct || 0)}</p></div>
+        </div>
+        ${!gs.length && recurring.length ? `<button class="btn" id="gRecur" style="margin-top:12px;width:100%">↻ Start the week with ${recurring.length} recurring goal${recurring.length>1?'s':''} from last week</button>` : ''}
+        <div class="glist">${gs.length ? gs.map(goalCard).join('') : `<div class="card empty" style="margin-top:12px"><div class="orb" aria-hidden="true"></div><p>No goals for week ${w} yet. Add the first one below.</p></div>`}</div>
+        <form class="card gform" id="gForm">
+          <h3 id="gFormTitle">Add a goal</h3>
+          <div class="gf-row">
+            <select class="inp" name="emoji" aria-label="Icon" style="width:72px">${GOAL_EMOJIS.map(e => `<option>${e}</option>`).join('')}</select>
+            <input class="inp" name="title" required placeholder="e.g. Payout 4% on FTMO 50K · Pay the electricity bill from payout · Read 2 chapters" aria-label="Goal">
+          </div>
+          <div class="seg" role="group" aria-label="Goal type" id="gKind"><button type="button" data-k="check" aria-pressed="true">✓ Checkbox</button><button type="button" data-k="number" aria-pressed="false"># Target</button></div>
+          <div id="gNum" hidden class="g3" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+            <div><label class="lbl" for="g_src">Progress from</label><select id="g_src" class="inp" name="source">${Object.entries(GOAL_SOURCES).map(([k,[l]]) => `<option value="${k}">${l}</option>`).join('')}</select></div>
+            <div id="gAcc" hidden><label class="lbl" for="g_acc">Account</label><select id="g_acc" class="inp" name="account_id">${accts.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join('') || '<option value="">no active accounts</option>'}</select></div>
+            <div><label class="lbl" for="g_t">Target</label><input id="g_t" class="inp num" name="target" inputmode="decimal" placeholder="4"></div>
+            <div><label class="lbl" for="g_u">Unit</label><input id="g_u" class="inp" name="unit" placeholder="%, $, pips, km…"></div>
+          </div>
+          <div class="flex flex-wrap items-center gap-3">
+            <label style="display:flex;gap:8px;align-items:center;font-weight:700;font-size:13px"><input type="checkbox" name="recurring" style="width:17px;height:17px;accent-color:var(--accent)"> Repeat every week</label>
+            <input class="inp" name="note" placeholder="note (optional)" style="flex:1;min-width:160px" aria-label="Note">
+            <button type="button" class="btn" id="gCancel" hidden>Cancel</button>
+            <button class="btn btn-primary" type="submit" id="gSubmit">Add goal</button>
+          </div>
+        </form>
+      </section>
+      <aside>
+        <div class="card"><h3>Last 10 weeks</h3>
+          <div class="ghist">${hist.map(h => { const p = h.s ? Math.round(h.s.pct*100) : 0; const isSel = h.year===y && h.week===w;
+            return `<button class="gh ${isSel ? 'sel' : ''}" data-gw="${h.year}|${h.week}" title="Week ${h.week}: ${h.s ? `${h.s.done}/${h.s.n} done` : 'no goals'}"><span class="gh-b"><i style="height:${Math.max(4,p)}%" class="${p>=100 ? 'full' : ''}"></i></span><span class="gh-l">W${h.week}</span></button>`; }).join('')}</div>
+          <div class="gstats"><div><span class="kick">Perfect-week streak</span><b>${streak} 🔥</b></div><div><span class="kick">Goals achieved (all time)</span><b>${total} 🏆</b></div></div>
+        </div>
+        <div class="card" style="margin-top:14px"><h3>Ideas</h3><div class="gideas">${[
+          ['💸','Payout 4% on an account'],['🛡️','No trade without a 4H setup'],['📈','+150 pips this week'],['🧠','Write a review every Friday'],
+          ['✅','Observe all 5 days'],['🏠','Pay a bill from trading profit'],['⏰','Max 3 trades this week'],['📚','Study 1 hour of fundamentals']]
+          .map(([e,t]) => `<button class="ch" data-idea="${esc(t)}" data-emo="${e}">${e} ${esc(t)}</button>`).join('')}</div></div>
+      </aside>
+    </div>`;
+  bindGoals();
+}
+function goalCard(g){
+  const st = goalState(g), u = goalUnit(g), auto = g.kind==='number' && g.source && g.source!=='manual', acc = S.accounts.get(g.account_id);
+  return `<article class="gcard ${st.done ? 'done' : ''}" data-gid="${g.id}">
+    ${g.kind==='check' ? `<button class="mschk big" data-gtoggle="${g.id}" aria-pressed="${!!g.done}" aria-label="${g.done ? 'Mark as not done' : 'Mark as done'}">${g.done ? '✓' : ''}</button>` : `<span class="gemo" aria-hidden="true">${esc(g.emoji || '🎯')}</span>`}
+    <div class="gc-b">
+      <div class="gc-t">${g.kind==='check' ? `<span aria-hidden="true">${esc(g.emoji || '🎯')}</span> ` : ''}<b>${esc(g.title)}</b>${g.recurring ? '<span class="gtag">↻ weekly</span>' : ''}${auto ? `<span class="gtag">auto${acc ? ' · '+esc(acc.name) : ''}</span>` : ''}</div>
+      ${g.note ? `<div class="muted" style="font-size:12.5px">${esc(g.note)}</div>` : ''}
+      ${g.kind==='number' ? `<div class="gbar"><span style="width:${Math.round(st.pct*100)}%" class="${st.done ? 'full' : ''}"></span></div>
+        <div class="gc-v"><span class="num ${st.val!=null && st.val<0 ? 'neg' : ''}"><b>${fmtGoal(st.val, u)}</b> / ${fmtGoal(Number(g.target), u)}</span><span class="muted">${Math.round(st.pct*100)}%</span>
+          ${!auto ? `<input class="inp num gval" data-gval="${g.id}" inputmode="decimal" value="${g.value ?? ''}" placeholder="achieved" aria-label="Achieved so far">` : ''}</div>` : ''}
+    </div>
+    <div class="gc-a"><button class="ib sm" data-gedit="${g.id}" aria-label="Edit goal">✎</button><button class="rm" data-gdel="${g.id}" aria-label="Delete goal">×</button></div>
+  </article>`;
+}
+async function saveGoal(row, id){
+  const q = id ? sb.from('do_goals').update(row).eq('id', id).select().single() : sb.from('do_goals').insert(row).select().single();
+  const { data, error } = await q; if(error){ toast('Not saved: ' + error.message); return null; }
+  const was = id ? goalState(S.goals.get(id)).done : false;
+  S.goals.set(data.id, data);
+  if(!was && goalState(data).done) toast(`🎉 Goal achieved: ${data.title}`);
+  return data;
+}
+function bindGoals(){
+  const { y, w } = goalWeek(), f = document.getElementById('gForm'); let editId = null, kind = 'check';
+  const go = n => { const d = mondayOf(y, w); d.setDate(d.getDate()+7*n); const k = isoWeek(d); S.gw = { y:k.year, w:k.week }; renderMain(); };
+  document.getElementById('gPrev').onclick = () => go(-1);
+  document.getElementById('gNext').onclick = () => go(1);
+  document.getElementById('gNow').onclick = () => { S.gw = null; renderMain(); };
+  document.querySelectorAll('[data-gw]').forEach(b => b.onclick = () => { const [yy, ww] = b.dataset.gw.split('|').map(Number); S.gw = { y:yy, w:ww }; renderMain(); });
+  const setKind = k => { kind = k; f.querySelectorAll('#gKind [data-k]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k===k))); f.querySelector('#gNum').hidden = k!=='number'; };
+  const syncSrc = () => { const src = f.elements.source.value; f.querySelector('#gAcc').hidden = !src.startsWith('acct_');
+    const u = GOAL_SOURCES[src][1]; f.elements.unit.disabled = src!=='manual'; if(src!=='manual') f.elements.unit.value = u; };
+  f.querySelectorAll('#gKind [data-k]').forEach(b => b.onclick = () => setKind(b.dataset.k));
+  f.elements.source.onchange = syncSrc;
+  const reset = () => { editId = null; f.reset(); setKind('check'); syncSrc(); f.querySelector('#gFormTitle').textContent = 'Add a goal'; f.querySelector('#gSubmit').textContent = 'Add goal'; f.querySelector('#gCancel').hidden = true; };
+  f.querySelector('#gCancel').onclick = reset;
+  f.onsubmit = async ev => {
+    ev.preventDefault();
+    const el = f.elements, src = kind==='number' ? el.source.value : 'manual';
+    const row = { year:y, week:w, emoji:el.emoji.value, title:el.title.value.trim(), kind, note:el.note.value.trim() || null, recurring:el.recurring.checked,
+      source:src, account_id: src.startsWith('acct_') ? (el.account_id.value || null) : null,
+      target: kind==='number' ? parseNum(el.target.value) : null, unit: kind==='number' ? (src==='manual' ? el.unit.value.trim() || null : GOAL_SOURCES[src][1]) : null };
+    if(!row.title) return;
+    if(kind==='number' && row.target==null) return toast('Set a target number');
+    if(!editId) row.sort = weekGoals(y, w).length;
+    if(await saveGoal(row, editId)){ toast(editId ? 'Goal updated' : 'Goal added'); renderMain(); }
+  };
+  document.querySelectorAll('[data-gtoggle]').forEach(b => b.onclick = async () => { const g = S.goals.get(b.dataset.gtoggle); if(await saveGoal({ done:!g.done }, g.id)) renderMain(); });
+  document.querySelectorAll('[data-gval]').forEach(i => i.onchange = async () => { if(await saveGoal({ value:parseNum(i.value) }, i.dataset.gval)) renderMain(); });
+  document.querySelectorAll('[data-gdel]').forEach(b => b.onclick = async () => {
+    if(!confirm('Delete this goal?')) return;
+    const { error } = await sb.from('do_goals').delete().eq('id', b.dataset.gdel); if(error) return toast(error.message);
+    S.goals.delete(b.dataset.gdel); renderMain(); });
+  document.querySelectorAll('[data-gedit]').forEach(b => b.onclick = () => {
+    const g = S.goals.get(b.dataset.gedit); editId = g.id; const el = f.elements;
+    el.emoji.value = g.emoji || '🎯'; el.title.value = g.title; el.note.value = g.note || ''; el.recurring.checked = !!g.recurring;
+    setKind(g.kind || 'check'); el.source.value = g.source || 'manual'; if(g.account_id) el.account_id.value = g.account_id; syncSrc();
+    el.target.value = g.target ?? ''; if((g.source||'manual')==='manual') el.unit.value = g.unit || '';
+    f.querySelector('#gFormTitle').textContent = 'Edit goal'; f.querySelector('#gSubmit').textContent = 'Save changes'; f.querySelector('#gCancel').hidden = false;
+    f.scrollIntoView({ behavior:'smooth', block:'center' }); el.title.focus();
+  });
+  document.querySelectorAll('[data-idea]').forEach(b => b.onclick = () => { reset(); f.elements.title.value = b.dataset.idea; f.elements.emoji.value = b.dataset.emo; f.elements.title.focus(); f.scrollIntoView({ behavior:'smooth', block:'center' }); });
+  document.getElementById('gRecur')?.addEventListener('click', async () => {
+    const prev = isoWeek(new Date(mondayOf(y, w).getTime() - 7*864e5));
+    const rows = weekGoals(prev.year, prev.week).filter(g => g.recurring).map(({ id, created_at, value, done, year, week, ...r }, i) => ({ ...r, year:y, week:w, value:null, done:false, sort:i }));
+    const { data, error } = await sb.from('do_goals').insert(rows).select(); if(error) return toast(error.message);
+    (data||[]).forEach(g => S.goals.set(g.id, g)); renderMain(); toast(`${rows.length} recurring goal${rows.length>1?'s':''} added`);
+  });
+  syncSrc();
+}
+
 /* ---------- analysis ---------- */
 function periodStart(){
   const now = new Date();
@@ -1666,7 +1884,7 @@ function download(name, text, type){
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 document.getElementById('expJson').onclick = () => download(`daily-observer-backup-${iso(new Date())}.json`,
-  JSON.stringify({ version:2, daily:[...S.daily.values()], weekly:[...S.weekly.values()], news:[...S.news.values()], accounts:[...S.accounts.values()] }, null, 1), 'application/json');
+  JSON.stringify({ version:2, daily:[...S.daily.values()], weekly:[...S.weekly.values()], news:[...S.news.values()], accounts:[...S.accounts.values()], goals:[...S.goals.values()] }, null, 1), 'application/json');
 document.getElementById('expCsv').onclick = () => {
   const p = S.pair, cols = ['day',...TEXT_F.slice(0,7),'r_multiple','risk','profit','entry_price','sl','tp','pips','daily_change','daily_obs','h4_obs','h1_obs','tv_daily','tv_4h','tv_1h','action'];
   const q = v => v==null ? '' : /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g,'""')}"` : String(v);
@@ -1683,6 +1901,7 @@ document.getElementById('jsonFile').onchange = async ev => {
     const clean = arr => (arr||[]).map(({ id, created_at, updated_at, user_id, ...r }) => r);
     if(!confirm(`Import: ${j.daily?.length||0} days, ${j.weekly?.length||0} weeks, ${j.news?.length||0} news items. Existing records on the same dates will be overwritten. Continue?`)) return;
     if(j.accounts?.length) await upsertChunks('do_accounts', j.accounts.map(({ created_at, ...r }) => r), 'id');
+    if(j.goals?.length) await upsertChunks('do_goals', j.goals.map(({ created_at, ...r }) => r), 'id');
     await upsertChunks('do_daily', clean(j.daily), 'pair,day');
     await upsertChunks('do_weekly', clean(j.weekly), 'pair,year,week');
     await upsertChunks('do_news', clean(j.news), 'currency,day');
