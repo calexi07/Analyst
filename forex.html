@@ -360,6 +360,17 @@
   .mschk{ width:26px; height:26px; border-radius:8px; border:2px solid var(--accent); background:transparent; color:var(--on-accent); font-weight:900; flex:0 0 auto; }
   .mschk[aria-pressed="true"]{ background:var(--accent); }
   .ms-amt{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:16px; font-variant-numeric:tabular-nums; }
+  .acct-detail{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent), var(--shadow); }
+  .paybtn{ width:100%; background:color-mix(in srgb,var(--pos) 14%,transparent); border-color:color-mix(in srgb,var(--pos) 40%,var(--line)); color:var(--pos); }
+  .paybtn:hover{ background:color-mix(in srgb,var(--pos) 22%,transparent); border-color:var(--pos); }
+  .st-acc-payout .accst{ background:color-mix(in srgb,var(--pos) 22%,transparent); color:var(--pos); }
+  .acard.st-acc-payout{ opacity:.85; }
+  details.archive{ margin-top:22px; }
+  details.archive summary{ cursor:pointer; list-style:none; }
+  details.archive summary::-webkit-details-marker{ display:none; }
+  details.archive summary h3{ display:flex; align-items:center; gap:8px; font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:18px; }
+  details.archive summary h3::after{ content:'▸'; color:var(--muted); margin-left:4px; }
+  details.archive[open] summary h3::after{ content:'▾'; }
 </style>
 </head>
 <body>
@@ -1145,7 +1156,7 @@ const tagPills = tags => (tags||[]).length ? `<div class="tagrow">${tags.map(t =
 
 /* ---------- prop firm accounts ---------- */
 const PHASES = ['Challenge – Phase 1','Challenge – Phase 2','Challenge – Phase 3','Funded','Personal'];
-const ACC_STATUS = { active:'Active', passed:'Passed', failed:'Failed', archived:'Archived' };
+const ACC_STATUS = { active:'Active', payout:'Payout reached', passed:'Passed', failed:'Failed', archived:'Archived' };
 const money = n => n==null ? '–' : `${n<0 ? '−' : ''}$${Math.abs(n).toLocaleString('en-US',{ maximumFractionDigits:0 })}`;
 function acctStats(a){
   const size = Number(a.size) || 0;
@@ -1168,16 +1179,7 @@ function bar(label, val, max, cls, right){
   const w = max ? Math.max(0, Math.min(100, val/max*100)) : 0;
   return `<div class="abar"><div class="abar-h"><span>${label}</span><span class="num">${right}</span></div><div class="abar-t"><span class="${cls}" style="width:${w}%"></span></div></div>`;
 }
-function renderAccounts(){
-  const accs = [...S.accounts.values()].sort((a,b) => (a.status==='active' ? 0 : 1) - (b.status==='active' ? 0 : 1) || (a.name||'').localeCompare(b.name||''));
-  if(S.selAcct && !S.accounts.has(S.selAcct)) S.selAcct = null;
-  const sel = S.selAcct ? S.accounts.get(S.selAcct) : null;
-  document.getElementById('main').innerHTML = `
-    <div class="flex flex-wrap items-end gap-4 mb-4">
-      <div><div class="pairtitle">Accounts</div><div class="muted mt-1" style="font-weight:600">Challenges and funded accounts — P/L from the trades linked to each account</div></div>
-      <button class="btn btn-primary ml-auto" id="newAcct">+ New account</button>
-    </div>
-    ${accs.length ? `<div class="agrid">${accs.map(a => { const s = acctStats(a);
+function acctCard(a){ const s = acctStats(a);
       const alert = s.breachMax ? 'Max loss hit' : s.breachDaily ? 'Daily loss breached' : s.passed && a.status==='active' ? 'Target reached 🎯' : '';
       return `<article class="acard ${S.selAcct===a.id ? 'sel' : ''} st-acc-${a.status||'active'}" data-acc="${a.id}" tabindex="0">
         <div class="acard-top"><div style="min-width:0"><h3>${esc(a.name)}</h3><div class="muted" style="font-size:12.5px;font-weight:600">${esc([a.firm, a.phase].filter(Boolean).join(' · '))}</div></div>
@@ -1190,11 +1192,32 @@ function renderAccounts(){
         ${s.maxLoss!=null ? bar('Max loss used', Math.max(0, a.size - s.bal), s.maxLoss, 'b-neg', `${money(s.room)} left`) : ''}
         ${s.dailyLim!=null ? bar('Daily loss today', Math.max(0,-s.today), s.dailyLim, 'b-amb', `${money(Math.max(0,-s.today))} / ${money(s.dailyLim)}`) : ''}
         ${msSummary(a)}
+        ${(a.status||'active')==='active' ? `<button class="btn paybtn" data-payout="${a.id}">💸 Payout reached — archive & restart</button>`
+          : `<div class="muted" style="font-size:12px;font-weight:700">${a.start_date ? a.start_date.split('-').reverse().join('.') : '…'} → ${a.closed_date ? a.closed_date.split('-').reverse().join('.') : '…'}</div>`}
         <div class="afoot"><span>${s.tr.length} trades${s.w+s.l ? ` · ${s.w}W/${s.l}L` : ''}</span><span>worst day ${money(s.worstDay)}</span></div>
-      </article>`; }).join('')}</div>` : `<div class="card empty"><div class="orb" aria-hidden="true"></div><p>No accounts yet. Add a challenge or funded account, then pick it in the Trade section of a day.</p><button class="btn btn-primary" id="newAcct2">+ New account</button></div>`}
-    ${sel ? acctDetail(sel) : ''}`;
+      </article>`;
+}
+function renderAccounts(){
+  const accs = [...S.accounts.values()].sort((a,b) => (a.status==='active' ? 0 : 1) - (b.status==='active' ? 0 : 1) || (a.name||'').localeCompare(b.name||''));
+  if(S.selAcct && !S.accounts.has(S.selAcct)) S.selAcct = null;
+  const sel = S.selAcct ? S.accounts.get(S.selAcct) : null;
+  const active = accs.filter(a => (a.status||'active')==='active'), archived = accs.filter(a => (a.status||'active')!=='active')
+    .sort((x,y) => (y.closed_date||y.created_at||'').localeCompare(x.closed_date||x.created_at||''));
+  document.getElementById('main').innerHTML = `
+    <div class="flex flex-wrap items-end gap-4 mb-4">
+      <div><div class="pairtitle">Accounts</div><div class="muted mt-1" style="font-weight:600">Challenges and funded accounts — P/L from the trades linked to each account</div></div>
+      <button class="btn btn-primary ml-auto" id="newAcct">+ New account</button>
+    </div>
+    ${accs.length ? `${active.length ? `<div class="agrid">${active.map(acctCard).join('')}</div>` : '<div class="card"><p class="muted">No active accounts. Open a new one or restore one from the archive.</p></div>'}
+      ${archived.length ? `<details class="archive" ${ls.get('do_arch_open', false) ? 'open' : ''}><summary><h3>Archive <span class="pg-n">${archived.length}</span>
+        <span class="muted" style="font-weight:600;font-size:13px;margin-left:8px">${money(archived.reduce((t,a) => t + msList(a).filter(m => m.kind==='payout').reduce((x,m) => x + (Number(m.amount)||0), 0), 0))} total paid out</span></h3></summary>
+        <div class="agrid" style="margin-top:12px">${archived.map(acctCard).join('')}</div></details>` : ''}`
+      : `<div class="card empty"><div class="orb" aria-hidden="true"></div><p>No accounts yet. Add a challenge or funded account, then pick it in the Trade section of a day.</p><button class="btn btn-primary" id="newAcct2">+ New account</button></div>`}
+    ${sel ? acctDetail(sel) : accs.length ? '<p class="muted" style="margin-top:16px;font-weight:600">Click an account card to see its balance curve, trades, goals, payouts and achievements.</p>' : ''}`;
   const open = id => { S.selAcct = S.selAcct===id ? null : id; renderMain(); if(S.selAcct) document.getElementById('acctDetail')?.scrollIntoView({ behavior:'smooth', block:'start' }); };
   document.querySelectorAll('[data-acc]').forEach(c => { c.onclick = () => open(c.dataset.acc); c.onkeydown = e => { if(e.key==='Enter' && e.target===c) open(c.dataset.acc); }; });
+  document.querySelectorAll('[data-payout]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openPayout(S.accounts.get(b.dataset.payout)); });
+  document.querySelector('.archive')?.addEventListener('toggle', ev => ls.set('do_arch_open', ev.target.open));
   document.querySelectorAll('[data-edit-acc]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openAcct(S.accounts.get(b.dataset.editAcc)); });
   document.getElementById('newAcct')?.addEventListener('click', () => openAcct());
   document.getElementById('newAcct2')?.addEventListener('click', () => openAcct());
@@ -1211,7 +1234,8 @@ function renderAccounts(){
 }
 function acctDetail(a){
   const s = acctStats(a);
-  return `<section id="acctDetail" class="card" style="margin-top:18px">
+  return `<section id="acctDetail" class="card acct-detail" style="margin-top:18px">
+    <div class="kick" style="margin-bottom:6px">Selected account</div>
     <div class="flex flex-wrap items-center gap-3 mb-3"><h3 style="margin:0;font-size:20px">${esc(a.name)}</h3>
       <span class="muted" style="font-weight:600">${money(Number(a.size))} account${a.start_date ? ' · start ' + a.start_date.split('-').reverse().join('.') : ''}</span>
       <button class="btn ml-auto" id="editAcct">Edit account</button></div>
@@ -1243,7 +1267,7 @@ function msSection(a){
   const sorted = [...ms].sort((x,y) => order(x)-order(y) || (y.date||'').localeCompare(x.date||''));
   const paid = ms.filter(m => m.kind==='payout').reduce((t,m) => t + (Number(m.amount)||0), 0);
   const goals = ms.filter(m => m.kind==='goal');
-  return `<div style="margin-top:22px"><div class="flex flex-wrap items-center gap-3" style="margin-bottom:10px"><h3 style="margin:0">Goals & achievements</h3>
+  return `<div style="margin-top:22px"><div class="flex flex-wrap items-center gap-3" style="margin-bottom:10px"><h3 style="margin:0">Goals & achievements <span class="muted" style="font-weight:600">· ${esc(a.name)}</span></h3>
       <span class="muted" style="font-weight:600;font-size:13px">${money(paid)} paid out${goals.length ? ` · ${goals.filter(g => g.done).length}/${goals.length} goals done` : ''}</span></div>
     <form class="msform" id="msForm">
       <select class="inp" name="kind" aria-label="Type">${Object.entries(MS_KINDS).map(([k,[i,l]]) => `<option value="${k}">${i} ${l}</option>`).join('')}</select>
@@ -1278,6 +1302,48 @@ function bindMilestones(a){
   document.querySelectorAll('[data-ms-del]').forEach(b => b.onclick = () => { if(confirm('Delete this item?')) saveMilestones(a, msList(a).filter(m => m.id!==b.dataset.msDel)); });
 }
 const acctDlg = document.getElementById('acctDlg');
+function nextName(n){ const m = (n||'').match(/^(.*#)(\d+)\s*$/); return m ? m[1] + (Number(m[2])+1) : `${n} #2`; }
+function openPayout(a){
+  const s = acctStats(a), today = iso(new Date());
+  acctDlg.innerHTML = `<form id="payForm" method="dialog">
+    <div class="dlg-head"><h2>💸 Payout reached</h2><p class="muted" style="margin-top:4px;font-weight:600">${esc(a.name)} · P/L ${s.pnl>0?'+':''}${money(s.pnl)}</p></div>
+    <div class="dlg-body" style="display:grid;gap:12px">
+      <div class="g3" style="grid-template-columns:1fr 1fr">
+        <div><label class="lbl" for="p_amt">Payout amount ($)</label><input id="p_amt" class="inp num" name="amount" inputmode="decimal" value="${s.pnl>0 ? Math.round(s.pnl) : ''}" placeholder="your share received"></div>
+        <div><label class="lbl" for="p_date">Payout date</label><input id="p_date" class="inp" name="date" type="date" value="${today}"></div>
+      </div>
+      <p class="hint" style="margin:0">The account is closed and moved to the Archive with the tag <b>Payout reached</b>. Its trades and history stay untouched.</p>
+      <label style="display:flex;gap:10px;align-items:center;font-weight:700;margin-top:4px"><input type="checkbox" name="restart" checked style="width:18px;height:18px;accent-color:var(--accent)"> Open a new account from 0 with the same rules</label>
+      <div id="restartBox" class="g3" style="grid-template-columns:1fr 1fr">
+        <div><label class="lbl" for="p_name">New account name</label><input id="p_name" class="inp" name="newname" value="${esc(nextName(a.name))}"></div>
+        <div><label class="lbl" for="p_start">Start date</label><input id="p_start" class="inp" name="start" type="date" value="${today}"></div>
+        <div><label class="lbl" for="p_phase">Phase</label><select id="p_phase" class="inp" name="phase">${[...PHASES, ...(a.phase && !PHASES.includes(a.phase) ? [a.phase] : [])].map(p => `<option ${p===(a.phase||'Funded') ? 'selected' : ''}>${p}</option>`).join('')}</select></div>
+        <div><label class="lbl" for="p_size">Account size ($)</label><input id="p_size" class="inp num" name="size" inputmode="decimal" value="${esc(a.size)}"></div>
+      </div>
+    </div>
+    <div class="dlg-foot"><button type="button" class="btn" id="payCancel">Cancel</button><button type="submit" class="btn btn-primary">Confirm payout</button></div></form>`;
+  const f = acctDlg.querySelector('#payForm');
+  f.elements.restart.onchange = () => acctDlg.querySelector('#restartBox').hidden = !f.elements.restart.checked;
+  acctDlg.querySelector('#payCancel').onclick = () => acctDlg.close();
+  f.onsubmit = async ev => {
+    ev.preventDefault();
+    const el = f.elements, amount = parseNum(el.amount.value), date = el.date.value || today;
+    const item = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), kind:'payout', title:'Payout reached', amount, date, done:true, done_date:date };
+    const { data:old, error:e1 } = await sb.from('do_accounts').update({ status:'payout', closed_date:date, closed_reason:'payout', milestones:[...msList(a), item] }).eq('id', a.id).select().single();
+    if(e1) return toast('Not saved: ' + e1.message);
+    S.accounts.set(old.id, old); S.selAcct = old.id;
+    if(el.restart.checked){
+      const row = { name:el.newname.value.trim() || nextName(a.name), firm:a.firm, phase:el.phase.value, status:'active', size:parseNum(el.size.value) ?? a.size,
+        start_date:el.start.value || date, target_pct:a.target_pct, daily_loss_pct:a.daily_loss_pct, max_loss_pct:a.max_loss_pct,
+        notes:`Restarted after payout on ${a.name}.`, milestones:[] };
+      const { data:nw, error:e2 } = await sb.from('do_accounts').insert(row).select().single();
+      if(e2){ toast('Archived, but the new account failed: ' + e2.message); acctDlg.close(); return renderMain(); }
+      S.accounts.set(nw.id, nw); S.selAcct = nw.id;
+    }
+    acctDlg.close(); renderMain(); toast(el.restart.checked ? 'Payout logged · new account opened' : 'Payout logged · account archived');
+  };
+  acctDlg.showModal();
+}
 function openAcct(a){
   const v = k => esc(a?.[k] ?? '');
   acctDlg.innerHTML = `<form id="acctForm" method="dialog">
