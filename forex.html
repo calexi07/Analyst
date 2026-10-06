@@ -456,6 +456,44 @@
   .ch[aria-pressed="true"] .fdot{ box-shadow:0 0 0 2px var(--on-accent); }
   .fhas{ font-weight:900; }
   .fundbox.exp{ border-color:color-mix(in srgb,var(--info) 40%,var(--line)); background:color-mix(in srgb,var(--info) 6%,var(--surface)); }
+  /* history */
+  .hfilters{ display:grid; gap:10px; padding:12px 14px; margin-bottom:14px; }
+  .hf{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+  .ch.hc{ font-weight:800; letter-spacing:.02em; }
+  .hmovers{ display:flex; gap:10px; overflow-x:auto; margin-bottom:14px; padding-bottom:2px; }
+  .hmv{ flex:0 0 auto; display:flex; flex-direction:column; gap:2px; text-align:left; padding:10px 14px; border-radius:14px; border:1px solid var(--line); background:var(--surface); color:var(--ink); min-width:170px; }
+  .hmv b{ font-family:'Bricolage Grotesque',sans-serif; font-size:17px; }
+  .hmv.flip{ border-color:var(--accent); }
+  .hmv:hover{ border-color:var(--muted); }
+  .hwrap{ padding:0; overflow:auto; }
+  .htable{ border-collapse:separate; border-spacing:0; width:100%; font-size:13px; }
+  .htable th{ position:sticky; top:0; z-index:2; background:var(--surface-2); color:var(--muted); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; padding:9px 8px; text-align:center; white-space:nowrap; }
+  .htable th.hcur{ color:var(--accent); }
+  .htable td{ padding:4px; border-top:1px solid var(--line); text-align:center; white-space:nowrap; }
+  .hsticky{ position:sticky; left:0; z-index:1; background:var(--surface); text-align:left !important; padding-left:14px !important; min-width:120px; }
+  .htable th.hsticky{ z-index:3; background:var(--surface-2); }
+  .hrow{ cursor:pointer; }
+  .hrow:hover td.hsticky, .hrow.open td.hsticky{ background:var(--surface-2); }
+  .hrow.open td{ border-top-color:var(--accent); }
+  .hrow b{ font-family:'Bricolage Grotesque',sans-serif; font-size:14px; }
+  .hcell{ min-width:46px; height:34px; border-radius:8px; font-weight:800; font-variant-numeric:tabular-nums; font-size:12.5px; }
+  .hcell i{ font-style:normal; font-size:10px; margin-left:2px; opacity:.8; }
+  .hnone{ color:var(--line); }
+  .hbias{ display:inline-block; margin-left:8px; font-size:10.5px; font-weight:800; padding:1px 6px; border-radius:6px; background:var(--neu); color:var(--muted); }
+  .hbias.bullish{ background:color-mix(in srgb,var(--pos) 16%,transparent); color:var(--pos); }
+  .hbias.bearish{ background:color-mix(in srgb,var(--neg) 16%,transparent); color:var(--neg); }
+  .mo{ font-size:11.5px; font-weight:800; padding:2px 8px; border-radius:999px; background:var(--neu); color:var(--muted); white-space:nowrap; }
+  .mo-up{ background:color-mix(in srgb,var(--pos) 16%,transparent); color:var(--pos); }
+  .mo-dn{ background:color-mix(in srgb,var(--neg) 16%,transparent); color:var(--neg); }
+  .mo-ease{ background:color-mix(in srgb,var(--amber) 16%,transparent); color:var(--amber); }
+  .mo-flipup{ background:var(--pos); color:#04241A; } .mo-flipdn{ background:var(--neg); color:#fff; }
+  .hdetail td{ padding:0; border-top:none; text-align:left; white-space:normal; }
+  .hdet{ display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); gap:16px; padding:14px; background:var(--surface-2); border-radius:0 0 14px 14px; }
+  @media (max-width:900px){ .hdet{ grid-template-columns:1fr; } }
+  .hlog{ display:grid; gap:8px; max-height:260px; overflow:auto; }
+  .hl{ padding:10px 12px; border-radius:12px; background:var(--surface); border:1px solid var(--line); }
+  .hl-h{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+  .hl p{ font-size:13px; margin-top:4px; }
 </style>
 </head>
 <body>
@@ -646,7 +684,7 @@ function render(){
       <div class="topbar">
         <div class="brand"><span class="mark" aria-hidden="true"></span>Daily Observer <small>by EaglePips</small></div>
         <nav class="tabs" role="tablist" aria-label="Sections">
-          ${[['journal','Journal'],['analysis','Analytics'],['overview','All pairs'],['accounts','Accounts'],['goals','Goals']].map(([v,l]) =>
+          ${[['journal','Journal'],['analysis','Analytics'],['overview','All pairs'],['history','History'],['accounts','Accounts'],['goals','Goals']].map(([v,l]) =>
             `<button class="tab" role="tab" aria-selected="${S.view===v}" data-view="${v}">${l}</button>`).join('')}
         </nav>
         <div class="tools">
@@ -705,6 +743,7 @@ function renderMain(){
   else if(S.view === 'overview') renderOverview();
   else if(S.view === 'accounts') renderAccounts();
   else if(S.view === 'goals') renderGoals();
+  else if(S.view === 'history') renderHistory();
   else renderJournal();
 }
 function setupScreen(){
@@ -1946,6 +1985,129 @@ function initReviewExport(){
     try{ await navigator.clipboard.writeText(txt); toast('Price action copied — paste it to the AI with the review prompt'); }
     catch{ download(`price-action-W${k.w}-${k.y}.json`, txt, 'application/json'); toast('Clipboard blocked — downloaded the file instead'); } };
   document.getElementById('revDl').onclick = () => { const k = get(); if(!k) return; download(`price-action-W${k.w}-${k.y}.json`, JSON.stringify(buildReviewExport(k.y, k.w), null, 1), 'application/json'); };
+}
+
+/* ---------- fundamentals history ---------- */
+const CCYS = ['USD','EUR','GBP','JPY','CHF','CAD','AUD','NZD','XAU'];
+S.hist = { n: ls.get('do_hist_n', 12), ccy: ls.get('do_hist_ccy', 'ALL'), mode: ls.get('do_hist_mode', 'pairs'), sort: ls.get('do_hist_sort', 'score'), bias: 'all', open: null };
+function histWeeks(n){ const cur = isoWeek(new Date()), out = []; for(let i = n-1; i >= 0; i--){ const d = mondayOf(cur.year, cur.week); d.setDate(d.getDate() - 7*i); out.push(isoWeek(d)); } return out; }
+/* signed score from the pair's point of view: >0 = bullish pair, <0 = bearish pair */
+function pairPoint(p, y, w, flip){
+  const r = S.weekly.get(wk(p, y, w)); if(!r) return null;
+  const d = det(r); let s = d.base_score!=null && d.quote_score!=null ? Number(d.base_score) - Number(d.quote_score) : null;
+  let bias = r.bias || null;
+  if(flip){ if(s!=null) s = -s; bias = bias==='bullish' ? 'bearish' : bias==='bearish' ? 'bullish' : bias; }
+  return { s, bias, conv:r.conviction, summary:r.fundamentals, changed:d.changed, base:d.base_score, quote:d.quote_score };
+}
+function ccyScore(c, y, w){
+  for(const r of S.weekly.values()){ if(r.year!==y || r.week!==w) continue; const d = det(r);
+    if(base(r.pair)===c && d.base_score!=null) return Number(d.base_score);
+    if(quote(r.pair)===c && d.quote_score!=null) return Number(d.quote_score); }
+  return null;
+}
+function momentum(s, p){
+  if(s==null || p==null) return { k:'none', t:'—' };
+  if(s>0 && p<0) return { k:'flipup', t:'Flipped bullish' };
+  if(s<0 && p>0) return { k:'flipdn', t:'Flipped bearish' };
+  if(s===p) return { k:'flat', t:'Unchanged' };
+  if(s<0) return s>p ? { k:'ease', t:'Bearish easing' } : { k:'dn', t:'Bearish strengthening' };
+  if(s>0) return s>p ? { k:'up', t:'Bullish strengthening' } : { k:'ease', t:'Bullish easing' };
+  return s>p ? { k:'up', t:'Turning bullish' } : { k:'dn', t:'Turning bearish' };
+}
+function heat(s, bias){
+  if(s==null){ const b = bias==='bullish' ? 6 : bias==='bearish' ? -6 : 0; if(!bias) return ''; s = b; }
+  const a = Math.min(1, Math.abs(s)/14), c = s>0 ? 'var(--pos)' : s<0 ? 'var(--neg)' : 'var(--muted)';
+  return `background:color-mix(in srgb,${c} ${Math.round(8 + a*52)}%,transparent);`;
+}
+function spark(vals, w = 120, h = 30){
+  const pts = vals.map((v,i) => [i, v]).filter(([,v]) => v!=null); if(pts.length < 2) return '<span class="muted" style="font-size:11px">not enough data</span>';
+  const max = Math.max(4, ...pts.map(([,v]) => Math.abs(v))), x = i => 3 + i*(w-6)/(vals.length-1), y = v => h/2 - v/max*(h/2-3);
+  const d = pts.map(([i,v], k) => `${k ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' '), last = pts.at(-1);
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><line x1="0" x2="${w}" y1="${h/2}" y2="${h/2}" stroke="var(--line)" stroke-dasharray="3 3"/>
+    <path d="${d}" fill="none" stroke="${last[1]>0 ? 'var(--pos)' : last[1]<0 ? 'var(--neg)' : 'var(--muted)'}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${x(last[0])}" cy="${y(last[1])}" r="3" fill="${last[1]>0 ? 'var(--pos)' : last[1]<0 ? 'var(--neg)' : 'var(--muted)'}"/></svg>`;
+}
+function renderHistory(){
+  const H = S.hist, weeks = histWeeks(H.n), cur = weeks.at(-1);
+  const filt = H.ccy==='ALL' ? allPairs() : allPairs().filter(p => base(p)===H.ccy || quote(p)===H.ccy);
+  let rows = [];
+  if(H.mode==='pairs'){
+    rows = filt.map(p => { const flip = H.ccy!=='ALL' && quote(p)===H.ccy;
+      const pts = weeks.map(k => pairPoint(p, k.year, k.week, flip)), vals = pts.map(x => x?.s ?? null);
+      const lastI = vals.map((v,i) => v!=null ? i : -1).filter(i => i>=0), li = lastI.at(-1), pi = lastI.at(-2);
+      const lastPt = [...pts].reverse().find(Boolean);
+      return { key:p, label: flip ? `${quote(p)}${base(p)}` : p, flip, pts, vals, last: li!=null ? vals[li] : null, prev: pi!=null ? vals[pi] : null, bias:lastPt?.bias, conv:lastPt?.conv };
+    }).filter(r => r.pts.some(Boolean));
+    if(H.bias!=='all') rows = rows.filter(r => (r.bias||'none')===H.bias || (H.bias==='neutral' && (r.bias==='two-sided' || !r.bias)));
+  } else {
+    rows = CCYS.map(c => { const vals = weeks.map(k => ccyScore(c, k.year, k.week)), idx = vals.map((v,i) => v!=null ? i : -1).filter(i => i>=0);
+      return { key:c, label:c, vals, pts:vals.map(v => v==null ? null : { s:v }), last: idx.length ? vals[idx.at(-1)] : null, prev: idx.length>1 ? vals[idx.at(-2)] : null }; }).filter(r => r.vals.some(v => v!=null));
+  }
+  const delta = r => r.last!=null && r.prev!=null ? r.last - r.prev : null;
+  if(H.sort==='score') rows.sort((a,b) => (b.last ?? -99) - (a.last ?? -99));
+  else if(H.sort==='abs') rows.sort((a,b) => Math.abs(b.last ?? 0) - Math.abs(a.last ?? 0));
+  else if(H.sort==='move') rows.sort((a,b) => Math.abs(delta(b) ?? 0) - Math.abs(delta(a) ?? 0));
+  else rows.sort((a,b) => a.label.localeCompare(b.label));
+  const movers = rows.filter(r => delta(r)).sort((a,b) => Math.abs(delta(b)) - Math.abs(delta(a))).slice(0,4);
+  const flips = H.mode==='pairs' ? rows.filter(r => r.last!=null && r.prev!=null && Math.sign(r.last)!==Math.sign(r.prev) && r.last!==0 && r.prev!==0) : [];
+  document.getElementById('main').innerHTML = `
+    <div class="flex flex-wrap items-end gap-4 mb-4">
+      <div><div class="pairtitle">History</div><div class="muted mt-1" style="font-weight:600">How the fundamental picture evolves week by week — score = base minus quote (positive = bullish pair).</div></div>
+      <div class="seg ml-auto" role="group" aria-label="View"><button data-hm="pairs" aria-pressed="${H.mode==='pairs'}">Pairs</button><button data-hm="ccy" aria-pressed="${H.mode==='ccy'}">Currencies</button></div>
+      <div class="seg" role="group" aria-label="Range">${[8,12,26].map(n => `<button data-hn="${n}" aria-pressed="${H.n===n}">${n}w</button>`).join('')}</div>
+    </div>
+    ${H.mode==='pairs' ? `<div class="hfilters card">
+      <div class="hf"><span class="lbl" style="margin:0">Currency</span><div class="chips">${['ALL', ...CCYS].map(c => `<button class="ch hc" data-hc="${c}" aria-pressed="${H.ccy===c}">${c==='ALL' ? 'All pairs' : c}</button>`).join('')}</div></div>
+      <div class="hf"><span class="lbl" style="margin:0">Latest bias</span><div class="chips">${[['all','All'],['bullish','▲ Bullish'],['bearish','▼ Bearish'],['neutral','◆ Neutral']].map(([k,l]) => `<button class="ch" data-hb="${k}" aria-pressed="${H.bias===k}">${l}</button>`).join('')}</div>
+        <span class="lbl" style="margin:0 0 0 auto">Sort</span><select class="inp" id="hSort" style="width:auto">${[['score','Score (bullish → bearish)'],['abs','Strongest divergence'],['move','Biggest weekly change'],['az','A → Z']].map(([k,l]) => `<option value="${k}" ${H.sort===k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      ${H.ccy!=='ALL' ? `<p class="hint" style="margin:0">Pairs are shown from <b>${H.ccy}</b>'s point of view (e.g. ${H.ccy==='USD' ? 'EURUSD becomes USDEUR' : `USD${H.ccy} becomes ${H.ccy}USD`}), so green always means ${H.ccy} stronger.</p>` : ''}
+    </div>` : `<div class="hfilters card"><div class="hf"><span class="lbl" style="margin:0">Sort</span><select class="inp" id="hSort" style="width:auto">${[['score','Strongest → weakest'],['move','Biggest weekly change'],['az','A → Z']].map(([k,l]) => `<option value="${k}" ${H.sort===k ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      <span class="hint" style="margin:0 0 0 8px">Currency scores from your imported scorecards.</span></div></div>`}
+    ${movers.length || flips.length ? `<div class="hmovers">${flips.map(r => `<button class="hmv flip" data-ho="${r.key}"><span class="kick">Flipped</span><b>${r.label}</b><span class="${r.last>0 ? 'pos' : 'neg'}">${r.last>0 ? '▲ now bullish' : '▼ now bearish'} (${r.prev>0?'+':''}${r.prev} → ${r.last>0?'+':''}${r.last})</span></button>`).join('')}
+      ${movers.map(r => { const dl = delta(r), m = momentum(r.last, r.prev); return `<button class="hmv" data-ho="${r.key}"><span class="kick">Biggest move</span><b>${r.label}</b><span class="mo mo-${m.k}">${dl>0 ? '▲' : '▼'} ${dl>0?'+':''}${dl} · ${m.t}</span></button>`; }).join('')}</div>` : ''}
+    ${rows.length ? `<div class="hwrap card"><table class="htable">
+      <thead><tr><th class="hsticky">${H.mode==='pairs' ? 'Pair' : 'Currency'}</th>${weeks.map(k => `<th class="${k.week===cur.week && k.year===cur.year ? 'hcur' : ''}">W${k.week}</th>`).join('')}<th>Trend</th><th>Last change</th></tr></thead>
+      <tbody>${rows.map(r => { const m = momentum(r.last, r.prev), dl = delta(r);
+        return `<tr class="hrow ${S.hist.open===r.key ? 'open' : ''}" data-ho="${r.key}" tabindex="0">
+          <td class="hsticky"><b>${r.label}</b>${r.bias ? `<span class="hbias ${r.bias}">${r.bias==='bullish' ? '▲' : r.bias==='bearish' ? '▼' : '◆'}${r.conv ? ' '+r.conv[0].toUpperCase() : ''}</span>` : ''}</td>
+          ${r.pts.map((pt, i) => { const prevV = r.vals.slice(0, i).reverse().find(v => v!=null); const ar = pt?.s!=null && prevV!=null && pt.s!==prevV ? (pt.s>prevV ? '↑' : '↓') : '';
+            return `<td class="hcell" style="${pt ? heat(pt.s, pt.bias) : ''}" title="${pt ? `W${weeks[i].week}: ${pt.bias ? BIAS_LBL[pt.bias] || pt.bias : ''}${pt.conv ? ', '+pt.conv : ''}${pt.s!=null ? ` · score ${pt.s>0?'+':''}${pt.s}` : ''}${pt.summary ? ' · '+esc(pt.summary) : ''}` : 'no data'}">
+              ${pt ? (pt.s!=null ? `${pt.s>0?'+':''}${pt.s}<i>${ar}</i>` : `<span style="font-size:11px">${pt.bias ? pt.bias[0].toUpperCase() : '·'}</span>`) : '<span class="hnone">·</span>'}</td>`; }).join('')}
+          <td>${spark(r.vals)}</td>
+          <td><span class="mo mo-${m.k}">${dl!=null && dl!==0 ? `${dl>0 ? '▲ +' : '▼ '}${dl} · ` : ''}${m.t}</span></td></tr>
+          ${S.hist.open===r.key ? `<tr class="hdetail"><td colspan="${weeks.length+3}">${histDetail(r, weeks)}</td></tr>` : ''}`; }).join('')}
+      </tbody></table></div>` : `<div class="card empty"><div class="orb" aria-hidden="true"></div><p>No fundamentals in this range yet. Import a weekly analysis or fill in the week panel in the journal.</p></div>`}`;
+  const set = (k, v, key) => { S.hist[k] = v; if(key) ls.set(key, v); renderMain(); };
+  document.querySelectorAll('[data-hm]').forEach(b => b.onclick = () => set('mode', b.dataset.hm, 'do_hist_mode'));
+  document.querySelectorAll('[data-hn]').forEach(b => b.onclick = () => set('n', +b.dataset.hn, 'do_hist_n'));
+  document.querySelectorAll('[data-hc]').forEach(b => b.onclick = () => set('ccy', b.dataset.hc, 'do_hist_ccy'));
+  document.querySelectorAll('[data-hb]').forEach(b => b.onclick = () => set('bias', b.dataset.hb));
+  document.getElementById('hSort')?.addEventListener('change', e => set('sort', e.target.value, 'do_hist_sort'));
+  document.querySelectorAll('[data-ho]').forEach(r => { const go = () => { S.hist.open = S.hist.open===r.dataset.ho ? null : r.dataset.ho; renderMain();
+      if(S.hist.open) document.querySelector('.hdetail')?.scrollIntoView({ behavior:'smooth', block:'nearest' }); };
+    r.onclick = ev => { if(ev.target.closest('[data-hj]')) return; go(); }; r.onkeydown = e => { if(e.key==='Enter') go(); }; });
+  document.querySelectorAll('[data-hj]').forEach(b => b.onclick = ev => { ev.stopPropagation(); const [p, y, w] = b.dataset.hj.split('|'); goTo(p, { type:'week', y:+y, w:+w }); });
+  const open = rows.find(r => r.key===S.hist.open);
+  if(open){
+    const ds = [{ label:'Score', data:open.vals, borderColor:cssv('--accent'), backgroundColor:cssv('--accent'), borderWidth:2.5, tension:.25, spanGaps:true, pointRadius:4 }];
+    if(H.mode==='pairs'){ const b = open.flip ? quote(open.key) : base(open.key), q = open.flip ? base(open.key) : quote(open.key);
+      ds.push({ label:b, data:open.pts.map(x => x ? (open.flip ? x.quote : x.base) ?? null : null), borderColor:cssv('--info'), borderDash:[5,4], borderWidth:1.5, pointRadius:2, spanGaps:true, tension:.25 });
+      ds.push({ label:q, data:open.pts.map(x => x ? (open.flip ? x.base : x.quote) ?? null : null), borderColor:cssv('--violet'), borderDash:[5,4], borderWidth:1.5, pointRadius:2, spanGaps:true, tension:.25 }); }
+    mkChart('c_hist', 'line', weeks.map(k => 'W'+k.week), ds, { tooltip:{ mode:'index', intersect:false } });
+    const ch = S.charts.at(-1); if(ch){ ch.options.plugins.legend.display = true; ch.options.plugins.legend.labels = { color:cssv('--muted'), boxWidth:14 }; ch.update(); }
+  }
+}
+function histDetail(r, weeks){
+  const H = S.hist;
+  const list = weeks.map((k, i) => ({ k, pt:r.pts[i] })).filter(x => x.pt).reverse();
+  return `<div class="hdet">
+    <div class="chartbox" style="height:220px"><canvas id="c_hist" aria-label="Score history for ${r.label}"></canvas></div>
+    ${H.mode==='pairs' ? `<div class="hlog">${list.map(({ k, pt }) => { const m = momentum(pt.s, r.vals.slice(0, weeks.indexOf(k)).reverse().find(v => v!=null) ?? null);
+      return `<div class="hl"><div class="hl-h"><b>W${k.week}</b><span class="hbias ${pt.bias||''}">${pt.bias ? BIAS_LBL[pt.bias] || pt.bias : '—'}${pt.conv ? ' · '+pt.conv : ''}</span>
+          ${pt.s!=null ? `<span class="num ${sgn(pt.s)}" style="font-weight:800">${pt.s>0?'+':''}${pt.s}</span>` : ''}<span class="mo mo-${m.k}">${m.t}</span>
+          <button class="btn" style="margin-left:auto;padding:3px 10px;font-size:12px" data-hj="${r.key}|${k.year}|${k.week}">Open week ›</button></div>
+        ${pt.summary ? `<p>${esc(pt.summary)}</p>` : ''}${pt.changed ? `<p class="muted" style="font-size:12.5px">${esc(pt.changed)}</p>` : ''}</div>`; }).join('')}</div>` : ''}
+  </div>`;
 }
 
 /* ---------- analysis ---------- */
