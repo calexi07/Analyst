@@ -494,6 +494,9 @@
   .hl{ padding:10px 12px; border-radius:12px; background:var(--surface); border:1px solid var(--line); }
   .hl-h{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
   .hl p{ font-size:13px; margin-top:4px; }
+  .shmsg{ border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+  .shmsg-h{ display:flex; align-items:center; gap:10px; padding:8px 12px; background:var(--surface-2); font-size:12.5px; }
+  .shpre{ margin:0; padding:12px 14px; max-height:300px; overflow:auto; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; line-height:1.5; white-space:pre-wrap; background:#313338; color:#dbdee1; }
 </style>
 </head>
 <body>
@@ -504,6 +507,7 @@
 <dialog id="searchDlg" class="panel" aria-label="Search" style="width:min(720px,96vw)"></dialog>
 
 <!-- Data dialog -->
+<dialog id="shareDlg" class="panel" aria-label="Share to Discord" style="width:min(760px,96vw)"></dialog>
 <dialog id="fundDlg" class="panel" aria-label="Import fundamental analysis" style="width:min(780px,96vw)"></dialog>
 <dialog id="dataDlg" class="panel" aria-labelledby="dataTitle" style="width:min(620px,96vw)">
   <div class="dlg-head"><h2 id="dataTitle" class="cond" style="font-size:20px;font-weight:600">Import & export</h2></div>
@@ -690,6 +694,7 @@ function render(){
         <div class="tools">
           <button class="searchbtn" id="searchBtn" aria-label="Search"><span aria-hidden="true" style="font-size:15px">⌕</span><span class="t">Search…</span><kbd>/</kbd></button>
           <button class="iconbtn" id="themeBtn" aria-label="${light ? 'Dark theme' : 'Light theme'}" title="${light ? 'Dark theme' : 'Light theme'}">${light ? '☾' : '☀'}</button>
+          <button class="hbtn" id="openShare" title="Share the week's fundamentals to Discord">📣 Share</button>
           <button class="hbtn" id="openData">Import / export</button>
         </div>
       </div>
@@ -701,6 +706,7 @@ function render(){
   document.getElementById('themeBtn').onclick = () => { const t = light ? 'dark' : 'light'; document.documentElement.dataset.theme = t; ls.set('do_theme', t); render(); };
   document.getElementById('openData').onclick = openData;
   document.getElementById('searchBtn').onclick = openSearch;
+  document.getElementById('openShare').onclick = openShare;
   renderMain();
 
 }
@@ -2108,6 +2114,103 @@ function histDetail(r, weeks){
           <button class="btn" style="margin-left:auto;padding:3px 10px;font-size:12px" data-hj="${r.key}|${k.year}|${k.week}">Open week ›</button></div>
         ${pt.summary ? `<p>${esc(pt.summary)}</p>` : ''}${pt.changed ? `<p class="muted" style="font-size:12.5px">${esc(pt.changed)}</p>` : ''}</div>`; }).join('')}</div>` : ''}
   </div>`;
+}
+
+/* ---------- Discord share ---------- */
+const shareDlg = document.getElementById('shareDlg');
+S.share = { topN: ls.get('do_sh_n', 3), drivers: ls.get('do_sh_drv', true), limit: ls.get('do_sh_lim', 2000), secs: ls.get('do_sh_secs', { strength:true, bull:true, bear:true, shifts:true, cats:true, neutral:false }) };
+const A = { g:'\u001b[1;32m', r:'\u001b[1;31m', y:'\u001b[1;33m', b:'\u001b[1;34m', c:'\u001b[1;36m', w:'\u001b[1;37m', d:'\u001b[0;30m', x:'\u001b[0m' };
+const cut = (t, n) => { t = String(t||'').replace(/\s+/g,' ').trim(); return t.length > n ? t.slice(0, n-1).replace(/[\s,;:.—-]+\S*$/, '') + '…' : t; };
+const rankImp = i => ({ CRITICAL:0, HIGH:1, MEDIUM:2, LOW:3 }[i] ?? 4);
+const MONI = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+function catDate(s, y){ const m = String(s||'').match(/(\d{1,2})(?:-\d{1,2})?\s+([A-Z][a-z]{2})/); return m && MONI[m[2]]!=null ? new Date(y, MONI[m[2]], +m[1]) : null; }
+function buildDiscord(y, w){
+  const o = S.share, [from] = weekRange(y, w), fri = parseISO(from); fri.setDate(fri.getDate()+4);
+  const recs = allPairs().map(p => ({ p, r:S.weekly.get(wk(p, y, w)) })).filter(x => x.r);
+  if(!recs.length) return null;
+  const pw = prevWeek(y, w);
+  const items = recs.map(({ p, r }) => { const d = det(r), s = d.base_score!=null && d.quote_score!=null ? d.base_score - d.quote_score : null;
+    const pr = S.weekly.get(wk(p, pw.year, pw.week)), pd = det(pr), ps = pr && pd.base_score!=null && pd.quote_score!=null ? pd.base_score - pd.quote_score : null;
+    return { p, bias:r.bias, conv:r.conviction, s, ps, driver:d.main_driver, horizon:d.horizon, cats:d.catalysts||[] }; });
+  const rank = x => ({ high:3, medium:2, low:1 }[x.conv] || 0) * 100 + Math.abs(x.s ?? 0);
+  const fmtP = p => p.length===6 ? `${p.slice(0,3)}/${p.slice(3)}` : p;
+  const convTxt = c => ({ high:'High conviction', medium:'Medium conviction', low:'Low conviction' }[c] || 'Unrated');
+  const sc = v => v==null ? '' : `${v>0?'+':''}${v}`;
+  const blocks = [];
+  blocks.push(`# 🦅 EaglePips · Weekly FX Bias — W${w}\n-# ${fmtDayShort(from)} – ${fmtDayShort(iso(fri))} ${y} · fundamental overview · not financial advice`);
+  if(o.secs.strength){
+    const rows = CCYS.map(c => ({ c, v:ccyScore(c, y, w), pv:ccyScore(c, pw.year, pw.week) })).filter(x => x.v!=null).sort((a,b) => b.v - a.v);
+    if(rows.length){
+      const lines = rows.map(x => { const n = Math.min(10, Math.abs(x.v)), col = x.v>0 ? A.g : x.v<0 ? A.r : A.w;
+        const bar = x.v>=0 ? `${A.d}${'░'.repeat(10)}${A.x}${col}${'█'.repeat(n)}${A.x}${A.d}${'░'.repeat(10-n)}${A.x}` : `${A.d}${'░'.repeat(10-n)}${A.x}${col}${'█'.repeat(n)}${A.x}${A.d}${'░'.repeat(10)}${A.x}`;
+        const dl = x.pv!=null ? x.v - x.pv : null, dtx = dl ? `${dl>0 ? A.g+'▲' : A.r+'▼'}${Math.abs(dl)}${A.x}` : `${A.d}·${A.x}`;
+        return `${A.w}${x.c}${A.x} ${col}${sc(x.v).padStart(3)}${A.x} ${bar} ${dtx}`; });
+      blocks.push(`## 💪 Currency strength\n\`\`\`ansi\n${lines.join('\n')}\n\`\`\``);
+    }
+  }
+  const pairLine = (x, e) => `${e} **${fmtP(x.p)}** \`${sc(x.s) || '—'}\` · *${convTxt(x.conv)}*${o.drivers && x.driver ? `\n> ${cut(x.driver, 120)}` : ''}`;
+  if(o.secs.bull){ const L = items.filter(x => x.bias==='bullish').sort((a,b) => rank(b)-rank(a)).slice(0, o.topN);
+    if(L.length) blocks.push(`## 🟢 Top bullish\n${L.map(x => pairLine(x, x.conv==='high' ? '🚀' : '📈')).join('\n')}`); }
+  if(o.secs.bear){ const L = items.filter(x => x.bias==='bearish').sort((a,b) => rank(b)-rank(a)).slice(0, o.topN);
+    if(L.length) blocks.push(`## 🔴 Top bearish\n${L.map(x => pairLine(x, x.conv==='high' ? '🩸' : '📉')).join('\n')}`); }
+  if(o.secs.neutral){ const L = items.filter(x => !['bullish','bearish'].includes(x.bias)).map(x => fmtP(x.p));
+    if(L.length) blocks.push(`## ⚖️ Neutral / two-sided\n-# ${L.join(' · ')}`); }
+  if(o.secs.shifts){ const sh = items.filter(x => x.s!=null && x.ps!=null && x.s!==x.ps).map(x => ({ ...x, m:momentum(x.s, x.ps), dl:x.s - x.ps }))
+      .sort((a,b) => (/flip/.test(b.m.k) ? 100 : 0) + Math.abs(b.dl) - (/flip/.test(a.m.k) ? 100 : 0) - Math.abs(a.dl)).slice(0, 4);
+    if(sh.length) blocks.push(`## 🔄 Biggest shifts vs W${pw.week}\n${sh.map(x => `- **${fmtP(x.p)}** \`${sc(x.ps)} → ${sc(x.s)}\` ${/flip/.test(x.m.k) ? `**__${x.m.t}__** ⚠️` : x.m.k==='ease' ? `*${x.m.t}*` : x.m.t}`).join('\n')}`); }
+  if(o.secs.cats){
+    const seen = new Map();
+    const norm = t => t.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+    items.forEach(x => x.cats.forEach(c => { if(!c.event) return;
+      String(c.event).replace(/\([^)]*\)/g,'').split(/\s\+\s|\s&\s/).map(t => t.trim()).filter(Boolean).forEach(ev => {
+        const dt = catDate(c.date, y); if(!dt || dt < parseISO(from)) return;
+        const n = norm(ev), dup = [...seen.values()].find(o => o.date===c.date && (norm(o.event).startsWith(n) || n.startsWith(norm(o.event))));
+        if(dup){ if(ev.length > dup.event.length) dup.event = ev; if(rankImp(c.imp) < rankImp(dup.imp)) dup.imp = c.imp; return; }
+        seen.set(`${c.date}|${n}`, { date:c.date, event:ev, imp:c.imp, dt }); }); }));
+    const rankI = i => ({ CRITICAL:0, HIGH:1, MEDIUM:2, LOW:3 }[i] ?? 4);
+    const byDay = {}; [...seen.values()].filter(c => c.dt).sort((a,b) => a.dt - b.dt || rankI(a.imp) - rankI(b.imp)).forEach(c => { (byDay[c.date] ||= []).push(c); });
+    const days = Object.entries(byDay).slice(0, 5);
+    if(days.length){ const ico = i => ({ CRITICAL:'🔥', HIGH:'🟠', MEDIUM:'🟡', LOW:'⚪' }[i] || '▫️');
+      blocks.push(`## 📅 Key catalysts\n${days.map(([d, cs]) => `> **${d}** — ${cs.slice(0,4).map(c => `${ico(c.imp)} ${cut(c.event, 40)}`).join(' · ')}`).join('\n')}`); }
+  }
+  blocks.push(`-# 🦅 Daily Observer · EaglePips — DYOR, manage your risk.`);
+  const msgs = []; let curM = '';
+  blocks.forEach(b => { if(curM && (curM.length + b.length + 2) > o.limit){ msgs.push(curM); curM = b; } else curM = curM ? curM + '\n\n' + b : b; });
+  if(curM) msgs.push(curM);
+  return msgs;
+}
+function openShare(){
+  const k0 = S.sel?.type==='week' ? { y:S.sel.y, w:S.sel.w } : (() => { const k = isoWeek(new Date()); return { y:k.year, w:k.week }; })();
+  let k = k0;
+  const draw = () => {
+    const o = S.share, msgs = buildDiscord(k.y, k.w);
+    shareDlg.innerHTML = `<div class="dlg-head"><h2>📣 Share to Discord</h2><p class="muted" style="margin-top:4px;font-weight:600">Discord-formatted overview of the week's fundamentals — copy and paste into any channel.</p></div>
+      <div class="dlg-body" style="display:grid;gap:14px">
+        <div class="flex flex-wrap items-center gap-2">
+          <input class="inp" type="week" id="shWeek" value="${k.y}-W${String(k.w).padStart(2,'0')}" style="width:auto" aria-label="Week">
+          <div class="seg" role="group" aria-label="Top pairs"><button data-sn="3" aria-pressed="${o.topN===3}">Top 3</button><button data-sn="5" aria-pressed="${o.topN===5}">Top 5</button></div>
+          <div class="seg" role="group" aria-label="Message length"><button data-sl="2000" aria-pressed="${o.limit===2000}">2000 chars</button><button data-sl="4000" aria-pressed="${o.limit===4000}">Nitro 4000</button></div>
+        </div>
+        <div class="chips">${[['strength','💪 Currency strength'],['bull','🟢 Top bullish'],['bear','🔴 Top bearish'],['shifts','🔄 Shifts'],['cats','📅 Catalysts'],['neutral','⚖️ Neutral list']].map(([s,l]) => `<button class="ch" data-ss="${s}" aria-pressed="${!!o.secs[s]}">${l}</button>`).join('')}
+          <button class="ch" data-sd="1" aria-pressed="${o.drivers}">💬 Drivers under pairs</button></div>
+        ${msgs ? msgs.map((m, i) => `<div class="shmsg"><div class="shmsg-h"><b>${msgs.length > 1 ? `Message ${i+1} of ${msgs.length}` : 'Message'}</b><span class="muted">${m.length} / ${o.limit} chars</span>
+            <button class="btn btn-primary" data-copy="${i}" style="margin-left:auto">Copy</button></div><pre class="shpre">${esc(m.replace(/\u001b\[[0-9;]*m/g, ''))}</pre></div>`).join('')
+          : `<div class="card empty"><p>No fundamentals for week ${k.w}. Import or fill in the weekly analysis first.</p></div>`}
+        <p class="hint" style="margin:0">The strength table uses Discord's coloured <code>ansi</code> code block (green/red on desktop; plain on some mobile clients). Preview above shows the text without colour codes.</p>
+      </div>
+      <div class="dlg-foot">${msgs && msgs.length > 1 ? '<button class="btn" id="shAll">Copy all (one after another)</button>' : ''}<button class="btn" id="shClose">Close</button></div>`;
+    const save = () => { ls.set('do_sh_n', o.topN); ls.set('do_sh_drv', o.drivers); ls.set('do_sh_lim', o.limit); ls.set('do_sh_secs', o.secs); draw(); };
+    shareDlg.querySelector('#shWeek').onchange = e => { const m = e.target.value.match(/(\d{4})-?W(\d{1,2})/i); if(m){ k = { y:+m[1], w:+m[2] }; draw(); } };
+    shareDlg.querySelectorAll('[data-sn]').forEach(b => b.onclick = () => { o.topN = +b.dataset.sn; save(); });
+    shareDlg.querySelectorAll('[data-sl]').forEach(b => b.onclick = () => { o.limit = +b.dataset.sl; save(); });
+    shareDlg.querySelectorAll('[data-ss]').forEach(b => b.onclick = () => { o.secs[b.dataset.ss] = !o.secs[b.dataset.ss]; save(); });
+    shareDlg.querySelector('[data-sd]').onclick = () => { o.drivers = !o.drivers; save(); };
+    const copy = async t => { try{ await navigator.clipboard.writeText(t); toast('Copied — paste it in Discord'); }catch{ toast('Clipboard blocked by the browser'); } };
+    shareDlg.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => { copy(msgs[+b.dataset.copy]); b.textContent = 'Copied ✓'; });
+    shareDlg.querySelector('#shAll')?.addEventListener('click', () => copy(msgs.join('\n\n')));
+    shareDlg.querySelector('#shClose').onclick = () => shareDlg.close();
+  };
+  draw(); shareDlg.showModal();
 }
 
 /* ---------- analysis ---------- */
