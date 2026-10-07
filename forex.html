@@ -2137,7 +2137,7 @@ function buildDiscord(y, w){
   const convTxt = c => ({ high:'High conviction', medium:'Medium conviction', low:'Low conviction' }[c] || 'Unrated');
   const sc = v => v==null ? '' : `${v>0?'+':''}${v}`;
   const blocks = [];
-  blocks.push(`# 🦅 EaglePips · Weekly FX Bias — W${w}\n-# ${fmtDayShort(from)} – ${fmtDayShort(iso(fri))} ${y} · fundamental overview · not financial advice`);
+  blocks.push(`# 📊 Weekly FX Bias — W${w}\n-# ${fmtDayShort(from)} – ${fmtDayShort(iso(fri))} ${y} · fundamental overview`);
   if(o.secs.strength){
     const rows = CCYS.map(c => ({ c, v:ccyScore(c, y, w), pv:ccyScore(c, pw.year, pw.week) })).filter(x => x.v!=null).sort((a,b) => b.v - a.v);
     if(rows.length){
@@ -2173,7 +2173,6 @@ function buildDiscord(y, w){
     if(days.length){ const ico = i => ({ CRITICAL:'🔥', HIGH:'🟠', MEDIUM:'🟡', LOW:'⚪' }[i] || '▫️');
       blocks.push(`## 📅 Key catalysts\n${days.map(([d, cs]) => `> **${d}** — ${cs.slice(0,4).map(c => `${ico(c.imp)} ${cut(c.event, 40)}`).join(' · ')}`).join('\n')}`); }
   }
-  blocks.push(`-# 🦅 Daily Observer · EaglePips — DYOR, manage your risk.`);
   const msgs = []; let curM = '';
   blocks.forEach(b => { if(curM && (curM.length + b.length + 2) > o.limit){ msgs.push(curM); curM = b; } else curM = curM ? curM + '\n\n' + b : b; });
   if(curM) msgs.push(curM);
