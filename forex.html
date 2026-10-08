@@ -639,6 +639,89 @@
   .lb-nav:hover{ background:rgba(255,255,255,.18); }
   .lb-nav.l{ left:20px; } .lb-nav.r{ right:20px; }
   .snap img, .tl-shot img{ cursor:zoom-in; }
+  /* ===== app shell ===== */
+  .shell{ display:grid; grid-template-columns:236px minmax(0,1fr); min-height:100vh; }
+  .shell.mini{ grid-template-columns:72px minmax(0,1fr); }
+  .side{ position:sticky; top:0; height:100vh; display:flex; flex-direction:column; gap:6px; padding:14px 12px; border-right:1px solid var(--line);
+         background:color-mix(in srgb,var(--surface) 70%,transparent); backdrop-filter:blur(10px); z-index:20; }
+  .side-top{ display:flex; align-items:center; justify-content:space-between; gap:6px; padding:4px 4px 10px; }
+  .side .brand{ font-size:17px; gap:9px; white-space:nowrap; overflow:hidden; }
+  .side-col{ width:28px; height:28px; border-radius:8px; border:1px solid var(--line); background:transparent; color:var(--muted); display:grid; place-items:center; flex:0 0 auto; transition:transform .2s; }
+  .shell.mini .side-col{ transform:rotate(180deg); }
+  .side-search{ display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:12px; border:1px solid var(--line); background:var(--surface); color:var(--muted); font-weight:600; font-size:13px; margin-bottom:6px; }
+  .side-search kbd{ margin-left:auto; font-family:inherit; font-size:11px; padding:0 6px; border-radius:6px; border:1px solid var(--line); }
+  .side-search:hover{ border-color:var(--muted); color:var(--ink); }
+  .side-nav{ display:flex; flex-direction:column; gap:2px; flex:1; overflow:auto; }
+  .side-g{ font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); padding:14px 10px 6px; opacity:.8; }
+  .side-i{ position:relative; display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:12px; border:none; background:transparent; color:var(--muted); font-weight:700; font-size:13.5px; text-align:left; white-space:nowrap; transition:background .15s, color .15s; }
+  .side-i:hover{ background:var(--hover); color:var(--ink); }
+  .side-i[aria-current="page"]{ background:color-mix(in srgb,var(--accent) 14%,transparent); color:var(--ink); }
+  .side-i[aria-current="page"]::before{ content:''; position:absolute; left:-12px; top:8px; bottom:8px; width:3px; border-radius:0 3px 3px 0; background:var(--accent); }
+  .side-i[aria-current="page"] .ico{ color:var(--accent); }
+  :root[data-theme="light"] .side-i[aria-current="page"] .ico{ color:var(--accent); }
+  .side-badge{ margin-left:auto; min-width:20px; height:20px; padding:0 6px; border-radius:999px; background:color-mix(in srgb,var(--info) 20%,transparent); color:var(--info); font-size:11px; font-weight:800; display:grid; place-items:center; }
+  .side-badge.warn{ background:color-mix(in srgb,var(--amber) 20%,transparent); color:var(--amber); }
+  .side-foot{ display:flex; flex-direction:column; gap:2px; border-top:1px solid var(--line); padding-top:8px; }
+  .shell.mini .side-l, .shell.mini .side-g{ display:none; }
+  .shell.mini .side-top{ flex-direction:column; }
+  .shell.mini .side-i, .shell.mini .side-search{ justify-content:center; padding:10px 0; }
+  .shell.mini .side-badge{ position:absolute; top:2px; right:2px; min-width:16px; height:16px; font-size:9.5px; padding:0 4px; }
+  .shell-main{ min-width:0; }
+  .shell-main .pairs{ padding-top:16px; }
+  .mtop{ display:none; }
+  .bnav{ display:none; }
+  .ico{ flex:0 0 auto; }
+  #main{ animation:pageIn .28s ease both; }
+  @keyframes pageIn{ from{ opacity:0; transform:translateY(6px); } to{ opacity:1; transform:none; } }
+  @media (max-width:900px){
+    .shell, .shell.mini{ grid-template-columns:1fr; }
+    .side{ display:none; }
+    .mtop{ display:flex; align-items:center; justify-content:space-between; padding:12px 14px; position:sticky; top:0; z-index:15;
+           background:color-mix(in srgb,var(--bg) 85%,transparent); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+    .mtop .brand{ font-size:17px; }
+    .bnav{ display:grid; grid-template-columns:repeat(5,1fr); position:fixed; left:0; right:0; bottom:0; z-index:30; padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));
+           background:color-mix(in srgb,var(--surface) 92%,transparent); backdrop-filter:blur(12px); border-top:1px solid var(--line); }
+    .bnav button{ display:flex; flex-direction:column; align-items:center; gap:3px; border:none; background:transparent; color:var(--muted); font-size:10.5px; font-weight:700; padding:6px 0; border-radius:12px; }
+    .bnav button[aria-current="page"]{ color:var(--ink); } .bnav button[aria-current="page"] .ico{ color:var(--accent); }
+    .shell-main{ padding-bottom:84px; }
+  }
+  .more-g{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding-bottom:20px; }
+  .more-i{ display:flex; flex-direction:column; align-items:center; gap:8px; padding:16px 8px; border-radius:16px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-weight:700; font-size:12.5px; }
+  .more-i .ico{ color:var(--accent); }
+  /* ===== today ===== */
+  .td-hero{ display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px; margin:6px 0 18px; padding:22px 24px; border-radius:22px; border:1px solid var(--line);
+            background:radial-gradient(600px 220px at 0% 0%, color-mix(in srgb,var(--accent) 16%,transparent), transparent 70%), radial-gradient(500px 200px at 100% 100%, color-mix(in srgb,var(--violet) 16%,transparent), transparent 70%), var(--surface); }
+  .td-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .td-actions .ico{ vertical-align:-2px; }
+  .td-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px; align-items:start; }
+  .td-card{ display:flex; flex-direction:column; gap:10px; transition:border-color .15s; }
+  .td-card:hover{ border-color:color-mix(in srgb,var(--muted) 60%,var(--line)); }
+  .td-h{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .td-h h3{ margin:0; }
+  .td-link{ border:none; background:transparent; color:var(--muted); font-size:12px; font-weight:700; padding:2px 4px; border-radius:6px; }
+  .td-link:hover{ color:var(--accent); }
+  .td-news{ display:grid; gap:10px; }
+  .td-list{ display:grid; gap:6px; }
+  .td-row{ display:flex; align-items:center; gap:10px; padding:9px 11px; border-radius:12px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); text-align:left; font-size:13px; }
+  .td-row:hover{ border-color:var(--accent); }
+  .td-row b, .td-cr b{ font-family:'Bricolage Grotesque',sans-serif; font-size:14px; white-space:nowrap; } .td-row em, .td-cr em{ font-style:normal; opacity:.55; }
+  .td-grow{ flex:1; min-width:0; }
+  .td-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .td-cov{ display:grid; gap:6px; }
+  .td-cr{ display:grid; grid-template-columns:76px repeat(5,1fr); gap:6px; align-items:center; }
+  .td-dot{ height:22px; border-radius:7px; border:1px solid var(--line); background:var(--surface-2); }
+  .td-dot.done{ background:color-mix(in srgb,var(--pos) 35%,transparent); border-color:var(--pos); }
+  .td-dot.part{ background:color-mix(in srgb,var(--amber) 22%,transparent); border-color:var(--amber); }
+  .td-dot.none{ border:1px dashed var(--neg); background:color-mix(in srgb,var(--neg) 8%,transparent); }
+  .td-dot.fut{ opacity:.35; }
+  .td-dot:hover{ transform:scale(1.06); }
+  .td-goal{ display:grid; gap:6px; font-size:13px; font-weight:600; }
+  .td-goal.done span:first-child{ color:var(--pos); }
+  .td-goal .gbar, .td-acc .gbar{ height:7px; }
+  .td-acc{ display:grid; gap:6px; padding:10px 12px; border-radius:12px; background:var(--surface-2); }
+  .td-acc > div{ display:flex; justify-content:space-between; gap:8px; font-size:13.5px; } .td-acc .num{ font-weight:800; }
+  /* light-theme contrast */
+  :root[data-theme="light"]{ --muted:#55537A; --line:#DCD7F0; }
 </style>
 </head>
 <body>
@@ -649,6 +732,7 @@
 <dialog id="searchDlg" class="panel" aria-label="Search" style="width:min(720px,96vw)"></dialog>
 
 <!-- Data dialog -->
+<dialog id="moreDlg" class="panel" aria-label="More" style="width:min(420px,94vw)"></dialog>
 <dialog id="lbDlg" class="lb" aria-label="Image viewer"></dialog>
 <dialog id="shareDlg" class="panel" aria-label="Share to Discord" style="width:min(760px,96vw)"></dialog>
 <dialog id="fundDlg" class="panel" aria-label="Import fundamental analysis" style="width:min(780px,96vw)"></dialog>
@@ -757,7 +841,7 @@ const ls = {
 };
 
 const S = {
-  view: ls.get('do_view','journal'), pair: ls.get('do_pair','EURUSD'),
+  view: ls.get('do_view','today'), pair: ls.get('do_pair','EURUSD'),
   month: firstOfMonth(new Date()), scope: ls.get('do_scope','pair'), period: ls.get('do_period','all'), metric:'pips',
   daily:new Map(), weekly:new Map(), news:new Map(), charts:[], extra: ls.get('do_extra_pairs', []),
   sel:null, goals:new Map(), gw:null, accounts:new Map(), selAcct:null, acct: ls.get('do_acct','all')
@@ -822,36 +906,92 @@ async function upsertChunks(table, rows, onConflict){
 }
 
 /* ---------- shell ---------- */
+const ICONS = {
+  home:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
+  calendar:'<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  grid:'<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
+  list:'<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/>',
+  chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+  wallet:'<rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18"/><circle cx="16.5" cy="15" r="1.2"/>',
+  target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
+  share:'<path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M12 3v12M7 8l5-5 5 5"/>',
+  swap:'<path d="M7 4v14M3 14l4 4 4-4M17 20V6M13 10l4-4 4 4"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  more:'<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
+  collapse:'<path d="M15 18l-6-6 6-6"/>',
+};
+const ico = (k, s = 18) => `<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]||''}</svg>`;
+const NAV = [
+  [null, [['today','Today','home']]],
+  ['Work', [['journal','Journal','calendar'],['desk','Desk','grid'],['trades','Trades','list']]],
+  ['Insights', [['analysis','Analytics','chart'],['history','History','trend']]],
+  ['Money', [['accounts','Accounts','wallet'],['goals','Goals','target']]],
+];
+const navActive = v => S.view===v || (v==='history' && S.view==='overview');
+async function goView(v){ await flushSave(); S.view = v; ls.set('do_view', v); render(); window.scrollTo({ top:0 }); }
 function render(){
   const app = document.getElementById('app');
   if(!CONFIGURED){ app.innerHTML = setupScreen(); return; }
-  const light = document.documentElement.dataset.theme === 'light';
+  const light = document.documentElement.dataset.theme === 'light', mini = ls.get('do_side_mini', false);
+  const board = ['journal','desk'].includes(S.view);
+  const cur = NAV.flatMap(g => g[1]).find(([v]) => navActive(v));
   app.innerHTML = `
-    <header class="app">
-      <div class="topbar">
-        <div class="brand"><span class="mark" aria-hidden="true"></span>Daily Observer <small>by EaglePips</small></div>
-        <nav class="tabs" role="tablist" aria-label="Sections">
-          ${[['journal','Journal'],['desk','Desk'],['trades','Trades'],['analysis','Analytics'],['overview','All pairs'],['history','History'],['accounts','Accounts'],['goals','Goals']].map(([v,l]) =>
-            `<button class="tab" role="tab" aria-selected="${S.view===v}" data-view="${v}">${l}</button>`).join('')}
-        </nav>
-        <div class="tools">
-          <button class="searchbtn" id="searchBtn" aria-label="Search"><span aria-hidden="true" style="font-size:15px">⌕</span><span class="t">Search…</span><kbd>/</kbd></button>
-          <button class="iconbtn" id="themeBtn" aria-label="${light ? 'Dark theme' : 'Light theme'}" title="${light ? 'Dark theme' : 'Light theme'}">${light ? '☾' : '☀'}</button>
-          <button class="hbtn" id="openShare" title="Share the week's fundamentals to Discord">📣 Share</button>
-          <button class="hbtn" id="openData">Import / export</button>
+    <div class="shell ${mini ? 'mini' : ''}">
+      <aside class="side" aria-label="Main navigation">
+        <div class="side-top"><div class="brand"><span class="mark" aria-hidden="true"></span><span class="side-l">Daily Observer</span></div>
+          <button class="side-col" id="sideCol" aria-label="${mini ? 'Expand sidebar' : 'Collapse sidebar'}" title="${mini ? 'Expand' : 'Collapse'}">${ico('collapse', 16)}</button></div>
+        <button class="side-search" id="searchBtn" aria-label="Search">${ico('search', 16)}<span class="side-l">Search…</span><kbd class="side-l">/</kbd></button>
+        <nav class="side-nav">${NAV.map(([g, items]) => `${g ? `<div class="side-g side-l">${g}</div>` : ''}${items.map(([v, l, i]) =>
+          `<button class="side-i" data-view="${v}" aria-current="${navActive(v) ? 'page' : 'false'}" title="${l}">${ico(i)}<span class="side-l">${l}</span>${v==='trades' && tjOpenCount() ? `<span class="side-badge">${tjOpenCount()}</span>` : ''}${v==='desk' && todayGapCount() ? `<span class="side-badge warn">${todayGapCount()}</span>` : ''}</button>`).join('')}`).join('')}</nav>
+        <div class="side-foot">
+          <button class="side-i" id="openShare" title="Share to Discord">${ico('share')}<span class="side-l">Share</span></button>
+          <button class="side-i" id="openData" title="Import / export">${ico('swap')}<span class="side-l">Import / export</span></button>
+          <button class="side-i" id="themeBtn" title="${light ? 'Dark theme' : 'Light theme'}">${ico(light ? 'moon' : 'sun')}<span class="side-l">${light ? 'Dark theme' : 'Light theme'}</span></button>
         </div>
+      </aside>
+      <div class="shell-main">
+        <header class="mtop"><div class="brand"><span class="mark" aria-hidden="true"></span>${cur ? cur[1] : 'Daily Observer'}</div>
+          <button class="iconbtn" id="searchBtnM" aria-label="Search">${ico('search', 18)}</button></header>
+        ${board ? '<nav class="pairs" id="pairs" aria-label="Pairs by this week\'s bias"></nav>' : ''}
+        <main id="main" class="wrap"></main>
       </div>
-      <nav class="pairs" id="pairs" aria-label="Pairs by this week's bias"></nav>
-    </header>
-    <main id="main" class="wrap"></main>`;
-  app.querySelectorAll('[data-view]').forEach(b => b.onclick = async () => { await flushSave(); S.view = b.dataset.view; ls.set('do_view', S.view); render(); });
+      <nav class="bnav" aria-label="Main navigation">
+        ${[['today','Today','home'],['journal','Journal','calendar'],['desk','Desk','grid'],['trades','Trades','list']].map(([v,l,i]) => `<button data-view="${v}" aria-current="${navActive(v) ? 'page' : 'false'}">${ico(i, 20)}<span>${l}</span></button>`).join('')}
+        <button id="bnMore" aria-current="${['analysis','history','overview','accounts','goals'].includes(S.view) ? 'page' : 'false'}">${ico('more', 20)}<span>More</span></button>
+      </nav>
+    </div>`;
+  app.querySelectorAll('[data-view]').forEach(b => b.onclick = () => goView(b.dataset.view));
   renderStrip();
   document.getElementById('themeBtn').onclick = () => { const t = light ? 'dark' : 'light'; document.documentElement.dataset.theme = t; ls.set('do_theme', t); render(); };
   document.getElementById('openData').onclick = openData;
   document.getElementById('searchBtn').onclick = openSearch;
+  document.getElementById('searchBtnM').onclick = openSearch;
   document.getElementById('openShare').onclick = openShare;
+  document.getElementById('sideCol').onclick = () => { ls.set('do_side_mini', !mini); render(); };
+  document.getElementById('bnMore').onclick = openMore;
   renderMain();
-
+}
+function openMore(){
+  const d = document.getElementById('moreDlg'), light = document.documentElement.dataset.theme === 'light';
+  d.innerHTML = `<div class="dlg-head"><h2>More</h2></div><div class="dlg-body more-g">
+    ${[['analysis','Analytics','chart'],['history','History','trend'],['accounts','Accounts','wallet'],['goals','Goals','target']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
+    <button class="more-i" data-ma="share">${ico('share', 22)}<span>Share</span></button>
+    <button class="more-i" data-ma="data">${ico('swap', 22)}<span>Import / export</span></button>
+    <button class="more-i" data-ma="theme">${ico(light ? 'moon' : 'sun', 22)}<span>${light ? 'Dark' : 'Light'} theme</span></button></div>`;
+  d.querySelectorAll('[data-mv]').forEach(b => b.onclick = () => { d.close(); goView(b.dataset.mv); });
+  d.querySelectorAll('[data-ma]').forEach(b => b.onclick = () => { d.close(); ({ share:openShare, data:openData, theme:() => document.getElementById('themeBtn').click() })[b.dataset.ma](); });
+  d.showModal();
+}
+function tjOpenCount(){ let n = 0; S.daily.forEach(e => { if(e.direction && !e.result && !e.exit_date) n++; }); return n; }
+function todayGapCount(){
+  const tr = [...trackedSet()]; if(!tr.length) return 0;
+  const k = isoWeek(new Date()), [from] = weekRange(k.year, k.week), today = iso(new Date()); let n = 0;
+  for(let i = 0; i < 5; i++){ const d = parseISO(from); d.setDate(d.getDate()+i); const ds = iso(d); if(ds > today) break;
+    tr.forEach(p => { if(dayCov(S.daily.get(dk(p, ds))).state!=='done') n++; }); }
+  return n;
 }
 const CONV_TIERS = [['high','High'],['medium','Medium'],['low','Low'],['','Not rated']];
 function curWeekRec(p){ const w = isoWeek(new Date()); return S.weekly.get(wk(p, w.year, w.week)) || null; }
@@ -894,6 +1034,7 @@ function renderMain(){
   else if(S.view === 'goals') renderGoals();
   else if(S.view === 'history') renderHistory();
   else if(S.view === 'desk') renderDesk();
+  else if(S.view === 'today') renderToday();
   else if(S.view === 'trades') renderTrades();
   else renderJournal();
 }
@@ -2205,7 +2346,7 @@ function renderHistory(){
   document.getElementById('main').innerHTML = `
     <div class="flex flex-wrap items-end gap-4 mb-4">
       <div><div class="pairtitle">History</div><div class="muted mt-1" style="font-weight:600">How the fundamental picture evolves week by week — score = base minus quote (positive = bullish pair).</div></div>
-      <div class="seg ml-auto" role="group" aria-label="View"><button data-hm="pairs" aria-pressed="${H.mode==='pairs'}">Pairs</button><button data-hm="ccy" aria-pressed="${H.mode==='ccy'}">Currencies</button></div>
+      <div class="seg ml-auto" role="group" aria-label="View"><button data-hm="pairs" aria-pressed="${H.mode==='pairs'}">Pairs</button><button data-hm="ccy" aria-pressed="${H.mode==='ccy'}">Currencies</button><button data-hov="1" aria-pressed="false">This week</button></div>
       <div class="seg" role="group" aria-label="Range">${[8,12,26].map(n => `<button data-hn="${n}" aria-pressed="${H.n===n}">${n}w</button>`).join('')}</div>
     </div>
     ${H.mode==='pairs' ? `<div class="hfilters card">
@@ -2231,6 +2372,7 @@ function renderHistory(){
       </tbody></table></div>` : `<div class="card empty"><div class="orb" aria-hidden="true"></div><p>No fundamentals in this range yet. Import a weekly analysis or fill in the week panel in the journal.</p></div>`}`;
   const set = (k, v, key) => { S.hist[k] = v; if(key) ls.set(key, v); renderMain(); };
   document.querySelectorAll('[data-hm]').forEach(b => b.onclick = () => set('mode', b.dataset.hm, 'do_hist_mode'));
+  document.querySelectorAll('[data-hov]').forEach(b => b.onclick = () => { S.view = 'overview'; ls.set('do_view', 'overview'); renderMain(); });
   document.querySelectorAll('[data-hn]').forEach(b => b.onclick = () => set('n', +b.dataset.hn, 'do_hist_n'));
   document.querySelectorAll('[data-hc]').forEach(b => b.onclick = () => set('ccy', b.dataset.hc, 'do_hist_ccy'));
   document.querySelectorAll('[data-hb]').forEach(b => b.onclick = () => set('bias', b.dataset.hb));
@@ -2356,6 +2498,94 @@ function openShare(){
     shareDlg.querySelector('#shClose').onclick = () => shareDlg.close();
   };
   draw(); shareDlg.showModal();
+}
+
+/* ---------- Today ---------- */
+function prevWeekday(ds){ const d = parseISO(ds); do { d.setDate(d.getDate()-1); } while(d.getDay()===0 || d.getDay()===6); return iso(d); }
+function renderToday(){
+  const now = new Date(), today = iso(now), k = isoWeek(now), [wFrom, wTo] = weekRange(k.year, k.week);
+  const weekend = now.getDay()===0 || now.getDay()===6, last = weekend || now.getHours() < 12 ? prevWeekday(weekend ? iso(new Date(now.getTime()+864e5)) : today) : today;
+  const hello = now.getHours() < 12 ? 'Good morning' : now.getHours() < 18 ? 'Good afternoon' : 'Good evening';
+  const tr = [...trackedSet()];
+  /* news */
+  const newsDay = weekend ? (() => { const d = new Date(now); while(d.getDay()!==1) d.setDate(d.getDate()+1); return iso(d); })() : today;
+  const news = [...S.news.values()].filter(n => n.day===newsDay).sort((a,b) => a.currency.localeCompare(b.currency));
+  /* plan from last session */
+  const planDay = weekend ? prevWeekday(iso(new Date(now.getTime()+864e5))) : prevWeekday(today);
+  const plans = [...S.daily.values()].filter(e => e.day===planDay && e.action).sort((a,b) => (tr.includes(b.pair) - tr.includes(a.pair)) || a.pair.localeCompare(b.pair));
+  /* open trades */
+  const open = tjAll().filter(tjIsOpen);
+  /* week P/L */
+  const wTrades = tjAll().filter(e => e.result && exitDay(e) >= wFrom && exitDay(e) <= wTo);
+  const wPips = wTrades.reduce((t,e) => t + (Number(e.pips)||0), 0), wProfit = wTrades.reduce((t,e) => t + (Number(e.profit)||0), 0);
+  /* coverage */
+  const covPairs = tr.length ? tr : [...new Set([...S.daily.values()].filter(e => e.day >= wFrom && e.day <= wTo).map(e => e.pair))];
+  const wDays = [0,1,2,3,4].map(i => { const d = parseISO(wFrom); d.setDate(d.getDate()+i); return iso(d); });
+  let due = 0, done = 0; covPairs.forEach(p => wDays.filter(ds => ds <= today).forEach(ds => { due++; if(dayCov(S.daily.get(dk(p, ds))).state==='done') done++; }));
+  /* goals + accounts + bias */
+  const gs = weekGoals(k.year, k.week), gsc = weekScore(k.year, k.week);
+  const accs = [...S.accounts.values()].filter(a => (a.status||'active')==='active');
+  const strong = allPairs().map(p => ({ p, r:curWeekRec(p) })).filter(x => x.r?.conviction==='high' && ['bullish','bearish'].includes(x.r.bias))
+    .map(x => ({ ...x, div:pairDiv(x.r) })).sort((a,b) => (b.div??0) - (a.div??0));
+  /* catalysts */
+  const cats = new Map(), nrm = t => t.toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  allPairs().forEach(p => (det(curWeekRec(p)).catalysts||[]).forEach(c => { const dt = catDate(c.date, now.getFullYear()); if(!dt || iso(dt) < today) return;
+    String(c.event||'').replace(/\([^)]*\)/g,'').split(/\s\+\s|\s&\s/).map(t => t.trim()).filter(Boolean).forEach(ev => {
+      const n = nrm(ev), hit = [...cats.values()].find(o => o.date===c.date && (nrm(o.event).startsWith(n) || n.startsWith(nrm(o.event))));
+      if(hit){ hit.pairs.add(p); if(ev.length > hit.event.length) hit.event = ev; if(rankImp(c.imp) < rankImp(hit.imp)) hit.imp = c.imp; }
+      else cats.set(c.date + '|' + n, { date:c.date, event:ev, imp:c.imp, dt, pairs:new Set([p]) }); }); }));
+  const upcoming = [...cats.values()].sort((a,b) => a.dt - b.dt || rankImp(a.imp) - rankImp(b.imp)).slice(0, 6);
+  const kpi = (l, v, c='', sub='') => `<div class="tj-kpi"><span class="kick">${l}</span><b class="${c}">${v}</b>${sub ? `<span class="muted">${sub}</span>` : ''}</div>`;
+  const card = (title, action, body, cls='') => `<section class="card td-card ${cls}"><div class="td-h"><h3>${title}</h3>${action || ''}</div>${body}</section>`;
+  const link = (lbl, attr) => `<button class="td-link" ${attr}>${lbl} →</button>`;
+  document.getElementById('main').innerHTML = `
+    <div class="td-hero">
+      <div><span class="kick">${WD[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]} · Week ${k.week}</span>
+        <div class="pairtitle" style="margin-top:6px">${hello}, Alessio.</div>
+        <p class="muted" style="font-weight:600;margin-top:6px">${weekend ? 'Weekend — time to review the week and prepare the next one.' : open.length ? `You have ${open.length} open trade${open.length>1?'s':''} to manage.` : 'Flat. Wait for your setup.'}</p></div>
+      <div class="td-actions">${weekend ? `<button class="btn btn-primary" data-act="data">Weekly review ${ico('swap',14)}</button>` : `<button class="btn btn-primary" data-act="gap">Fill next gap →</button>`}<button class="btn" data-act="journal">Open journal</button></div>
+    </div>
+    <div class="tj-kpis">
+      ${kpi('Open trades', open.length, open.length ? 'pos' : '')}
+      ${kpi('This week', wTrades.length ? `${wPips>0?'+':''}${fmt(wPips,1)} pips` : '–', sgn(wPips), wTrades.length ? `${wTrades.length} closed${wProfit ? ' · '+(wProfit>0?'+':'')+money(wProfit) : ''}` : 'no closed trades')}
+      ${kpi('Coverage', due ? Math.round(done/due*100)+'%' : '–', due && done===due ? 'pos' : '', due ? `${done}/${due} days · ${covPairs.length} pair${covPairs.length===1?'':'s'}` : 'track pairs in Desk')}
+      ${kpi('Weekly goals', gsc ? Math.round(gsc.pct*100)+'%' : '–', gsc && gsc.pct>=1 ? 'pos' : '', gsc ? `${gsc.done}/${gsc.n} done` : 'none set')}
+    </div>
+    <div class="td-grid">
+      ${card(`📰 ${weekend ? 'Monday\'s' : 'Today\'s'} news`, link('Calendar', 'data-act="journal"'),
+        news.length ? `<div class="td-news">${news.map(n => `<div class="td-nw"><span class="ncur">${n.currency}</span><ul class="nl">${newsList(n.events)}</ul></div>`).join('')}</div>`
+          : '<p class="muted">No events logged. Import the weekly analysis or add news in the journal.</p>')}
+      ${card(`🗒️ Plan from ${fmtDayShort(planDay)}`, '', plans.length ? `<div class="td-list">${plans.slice(0,8).map(e => `<button class="td-row" data-go="${e.pair}|${e.day}">
+          <b>${e.pair.slice(0,3)}<em>${e.pair.slice(3)}</em></b><span class="td-grow">${esc(e.action)}</span>${e.trade_status ? stBadge(e.trade_status) : ''}</button>`).join('')}</div>`
+          : '<p class="muted">No plan written last session. Use "Plan for tomorrow" in the journal.</p>')}
+      ${card('⚡ Open trades', link('All trades', 'data-view2="trades"'), open.length ? `<div class="td-list">${open.map(e => { const days = Math.max(0, Math.round((now - parseISO(e.day))/864e5));
+          return `<button class="td-row" data-go="${e.pair}|${e.day}"><span class="tj-dir ${e.direction.toLowerCase()}">${e.direction==='Long' ? '▲' : '▼'}</span><b>${e.pair.slice(0,3)}<em>${e.pair.slice(3)}</em></b>
+            <span class="muted td-grow">${days}d · since ${fmtDayShort(e.day)}${e.setup_tf ? ' · '+e.setup_tf : ''}</span>${e.entry_price!=null ? `<span class="num" style="margin-left:auto;font-size:12px">@ ${e.entry_price}</span>` : ''}</button>`; }).join('')}</div>`
+          : '<p class="muted">No open positions.</p>')}
+      ${card('🎯 High conviction', link('History', 'data-view2="history"'), strong.length ? `<div class="td-chips">${strong.map(x => `<button class="pc b-${x.r.bias}" data-pick="${x.p}"><span class="pc-n">${x.p.slice(0,3)}<i>${x.p.slice(3)}</i></span><span class="pc-d">${x.div ?? ''}</span></button>`).join('')}</div>`
+          : '<p class="muted">No high-conviction pairs this week.</p>')}
+      ${card('📅 Upcoming catalysts', '', upcoming.length ? `<div class="cats">${upcoming.map(c => `<div class="cat"><time>${esc(c.date)}</time><span>${esc(c.event)} <span class="muted" style="font-size:11.5px">· ${[...c.pairs].length} pair${[...c.pairs].length>1?'s':''}</span></span>${c.imp ? `<span class="imp ${impCls(c.imp)}">${esc(c.imp)}</span>` : ''}</div>`).join('')}</div>`
+          : '<p class="muted">No dated catalysts in this week\'s analysis.</p>')}
+      ${card('✍️ This week\'s coverage', link('Desk', 'data-view2="desk"'), covPairs.length ? `<div class="td-cov">${covPairs.slice(0,8).map(p => `<div class="td-cr"><b>${p.slice(0,3)}<em>${p.slice(3)}</em></b>${wDays.map(ds => { const c = dayCov(S.daily.get(dk(p, ds)));
+          return `<button class="td-dot ${ds > today ? 'fut' : c.state}" data-cell="${p}|${ds}" title="${p} · ${fmtDayShort(ds)}"></button>`; }).join('')}</div>`).join('')}</div>`
+          : '<p class="muted">Star the pairs you follow in Desk (☆) and their daily coverage shows up here.</p>')}
+      ${card('🏆 Goals', link('Goals', 'data-view2="goals"'), gs.length ? `<div class="td-list">${gs.slice(0,5).map(g => { const st = goalState(g);
+          return `<div class="td-goal ${st.done ? 'done' : ''}"><span>${esc(g.emoji || '🎯')} ${esc(g.title)}</span><span class="gbar"><span style="width:${Math.round(st.pct*100)}%" class="${st.done ? 'full' : ''}"></span></span></div>`; }).join('')}</div>`
+          : '<p class="muted">No goals for this week yet.</p>')}
+      ${card('💼 Accounts', link('Accounts', 'data-view2="accounts"'), accs.length ? `<div class="td-list">${accs.map(a => { const s = acctStats(a);
+          return `<div class="td-acc"><div><b>${esc(a.name)}</b><span class="num ${sgn(s.pnl)}">${s.pnl>0?'+':''}${money(s.pnl)}</span></div>
+            ${s.target!=null ? `<span class="gbar"><span style="width:${Math.max(0,Math.min(100, s.pnl/s.target*100))}%" class="${s.passed ? 'full' : ''}"></span></span>` : ''}
+            ${s.room!=null ? `<span class="muted" style="font-size:12px">${money(s.room)} to max loss${s.target!=null ? ` · ${money(Math.max(0, s.target - s.pnl))} to target` : ''}</span>` : ''}</div>`; }).join('')}</div>`
+          : '<p class="muted">No active accounts.</p>')}
+    </div>`;
+  const m = document.getElementById('main');
+  m.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const [p, d] = b.dataset.go.split('|'); goTo(p, { type:'day', day:d }); });
+  m.querySelectorAll('[data-view2]').forEach(b => b.onclick = () => goView(b.dataset.view2));
+  m.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { S.pair = b.dataset.pick; ls.set('do_pair', S.pair); goView('journal'); });
+  m.querySelectorAll('[data-cell]').forEach(b => b.onclick = async () => { const [p, ds] = b.dataset.cell.split('|'); S.view = 'desk'; ls.set('do_view', 'desk'); S.desk.k = null; render(); openDeskCell(p, ds); });
+  m.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => { const a = b.dataset.act;
+    if(a==='journal') goView('journal'); else if(a==='data') openData();
+    else { S.desk.k = null; S.view = 'desk'; ls.set('do_view', 'desk'); render(); const g = nextGap(); if(g) openDeskCell(g.p, g.ds); else toast('No gaps this week 🎉'); } });
 }
 
 /* ---------- Desk: coverage matrix + editor ---------- */
@@ -2912,7 +3142,8 @@ function renderOverview(){
     return { p, es:es.length, tr:tr.length, w, l, pips:tr.reduce((s,e) => s+(e.pips||0), 0), last, wr };
   });
   document.getElementById('main').innerHTML = `
-    <div class="mb-4"><div class="pairtitle">All pairs</div><div class="muted mt-1">Week ${cw.week} · click a pair to open its journal</div></div>
+    <div class="flex flex-wrap items-end gap-4 mb-4"><div><div class="pairtitle">History</div><div class="muted mt-1" style="font-weight:600">Week ${cw.week} overview — bias and your stats per pair. Click a pair to open its journal.</div></div>
+      <div class="seg ml-auto" role="group" aria-label="View"><button data-ovm="pairs">Pairs</button><button data-ovm="ccy">Currencies</button><button aria-pressed="true">This week</button></div></div>
     <div style="overflow-x:auto"><table class="sumtable" style="min-width:820px"><thead><tr>
       <th>Pair</th><th>This week's bias</th><th>Fundamentals</th><th>Last observation</th><th>Days</th><th>Trades</th><th>W / L</th><th>Pips</th></tr></thead>
       <tbody>${rows.map(r => `<tr class="click" data-pair-go="${r.p}">
@@ -2922,6 +3153,7 @@ function renderOverview(){
         <td class="num">${r.last ? r.last.split('-').reverse().join('.') : '<span class="muted">–</span>'}</td>
         <td class="num">${r.es}</td><td class="num">${r.tr}</td><td class="num">${r.tr ? `${r.w} / ${r.l}` : '–'}</td>
         <td class="num ${sgn(r.pips)}">${r.tr ? fmt(r.pips,1) : '–'}</td></tr>`).join('')}</tbody></table></div>`;
+  document.querySelectorAll('[data-ovm]').forEach(b => b.onclick = () => { S.hist.mode = b.dataset.ovm; ls.set('do_hist_mode', S.hist.mode); S.view = 'history'; ls.set('do_view', 'history'); renderMain(); });
   document.querySelectorAll('[data-pair-go]').forEach(r => r.onclick = () => {
     S.pair = r.dataset.pairGo; S.view = 'journal'; ls.set('do_pair', S.pair); ls.set('do_view','journal'); render(); });
 }
