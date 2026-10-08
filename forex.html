@@ -497,6 +497,53 @@
   .shmsg{ border:1px solid var(--line); border-radius:14px; overflow:hidden; }
   .shmsg-h{ display:flex; align-items:center; gap:10px; padding:8px 12px; background:var(--surface-2); font-size:12.5px; }
   .shpre{ margin:0; padding:12px 14px; max-height:300px; overflow:auto; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; line-height:1.5; white-space:pre-wrap; background:#313338; color:#dbdee1; }
+  /* desk */
+  .dsum{ display:flex; align-items:center; gap:18px; }
+  .dstats{ display:flex; flex-wrap:wrap; gap:6px; }
+  .ds{ font-size:12px; font-weight:800; padding:3px 10px; border-radius:999px; }
+  .ds.done{ background:color-mix(in srgb,var(--pos) 15%,transparent); color:var(--pos); }
+  .ds.part{ background:color-mix(in srgb,var(--amber) 15%,transparent); color:var(--amber); }
+  .ds.none{ background:color-mix(in srgb,var(--neg) 15%,transparent); color:var(--neg); }
+  .dwrap{ padding:0; overflow:auto; max-height:calc(100vh - 330px); }
+  .dtable{ border-collapse:separate; border-spacing:0; width:100%; }
+  .dtable th{ position:sticky; top:0; z-index:2; background:var(--surface-2); color:var(--muted); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; padding:9px 6px; white-space:nowrap; }
+  .dtable th span{ color:var(--ink); font-size:13px; letter-spacing:0; }
+  .dtable th.dtoday{ color:var(--accent); } .dtable th.dtoday span{ color:var(--accent); }
+  .dtable td{ padding:4px; border-top:1px solid var(--line); }
+  .dsticky{ position:sticky; left:0; z-index:1; background:var(--surface); text-align:left; }
+  .dtable th.dsticky{ z-index:3; background:var(--surface-2); padding-left:14px; }
+  .dpair{ display:flex; align-items:center; gap:7px; padding-left:6px; min-width:150px; }
+  .dpair b{ font-family:'Bricolage Grotesque',sans-serif; font-size:14px; } .dpair b em{ font-style:normal; opacity:.55; }
+  .dpair b.cur{ color:var(--accent); }
+  .dstar{ border:none; background:transparent; color:var(--muted); font-size:15px; width:22px; padding:0; }
+  .dstar.on{ color:var(--amber); }
+  .dprog{ margin-left:auto; width:34px; height:5px; border-radius:5px; background:var(--surface-2); overflow:hidden; }
+  .dprog span{ display:block; height:100%; background:var(--amber); } .dprog span.full{ background:var(--pos); }
+  .dc{ width:100%; min-width:76px; height:54px; border-radius:12px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink);
+       display:flex; flex-direction:column; justify-content:space-between; padding:7px 8px 6px; text-align:left; transition:transform .1s, box-shadow .1s; }
+  .dc:hover{ transform:translateY(-1px); border-color:var(--muted); }
+  .dc-t{ display:flex; align-items:center; justify-content:space-between; gap:4px; font-size:12.5px; font-variant-numeric:tabular-nums; }
+  .dc-m{ font-size:11px; font-weight:700; color:var(--muted); }
+  .dsegs{ display:grid; grid-template-columns:repeat(4,1fr); gap:3px; }
+  .dsegs i{ height:4px; border-radius:2px; background:var(--line); }
+  .dsegs i.on{ background:var(--accent); }
+  .dc.done{ border-color:color-mix(in srgb,var(--pos) 45%,var(--line)); background:color-mix(in srgb,var(--pos) 9%,var(--surface-2)); }
+  .dc.done .dsegs i.on{ background:var(--pos); }
+  .dc.part{ border-color:color-mix(in srgb,var(--amber) 50%,var(--line)); }
+  .dc.part .dsegs i.on{ background:var(--amber); }
+  .dc.none{ border-style:dashed; border-color:color-mix(in srgb,var(--neg) 55%,var(--line)); background:color-mix(in srgb,var(--neg) 6%,var(--surface-2)); }
+  .dc.none .dc-m{ color:var(--neg); }
+  .dc.fut{ opacity:.35; }
+  .dc.tday{ box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 50%,transparent); }
+  .dc.sel{ border:2px solid var(--accent); box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 25%,transparent); }
+  .dfund{ width:100%; min-width:96px; height:54px; border-radius:12px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-weight:800; font-size:12.5px; }
+  .dfund em{ font-style:normal; font-size:10px; padding:1px 5px; border-radius:5px; background:rgba(255,255,255,.12); margin-left:3px; }
+  .dfund.miss{ border-style:dashed; border-color:color-mix(in srgb,var(--neg) 55%,var(--line)); color:var(--neg); background:color-mix(in srgb,var(--neg) 6%,var(--surface-2)); }
+  .dfund.b-bullish{ color:var(--pos); background:var(--bull); } .dfund.b-bearish{ color:var(--neg); background:var(--bear); } .dfund.b-two-sided{ color:var(--amber); background:var(--two); }
+  .dfund.sel{ border:2px solid var(--accent); }
+  .dlg{ display:inline-block; width:14px; height:10px; border-radius:3px; border:1px solid var(--line); margin-right:-6px; }
+  .dlg.done{ background:color-mix(in srgb,var(--pos) 30%,transparent); border-color:var(--pos); }
+  .dlg.part{ border-color:var(--amber); } .dlg.none{ border:1px dashed var(--neg); } .dlg.fut{ opacity:.35; }
 </style>
 </head>
 <body>
@@ -688,7 +735,7 @@ function render(){
       <div class="topbar">
         <div class="brand"><span class="mark" aria-hidden="true"></span>Daily Observer <small>by EaglePips</small></div>
         <nav class="tabs" role="tablist" aria-label="Sections">
-          ${[['journal','Journal'],['analysis','Analytics'],['overview','All pairs'],['history','History'],['accounts','Accounts'],['goals','Goals']].map(([v,l]) =>
+          ${[['journal','Journal'],['desk','Desk'],['analysis','Analytics'],['overview','All pairs'],['history','History'],['accounts','Accounts'],['goals','Goals']].map(([v,l]) =>
             `<button class="tab" role="tab" aria-selected="${S.view===v}" data-view="${v}">${l}</button>`).join('')}
         </nav>
         <div class="tools">
@@ -750,6 +797,7 @@ function renderMain(){
   else if(S.view === 'accounts') renderAccounts();
   else if(S.view === 'goals') renderGoals();
   else if(S.view === 'history') renderHistory();
+  else if(S.view === 'desk') renderDesk();
   else renderJournal();
 }
 function setupScreen(){
@@ -829,6 +877,7 @@ function renderJournal(){
 }
 
 function renderCalendar(){
+  if(document.getElementById('deskGrid')) renderDeskGrid();
   const cal = document.getElementById('cal'); if(!cal) return;
   const p = S.pair, b = base(p), q = quote(p), today = iso(new Date()), m = S.month.getMonth(), hold = holdingMap(p);
   let h = `<div class="cal-h wkh">Week</div>${['Monday','Tuesday','Wednesday','Thursday','Friday'].map(d => `<div class="cal-h">${d}</div>`).join('')}`;
@@ -2210,6 +2259,120 @@ function openShare(){
     shareDlg.querySelector('#shClose').onclick = () => shareDlg.close();
   };
   draw(); shareDlg.showModal();
+}
+
+/* ---------- Desk: coverage matrix + editor ---------- */
+S.desk = { k:null, filter: ls.get('do_desk_f', 'all') };
+function deskWeek(){ if(!S.desk.k){ const k = isoWeek(new Date()); S.desk.k = { y:k.year, w:k.week }; } return S.desk.k; }
+const trackedSet = () => new Set(ls.get('do_tracked', []));
+function dayCov(e){
+  const parts = { close: e?.daily_change!=null, d: !!e?.daily_obs, h4: !!e?.h4_obs, h1: !!e?.h1_obs };
+  const n = Object.values(parts).filter(Boolean).length;
+  return { parts, n, state: n===4 ? 'done' : n ? 'part' : 'none' };
+}
+function deskData(){
+  const { y, w } = deskWeek(), [from] = weekRange(y, w), today = iso(new Date()), tr = trackedSet();
+  const days = [0,1,2,3,4].map(i => { const d = parseISO(from); d.setDate(d.getDate()+i); return iso(d); });
+  let rows = allPairs().map(p => {
+    const cells = days.map(ds => { const e = S.daily.get(dk(p, ds)); return { ds, e, future: ds > today, ...dayCov(e) }; });
+    const due = cells.filter(c => !c.future), done = due.filter(c => c.state==='done').length;
+    return { p, cells, due:due.length, done, gaps:due.length - done, fund:S.weekly.get(wk(p, y, w)), tracked:tr.has(p), touched:cells.some(c => c.n) };
+  });
+  const f = S.desk.filter;
+  if(f==='tracked') rows = rows.filter(r => r.tracked);
+  else if(f==='gaps') rows = rows.filter(r => r.gaps > 0 || !r.fund);
+  else if(f==='active') rows = rows.filter(r => r.touched || r.tracked);
+  rows.sort((a,b) => (b.tracked - a.tracked));
+  return { y, w, days, today, rows };
+}
+function nextGap(){
+  const { days, rows } = deskData();
+  for(let i = 0; i < days.length; i++) for(const r of rows){ const c = r.cells[i]; if(!c.future && c.state!=='done') return { p:r.p, ds:c.ds }; }
+  return null;
+}
+async function openDeskCell(p, ds){
+  await flushSave();
+  const c = dayCov(S.daily.get(dk(p, ds)));
+  if(c.state!=='done'){ S.mode = 'edit'; ls.set('do_mode', 'edit'); }
+  if(S.pair!==p){ S.pair = p; ls.set('do_pair', p); renderStrip(); }
+  await selectDay(ds);
+  const pn = document.getElementById('panel'); if(pn) pn.scrollTop = 0;
+  setTimeout(() => document.querySelector('#panel [data-f="daily_change"]')?.focus(), 50);
+}
+function renderDesk(){
+  const { y, w, days } = deskData(), [from] = weekRange(y, w);
+  document.getElementById('main').innerHTML = `
+    <div class="flex flex-wrap items-end gap-x-5 gap-y-3 mb-4">
+      <div><div class="pairtitle">Desk</div><div class="muted mt-1" style="font-weight:600">Every pair, every day — see what's done, what's missing, and fill it in on the right.</div></div>
+      <div class="flex items-center gap-2 ml-auto">
+        <div class="monthnav"><button class="ib" id="dkPrev" aria-label="Previous week">‹</button>
+          <div class="mlabel">Week ${w} <span class="muted" style="font-size:13px;font-weight:600">· ${fmtDayShort(from)} – ${fmtDayShort(days[4])}</span></div>
+          <button class="ib" id="dkNext" aria-label="Next week">›</button></div>
+        <button class="btn" id="dkNow">This week</button>
+        <button class="btn btn-primary" id="dkGap">Fill next gap →</button>
+      </div>
+    </div>
+    <div class="jr">
+      <section>
+        <div class="card dsum" id="deskSum"></div>
+        <div class="chips" style="margin:12px 0" role="group" aria-label="Filter">
+          ${[['all','All pairs'],['tracked','★ Tracked'],['active','Active this week'],['gaps','Has gaps']].map(([k,l]) => `<button class="ch" data-df="${k}" aria-pressed="${S.desk.filter===k}">${l}</button>`).join('')}
+        </div>
+        <div class="dwrap card" id="deskGrid"></div>
+        <div class="legend">
+          <span class="dlg done"></span>complete <span class="dlg part"></span>partial <span class="dlg none"></span>missing <span class="dlg fut"></span>upcoming
+          <span style="margin-left:8px">bars: <b>%</b> close · <b>D</b> · <b>4H</b> · <b>1H</b></span><span>★ = tracked pair, always on top</span>
+        </div>
+      </section>
+      <aside id="panel" class="panel-side" aria-live="polite"></aside>
+    </div>`;
+  const go = n => { const d = mondayOf(y, w); d.setDate(d.getDate()+7*n); const k = isoWeek(d); S.desk.k = { y:k.year, w:k.week }; renderMain(); };
+  document.getElementById('dkPrev').onclick = () => go(-1);
+  document.getElementById('dkNext').onclick = () => go(1);
+  document.getElementById('dkNow').onclick = () => { S.desk.k = null; renderMain(); };
+  document.getElementById('dkGap').onclick = () => { const g = nextGap(); if(!g) return toast('No gaps this week — everything is filled in 🎉'); openDeskCell(g.p, g.ds); };
+  document.querySelectorAll('[data-df]').forEach(b => b.onclick = () => { S.desk.filter = b.dataset.df; ls.set('do_desk_f', b.dataset.df); renderDeskGrid(); document.querySelectorAll('[data-df]').forEach(x => x.setAttribute('aria-pressed', String(x===b))); });
+  renderDeskGrid(); renderPanel();
+}
+function renderDeskGrid(){
+  const grid = document.getElementById('deskGrid'); if(!grid) return;
+  const { y, w, days, today, rows } = deskData();
+  const all = rows.flatMap(r => r.cells.filter(c => !c.future));
+  const done = all.filter(c => c.state==='done').length, part = all.filter(c => c.state==='part').length, miss = all.length - done - part;
+  const funds = rows.filter(r => r.fund).length, pctDone = all.length ? Math.round(done/all.length*100) : 0;
+  document.getElementById('deskSum').innerHTML = `
+    <div class="gring" style="--p:${pctDone}"><span>${pctDone}%</span></div>
+    <div style="min-width:0;display:grid;gap:8px">
+      <div><span class="bigval">${done}</span><span class="muted" style="font-weight:700"> / ${all.length} days complete${rows.length < allPairs().length ? ` · ${rows.length} pairs shown` : ''}</span></div>
+      <div class="dstats"><span class="ds done">✓ ${done} complete</span><span class="ds part">◐ ${part} partial</span><span class="ds none">✕ ${miss} missing</span>
+        <span class="ds ${funds===rows.length ? 'done' : 'part'}">📊 Fundamentals ${funds}/${rows.length}</span></div>
+    </div>`;
+  const selDay = S.sel?.type==='day' ? S.sel.day : null, selWk = S.sel?.type==='week' ? `${S.sel.y}|${S.sel.w}` : null;
+  grid.innerHTML = rows.length ? `<table class="dtable"><thead><tr><th class="dsticky">Pair</th>
+      ${days.map(ds => { const d = parseISO(ds); return `<th class="${ds===today ? 'dtoday' : ''}">${WD_SHORT[d.getDay()]} <span>${d.getDate()}</span></th>`; }).join('')}<th>Fundamentals</th></tr></thead>
+    <tbody>${rows.map(r => { const b = curWeekRec(r.p)?.bias || 'none', fr = r.fund;
+      return `<tr>
+        <td class="dsticky"><div class="dpair">
+          <button class="dstar ${r.tracked ? 'on' : ''}" data-star="${r.p}" aria-pressed="${r.tracked}" aria-label="Track ${r.p}">${r.tracked ? '★' : '☆'}</button>
+          <i class="fdot ${b}"></i><b class="${r.p===S.pair ? 'cur' : ''}">${r.p.slice(0,3)}<em>${r.p.slice(3)}</em></b>
+          <span class="dprog" title="${r.done}/${r.due} days complete"><span style="width:${r.due ? r.done/r.due*100 : 0}%" class="${r.due && r.done===r.due ? 'full' : ''}"></span></span>
+        </div></td>
+        ${r.cells.map(c => { const st = c.future ? 'fut' : c.state, sel = r.p===S.pair && selDay===c.ds, e = c.e || {};
+          return `<td><button class="dc ${st} ${sel ? 'sel' : ''} ${c.ds===today ? 'tday' : ''}" data-cell="${r.p}|${c.ds}"
+              title="${r.p} · ${fmtDayShort(c.ds)} — ${c.future ? 'upcoming' : c.state==='done' ? 'complete' : c.state==='part' ? 'partial: missing ' + ['close','d','h4','h1'].filter(k => !c.parts[k]).map(k => ({close:'close %',d:'Daily',h4:'4H',h1:'1H'}[k])).join(', ') : 'nothing logged'}">
+            <span class="dc-t">${e.daily_change!=null ? `<b class="${sgn(e.daily_change)}">${pct(e.daily_change)}</b>` : `<span class="dc-m">${c.future ? '' : c.state==='none' ? 'missing' : '—'}</span>`}
+              ${e.direction ? `<span class="${e.direction==='Long' ? 'pos' : 'neg'}" style="font-weight:900">${e.direction==='Long' ? '▲' : '▼'}</span>` : ''}</span>
+            <span class="dsegs">${['close','d','h4','h1'].map(k => `<i class="${c.parts[k] ? 'on' : ''}"></i>`).join('')}</span>
+          </button></td>`; }).join('')}
+        <td><button class="dfund ${fr ? 'ok b-'+(fr.bias||'none') : 'miss'} ${r.p===S.pair && selWk===`${y}|${w}` ? 'sel' : ''}" data-fund="${r.p}">
+          ${fr ? `${fr.bias ? BIAS_LBL[fr.bias] : 'Notes'}${fr.conviction ? ` <em>${fr.conviction[0].toUpperCase()}</em>` : ''}` : '+ add'}</button></td>
+      </tr>`; }).join('')}</tbody></table>`
+    : `<div class="empty"><div class="orb" aria-hidden="true"></div><p>${S.desk.filter==='tracked' ? 'No tracked pairs yet — tap ☆ next to a pair to track it.' : 'Nothing to show for this filter.'}</p></div>`;
+  grid.querySelectorAll('[data-cell]').forEach(b => b.onclick = () => { const [p, ds] = b.dataset.cell.split('|'); openDeskCell(p, ds); });
+  grid.querySelectorAll('[data-fund]').forEach(b => b.onclick = async () => { await flushSave(); const p = b.dataset.fund;
+    if(!S.weekly.get(wk(p, y, w))){ S.mode = 'edit'; ls.set('do_mode', 'edit'); }
+    if(S.pair!==p){ S.pair = p; ls.set('do_pair', p); renderStrip(); } selectWeek(y, w); });
+  grid.querySelectorAll('[data-star]').forEach(b => b.onclick = () => { const t = trackedSet(), p = b.dataset.star; t.has(p) ? t.delete(p) : t.add(p); ls.set('do_tracked', [...t]); renderDeskGrid(); });
 }
 
 /* ---------- analysis ---------- */
