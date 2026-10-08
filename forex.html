@@ -593,6 +593,30 @@
     .tj-meta, .tj-num:nth-of-type(4), .tj-num:nth-of-type(5){ display:none; }
     .tj-num:last-of-type{ grid-area:nums; }
   }
+  .tl-wrap{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 16px; }
+  .tl-top{ display:flex; align-items:baseline; gap:10px; margin-bottom:10px; }
+  .tl-top h4{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:15px; }
+  .tl-top .muted{ font-size:12px; font-weight:600; }
+  .tlx{ list-style:none; margin:0; padding:0; position:relative; }
+  .tlx::before{ content:''; position:absolute; left:7px; top:6px; bottom:6px; width:2px; background:linear-gradient(var(--accent), var(--line)); border-radius:2px; }
+  .tl-i{ position:relative; padding:0 0 16px 28px; }
+  .tl-i:last-child{ padding-bottom:0; }
+  .tl-dot{ position:absolute; left:1px; top:3px; width:14px; height:14px; border-radius:50%; background:var(--surface-2); border:2px solid var(--muted); }
+  .tl-en .tl-dot{ border-color:var(--accent); background:var(--accent); box-shadow:0 0 10px var(--accent); }
+  .tl-ex .tl-dot{ border-color:var(--pos); background:var(--pos); }
+  .tl-h{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+  .tl-h b{ font-family:'Bricolage Grotesque',sans-serif; font-size:14px; }
+  .tl-role{ font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+  .tl-en .tl-role{ color:var(--accent); } .tl-ex .tl-role{ color:var(--pos); }
+  .tl-cum{ font-size:11.5px; font-weight:800; }
+  .tl-shots{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:8px; margin-top:8px; }
+  .tl-shot{ position:relative; display:block; border-radius:10px; overflow:hidden; border:1px solid var(--line); background:var(--field); }
+  .tl-shot img{ display:block; width:100%; aspect-ratio:16/9; object-fit:cover; transition:transform .2s; }
+  .tl-shot:hover img{ transform:scale(1.03); }
+  .tl-shot span{ position:absolute; left:6px; top:6px; font-size:10.5px; font-weight:800; padding:1px 7px; border-radius:6px; background:var(--accent); color:var(--on-accent); }
+  .tl-notes{ display:grid; gap:4px; margin-top:8px; }
+  .tl-notes p{ margin:0; font-size:13px; line-height:1.45; white-space:pre-line; }
+  .tl-notes .tfl{ font-size:10px; padding:1px 6px; margin-right:4px; }
 </style>
 </head>
 <body>
@@ -2554,6 +2578,31 @@ function renderTrades(){
       { tooltip:{ callbacks:{ label:c => { const x = st.curve[c.dataIndex]; return `${x.e.pair} ${x.e.direction} ${x.e.result} · total ${tjv(x.v)}`; } } } });
   }
 }
+function tjTimeline(e){
+  let end = e.exit_date || (tjIsOpen(e) ? iso(new Date()) : e.day); if(end < e.day) end = e.day; const days = [];
+  for(const d = parseISO(e.day); iso(d) <= end; d.setDate(d.getDate()+1)){ const ds = iso(d), r = S.daily.get(dk(e.pair, ds));
+    if((d.getDay()===0 || d.getDay()===6) && !r) continue; days.push({ ds, r }); }
+  const sign = e.direction==='Short' ? -1 : 1; let cum = 0;
+  const items = days.map(({ ds, r }, i) => {
+    const isEntry = i===0, isExit = ds===e.exit_date || (!e.exit_date && !tjIsOpen(e) && i===days.length-1);
+    if(r?.daily_change!=null) cum += sign*Number(r.daily_change);
+    const role = isEntry && isExit ? 'Entry & exit' : isEntry ? 'Entry' : isExit ? 'Exit' : `Day ${i+1}`;
+    const tfs = [['Daily','daily_obs','tv_daily'],['4H','h4_obs','tv_4h'],['1H','h1_obs','tv_1h']].filter(([,o,t]) => r?.[o] || r?.[t]);
+    const shots = tfs.map(([l,,t]) => [l, r[t], tvSnap(r[t])]).filter(x => x[2]);
+    return `<li class="tl-i ${isEntry ? 'tl-en' : ''} ${isExit ? 'tl-ex' : ''}">
+      <div class="tl-dot" aria-hidden="true"></div>
+      <div class="tl-c">
+        <div class="tl-h"><b>${fmtDayShort(ds)}</b><span class="tl-role">${role}${isEntry && e.entry_time ? ' · '+esc(e.entry_time) : ''}${isExit && e.exit_time ? ' · '+esc(e.exit_time) : ''}</span>
+          ${r?.daily_change!=null ? `<span class="cd-c ${sgn(r.daily_change)}">${pct(r.daily_change)}</span>` : ''}
+          ${r?.daily_change!=null ? `<span class="tl-cum ${sgn(cum)}" title="Cumulative daily closes in the trade's direction">${cum>0?'+':''}${cum.toFixed(2)}% for you</span>` : ''}
+          ${r?.trade_status ? stBadge(r.trade_status) : ''}</div>
+        ${shots.length ? `<div class="tl-shots">${shots.map(([l, u, sn]) => `<a class="tl-shot" href="${esc(u)}" target="_blank" rel="noopener"><img src="${sn}" alt="${l} chart ${fmtDayShort(ds)}" loading="lazy" onerror="this.closest('.tl-shot').remove()"><span>${l}</span></a>`).join('')}</div>` : ''}
+        ${tfs.some(([,o]) => r[o]) ? `<div class="tl-notes">${tfs.filter(([,o]) => r[o]).map(([l,o]) => `<p><span class="tfl">${l}</span> ${esc(r[o])}</p>`).join('')}</div>` : ''}
+        ${r?.action ? `<p class="muted" style="font-size:12.5px;margin-top:4px">→ ${esc(r.action)}</p>` : ''}
+        ${!r ? '<p class="muted" style="font-size:12.5px">Nothing logged this day.</p>' : ''}
+      </div></li>`; }).join('');
+  return `<div class="tl-wrap"><div class="tl-top"><h4>How the trade played out</h4><span class="muted">${days.length} day${days.length===1?'':'s'}${tjIsOpen(e) ? ' · still open' : ''}</span></div><ol class="tlx">${items}</ol></div>`;
+}
 function tjRow(e){
   const k = `${e.pair}|${e.day}`, open = S.tj.open===k, isO = tjIsOpen(e), mins = tradeMinutes(e), accs = tradeAccts(e).filter(x => S.accounts.get(x.id));
   const res = isO ? '<span class="tj-res o">Open</span>' : `<span class="tj-res ${e.result}" ${e._inferred ? 'title="W/L not set in the journal — inferred from P/L"' : ''}>${{W:'Win',L:'Loss',BE:'BE'}[e.result] || '–'}${e._inferred ? ' *' : ''}</span>`;
@@ -2575,9 +2624,7 @@ function tjRow(e){
       ${accs.length ? `<div class="tk-accts">${accs.map(x => `<span class="tk-acc">${esc(S.accounts.get(x.id).name)}${x.profit!=null ? ` <b class="${sgn(x.profit)}">${x.profit>0?'+':''}${money(Number(x.profit))}</b>` : ''}</span>`).join('')}</div>` : ''}
       ${e._inferred ? '<p class="hint" style="margin:0">⚠️ Result not set in the journal — counted as <b>' + ({W:'Win',L:'Loss',BE:'Break-even'}[e.result]) + '</b> from its P/L. Open the entry day and pick W/L to make it official.</p>' : ''}
       ${(e.tags||[]).length ? tagPills(e.tags) : ''}
-      <div class="tj-obs">${[['Daily','daily_obs','tv_daily'],['4H','h4_obs','tv_4h'],['1H','h1_obs','tv_1h']].filter(([,o,t]) => e[o] || e[t]).map(([l,o,t]) => { const sn = tvSnap(e[t]);
-        return `<div class="tfv"><div class="tfv-h"><span class="tfl">${l}</span>${e[t] ? `<a class="tvlink" href="${esc(e[t])}" target="_blank" rel="noopener">TradingView ↗</a>` : ''}</div>${e[o] ? `<p>${esc(e[o])}</p>` : ''}
-          ${sn ? `<a class="snap" href="${esc(e[t])}" target="_blank" rel="noopener"><img src="${sn}" alt="${l} chart" loading="lazy" onerror="this.parentElement.remove()"></a>` : ''}</div>`; }).join('') || '<p class="muted">No observations logged on the entry day.</p>'}</div>
+      ${tjTimeline(e)}
       <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" data-tjgo="${e.pair}|${e.day}">Open in journal ›</button></div>
     </div>` : ''}
   </article>`;
