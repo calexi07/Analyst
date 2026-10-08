@@ -2449,6 +2449,67 @@ function renderDeskGrid(){
   grid.querySelectorAll('[data-star]').forEach(b => b.onclick = () => { const t = trackedSet(), p = b.dataset.star; t.has(p) ? t.delete(p) : t.add(p); ls.set('do_tracked', [...t]); renderDeskGrid(); });
 }
 
+/* ---------- Discord share for a single trade ---------- */
+S.tshare = ls.get('do_tsh', { notes:true, links:true, money:false, fund:true, limit:2000 });
+function buildTradeDiscord(e){
+  const o = S.tshare, P = `${e.pair.slice(0,3)}/${e.pair.slice(3)}`, isO = tjIsOpen(e);
+  const res = isO ? '🔵 OPEN' : { W:'✅ WIN', L:'❌ LOSS', BE:'➖ BREAK-EVEN' }[e.result] || '';
+  const mins = tradeMinutes(e), dur = e.duration || (mins!=null ? fmtDur(mins) : null);
+  const blocks = [];
+  blocks.push(`# ${e.direction==='Long' ? '📈' : '📉'} ${P} ${e.direction} — ${res}\n-# ${fmtDayShort(e.day)}${e.entry_time ? ' '+e.entry_time : ''} → ${e.exit_date || e.exit_time ? fmtDayShort(exitDay(e)) + (e.exit_time ? ' '+e.exit_time : '') : 'still running'}${dur ? ' · '+dur : ''}`);
+  const st = [];
+  if(e.pips!=null) st.push(`**Pips** \`${e.pips>0?'+':''}${fmt(e.pips,1)}\``);
+  if(e.r_multiple!=null) st.push(`**R** \`${e.r_multiple>0?'+':''}${fmt(e.r_multiple)}R\``);
+  if(o.money && e.profit!=null) st.push(`**P/L** \`${e.profit>0?'+':''}${money(Number(e.profit))}\``);
+  const lv = [['Entry', e.entry_price], ['SL', e.sl], ['TP', e.tp]].filter(([,v]) => v!=null);
+  let rr = '';
+  if(e.entry_price!=null && e.sl!=null && e.tp!=null && e.entry_price!==e.sl) rr = ` · RR 1:${fmt(Math.abs(e.tp-e.entry_price)/Math.abs(e.entry_price-e.sl))}`;
+  const meta = [e.setup_tf ? `${e.setup_tf} setup` : '', e.session ? `${e.session} session` : ''].filter(Boolean).join(' · ');
+  blocks.push(`## 🎯 Trade${st.length ? '\n'+st.join(' · ') : ''}${lv.length ? `\n${lv.map(([l,v]) => `${l} \`${v}\``).join(' · ')}${rr}` : ''}${meta ? `\n-# ${meta}` : ''}${(e.tags||[]).length ? `\n${e.tags.map(t => `\`#${t}\``).join(' ')}` : ''}`);
+  if(o.fund){ const w = isoWeek(parseISO(e.day)), r = S.weekly.get(wk(e.pair, w.year, w.week));
+    if(r?.bias){ const d = det(r), al = (r.bias==='bullish' && e.direction==='Long') || (r.bias==='bearish' && e.direction==='Short');
+      blocks.push(`## 🧭 Fundamental context\n**${BIAS_LBL[r.bias]}**${r.conviction ? ` · *${CONV_LBL[r.conviction]}*` : ''} — ${al ? 'trade **with** the bias ✅' : r.bias==='bullish' || r.bias==='bearish' ? 'trade **against** the bias ⚠️' : 'no directional bias'}${d.main_driver ? `\n> ${cut(d.main_driver, 160)}` : ''}`); } }
+  let end = e.exit_date || (isO ? iso(new Date()) : e.day); if(end < e.day) end = e.day;
+  const sign = e.direction==='Short' ? -1 : 1; let cum = 0, i = 0; const days = [];
+  for(const d = parseISO(e.day); iso(d) <= end; d.setDate(d.getDate()+1)){ const ds = iso(d), r = S.daily.get(dk(e.pair, ds));
+    if((d.getDay()===0 || d.getDay()===6) && !r) continue; i++;
+    if(r?.daily_change!=null) cum += sign*Number(r.daily_change);
+    const role = i===1 ? '🟢 Entry' : ds===e.exit_date ? '🏁 Exit' : `Day ${i}`;
+    let line = `**${fmtDayShort(ds)}** · ${role}${r?.daily_change!=null ? ` · \`${pct(r.daily_change)}\` → ${cum>=0 ? '+' : ''}${cum.toFixed(2)}% for us` : ''}`;
+    if(o.notes && r){ const n = [['D', r.daily_obs], ['4H', r.h4_obs], ['1H', r.h1_obs]].filter(([,t]) => t).map(([l,t]) => `> **${l}** ${cut(t, 150)}`); if(n.length) line += '\n' + n.join('\n'); }
+    if(o.links && r){ const L = [['Daily', r.tv_daily], ['4H', r.tv_4h], ['1H', r.tv_1h]].filter(([,u]) => u); if(L.length) line += `\n-# 📸 ${L.map(([l,u]) => `[${l}](${u})`).join(' · ')}`; }
+    days.push(line); }
+  if(days.length) blocks.push(`## 🗓️ How it played out\n${days.join('\n')}`);
+  const msgs = []; let cur = '';
+  blocks.forEach(b => { if(cur && cur.length + b.length + 2 > o.limit){ msgs.push(cur); cur = b; } else cur = cur ? cur + '\n\n' + b : b; });
+  if(cur) msgs.push(cur);
+  return msgs;
+}
+function openTradeShare(e){
+  const draw = () => {
+    const o = S.tshare, msgs = buildTradeDiscord(e);
+    shareDlg.innerHTML = `<div class="dlg-head"><h2>📣 Share trade to Discord</h2><p class="muted" style="margin-top:4px;font-weight:600">${e.pair} ${e.direction} · ${fmtDayShort(e.day)} — copy and paste into any channel.</p></div>
+      <div class="dlg-body" style="display:grid;gap:14px">
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="chips">${[['notes','💬 Notes per day'],['links','📸 Chart links'],['fund','🧭 Fundamental context'],['money','💵 Show $ P/L']].map(([k,l]) => `<button class="ch" data-ts="${k}" aria-pressed="${!!o[k]}">${l}</button>`).join('')}</div>
+          <div class="seg ml-auto" role="group" aria-label="Message length"><button data-tl="2000" aria-pressed="${o.limit===2000}">2000 chars</button><button data-tl="4000" aria-pressed="${o.limit===4000}">Nitro 4000</button></div>
+        </div>
+        ${msgs.map((m, i) => `<div class="shmsg"><div class="shmsg-h"><b>${msgs.length > 1 ? `Message ${i+1} of ${msgs.length}` : 'Message'}</b><span class="muted">${m.length} / ${o.limit} chars</span>
+          <button class="btn btn-primary" data-copy="${i}" style="margin-left:auto">Copy</button></div><pre class="shpre">${esc(m)}</pre></div>`).join('')}
+        <p class="hint" style="margin:0">Chart links become TradingView previews in Discord. $ P/L is off by default so you can share results without amounts.</p>
+      </div>
+      <div class="dlg-foot">${msgs.length > 1 ? '<button class="btn" id="shAll">Copy all</button>' : ''}<button class="btn" id="shClose">Close</button></div>`;
+    const save = () => { ls.set('do_tsh', o); draw(); };
+    shareDlg.querySelectorAll('[data-ts]').forEach(b => b.onclick = () => { o[b.dataset.ts] = !o[b.dataset.ts]; save(); });
+    shareDlg.querySelectorAll('[data-tl]').forEach(b => b.onclick = () => { o.limit = +b.dataset.tl; save(); });
+    const copy = async t => { try{ await navigator.clipboard.writeText(t); toast('Copied — paste it in Discord'); }catch{ toast('Clipboard blocked by the browser'); } };
+    shareDlg.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => { copy(msgs[+b.dataset.copy]); b.textContent = 'Copied ✓'; });
+    shareDlg.querySelector('#shAll')?.addEventListener('click', () => copy(msgs.join('\n\n')));
+    shareDlg.querySelector('#shClose').onclick = () => shareDlg.close();
+  };
+  draw(); shareDlg.showModal();
+}
+
 /* ---------- Trades: full journal ---------- */
 S.tj = { period: ls.get('do_tj_period','all'), metric: ls.get('do_tj_metric','usd'), dir:'all', res:'all', pair:'all', acct:'all', tf:'all', sess:'all', tag:'all', q:'', sort:'new', open:null };
 function tjAll(){ return [...S.daily.values()].filter(e => e.direction).map(tjInfer); }
@@ -2570,7 +2631,8 @@ function renderTrades(){
   document.getElementById('tjReset')?.addEventListener('click', () => { Object.assign(S.tj, { dir:'all', res:'all', pair:'all', acct:'all', tf:'all', sess:'all', tag:'all', q:'' }); renderMain(); });
   document.querySelectorAll('[data-tjpair]').forEach(b => b.onclick = () => set('pair', b.dataset.tjpair));
   document.querySelectorAll('[data-tjgo]').forEach(b => b.onclick = ev => { ev.stopPropagation(); const [p, d] = b.dataset.tjgo.split('|'); goTo(p, { type:'day', day:d }); });
-  document.querySelectorAll('[data-tjrow]').forEach(r => r.onclick = ev => { if(ev.target.closest('a,[data-tjgo]')) return; S.tj.open = S.tj.open===r.dataset.tjrow ? null : r.dataset.tjrow; renderMain(); });
+  document.querySelectorAll('[data-tjshare]').forEach(b => b.onclick = ev => { ev.stopPropagation(); const t = tjAll().find(x => `${x.pair}|${x.day}`===b.dataset.tjshare); if(t) openTradeShare(t); });
+  document.querySelectorAll('[data-tjrow]').forEach(r => r.onclick = ev => { if(ev.target.closest('a,[data-tjgo],[data-tjshare]')) return; S.tj.open = S.tj.open===r.dataset.tjrow ? null : r.dataset.tjrow; renderMain(); });
   if(st.curve.length > 1){
     const ink = cssv('--accent'), last = st.curve.at(-1).v;
     mkChart('tjEq', 'line', st.curve.map(c => c.d.slice(5)), [{ data:st.curve.map(c => c.v), borderColor: last>=0 ? cssv('--pos') : cssv('--neg'), backgroundColor:ink, borderWidth:2.5, tension:.25,
@@ -2625,7 +2687,7 @@ function tjRow(e){
       ${e._inferred ? '<p class="hint" style="margin:0">⚠️ Result not set in the journal — counted as <b>' + ({W:'Win',L:'Loss',BE:'Break-even'}[e.result]) + '</b> from its P/L. Open the entry day and pick W/L to make it official.</p>' : ''}
       ${(e.tags||[]).length ? tagPills(e.tags) : ''}
       ${tjTimeline(e)}
-      <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" data-tjgo="${e.pair}|${e.day}">Open in journal ›</button></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn" data-tjshare="${e.pair}|${e.day}">📣 Share to Discord</button><button class="btn btn-primary" data-tjgo="${e.pair}|${e.day}">Open in journal ›</button></div>
     </div>` : ''}
   </article>`;
 }
