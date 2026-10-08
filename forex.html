@@ -2427,8 +2427,14 @@ function renderDeskGrid(){
 
 /* ---------- Trades: full journal ---------- */
 S.tj = { period: ls.get('do_tj_period','all'), metric: ls.get('do_tj_metric','usd'), dir:'all', res:'all', pair:'all', acct:'all', tf:'all', sess:'all', tag:'all', q:'', sort:'new', open:null };
-function tjAll(){ return [...S.daily.values()].filter(e => e.direction); }
+function tjAll(){ return [...S.daily.values()].filter(e => e.direction).map(tjInfer); }
 const tjIsOpen = e => !e.result && !e.exit_date;
+/* a trade with an exit date but no W/L set is still closed — infer the result from P/L */
+function tjInfer(e){
+  if(e.result || !e.exit_date) return e;
+  const v = e.profit!=null ? Number(e.profit) : e.pips!=null ? Number(e.pips) : e.r_multiple!=null ? Number(e.r_multiple) : null;
+  return { ...e, result: v==null ? 'BE' : v > 0 ? 'W' : v < 0 ? 'L' : 'BE', _inferred:true };
+}
 function tjFiltered(){
   const T = S.tj, now = new Date();
   const from = T.period==='30' ? iso(new Date(now - 30*864e5)) : T.period==='90' ? iso(new Date(now - 90*864e5)) : T.period==='ytd' ? `${now.getFullYear()}-01-01` : '0000';
@@ -2550,7 +2556,7 @@ function renderTrades(){
 }
 function tjRow(e){
   const k = `${e.pair}|${e.day}`, open = S.tj.open===k, isO = tjIsOpen(e), mins = tradeMinutes(e), accs = tradeAccts(e).filter(x => S.accounts.get(x.id));
-  const res = isO ? '<span class="tj-res o">Open</span>' : `<span class="tj-res ${e.result}">${{W:'Win',L:'Loss',BE:'BE'}[e.result] || '–'}</span>`;
+  const res = isO ? '<span class="tj-res o">Open</span>' : `<span class="tj-res ${e.result}" ${e._inferred ? 'title="W/L not set in the journal — inferred from P/L"' : ''}>${{W:'Win',L:'Loss',BE:'BE'}[e.result] || '–'}${e._inferred ? ' *' : ''}</span>`;
   return `<article class="tj-tr ${open ? 'open' : ''} ${e.result ? 'tjr-'+e.result : 'tjr-o'}" data-tjrow="${k}">
     <div class="tj-main">
       <div class="tj-date"><b>${fmtDayShort(e.day)}</b><span class="muted">${e.exit_date && e.exit_date!==e.day ? '→ '+fmtDayShort(e.exit_date) : e.entry_time ? e.entry_time+(e.exit_time ? '–'+e.exit_time : '') : ''}</span></div>
@@ -2567,6 +2573,7 @@ function tjRow(e){
           .map(([l,v]) => `<div><span class="kick">${l}</span><b>${esc(v)}</b></div>`).join('')}
       </div>
       ${accs.length ? `<div class="tk-accts">${accs.map(x => `<span class="tk-acc">${esc(S.accounts.get(x.id).name)}${x.profit!=null ? ` <b class="${sgn(x.profit)}">${x.profit>0?'+':''}${money(Number(x.profit))}</b>` : ''}</span>`).join('')}</div>` : ''}
+      ${e._inferred ? '<p class="hint" style="margin:0">⚠️ Result not set in the journal — counted as <b>' + ({W:'Win',L:'Loss',BE:'Break-even'}[e.result]) + '</b> from its P/L. Open the entry day and pick W/L to make it official.</p>' : ''}
       ${(e.tags||[]).length ? tagPills(e.tags) : ''}
       <div class="tj-obs">${[['Daily','daily_obs','tv_daily'],['4H','h4_obs','tv_4h'],['1H','h1_obs','tv_1h']].filter(([,o,t]) => e[o] || e[t]).map(([l,o,t]) => { const sn = tvSnap(e[t]);
         return `<div class="tfv"><div class="tfv-h"><span class="tfl">${l}</span>${e[t] ? `<a class="tvlink" href="${esc(e[t])}" target="_blank" rel="noopener">TradingView ↗</a>` : ''}</div>${e[o] ? `<p>${esc(e[o])}</p>` : ''}
