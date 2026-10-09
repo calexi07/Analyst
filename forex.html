@@ -3066,7 +3066,7 @@ async function openPairDay(p, ds, mode){
 function syncPill(){
   const s = S.settings?.tv_sync; if(!s?.day) return '';
   const ok = s.day >= prevWeekday(iso(new Date()));
-  return `<span class="sync-pill ${ok ? 'ok' : 'old'}" title="Last TradingView alert received ${s.at ? new Date(s.at).toLocaleString() : ''}">${ok ? '●' : '◐'} Auto-sync · ${fmtDayShort(s.day)} · ${s.pairs ?? '?'} pairs</span>`;
+  return `<span class="sync-pill ${ok ? 'ok' : 'old'}" title="Last TradingView alert received ${s.at ? new Date(s.at).toLocaleString() : ''}">${ok ? '●' : '◐'} Auto-sync${/TEST/.test(s.src || '') ? ' (test)' : ''} · ${fmtDayShort(s.day)} · ${s.pairs ?? '?'} pairs${s.filled!=null ? ` · ${s.filled} filled` : ''}</span>`;
 }
 function renderTdBoard(){
   const box = document.getElementById('tdBoard'); if(!box) return;
