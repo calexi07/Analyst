@@ -769,6 +769,46 @@
   .bk-tog input{ width:16px; height:16px; accent-color:var(--accent); }
   .bk-kind{ display:flex; } .bk-kind button{ flex:1; }
   @media (max-width:600px){ .bk-src{ display:none; } .bk-amt{ min-width:0; } .bk-cats .tj-bar{ grid-template-columns:110px 1fr 84px; } }
+  /* ===== drawer editor ===== */
+  .jr{ display:block !important; }
+  .panel-side{ position:fixed !important; top:0; right:0; bottom:0; height:100vh; height:100dvh; max-height:none !important; width:min(560px,100vw); z-index:45;
+    overflow-y:auto; overscroll-behavior:contain; border-radius:0 !important; background:var(--surface); border-left:1px solid var(--line);
+    box-shadow:-30px 0 60px rgba(0,0,0,.35); transform:translateX(104%); transition:transform .28s cubic-bezier(.2,.8,.2,1); visibility:hidden; }
+  .panel-side.open{ transform:none; visibility:visible; }
+  .panel-side .ps{ border:none; border-radius:0; box-shadow:none; min-height:100%; display:flex; flex-direction:column; overflow:visible; }
+  .panel-side .ps-head{ border-radius:0; padding:16px 18px 12px; }
+  .drawer-bd{ position:fixed; inset:0; z-index:44; background:rgba(6,6,20,.45); backdrop-filter:blur(2px); opacity:0; pointer-events:none; transition:opacity .2s; }
+  .drawer-bd.on{ opacity:1; pointer-events:auto; }
+  :root[data-theme="light"] .drawer-bd{ background:rgba(27,25,52,.25); }
+  html.drawer-lock, html.drawer-lock body{ overflow:hidden; }
+  .ps-x{ width:34px; height:34px; border-radius:10px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-size:20px; line-height:1; display:grid; place-items:center; }
+  .ps-x:hover{ border-color:var(--neg); color:var(--neg); }
+  .sticky-foot{ position:sticky; bottom:0; margin-top:auto; z-index:3; background:color-mix(in srgb,var(--surface) 94%,transparent); backdrop-filter:blur(8px); }
+  @media (prefers-reduced-motion: reduce){ .panel-side{ transition:none; } }
+  @media (max-width:900px){ .panel-side{ width:100vw; border-left:none; } }
+  /* status chips */
+  .stc{ display:inline-flex; align-items:center; gap:7px; }
+  .stc > i{ width:7px; height:7px; border-radius:50%; background:currentColor; opacity:.7; }
+  .stc.st-yes > i{ background:var(--accent); } .stc.st-in > i{ background:var(--pos); } .stc.st-wait > i{ background:var(--amber); }
+  .stc.st-setup > i{ background:var(--violet); } .stc.st-closed > i{ background:var(--ink); } .stc.st-no > i, .stc.st-other > i{ background:var(--muted); }
+  .stc[aria-pressed="true"] > i{ background:var(--on-accent); opacity:1; }
+  .st-rm{ margin-left:2px; width:16px; height:16px; border-radius:50%; display:grid; place-items:center; font-size:12px; line-height:1; opacity:.55; }
+  .st-rm:hover{ opacity:1; background:color-mix(in srgb,var(--neg) 25%,transparent); }
+  .st-add{ border-style:dashed !important; color:var(--muted) !important; background:transparent !important; }
+  .st-add:hover{ color:var(--ink) !important; }
+  /* top-down tabs */
+  .td-close{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  .close-in{ display:flex; align-items:center; gap:6px; font-size:12px; font-weight:800; color:var(--muted); }
+  .close-in .inp{ width:92px; font-weight:800; text-align:right; }
+  .tf-tabs{ display:flex; width:100%; margin-bottom:10px; }
+  .tf-tabs button{ flex:1; display:inline-flex; align-items:center; justify-content:center; gap:7px; }
+  .tf-dot{ width:6px; height:6px; border-radius:50%; background:var(--line); }
+  .tf-dot.on{ background:var(--pos); box-shadow:0 0 6px var(--pos); }
+  .tf-tabs button[aria-pressed="true"] .tf-dot.on{ background:var(--on-accent); box-shadow:none; }
+  .tf-pane textarea{ min-height:110px; }
+  .tv-in{ margin-top:8px; font-size:12.5px; }
+  .g2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  @media (max-width:520px){ .g2{ grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -936,6 +976,8 @@ async function loadAll(){
   S.accounts = new Map(a.map(r => [r.id, r]));
   const g = await fetchAll('do_goals').catch(e => { console.warn(e); return []; });
   const bk = await fetchAll('do_bank').catch(e => { console.warn(e); return []; });
+  const st = await fetchAll('do_settings').catch(e => { console.warn(e); return []; });
+  S.settings = Object.fromEntries(st.map(r => [r.key, r.value]));
   S.bank.rows = new Map(bk.map(r => [r.id, r]));
   S.goals = new Map(g.map(r => [r.id, r]));
   S.daily = new Map(d.map(r => [dk(r.pair, r.day), r]));
@@ -985,7 +1027,7 @@ const NAV = [
   ['Tools', [['prompts','Prompts','spark']]],
 ];
 const navActive = v => S.view===v || (v==='history' && S.view==='overview');
-async function goView(v){ await flushSave(); S.view = v; ls.set('do_view', v); render(); window.scrollTo({ top:0 }); }
+async function goView(v){ await flushSave(); S.drawerOpen = false; S.view = v; ls.set('do_view', v); render(); window.scrollTo({ top:0 }); }
 function render(){
   const app = document.getElementById('app');
   if(!CONFIGURED){ app.innerHTML = setupScreen(); return; }
@@ -1093,12 +1135,44 @@ function renderMain(){
   else if(S.view === 'bank') renderBank();
   else if(S.view === 'trades') renderTrades();
   else renderJournal();
+  syncDrawer();
 }
 function setupScreen(){
   return `<div class="max-w-xl mx-auto p-8"><h1 class="pairtitle mb-4">Daily Observer</h1>
     <div class="card"><p>The app is not connected to Supabase yet.</p>
     <p class="mt-2 muted">1) Run <b>schema.sql</b> in Supabase → SQL Editor. 2) Put <b>SUPABASE_URL</b> and <b>SUPABASE_ANON_KEY</b> in the CONFIG section of index.html.</p></div></div>`;
 }
+/* ---------- day/week drawer ---------- */
+S.drawerOpen = false;
+const drawerBd = (() => { const d = document.createElement('div'); d.className = 'drawer-bd'; d.onclick = () => closeDrawer(); document.body.appendChild(d); return d; })();
+function syncDrawer(){
+  /* the drawer lives directly in <body> so no animated ancestor can trap it under the backdrop */
+  const fresh = document.querySelector('#app #panel');
+  if(fresh){ document.querySelectorAll('body > #panel').forEach(x => x.remove()); document.body.appendChild(fresh); }
+  else if(!['journal','desk'].includes(S.view)) document.querySelectorAll('body > #panel').forEach(x => x.remove());
+  const p = document.querySelector('body > #panel'), on = !!(p && S.drawerOpen);
+  p?.classList.toggle('open', on); drawerBd.classList.toggle('on', on);
+  document.documentElement.classList.toggle('drawer-lock', on);
+}
+async function closeDrawer(){ await flushSave(); S.drawerOpen = false; syncDrawer(); }
+function openDrawer(){ const was = S.drawerOpen; S.drawerOpen = true; syncDrawer(); const p = document.getElementById('panel'); if(p && !was) p.scrollTop = 0; }
+document.addEventListener('keydown', ev => { if(ev.key==='Escape' && S.drawerOpen && !document.querySelector('dialog[open]')){ ev.preventDefault(); closeDrawer(); } });
+/* custom day statuses (quick picks), synced through do_settings with a local fallback */
+S.settings = {};
+function customStatuses(){ return Array.isArray(S.settings.day_statuses) ? S.settings.day_statuses : ls.get('do_statuses', []); }
+async function setCustomStatuses(list){
+  S.settings.day_statuses = list; ls.set('do_statuses', list);
+  try{ const { error } = await sb.from('do_settings').upsert({ key:'day_statuses', value:list }, { onConflict:'key' }); if(error) throw error; }
+  catch(e){ console.warn('settings not synced', e); }
+}
+function statusOptions(extra){
+  const used = new Set(); S.daily.forEach(e => { if(e.trade_status) used.add(e.trade_status); });
+  const all = [...STATUSES, ...customStatuses()];
+  used.forEach(u => { if(!all.some(x => x.toLowerCase()===u.toLowerCase())) all.push(u); });
+  if(extra && !all.includes(extra)) all.push(extra);
+  return all;
+}
+
 /* ---------- journal (calendar + view/edit panel) ---------- */
 const STATUSES = ['No trade','Wait','Setup formed','YES','In trade','Closed trade'];
 const SESSIONS = ['Asia','London','New York','Asia / London','London / New York'];
@@ -1220,7 +1294,7 @@ async function selectDay(ds){
   const d = parseISO(ds);
   if(firstOfMonth(d).getTime() !== S.month.getTime()){ S.month = firstOfMonth(d); renderMain(); }
   else { renderCalendar(); renderPanel(); }
-  if(narrow()) document.getElementById('panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
+  openDrawer(); document.getElementById('panel').scrollTop = 0;
 }
 async function selectWeek(y, w){
   await flushSave();
@@ -1228,7 +1302,7 @@ async function selectWeek(y, w){
   const d = mondayOf(y, w);
   if(firstOfMonth(d).getTime() !== S.month.getTime() && firstOfMonth(new Date(d.getFullYear(), d.getMonth(), d.getDate()+4)).getTime() !== S.month.getTime()){ S.month = firstOfMonth(d); renderMain(); }
   else { renderCalendar(); renderPanel(); }
-  if(narrow()) document.getElementById('panel')?.scrollIntoView({ behavior:'smooth', block:'start' });
+  openDrawer(); document.getElementById('panel').scrollTop = 0;
 }
 async function setMode(m){ await flushSave(); S.mode = m; ls.set('do_mode', m); renderPanel(); }
 
@@ -1265,18 +1339,20 @@ function bindChips(root, attr, onChange){
 function panelHead(title, sub){
   return `<div class="ps-head">
     <div style="min-width:0"><h2>${title}</h2><div class="sub">${sub}</div></div>
-    <div class="ps-nav"><button class="ib" id="navPrev" aria-label="Previous">‹</button><button class="ib" id="navNext" aria-label="Next">›</button></div>
+    <div class="ps-nav"><button class="ib" id="navPrev" aria-label="Previous">‹</button><button class="ib" id="navNext" aria-label="Next">›</button><button class="ps-x" id="psClose" aria-label="Close panel" title="Close (Esc)">×</button></div>
     <div class="seg mode" role="group" aria-label="Panel mode">
       <button data-mode="view" aria-pressed="${S.mode==='view'}">View</button><button data-mode="edit" aria-pressed="${S.mode==='edit'}">Edit</button>
     </div></div>`;
 }
 function bindHead(panel, prev, next){
   panel.querySelector('#navPrev').onclick = prev; panel.querySelector('#navNext').onclick = next;
+  panel.querySelector('#psClose').onclick = () => closeDrawer();
   panel.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => setMode(b.dataset.mode));
 }
 
 function renderPanel(){
   const panel = document.getElementById('panel'); if(!panel) return;
+  syncDrawer();
   if(S.sel.type==='week') return S.mode==='edit' ? weekEdit(panel) : weekView(panel);
   const p = S.pair, ds = S.sel.day, dt = parseISO(ds), w = isoWeek(dt);
   const ctx = { p, ds, dt, w, e: S.daily.get(dk(p, ds)) || {}, b: base(p), q: quote(p), wr: S.weekly.get(wk(p, w.year, w.week)) };
@@ -1349,37 +1425,39 @@ function fmtDayShort(ds){ const d = parseISO(ds); return `${WD_SHORT[d.getDay()]
 
 /* ---- day: edit ---- */
 function dayEdit(panel, ctx){
-  const { p, ds, e, b, q } = ctx;
+  const { p, ds, e } = ctx;
   const hasTrade = !!(e.direction || ['yes','in','closed'].includes(statusKey(e.trade_status)));
   const v = f => esc(e[f] ?? '');
-  const tf = (label, obs, tv, extra='') => `<div class="tf"><div class="tf-h"><span class="tfl">${label}</span>${extra}</div>
-      <textarea class="inp" data-f="${obs}" rows="2" aria-label="${label} observations" placeholder="What do you see on ${label}…">${v(obs)}</textarea>
-      <input class="inp" style="margin-top:6px;font-size:12.5px" data-f="${tv}" type="url" value="${v(tv)}" aria-label="Link TradingView ${label}" placeholder="Link TradingView ${label}"></div>`;
+  const tfTab = S.tfTab || 'daily';
+  const TFS = [['daily','Daily','daily_obs','tv_daily'],['4h','4H','h4_obs','tv_4h'],['1h','1H','h1_obs','tv_1h']];
   const numIn = (f, l, type='text') => `<div><label class="lbl" for="i_${f}">${l}</label><input id="i_${f}" class="inp num" data-f="${f}" ${type==='time' ? 'type="time"' : 'inputmode="decimal"'} value="${v(f)}"></div>`;
+  const opts = statusOptions(e.trade_status), custom = new Set(customStatuses());
   panel.innerHTML = `<div class="ps">
     ${panelHead(dayTitle(ctx), `${p} · <span id="saveState" class="save">${e.id ? 'saved ✓' : 'autosaves'}</span>`)}
     ${wkBanner(ctx)}
-    <div class="sec" style="border-top:none;margin-top:4px"><h4>Day status</h4>${chipGroup('trade_status', STATUSES, e.trade_status)}</div>
-    <div class="sec"><h4>Setup tags <small>pick any</small></h4>
-      <div class="chips" id="tagBox">${allTags(e.tags||[]).map(t => `<button type="button" class="ch tag" data-t="${esc(t)}" aria-pressed="${(e.tags||[]).includes(t)}">${esc(t)}</button>`).join('')}</div>
-      <div class="dyn" style="margin-top:8px"><input class="inp" id="newTag" placeholder="new tag…" aria-label="New tag"><button type="button" class="btn" id="addTag">Add</button></div></div>
-    <div class="sec"><h4>News <small>shared per currency</small></h4>
-      <div class="g3" style="grid-template-columns:1fr 1fr">
-        <div><label class="lbl" for="nb">${b}</label><textarea id="nb" class="inp" data-news="base" rows="2" placeholder="15:30 CPI">${esc(S.news.get(nk(b,ds))?.events || '')}</textarea></div>
-        <div><label class="lbl" for="nq">${q}</label><textarea id="nq" class="inp" data-news="quote" rows="2" placeholder="12:00 GDP">${esc(S.news.get(nk(q,ds))?.events || '')}</textarea></div>
-      </div><p class="hint">One event per line, time first: "15:30 CPI".</p></div>
-    <div class="sec"><h4>Top-down</h4>
-      ${tf('Daily','daily_obs','tv_daily', `<label class="muted" style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px;margin-left:auto">Close <input class="inp num" data-f="daily_change" inputmode="decimal" value="${v('daily_change')}" placeholder="-0.19" style="width:80px;padding:4px 8px">%</label>`)}
-      ${tf('4H','h4_obs','tv_4h')}
-      ${tf('1H','h1_obs','tv_1h')}
+    <div class="sec" style="border-top:none;margin-top:4px">
+      <h4>Day status <small>tap to set · tracked in Analytics</small></h4>
+      <div class="chips" role="group" id="stBox">${opts.map(o => `<button type="button" class="ch stc st-${statusKey(o)}" data-st="${esc(o)}" aria-pressed="${o===e.trade_status}">
+        <i></i>${esc(o)}${custom.has(o) ? `<span class="st-rm" data-strm="${esc(o)}" title="Remove from quick picks" aria-label="Remove ${esc(o)} from quick picks">×</span>` : ''}</button>`).join('')}
+        <button type="button" class="ch st-add" id="stAddBtn">+ New</button></div>
+      <input type="hidden" data-f="trade_status" value="${esc(e.trade_status||'')}">
+      <div class="dyn" id="stAddRow" hidden style="margin-top:8px"><input class="inp" id="stNew" maxlength="28" placeholder="e.g. Missed setup, News day, Holiday…" aria-label="New status"><button type="button" class="btn btn-primary" id="stSave">Add</button></div>
+    </div>
+    <div class="sec">
+      <div class="td-close"><h4 style="margin:0">Top-down</h4>
+        <label class="close-in">Daily close <input class="inp num" data-f="daily_change" inputmode="decimal" value="${v('daily_change')}" placeholder="-0.19"><span>%</span></label></div>
+      <div class="seg tf-tabs" role="tablist" aria-label="Timeframe">${TFS.map(([k,l,o,t]) => `<button type="button" role="tab" data-tft="${k}" aria-selected="${tfTab===k}" aria-pressed="${tfTab===k}">${l}<i class="tf-dot ${e[o] || e[t] ? 'on' : ''}" data-dot="${k}"></i></button>`).join('')}</div>
+      ${TFS.map(([k,l,o,t]) => `<div class="tf-pane" data-tfp="${k}" ${tfTab===k ? '' : 'hidden'}>
+        <textarea class="inp" data-f="${o}" rows="4" aria-label="${l} observations" placeholder="What do you see on ${l}? Structure, liquidity, MA, plan…">${v(o)}</textarea>
+        <input class="inp tv-in" data-f="${t}" type="url" value="${v(t)}" aria-label="TradingView link ${l}" placeholder="📸 TradingView link (${l})"></div>`).join('')}
     </div>
     <details class="sec trade" ${hasTrade ? 'open' : ''}><summary><h4>Trade <small>${e.direction ? esc(e.direction) + (e.result ? ' · '+esc(e.result) : '') : 'optional'}</small></h4></summary>
       <div style="display:grid;gap:12px">
-        <div><span class="lbl">Direction</span>${chipGroup('direction', ['Long','Short'], e.direction)}</div>
-        <div><span class="lbl">Setup timeframe</span>${chipGroup('setup_tf', ['1H','4H'], e.setup_tf)}</div>
+        <div class="g2"><div><span class="lbl">Direction</span>${chipGroup('direction', ['Long','Short'], e.direction)}</div>
+          <div><span class="lbl">Setup timeframe</span>${chipGroup('setup_tf', ['1H','4H'], e.setup_tf)}</div></div>
         <div><span class="lbl">Session</span>${chipGroup('session', SESSIONS, e.session)}</div>
         <div><span class="lbl">Result</span>${chipGroup('result', ['W','L','BE'], e.result, o => o)}</div>
-        <div><span class="lbl">Accounts <span style="font-weight:600">· select every account you took this setup on</span></span>${(() => { const cur = tradeAccts(e), ids = cur.map(x => x.id);
+        <div><span class="lbl">Accounts <span style="font-weight:600">· every account you took this setup on</span></span>${(() => { const cur = tradeAccts(e), ids = cur.map(x => x.id);
           const accs = [...S.accounts.values()].filter(a => (a.status||'active')==='active' || ids.includes(a.id));
           return accs.length ? `<div class="chips" id="acctBox">${accs.map(a => `<button type="button" class="ch" data-a="${a.id}" aria-pressed="${ids.includes(a.id)}">${esc(a.name)}</button>`).join('')}</div>
             <div id="acctRows" class="accrows">${acctRowsHtml(cur)}</div>`
@@ -1396,37 +1474,50 @@ function dayEdit(panel, ctx){
       </div></details>
     <div class="sec"><h4>Plan for tomorrow</h4>${chipGroup('action', ACTIONS, e.action)}
       <input class="inp" style="margin-top:8px" data-f-alt="action" placeholder="or type a custom action…" aria-label="Custom action"></div>
-    <div class="editfoot">
+    <div class="editfoot sticky-foot">
       ${e.id ? '<button class="linkbtn" id="pDel">Delete day</button>' : ''}
       <button class="btn btn-primary" style="margin-left:auto" id="doneEdit">Done ✓</button>
     </div>
   </div>`;
 
   panel.querySelectorAll('textarea').forEach(t => { autosize(t); t.addEventListener('input', () => autosize(t)); });
-  [['daily_obs','tv_daily'],['h4_obs','tv_4h'],['h1_obs','tv_1h']].forEach(([o,t]) => {
-    const ta = panel.querySelector(`[data-f="${o}"]`), li = panel.querySelector(`[data-f="${t}"]`);
+  TFS.forEach(([k,,o,t]) => {
+    const ta = panel.querySelector(`[data-f="${o}"]`), li = panel.querySelector(`[data-f="${t}"]`), dot = panel.querySelector(`[data-dot="${k}"]`);
+    const upd = () => dot.classList.toggle('on', !!(ta.value.trim() || li.value.trim()));
     ta.addEventListener('input', () => {
-      const m = ta.value.match(TVRX); if(!m || li.value.trim()) return;
-      li.value = m[0]; ta.value = ta.value.replace(m[0], '').replace(/\n{3,}/g, '\n\n').trim(); autosize(ta);
-      toast('TradingView link moved to the chart field');
-    });
+      const m = ta.value.match(TVRX); if(m && !li.value.trim()){ li.value = m[0]; ta.value = ta.value.replace(m[0], '').replace(/\n{3,}/g, '\n\n').trim(); autosize(ta); toast('TradingView link moved to the chart field'); }
+      upd(); });
+    li.addEventListener('input', upd);
   });
+  panel.querySelectorAll('[data-tft]').forEach(b => b.onclick = () => { S.tfTab = b.dataset.tft;
+    panel.querySelectorAll('[data-tft]').forEach(x => { const on = x===b; x.setAttribute('aria-selected', String(on)); x.setAttribute('aria-pressed', String(on)); });
+    panel.querySelectorAll('[data-tfp]').forEach(x => x.hidden = x.dataset.tfp!==S.tfTab);
+    const ta = panel.querySelector(`[data-tfp="${S.tfTab}"] textarea`); autosize(ta); ta.focus(); });
   const save = () => schedule(() => collectDay(panel));
-  panel.querySelectorAll('[data-f], [data-news]').forEach(el => el.addEventListener('input', save));
+  panel.querySelectorAll('[data-f]').forEach(el => el.addEventListener('input', save));
   bindChips(panel, 'data-f', field => {
-    if(field==='trade_status' && ['YES','In trade','Closed trade'].includes(panel.querySelector('[data-f="trade_status"]').value)) panel.querySelector('details.trade').open = true;
-    if(field==='action') panel.querySelector('[data-f-alt="action"]').value = '';
+    if(field==='action') panel.querySelector('[data-f="action"]') && (panel.querySelector('[data-f-alt="action"]').value = '');
     save(); flushSave();
   });
-  panel.querySelector('#tagBox').addEventListener('click', ev => { const b = ev.target.closest('[data-t]'); if(!b) return;
-    b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed')!=='true')); save(); flushSave(); });
-  const addTag = () => { const inp = panel.querySelector('#newTag'), t = inp.value.trim(); if(!t) return;
-    let b = [...panel.querySelectorAll('#tagBox [data-t]')].find(x => x.dataset.t.toLowerCase()===t.toLowerCase());
-    if(!b){ panel.querySelector('#tagBox').insertAdjacentHTML('beforeend', `<button type="button" class="ch tag" data-t="${esc(t)}" aria-pressed="true">${esc(t)}</button>`); }
-    else b.setAttribute('aria-pressed','true');
-    inp.value = ''; save(); flushSave(); };
-  panel.querySelector('#addTag').onclick = addTag;
-  panel.querySelector('#newTag').addEventListener('keydown', ev => { if(ev.key==='Enter'){ ev.preventDefault(); addTag(); } });
+  /* day status: single-select chips + custom quick picks */
+  const stHid = panel.querySelector('[data-f="trade_status"]');
+  panel.querySelector('#stBox').addEventListener('click', async ev => {
+    const rm = ev.target.closest('[data-strm]');
+    if(rm){ ev.stopPropagation(); await setCustomStatuses(customStatuses().filter(x => x!==rm.dataset.strm)); toast(`“${rm.dataset.strm}” removed from quick picks`); renderPanel(); return; }
+    if(ev.target.closest('#stAddBtn')){ const row = panel.querySelector('#stAddRow'); row.hidden = !row.hidden; if(!row.hidden) panel.querySelector('#stNew').focus(); return; }
+    const b = ev.target.closest('[data-st]'); if(!b) return;
+    const on = b.getAttribute('aria-pressed')!=='true';
+    panel.querySelectorAll('[data-st]').forEach(x => x.setAttribute('aria-pressed', 'false'));
+    b.setAttribute('aria-pressed', String(on)); stHid.value = on ? b.dataset.st : '';
+    if(on && ['yes','in','closed'].includes(statusKey(b.dataset.st))) panel.querySelector('details.trade').open = true;
+    save(); flushSave();
+  });
+  const addSt = async () => { const inp = panel.querySelector('#stNew'), t = inp.value.trim().replace(/\s+/g,' '); if(!t) return;
+    const exists = statusOptions().find(x => x.toLowerCase()===t.toLowerCase());
+    if(!exists) await setCustomStatuses([...customStatuses(), t]);
+    stHid.value = exists || t; save(); await flushSave(); renderPanel(); toast(exists ? `Status set to “${exists}”` : `“${t}” added to quick picks`); };
+  panel.querySelector('#stSave').onclick = addSt;
+  panel.querySelector('#stNew').addEventListener('keydown', ev => { if(ev.key==='Enter'){ ev.preventDefault(); addSt(); } if(ev.key==='Escape'){ ev.stopPropagation(); panel.querySelector('#stAddRow').hidden = true; } });
   const syncProfit = () => {
     const rows = readAcctRows(panel), pf = panel.querySelector('[data-f="profit"]');
     if(rows.length){ const vals = rows.map(r => r.profit).filter(v => v!=null); pf.value = vals.length ? +vals.reduce((t,v) => t+v, 0).toFixed(2) : ''; pf.readOnly = true; pf.title = 'Sum of the per-account profits below'; pf.classList.add('ro'); }
@@ -1477,11 +1568,11 @@ function collectDay(panel){
   const p = S.pair, ds = S.sel.day, row = { pair:p, day:ds };
   for(const f of TEXT_F){ const el = panel.querySelector(`[data-f="${f}"]`); row[f] = el ? (el.value.trim() || null) : null; }
   for(const f of NUM_F){ const el = panel.querySelector(`[data-f="${f}"]`); row[f] = el ? parseNum(el.value) : null; }
-  row.tags = [...panel.querySelectorAll('#tagBox [data-t][aria-pressed="true"]')].map(b => b.dataset.t);
+  const tb = panel.querySelector('#tagBox'); row.tags = tb ? [...tb.querySelectorAll('[data-t][aria-pressed="true"]')].map(b => b.dataset.t) : (S.daily.get(dk(p, ds))?.tags || []);
   row.trade_accounts = readAcctRows(panel);
   row.account_id = row.trade_accounts[0]?.id || null;
   if(row.trade_accounts.some(x => x.profit!=null)) row.profit = +row.trade_accounts.reduce((t,x) => t + (x.profit||0), 0).toFixed(2);
-  const bn = panel.querySelector('[data-news="base"]').value, qn = panel.querySelector('[data-news="quote"]').value;
+  const nbEl = panel.querySelector('[data-news="base"]'), nqEl = panel.querySelector('[data-news="quote"]');
   return { run: async () => {
     const has = [...TEXT_F, ...NUM_F].some(f => row[f] != null) || row.tags.length || row.trade_accounts.length, ex = S.daily.get(dk(p, ds));
     if(has){
@@ -1490,7 +1581,7 @@ function collectDay(panel){
     } else if(ex){
       const { error } = await sb.from('do_daily').delete().eq('id', ex.id); if(error) throw error; S.daily.delete(dk(p, ds));
     }
-    await saveNews(base(p), ds, bn); await saveNews(quote(p), ds, qn);
+    if(nbEl) await saveNews(base(p), ds, nbEl.value); if(nqEl) await saveNews(quote(p), ds, nqEl.value);
   }};
 }
 
@@ -1930,7 +2021,7 @@ function openAcct(a){
 /* ---------- global search ---------- */
 async function goTo(pair, sel){
   await flushSave();
-  S.pair = pair; S.view = 'journal'; S.sel = sel; S.mode = 'view';
+  S.pair = pair; S.view = 'journal'; S.sel = sel; S.mode = 'view'; S.drawerOpen = true;
   ls.set('do_pair', pair); ls.set('do_view', 'journal'); ls.set('do_mode', 'view');
   S.month = firstOfMonth(sel.type==='day' ? parseISO(sel.day) : mondayOf(sel.y, sel.w));
   render();
