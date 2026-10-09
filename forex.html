@@ -831,6 +831,42 @@
   .pl-legend{ display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:12px; padding:0 4px; font-size:11.5px; font-weight:700; color:var(--muted); align-items:center; }
   .pl-legend span{ display:inline-flex; align-items:center; gap:6px; }
   @media (max-width:600px){ .pl{ padding:12px 10px 14px; } .pl-ctl{ margin-left:0; width:100%; } .pl-days{ width:100%; overflow-x:auto; } .pl-day{ flex:1; } }
+  /* ===== wide reading view (day · View mode) ===== */
+  .panel-side.wide{ width:min(1380px, calc(100vw - 64px)); transition:transform .28s cubic-bezier(.2,.8,.2,1), width .25s ease; }
+  .panel-side.wide .ps-head{ grid-template-columns:auto minmax(0,1fr) 210px auto; grid-template-areas:"title switch seg nav"; align-items:center; gap:10px 18px; padding:14px 22px; }
+  .panel-side.wide .ps-head > div:first-child{ grid-area:title; }
+  .panel-side.wide .ps-head .ps-nav{ grid-area:nav; }
+  .panel-side.wide .ps-head .seg.mode{ grid-area:seg; }
+  .panel-side.wide .ps-head .pswitch{ grid-area:switch; margin:0; }
+  .panel-side.wide .ps-head h2{ font-size:22px; }
+  .vw{ display:grid; grid-template-columns:minmax(300px, 360px) minmax(0,1fr); align-items:start; flex:1; }
+  .vw-side{ display:flex; flex-direction:column; gap:14px; padding:20px; border-right:1px solid var(--line); min-height:100%; }
+  .vw-side .wkbanner, .vw-side .holdcard{ width:100%; margin:0; }
+  .vw-side .hero{ padding:16px; border-radius:16px; border:1px solid var(--line); background:var(--surface-2); }
+  .vw-side .ticket{ margin:0; }
+  .vw-side .vsec{ padding:14px; border:1px solid var(--line); border-radius:16px; background:var(--surface-2); }
+  .vw-side .bigval{ font-size:34px; }
+  .vw-main{ padding:20px 26px 40px; min-width:0; display:flex; flex-direction:column; gap:18px; }
+  .vw-mh{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .vw-mh h4{ margin:0; font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:18px; }
+  .vw-jump{ display:flex; gap:4px; padding:3px; border-radius:11px; background:var(--surface-2); border:1px solid var(--line); }
+  .vw-jump button{ border:none; background:transparent; color:var(--muted); font-weight:800; font-size:12px; padding:5px 12px; border-radius:8px; }
+  .vw-jump button:hover{ background:var(--surface); color:var(--ink); }
+  .vw-main .tfv{ margin:0; padding:18px 20px 20px; border-radius:20px; scroll-margin-top:90px; }
+  .vw-main .tfv-h{ margin-bottom:10px; }
+  .vw-main .tfv-h .tvlink{ margin-left:auto; }
+  .vw-main .tfv-h .tfl{ font-size:13px; padding:4px 12px; }
+  .tfv-t{ font-size:15.5px !important; line-height:1.7; max-width:95ch; color:var(--ink); }
+  .vw-main .snap{ margin-top:14px; }
+  .vw-main .snap img{ border-radius:14px; max-height:78vh; object-fit:contain; }
+  .vw-none{ display:flex; align-items:center; gap:14px; padding:30px; border:1px dashed var(--line); border-radius:18px; }
+  @media (max-width:1100px){
+    .panel-side.wide .ps-head{ grid-template-columns:minmax(0,1fr) auto; grid-template-areas:"title nav" "seg seg" "switch switch"; }
+    .vw{ grid-template-columns:1fr; }
+    .vw-side{ position:static; border-right:none; border-bottom:1px solid var(--line); }
+    .vw-main{ padding:16px 16px 32px; }
+  }
+  @media (max-width:900px){ .panel-side.wide{ width:100vw; } }
   /* pair selection: board by currency, title picker, desk groups */
   .seg.bmode{ background:var(--surface-2); padding:2px; border-radius:10px; }
   .seg.bmode button{ padding:3px 10px; font-size:12px; border-radius:8px; }
@@ -899,6 +935,11 @@
   .td-close{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
   .close-in{ display:flex; align-items:center; gap:6px; font-size:12px; font-weight:800; color:var(--muted); }
   .close-in .inp{ width:92px; font-weight:800; text-align:right; }
+  .close-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .cd-pips{ display:block; font-size:11px; font-weight:700; color:var(--muted); text-align:right; margin-top:2px; }
+  .sync-pill{ display:inline-flex; align-items:center; gap:6px; font-size:11.5px; font-weight:800; padding:3px 10px; border-radius:999px; background:var(--surface-2); color:var(--muted); border:1px solid var(--line); }
+  .sync-pill.ok{ color:var(--pos); border-color:color-mix(in srgb,var(--pos) 35%,var(--line)); }
+  .sync-pill.old{ color:var(--amber); border-color:color-mix(in srgb,var(--amber) 35%,var(--line)); }
   .tf-tabs{ display:flex; width:100%; margin-bottom:10px; }
   .tf-tabs button{ flex:1; display:inline-flex; align-items:center; justify-content:center; gap:7px; }
   .tf-dot{ width:6px; height:6px; border-radius:50%; background:var(--line); }
@@ -941,6 +982,15 @@
         <input class="inp" type="week" id="revWeek" style="width:auto" aria-label="Week to export">
         <button class="btn btn-primary" id="revCopy">Copy to clipboard</button><button class="btn" id="revDl">Download .json</button>
       </div><p class="hint" id="revInfo"></p>
+    </div>
+    <div class="fundbox">
+      <h3 class="cond" style="font-weight:600;font-size:16px">📈 Import daily moves from TradingView</h3>
+      <p class="muted" style="font-size:13px">Add the <b>Daily Move Matrix</b> indicator on a 1D chart → <b>Download chart data</b> → drop the CSV here. Fills the <b>daily close %</b> (and pips) for every pair and day in the file — handy for back-filling history or fixing a missed alert. Today's unfinished candle and weekends are skipped.</p>
+      <div class="flex flex-wrap items-center gap-3" style="margin-top:8px">
+        <label class="btn btn-primary" style="cursor:pointer">Choose CSV<input type="file" id="tvFile" accept=".csv,text/csv" hidden></label>
+        <label class="bk-tog"><input type="checkbox" id="tvOver"> Overwrite values already filled</label>
+      </div>
+      <div id="tvPrev" class="hint" style="margin-top:8px"></div>
     </div>
     <div>
       <h3 class="cond" style="font-weight:600;font-size:16px">Import from Google Sheets</h3>
@@ -1021,7 +1071,7 @@ function holdingMap(pair){
   });
   return map;
 }
-const NUM_F  = ['r_multiple','risk','profit','entry_price','sl','tp','pips','daily_change'];
+const NUM_F  = ['r_multiple','risk','profit','entry_price','sl','tp','pips','daily_change','daily_pips'];
 
 /* ---------- safe localStorage ---------- */
 const ls = {
@@ -1077,6 +1127,8 @@ async function loadAll(){
   const g = await fetchAll('do_goals').catch(e => { console.warn(e); return []; });
   const bk = await fetchAll('do_bank').catch(e => { console.warn(e); return []; });
   const st = await fetchAll('do_settings').catch(e => { console.warn(e); return []; });
+  /* daily_pips exists only after migration-daily-pips.sql — never send it before that */
+  S.hasPips = d.length ? d.some(r => 'daily_pips' in r) : await sb.from('do_daily').select('daily_pips').limit(1).then(r => !r.error, () => false);
   S.settings = Object.fromEntries(st.map(r => [r.key, r.value]));
   S.bank.rows = new Map(bk.map(r => [r.id, r]));
   S.goals = new Map(g.map(r => [r.id, r]));
@@ -1428,7 +1480,7 @@ async function selectWeek(y, w){
   else { renderCalendar(); renderPanel(); }
   openDrawer(); document.getElementById('panel').scrollTop = 0;
 }
-async function setMode(m){ await flushSave(); S.mode = m; ls.set('do_mode', m); renderPanel(); }
+async function setMode(m){ await flushSave(); S.mode = m; ls.set('do_mode', m); renderPanel(); const pn = document.getElementById('panel'); if(pn) pn.scrollTop = 0; }
 
 /* autosave */
 let pending = null, timer = null;
@@ -1476,6 +1528,7 @@ function bindHead(panel, prev, next){
 
 function renderPanel(){
   const panel = document.getElementById('panel'); if(!panel) return;
+  panel.classList.toggle('wide', S.sel?.type==='day' && S.mode==='view');
   syncDrawer();
   if(S.sel.type==='week') return S.mode==='edit' ? weekEdit(panel) : weekView(panel);
   const p = S.pair, ds = S.sel.day, dt = parseISO(ds), w = isoWeek(dt);
@@ -1508,12 +1561,14 @@ function dayView(panel, ctx){
     .filter(([,v]) => v!=null && v!=='');
   panel.innerHTML = `<div class="ps">
     ${panelHead(dayTitle(ctx), `${p} · ${ctx.dt.getFullYear()}`)}
-    ${wkBanner(ctx)}
-    ${empty ? `<div class="empty"><div class="orb" aria-hidden="true"></div><p>No observations for this day yet.</p><button class="btn btn-primary" id="startEdit">Start observing</button></div>` : `
+    ${empty ? `${wkBanner(ctx)}<div class="empty"><div class="orb" aria-hidden="true"></div><p>No observations for this day yet.</p><button class="btn btn-primary" id="startEdit">Start observing</button></div>` : `
+    <div class="vw">
+     <aside class="vw-side">
+      ${wkBanner(ctx)}
       <div class="hero">
         <div class="hero-row">
           <div>${e.trade_status ? stBadge(e.trade_status, true) : '<span class="muted">no status</span>'}</div>
-          ${e.daily_change!=null ? `<div style="text-align:right"><span class="kick">Daily close</span><span class="bigval ${sgn(e.daily_change)}">${pct(e.daily_change)}</span></div>` : ''}
+          ${e.daily_change!=null ? `<div style="text-align:right"><span class="kick">Daily close</span><span class="bigval ${sgn(e.daily_change)}">${pct(e.daily_change)}</span>${e.daily_pips!=null ? `<span class="cd-pips">${e.daily_pips>0 ? '+' : ''}${fmt(e.daily_pips, 1)} pips</span>` : ''}</div>` : ''}
         </div>
         ${tagPills(e.tags)}
         ${e.action ? `<div class="next"><span class="kick">Plan</span>${esc(e.action)}</div>` : ''}
@@ -1532,19 +1587,25 @@ function dayView(panel, ctx){
       ${bn || qn ? `<div class="vsec"><h4>News</h4><div class="news2">
         ${[[b,bn],[q,qn]].map(([c,t]) => `<div><span class="ncur">${c}</span>${t ? `<ul class="nl">${newsList(t)}</ul>` : '<p class="muted" style="font-size:13px">—</p>'}</div>`).join('')}
       </div></div>` : ''}
-      <div class="vsec"><h4>Top-down</h4>
+     </aside>
+     <section class="vw-main">
+      <div class="vw-mh"><h4>Top-down</h4>${tfs.length > 1 ? `<div class="vw-jump">${tfs.map(([l]) => `<button data-jump="${l}">${l}</button>`).join('')}</div>` : ''}</div>
         ${tfs.length ? tfs.map(([l,o,t]) => {
           const links = [...new Set([e[t], ...((e[o]||'').match(TVRX) || [])].filter(Boolean))];
           const text = (e[o]||'').replace(TVRX, '').trim();
-          return `<article class="tfv">
-          <div class="tfv-h"><span class="tfl">${l}</span>${links[0] ? `<a class="tvlink" href="${esc(links[0])}" target="_blank" rel="noopener">TradingView ↗</a>` : ''}</div>
-          ${text ? `<p>${esc(text)}</p>` : ''}
+          return `<article class="tfv" id="tf-${l}">
+          <div class="tfv-h"><span class="tfl">${l}</span>${links[0] ? `<a class="tvlink" href="${esc(links[0])}" target="_blank" rel="noopener">Open on TradingView ↗</a>` : ''}</div>
+          ${text ? `<p class="tfv-t">${esc(text)}</p>` : ''}
           ${links.map(u => { const snap = tvSnap(u); return snap
             ? `<a class="snap" href="${esc(u)}" target="_blank" rel="noopener"><img src="${snap}" alt="Chart ${l} ${p}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'tvlink',textContent:'Preview unavailable — open chart ↗'}))"></a>`
             : `<a class="tvlink" style="display:block;margin-top:8px;word-break:break-all" href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>`; }).join('')}
-        </article>`; }).join('') : '<p class="muted">No timeframe observations.</p>'}
-      </div>`}
+        </article>`; }).join('') : `<div class="vw-none"><p class="muted">No timeframe observations yet.</p><button class="btn" id="startEdit2">Add top-down</button></div>`}
+     </section>
+    </div>`}
   </div>`;
+  panel.querySelector('#startEdit2')?.addEventListener('click', () => setMode('edit'));
+  panel.querySelectorAll('[data-jump]').forEach(bt => bt.onclick = () => { const el = panel.querySelector('#tf-' + bt.dataset.jump);
+    if(el) panel.scrollTo({ top: el.getBoundingClientRect().top - panel.getBoundingClientRect().top + panel.scrollTop - (panel.querySelector('.ps-head')?.offsetHeight || 0) - 12, behavior:'smooth' }); });
   panel.querySelector('#startEdit')?.addEventListener('click', () => setMode('edit'));
   panel.querySelector('#goEntry')?.addEventListener('click', () => selectDay(held.t.day));
 }
@@ -1572,7 +1633,8 @@ function dayEdit(panel, ctx){
     </div>
     <div class="sec">
       <div class="td-close"><h4 style="margin:0">Top-down</h4>
-        <label class="close-in">Daily close <input class="inp num" data-f="daily_change" inputmode="decimal" value="${v('daily_change')}" placeholder="-0.19"><span>%</span></label></div>
+        <div class="close-row"><label class="close-in">Daily close <input class="inp num" data-f="daily_change" inputmode="decimal" value="${v('daily_change')}" placeholder="-0.19"><span>%</span></label>
+          ${S.hasPips ? `<label class="close-in"><input class="inp num" data-f="daily_pips" inputmode="decimal" value="${v('daily_pips')}" placeholder="-21" style="width:78px"><span>pips</span></label>` : ''}</div></div>
       <div class="seg tf-tabs" role="tablist" aria-label="Timeframe">${TFS.map(([k,l,o,t]) => `<button type="button" role="tab" data-tft="${k}" aria-selected="${tfTab===k}" aria-pressed="${tfTab===k}">${l}<i class="tf-dot ${e[o] || e[t] ? 'on' : ''}" data-dot="${k}"></i></button>`).join('')}</div>
       ${TFS.map(([k,l,o,t]) => `<div class="tf-pane" data-tfp="${k}" ${tfTab===k ? '' : 'hidden'}>
         <textarea class="inp" data-f="${o}" rows="4" aria-label="${l} observations" placeholder="What do you see on ${l}? Structure, liquidity, MA, plan…">${v(o)}</textarea>
@@ -1695,6 +1757,7 @@ function collectDay(panel){
   const p = S.pair, ds = S.sel.day, row = { pair:p, day:ds };
   for(const f of TEXT_F){ const el = panel.querySelector(`[data-f="${f}"]`); row[f] = el ? (el.value.trim() || null) : null; }
   for(const f of NUM_F){ const el = panel.querySelector(`[data-f="${f}"]`); row[f] = el ? parseNum(el.value) : null; }
+  if(!S.hasPips) delete row.daily_pips;
   const tb = panel.querySelector('#tagBox'); row.tags = tb ? [...tb.querySelectorAll('[data-t][aria-pressed="true"]')].map(b => b.dataset.t) : (S.daily.get(dk(p, ds))?.tags || []);
   row.trade_accounts = readAcctRows(panel);
   row.account_id = row.trade_accounts[0]?.id || null;
@@ -2999,6 +3062,12 @@ async function openPairDay(p, ds, mode){
   else { renderCalendar(); renderPanel(); }
   openDrawer(); const pn = document.getElementById('panel'); if(pn) pn.scrollTop = 0;
 }
+/* status of the TradingView webhook (written by the tv-daily Edge Function into do_settings.tv_sync) */
+function syncPill(){
+  const s = S.settings?.tv_sync; if(!s?.day) return '';
+  const ok = s.day >= prevWeekday(iso(new Date()));
+  return `<span class="sync-pill ${ok ? 'ok' : 'old'}" title="Last TradingView alert received ${s.at ? new Date(s.at).toLocaleString() : ''}">${ok ? '●' : '◐'} Auto-sync · ${fmtDayShort(s.day)} · ${s.pairs ?? '?'} pairs</span>`;
+}
 function renderTdBoard(){
   const box = document.getElementById('tdBoard'); if(!box) return;
   const { days, today } = tdDays(), ds = S.td.day, tr = trackedSet(), open = openPairs(), mode = S.td.group, f = S.td.filter;
@@ -3012,7 +3081,7 @@ function renderTdBoard(){
       <i class="cdot"></i><span class="pc-n">${base(p)}<i>${quote(p)}</i></span>${od ? `<span class="tpt ${od.toLowerCase()}" title="Open ${od}">${od==='Long' ? '▲' : '▼'}</span>` : ''}${dv!=null ? `<span class="pc-d">${dv}</span>` : ''}</button>`; };
   box.innerHTML = `
     <div class="pl-top">
-      <div><h3>Pairs</h3><div class="pl-sub">${fmtDayShort(ds)} · ${doneN}/${all.length} complete · tap a pair to open its day</div></div>
+      <div><h3 style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Pairs ${syncPill()}</h3><div class="pl-sub">${fmtDayShort(ds)} · ${doneN}/${all.length} complete · tap a pair to open its day</div></div>
       <div class="pl-ctl">
         <div class="pl-days" role="group" aria-label="Day">${days.map(d => { const dt = parseISO(d), n = d > today ? 0 : all.filter(p => dayCov(S.daily.get(dk(p, d))).state==='done').length;
           return `<button class="pl-day ${n===all.length ? 'full' : ''}" data-tdd="${d}" aria-pressed="${d===ds}" ${d > today ? 'disabled' : ''}>${WD_SHORT[dt.getDay()]} ${dt.getDate()}<small>${d > today ? '—' : n+'/'+all.length}</small></button>`; }).join('')}</div>
@@ -3776,6 +3845,7 @@ const dataDlg = document.getElementById('dataDlg');
 function openData(){
   document.getElementById('impPair').textContent = S.pair;
   document.getElementById('extraList').textContent = S.extra.length ? 'Added: ' + S.extra.join(', ') : '';
+  document.getElementById('tvPrev').innerHTML = syncPill() || (S.hasPips ? '' : '<span class="muted">Run migration-daily-pips.sql to also store pips.</span>');
   initReviewExport();
   dataDlg.showModal();
 }
@@ -3816,6 +3886,51 @@ document.getElementById('jsonFile').onchange = async ev => {
   }catch(e){ console.error(e); toast('Import failed: ' + e.message); }
 };
 
+/* TradingView "Download chart data" CSV (Daily Move Matrix) → daily close % */
+function parseTvMoves(text){
+  const rows = parseCSV(text).filter(r => r.some(c => String(c).trim()));
+  if(rows.length < 2) throw new Error('The file is empty.');
+  const head = rows[0].map(h => String(h).trim()), known = new Set(allPairs());
+  const dayI = head.findIndex(h => /(^|[:\s·])day$/i.test(h)), timeI = head.findIndex(h => /^time$/i.test(h));
+  const cols = head.map((h, i) => { const m = h.toUpperCase().match(/([A-Z]{6})\s*%/); return m && known.has(m[1]) ? { p:m[1], i } : null; }).filter(Boolean);
+  if(!cols.length) throw new Error('No "PAIR %" columns found — is the Daily Move Matrix indicator on the chart you exported?');
+  const toDay = r => {
+    const d = dayI >= 0 ? String(r[dayI]).trim() : '';
+    if(/^\d{8}(\.0+)?$/.test(d)) return `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;
+    const t = timeI >= 0 ? String(r[timeI]).trim() : ''; if(!t) return null;
+    if(/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+    const dt = /^\d{9,13}$/.test(t) ? new Date(Number(t) * (t.length > 11 ? 1 : 1000)) : /^\d{4}-\d{2}-\d{2}T/.test(t) ? new Date(t) : null;
+    if(!dt || isNaN(dt)) return null;
+    if(dt.getUTCHours() >= 12) dt.setUTCDate(dt.getUTCDate() + 1);   /* FX daily candle opens the evening before (17:00 New York) */
+    return dt.toISOString().slice(0, 10);
+  };
+  const pipI = Object.fromEntries(head.map((h, i) => { const m = h.toUpperCase().match(/([A-Z]{6})\s*PIPS/); return m ? [m[1], i] : null; }).filter(Boolean));
+  const num = x => { const v = parseFloat(String(x ?? '').replace(',', '.')); return Number.isFinite(v) ? v : null; };
+  const today = iso(new Date()), out = [];
+  rows.slice(1).forEach(r => { const ds = toDay(r); if(!ds || ds >= today) return; const wd = parseISO(ds).getDay(); if(wd===0 || wd===6) return;
+    cols.forEach(({ p, i }) => { const v = num(r[i]); if(v==null) return;
+      const row = { pair:p, day:ds, daily_change:+v.toFixed(2) };
+      if(S.hasPips){ const q = pipI[p]!=null ? num(r[pipI[p]]) : null; row.daily_pips = q==null ? null : +q.toFixed(1); }
+      out.push(row); }); });
+  return { out, pairs:cols.length, days:[...new Set(out.map(x => x.day))].sort() };
+}
+document.getElementById('tvFile').onchange = async ev => {
+  const f = ev.target.files[0]; ev.target.value = ''; if(!f) return;
+  const box = document.getElementById('tvPrev');
+  try{
+    const { out, pairs, days } = parseTvMoves(await f.text());
+    const over = document.getElementById('tvOver').checked;
+    const rows = out.filter(x => { const ex = S.daily.get(dk(x.pair, x.day)); return over ? (ex?.daily_change !== x.daily_change || (x.daily_pips!=null && ex?.daily_pips !== x.daily_pips)) : ex?.daily_change == null; });
+    if(!days.length) throw new Error('No finished weekday candles in the file.');
+    if(!rows.length){ box.innerHTML = `<span class="pos">Nothing new — ${pairs} pairs × ${days.length} days already filled.</span>`; return; }
+    if(!confirm(`${pairs} pair${pairs===1?"":"s"} · ${days.length} day${days.length===1?"":"s"} (${fmtDayShort(days[0])} – ${fmtDayShort(days.at(-1))})\n${rows.length} daily close values will be ${over ? 'written/overwritten' : 'filled in (empty days only)'}. Continue?`)) return;
+    box.textContent = 'Importing…';
+    await upsertChunks('do_daily', rows, 'pair,day');
+    await loadAll(); render();
+    box.innerHTML = `<span class="pos">✓ ${rows.length} values imported · ${pairs} pairs · ${days.length} day${days.length===1?"":"s"}</span>`;
+    toast(`Daily moves imported: ${rows.length} values`);
+  }catch(e){ console.error(e); box.innerHTML = `<span class="neg">${esc(e.message || String(e))}</span>`; }
+};
 function parseCSV(text){
   const rows = []; let row = [], f = '', q = false;
   for(let i = 0; i < text.length; i++){
@@ -3858,7 +3973,7 @@ document.getElementById('csvFile').onchange = async ev => {
       const val = k => { const i = col(MAP[k]); if(i < 0) return null; const v = (r[i]||'').trim(); return v==='' || v==='-' ? null : v; };
       const row = { pair:p, day };
       for(const f of TEXT_F) row[f] = val(f);
-      for(const f of NUM_F.filter(f => f!=='daily_change')) row[f] = parseNum(val(f));
+      for(const f of NUM_F.filter(f => f!=='daily_change' && f!=='daily_pips')) row[f] = parseNum(val(f));
       if(row.result){ const u = row.result.toUpperCase(); row.result = u.startsWith('W') ? 'W' : u.startsWith('L') ? 'L' : u.startsWith('B') ? 'BE' : row.result; }
       if(row.direction){ row.direction = /short/i.test(row.direction) ? 'Short' : /long/i.test(row.direction) ? 'Long' : row.direction; }
       const m = (row.daily_obs||'').match(/closed[^\d+\-−]*([+\-−]?\d+(?:[.,]\d+)?)\s*%/i);
