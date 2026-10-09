@@ -722,6 +722,33 @@
   .td-acc > div{ display:flex; justify-content:space-between; gap:8px; font-size:13.5px; } .td-acc .num{ font-weight:800; }
   /* light-theme contrast */
   :root[data-theme="light"]{ --muted:#55537A; --line:#DCD7F0; }
+  /* prompts */
+  .pr-banner{ padding:12px 16px; border-radius:14px; border:1px solid var(--line); background:var(--surface); font-weight:700; font-size:13.5px; margin-bottom:18px; }
+  .pr-banner.on{ border-color:color-mix(in srgb,var(--accent) 50%,var(--line)); background:color-mix(in srgb,var(--accent) 10%,var(--surface)); }
+  .pr-sec{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:18px; margin:6px 0 12px; }
+  .pr-sec .muted{ font-size:13px; font-weight:600; }
+  .pr-flow{ list-style:none; margin:0 0 26px; padding:0; display:grid; gap:12px; position:relative; }
+  .pr-flow::before{ content:''; position:absolute; left:33px; top:30px; bottom:30px; width:2px; background:linear-gradient(var(--accent), var(--violet)); opacity:.5; }
+  .pr-step{ display:grid; grid-template-columns:42px minmax(0,1fr); gap:14px; align-items:start; position:relative; }
+  .pr-num{ width:36px; height:36px; border-radius:12px; display:grid; place-items:center; font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:17px;
+           background:var(--accent); color:var(--on-accent); box-shadow:0 0 0 5px var(--surface); position:relative; z-index:1; }
+  .pr-c{ min-width:0; }
+  .pr-h{ display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 12px; }
+  .pr-h h3{ margin:0; }
+  .pr-when{ font-size:11.5px; font-weight:800; color:var(--info); background:color-mix(in srgb,var(--info) 12%,transparent); padding:2px 9px; border-radius:999px; }
+  .pr-desc{ font-size:13px; margin:6px 0 10px; max-width:75ch; }
+  .pr-box{ position:relative; border-radius:12px; border:1px solid var(--line); background:var(--field); overflow:hidden; }
+  .pr-pre{ margin:0; padding:12px 14px; font-family:ui-monospace,'JetBrains Mono',Menlo,Consolas,monospace; font-size:12px; line-height:1.55; white-space:pre-wrap; color:var(--ink); max-height:230px; overflow:hidden; }
+  .pr-box.open .pr-pre{ max-height:none; }
+  .pr-box:not(.open)::after{ content:''; position:absolute; left:0; right:0; bottom:0; height:70px; background:linear-gradient(transparent, var(--field)); pointer-events:none; }
+  .pr-more{ white-space:nowrap; position:absolute; left:50%; bottom:10px; transform:translateX(-50%); z-index:1; border:1px solid var(--line); background:var(--surface); color:var(--ink); font-weight:700; font-size:12px; padding:5px 12px; border-radius:999px; }
+  .pr-more:hover{ border-color:var(--accent); }
+  .pr-act{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:10px; }
+  .pr-act .ico{ vertical-align:-2px; }
+  .pr-act .btn.ok{ background:var(--pos); color:#04241A; }
+  .pr-len{ font-size:12px; font-weight:600; margin-left:auto; }
+  .pr-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:14px; align-items:start; }
+  @media (max-width:520px){ .pr-grid{ grid-template-columns:1fr; } .pr-flow::before{ display:none; } .pr-step{ grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -732,6 +759,7 @@
 <dialog id="searchDlg" class="panel" aria-label="Search" style="width:min(720px,96vw)"></dialog>
 
 <!-- Data dialog -->
+<script type="application/json" id="promptData">[{"id": "phase1", "group": "weekly", "step": 1, "title": "Phase 1 — Weekly research", "when": "Saturday / Sunday · attach last week's report", "desc": "The AI rebuilds last week from its own research (scheduled + unscheduled news), re-scores every currency and writes the full report for the coming week, including the Section 12 import block.", "text": "WEEKLY FUNDAMENTAL UPDATE — PHASE 1 (research only)\n\nAttached: your report from last week.\n\nUpdate the full analysis for the coming week using only your own research.\nDo NOT ask for or use price action yet — I will send it after you finish.\n\n1. Rebuild last week (search, do not rely on memory). For USD, EUR, GBP, JPY, CHF, CAD,\n   AUD, NZD and XAU, find everything that happened Mon–Fri plus the weekend:\n   - scheduled data and central-bank decisions/speakers\n   - UNSCHEDULED events: political and fiscal crises (governments, budgets, bond spreads —\n     including big euro-area states like France, Italy, Germany), geopolitics, trade policy,\n     commodity shocks, interventions, haven flows, credit stress\n   Cite a source for every event you use.\n2. Re-score every currency from the evidence. Do not anchor on last week's numbers; every\n   change must be justified.\n3. Produce the complete report in the usual structure, valid for the coming week, including\n   Section 12 \"Daily Observer Import\" with \"valid_week\" set to the NEXT ISO week.\n   Bias rule: if the weekly label is Neutral/Two-sided but the horizon or main driver clearly\n   leans one way, set \"bias\" to that direction with conviction \"low\" and keep the original\n   wording in \"summary\".\n4. State the data cut-off (Friday close plus any weekend news) at the top.\n\nWhen you are done, write: \"PHASE 1 COMPLETE — send the price action.\"\n\n----- Section 12 specification -----\nAt the very end of the report, after the Trader Handoff section, add one more section:\n\"12. Daily Observer Import\".\n\nIt must contain:\n- a short line: \"Copy this block and paste it into Daily Observer → Import / export.\"\n- a \"Copy\" button that copies the block below to the clipboard (navigator.clipboard.writeText)\n- a <pre id=\"dobs-import\"> block containing ONE valid JSON object and nothing else\n\nThe JSON must be strictly valid: double quotes only, no comments, no trailing commas, escape inner quotes.\nIt must only restate what is already in the report — do not add new analysis.\n\nSchema:\n{\n  \"format\": \"daily-observer-fundamentals\",\n  \"version\": 1,\n  \"report_date\": \"YYYY-MM-DD\",\n  \"report_title\": \"Forex Fundamental Bias Engine — Week NN\",\n  \"valid_week\": { \"year\": 2026, \"week\": NN },          // ISO week the analysis is FOR (the trading week that starts the Monday after the report)\n  \"currencies\": {\n    \"USD\": { \"score\": 4, \"state\": \"Strong\", \"note\": \"one-line thesis state\" }\n    // same for EUR, GBP, JPY, CHF, CAD, AUD, NZD, XAU\n  },\n  \"pairs\": [                                            // ALL pairs in the 28-pair matrix + XAUUSD\n    {\n      \"pair\": \"EURUSD\",                                 // 6 letters, no slash\n      \"bias\": \"bearish\",                                // bullish | bearish | two-sided | neutral\n      \"conviction\": \"medium\",                           // low | medium | high\n      \"summary\": \"Bearish (EUR -1 vs USD +4)\",          // same wording as the weekly bias history\n      \"base_state\": \"Weak\",                             // Strong | Improving | Neutral | Weakening | Weak\n      \"base_score\": -1,                                 // number from the scorecard\n      \"quote_state\": \"Strong\",\n      \"quote_score\": 4,\n      \"main_driver\": \"one or two sentences\",\n      \"drivers\": [\"secondary driver 1\", \"secondary driver 2\"],      // [] if none\n      \"catalysts\": [ { \"date\": \"28 Oct\", \"event\": \"FOMC decision\", \"imp\": \"CRITICAL\" } ],  // imp: LOW | MEDIUM | HIGH | CRITICAL\n      \"priced\": \"what is already priced in\",\n      \"invalidation\": \"what would invalidate the thesis\",\n      \"horizon\": \"Swing: mild bearish\",\n      \"alignment\": \"Aligned\",                           // Aligned | Partial conflict | Conflicting | Neutral\n      \"alignment_note\": \"short explanation\",\n      \"changed\": \"what changed vs last week for this pair (both currencies)\"\n    }\n  ],\n  \"news\": [                                             // every dated event from the Catalyst Calendar\n    { \"date\": \"2026-10-28\", \"currency\": \"USD\", \"event\": \"FOMC decision\", \"importance\": \"CRITICAL\" }\n    // ISO dates only; one entry per currency (an event for \"USD, XAU\" becomes one USD entry); skip \"Ongoing\"/undated items\n  ]\n}"}, {"id": "export", "group": "weekly", "step": 2, "title": "Export price action", "when": "after the AI says “PHASE 1 COMPLETE”", "action": "export", "desc": "Copy the daily-close export for the week that just ended. Nothing to paste here — use the button."}, {"id": "phase2", "group": "weekly", "step": 3, "title": "Phase 2 — Price-action confirmation", "when": "send together with the price-action export", "desc": "The AI checks its analysis against what price actually did, investigates only the anomalies, corrects what it missed and outputs a new Section 12.", "text": "WEEKLY FUNDAMENTAL UPDATE — PHASE 2 (price-action confirmation)\n\nAttached: my price-action export for last week (\"daily-observer-price-action\" JSON:\ndaily close % per pair). Use it only to CONFIRM your Phase 1 analysis, not to rebuild it.\n\n1. Treat my logged closes as ground truth; fetch real daily closes for every pair in\n   \"pairs_not_logged\". Build the realized currency-strength ranking (use the crosses, not\n   only the USD pairs, to isolate each currency).\n2. Flag ANOMALIES only:\n   - a pair that moved 1% or more against the bias you gave it last week\n     (e.g. USDJPY bullish but -2% on the week)\n   - a currency whose realized rank differs from its score rank by 3 or more places\n   - a currency that moved against its score consistently on the crosses for 2+ sessions\n3. For each anomaly, run a TARGETED re-check: search specifically for what could explain it\n   (the country's politics, fiscal news, central-bank speakers, interventions, flows,\n   commodities). Then classify:\n   MISSED NEWS · MISWEIGHTED KNOWN NEWS · ALREADY PRICED · FLOWS/POSITIONING · NOISE\n   - If you find a real cause you missed or misweighted → correct the score and the affected\n     pairs, and say so.\n   - If you find no fundamental cause → keep your thesis, mark it as \"unexplained price\n     divergence\", and lower the conviction if it persists. Price alone never overrides the\n     research — never invent a cause to fit the chart.\n4. Output:\n   - \"0a. Price-Action Check\": hit-rate table (last week's bias vs realized move, every pair)\n     and the realized currency ranking vs scores\n   - \"0b. Self-Correction Log\": each anomaly, what you re-checked, the cause and\n     classification, and what changed (or why nothing changed)\n   - the final corrected report, with in every affected pair's \"changed\" field a note that the\n     change came from the Phase 2 check\n   - a NEW Section 12 \"Daily Observer Import\" block reflecting the corrections (same format,\n     same \"valid_week\")\nIf nothing needed correcting, say so and repeat Section 12 unchanged."}, {"id": "import", "group": "weekly", "step": 4, "title": "Import into Daily Observer", "when": "copy Section 12 from the Phase 2 answer", "action": "import", "desc": "Paste the Section 12 block, choose the next week, the pairs and the sections."}, {"id": "schema", "group": "ref", "title": "Section 12 add-on", "when": "append to any report prompt", "desc": "Makes any Fundamental Bias Engine report end with a copy-paste JSON block the app can import. Already included in Phase 1.", "text": "At the very end of the report, after the Trader Handoff section, add one more section:\n\"12. Daily Observer Import\".\n\nIt must contain:\n- a short line: \"Copy this block and paste it into Daily Observer → Import / export.\"\n- a \"Copy\" button that copies the block below to the clipboard (navigator.clipboard.writeText)\n- a <pre id=\"dobs-import\"> block containing ONE valid JSON object and nothing else\n\nThe JSON must be strictly valid: double quotes only, no comments, no trailing commas, escape inner quotes.\nIt must only restate what is already in the report — do not add new analysis.\n\nSchema:\n{\n  \"format\": \"daily-observer-fundamentals\",\n  \"version\": 1,\n  \"report_date\": \"YYYY-MM-DD\",\n  \"report_title\": \"Forex Fundamental Bias Engine — Week NN\",\n  \"valid_week\": { \"year\": 2026, \"week\": NN },          // ISO week the analysis is FOR (the trading week that starts the Monday after the report)\n  \"currencies\": {\n    \"USD\": { \"score\": 4, \"state\": \"Strong\", \"note\": \"one-line thesis state\" }\n    // same for EUR, GBP, JPY, CHF, CAD, AUD, NZD, XAU\n  },\n  \"pairs\": [                                            // ALL pairs in the 28-pair matrix + XAUUSD\n    {\n      \"pair\": \"EURUSD\",                                 // 6 letters, no slash\n      \"bias\": \"bearish\",                                // bullish | bearish | two-sided | neutral\n      \"conviction\": \"medium\",                           // low | medium | high\n      \"summary\": \"Bearish (EUR -1 vs USD +4)\",          // same wording as the weekly bias history\n      \"base_state\": \"Weak\",                             // Strong | Improving | Neutral | Weakening | Weak\n      \"base_score\": -1,                                 // number from the scorecard\n      \"quote_state\": \"Strong\",\n      \"quote_score\": 4,\n      \"main_driver\": \"one or two sentences\",\n      \"drivers\": [\"secondary driver 1\", \"secondary driver 2\"],      // [] if none\n      \"catalysts\": [ { \"date\": \"28 Oct\", \"event\": \"FOMC decision\", \"imp\": \"CRITICAL\" } ],  // imp: LOW | MEDIUM | HIGH | CRITICAL\n      \"priced\": \"what is already priced in\",\n      \"invalidation\": \"what would invalidate the thesis\",\n      \"horizon\": \"Swing: mild bearish\",\n      \"alignment\": \"Aligned\",                           // Aligned | Partial conflict | Conflicting | Neutral\n      \"alignment_note\": \"short explanation\",\n      \"changed\": \"what changed vs last week for this pair (both currencies)\"\n    }\n  ],\n  \"news\": [                                             // every dated event from the Catalyst Calendar\n    { \"date\": \"2026-10-28\", \"currency\": \"USD\", \"event\": \"FOMC decision\", \"importance\": \"CRITICAL\" }\n    // ISO dates only; one entry per currency (an event for \"USD, XAU\" becomes one USD entry); skip \"Ongoing\"/undated items\n  ]\n}"}, {"id": "bias", "group": "ref", "title": "Bias rule", "when": "append when too many pairs come back Neutral", "desc": "Forces Neutral/Two-sided pairs that clearly lean one way into bullish/bearish with Low conviction, so they land in the right board column.", "text": "For \"bias\": if the weekly label is Neutral/Two-sided but the pair's horizon or main driver\nclearly leans one way (e.g. \"Swing: mild bearish\", \"GBP favored\"), set bias to that direction\n(\"bullish\"/\"bearish\") with conviction \"low\", and keep the original wording in \"summary\"."}, {"id": "fix", "group": "ref", "title": "Fix a broken import block", "when": "when the import says the JSON is invalid", "desc": "Asks the AI to re-output only a strictly valid Section 12 block, without changing the analysis.", "text": "Your Section 12 JSON block could not be imported into Daily Observer.\n\nRe-output ONLY Section 12 as one strictly valid JSON object inside a single code block:\n- double quotes only, no comments, no trailing commas, inner quotes escaped\n- every pair 6 letters with no slash (EURUSD, XAUUSD)\n- bias: bullish | bearish | two-sided | neutral · conviction: low | medium | high\n- imp / importance: LOW | MEDIUM | HIGH | CRITICAL\n- news dates in ISO format (YYYY-MM-DD), undated items removed\n- same content as the report — do not change the analysis."}]</script>
 <dialog id="moreDlg" class="panel" aria-label="More" style="width:min(420px,94vw)"></dialog>
 <dialog id="lbDlg" class="lb" aria-label="Image viewer"></dialog>
 <dialog id="shareDlg" class="panel" aria-label="Share to Discord" style="width:min(760px,96vw)"></dialog>
@@ -922,6 +950,7 @@ const ICONS = {
   moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
   more:'<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
   collapse:'<path d="M15 18l-6-6 6-6"/>',
+  spark:'<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
 };
 const ico = (k, s = 18) => `<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]||''}</svg>`;
 const NAV = [
@@ -929,6 +958,7 @@ const NAV = [
   ['Work', [['journal','Journal','calendar'],['desk','Desk','grid'],['trades','Trades','list']]],
   ['Insights', [['analysis','Analytics','chart'],['history','History','trend']]],
   ['Money', [['accounts','Accounts','wallet'],['goals','Goals','target']]],
+  ['Tools', [['prompts','Prompts','spark']]],
 ];
 const navActive = v => S.view===v || (v==='history' && S.view==='overview');
 async function goView(v){ await flushSave(); S.view = v; ls.set('do_view', v); render(); window.scrollTo({ top:0 }); }
@@ -960,7 +990,7 @@ function render(){
       </div>
       <nav class="bnav" aria-label="Main navigation">
         ${[['today','Today','home'],['journal','Journal','calendar'],['desk','Desk','grid'],['trades','Trades','list']].map(([v,l,i]) => `<button data-view="${v}" aria-current="${navActive(v) ? 'page' : 'false'}">${ico(i, 20)}<span>${l}</span></button>`).join('')}
-        <button id="bnMore" aria-current="${['analysis','history','overview','accounts','goals'].includes(S.view) ? 'page' : 'false'}">${ico('more', 20)}<span>More</span></button>
+        <button id="bnMore" aria-current="${['analysis','history','overview','accounts','goals','prompts'].includes(S.view) ? 'page' : 'false'}">${ico('more', 20)}<span>More</span></button>
       </nav>
     </div>`;
   app.querySelectorAll('[data-view]').forEach(b => b.onclick = () => goView(b.dataset.view));
@@ -977,7 +1007,7 @@ function render(){
 function openMore(){
   const d = document.getElementById('moreDlg'), light = document.documentElement.dataset.theme === 'light';
   d.innerHTML = `<div class="dlg-head"><h2>More</h2></div><div class="dlg-body more-g">
-    ${[['analysis','Analytics','chart'],['history','History','trend'],['accounts','Accounts','wallet'],['goals','Goals','target']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
+    ${[['analysis','Analytics','chart'],['history','History','trend'],['accounts','Accounts','wallet'],['goals','Goals','target'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
     <button class="more-i" data-ma="share">${ico('share', 22)}<span>Share</span></button>
     <button class="more-i" data-ma="data">${ico('swap', 22)}<span>Import / export</span></button>
     <button class="more-i" data-ma="theme">${ico(light ? 'moon' : 'sun', 22)}<span>${light ? 'Dark' : 'Light'} theme</span></button></div>`;
@@ -1035,6 +1065,7 @@ function renderMain(){
   else if(S.view === 'history') renderHistory();
   else if(S.view === 'desk') renderDesk();
   else if(S.view === 'today') renderToday();
+  else if(S.view === 'prompts') renderPrompts();
   else if(S.view === 'trades') renderTrades();
   else renderJournal();
 }
@@ -2500,6 +2531,43 @@ function openShare(){
   draw(); shareDlg.showModal();
 }
 
+/* ---------- Prompts library ---------- */
+const PROMPTS = (() => { try{ return JSON.parse(document.getElementById('promptData').textContent); }catch{ return []; } })();
+S.pr = { open: ls.get('do_pr_open', {}) };
+async function copyText(t, msg){ try{ await navigator.clipboard.writeText(t); toast(msg || 'Copied'); return true; }catch{ toast('Clipboard blocked — select the text and copy it manually'); return false; } }
+function renderPrompts(){
+  const weekly = PROMPTS.filter(p => p.group==='weekly'), ref = PROMPTS.filter(p => p.group==='ref');
+  const now = new Date(), weekend = now.getDay()===0 || now.getDay()===6;
+  const body = p => {
+    if(p.action==='export') return `<div class="pr-act"><button class="btn btn-primary" data-pract="export">${ico('swap',14)} Open price-action export</button></div>`;
+    if(p.action==='import') return `<div class="pr-act"><button class="btn btn-primary" data-pract="import">${ico('swap',14)} Open fundamental import</button></div>`;
+    const open = !!S.pr.open[p.id], lines = p.text.split('\n').length;
+    return `<div class="pr-box ${open || lines <= 12 ? 'open' : ''}"><pre class="pr-pre" id="pre_${p.id}">${esc(p.text)}</pre>
+      ${!open && lines > 12 ? `<button class="pr-more" data-prtog="${p.id}">Show full prompt · ${lines} lines</button>` : ''}</div>
+      <div class="pr-act"><button class="btn btn-primary" data-prcopy="${p.id}">Copy prompt</button>
+        ${open && lines > 12 ? `<button class="btn" data-prtog="${p.id}">Collapse</button>` : ''}<span class="muted pr-len">${p.text.length.toLocaleString('en-US')} chars</span></div>`;
+  };
+  document.getElementById('main').innerHTML = `
+    <div class="flex flex-wrap items-end gap-4 mb-4">
+      <div><div class="pairtitle">Prompts</div><div class="muted mt-1" style="font-weight:600">Ready-to-paste prompts for your AI analyst — the weekend workflow and handy fixes.</div></div>
+    </div>
+    <div class="pr-banner ${weekend ? 'on' : ''}">${weekend ? '🗓️ It\'s the weekend — run the weekly update below, step by step.' : 'ℹ️ The weekly update runs on Saturday or Sunday, after the Friday close.'}</div>
+    <h3 class="pr-sec">Weekly update <span class="muted">· 4 steps</span></h3>
+    <ol class="pr-flow">${weekly.map(p => `<li class="pr-step card">
+      <div class="pr-num">${p.step}</div>
+      <div class="pr-c"><div class="pr-h"><h3>${esc(p.title)}</h3><span class="pr-when">${esc(p.when)}</span></div>
+        <p class="muted pr-desc">${esc(p.desc)}</p>${body(p)}</div></li>`).join('')}</ol>
+    <h3 class="pr-sec">Building blocks & fixes</h3>
+    <div class="pr-grid">${ref.map(p => `<section class="card pr-ref"><div class="pr-h"><h3>${esc(p.title)}</h3><span class="pr-when">${esc(p.when)}</span></div>
+      <p class="muted pr-desc">${esc(p.desc)}</p>${body(p)}</section>`).join('')}</div>`;
+  const m = document.getElementById('main');
+  m.querySelectorAll('[data-prcopy]').forEach(b => b.onclick = async () => { const p = PROMPTS.find(x => x.id===b.dataset.prcopy);
+    if(await copyText(p.text, `“${p.title}” copied — paste it to your AI`)){ b.textContent = 'Copied ✓'; b.classList.add('ok'); setTimeout(() => { b.textContent = 'Copy prompt'; b.classList.remove('ok'); }, 1800); } });
+  m.querySelectorAll('[data-prtog]').forEach(b => b.onclick = () => { S.pr.open[b.dataset.prtog] = !S.pr.open[b.dataset.prtog]; ls.set('do_pr_open', S.pr.open); renderPrompts(); });
+  m.querySelectorAll('[data-pract]').forEach(b => b.onclick = () => { openData(); setTimeout(() => {
+    const el = document.getElementById(b.dataset.pract==='export' ? 'revWeek' : 'fundPaste'); el?.closest('.fundbox')?.scrollIntoView({ block:'start' }); el?.focus(); }, 60); });
+}
+
 /* ---------- Today ---------- */
 function prevWeekday(ds){ const d = parseISO(ds); do { d.setDate(d.getDate()-1); } while(d.getDay()===0 || d.getDay()===6); return iso(d); }
 function renderToday(){
@@ -2543,7 +2611,7 @@ function renderToday(){
       <div><span class="kick">${WD[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]} · Week ${k.week}</span>
         <div class="pairtitle" style="margin-top:6px">${hello}, Alessio.</div>
         <p class="muted" style="font-weight:600;margin-top:6px">${weekend ? 'Weekend — time to review the week and prepare the next one.' : open.length ? `You have ${open.length} open trade${open.length>1?'s':''} to manage.` : 'Flat. Wait for your setup.'}</p></div>
-      <div class="td-actions">${weekend ? `<button class="btn btn-primary" data-act="data">Weekly review ${ico('swap',14)}</button>` : `<button class="btn btn-primary" data-act="gap">Fill next gap →</button>`}<button class="btn" data-act="journal">Open journal</button></div>
+      <div class="td-actions">${weekend ? `<button class="btn btn-primary" data-act="prompts">Weekly review ${ico('spark',14)}</button>` : `<button class="btn btn-primary" data-act="gap">Fill next gap →</button>`}<button class="btn" data-act="journal">Open journal</button></div>
     </div>
     <div class="tj-kpis">
       ${kpi('Open trades', open.length, open.length ? 'pos' : '')}
@@ -2584,7 +2652,7 @@ function renderToday(){
   m.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { S.pair = b.dataset.pick; ls.set('do_pair', S.pair); goView('journal'); });
   m.querySelectorAll('[data-cell]').forEach(b => b.onclick = async () => { const [p, ds] = b.dataset.cell.split('|'); S.view = 'desk'; ls.set('do_view', 'desk'); S.desk.k = null; render(); openDeskCell(p, ds); });
   m.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => { const a = b.dataset.act;
-    if(a==='journal') goView('journal'); else if(a==='data') openData();
+    if(a==='journal') goView('journal'); else if(a==='data') openData(); else if(a==='prompts') goView('prompts');
     else { S.desk.k = null; S.view = 'desk'; ls.set('do_view', 'desk'); render(); const g = nextGap(); if(g) openDeskCell(g.p, g.ds); else toast('No gaps this week 🎉'); } });
 }
 
