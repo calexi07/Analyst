@@ -785,6 +785,105 @@
   .ps-x:hover{ border-color:var(--neg); color:var(--neg); }
   .sticky-foot{ position:sticky; bottom:0; margin-top:auto; z-index:3; background:color-mix(in srgb,var(--surface) 94%,transparent); backdrop-filter:blur(8px); }
   @media (prefers-reduced-motion: reduce){ .panel-side{ transition:none; } }
+  /* ===== today: pair launcher ===== */
+  .pl{ border:1px solid var(--line); border-radius:22px; background:color-mix(in srgb,var(--surface) 80%,transparent); padding:14px 14px 16px; margin-bottom:18px; }
+  .pl-top{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; padding:0 4px 12px; }
+  .pl-top h3{ margin:0; font-family:'Bricolage Grotesque',sans-serif; font-size:18px; }
+  .pl-sub{ font-size:12.5px; font-weight:600; color:var(--muted); }
+  .pl-ctl{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-left:auto; }
+  .pl-days{ display:flex; gap:4px; padding:3px; border-radius:12px; background:var(--surface-2); border:1px solid var(--line); }
+  .pl-day{ border:none; background:transparent; color:var(--muted); font-weight:800; font-size:12px; padding:5px 9px; border-radius:9px; display:grid; justify-items:center; line-height:1.15; min-width:46px; }
+  .pl-day small{ font-size:10px; font-weight:700; opacity:.85; }
+  .pl-day[aria-pressed="true"]{ background:var(--accent); color:var(--on-accent); }
+  .pl-day:disabled{ opacity:.35; cursor:default; }
+  .pl-day.full small{ color:var(--pos); } .pl-day[aria-pressed="true"].full small{ color:inherit; }
+  .pl-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px; }
+  .ccy{ position:relative; overflow:hidden; border-radius:16px; border:1px solid var(--line); padding:11px 11px 10px; display:flex; flex-direction:column; gap:9px;
+        background:linear-gradient(180deg, color-mix(in srgb,var(--cc) 11%,transparent), transparent 75%), var(--surface); }
+  .ccy::before{ content:''; position:absolute; left:0; right:0; top:0; height:3px; background:linear-gradient(90deg, var(--cc), transparent); }
+  .ccy-h{ display:flex; align-items:center; gap:9px; }
+  .ccy-code{ width:38px; height:38px; border-radius:12px; display:grid; place-items:center; font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:12.5px;
+             color:var(--cc); background:color-mix(in srgb,var(--cc) 16%,transparent); border:1px solid color-mix(in srgb,var(--cc) 35%,transparent); }
+  .ccy-t{ min-width:0; display:flex; flex-direction:column; line-height:1.2; }
+  .ccy-t b{ font-family:'Bricolage Grotesque',sans-serif; font-size:15px; }
+  .ccy-t span{ font-size:11.5px; font-weight:700; color:var(--muted); }
+  .ccy-sc{ margin-left:auto; display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+  .ccy-score{ font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px; background:var(--surface-2); color:var(--muted); white-space:nowrap; }
+  .ccy-score.hi{ color:var(--pos); background:color-mix(in srgb,var(--pos) 14%,transparent); }
+  .ccy-score.lo{ color:var(--neg); background:color-mix(in srgb,var(--neg) 14%,transparent); }
+  .ccy-prog{ width:64px; height:5px; border-radius:99px; background:var(--surface-2); overflow:hidden; }
+  .ccy-prog i{ display:block; height:100%; background:var(--amber); border-radius:99px; } .ccy-prog i.full{ background:var(--pos); }
+  .ccy-ps{ display:flex; flex-wrap:wrap; gap:6px; }
+  .tpc{ position:relative; display:inline-flex; align-items:center; gap:7px; padding:6px 8px 6px 9px; border-radius:11px; border:1px solid var(--line); background:var(--surface-2);
+        color:var(--ink); font-weight:800; font-size:12.5px; transition:transform .1s, border-color .1s, box-shadow .1s; }
+  .tpc:hover{ transform:translateY(-1px); border-color:var(--muted); }
+  .tpc[aria-current="true"]{ border-color:var(--accent); box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent); }
+  .tpc .pc-n i{ font-style:normal; opacity:.5; }
+  .tpc.b-bullish{ border-left:3px solid var(--pos); } .tpc.b-bearish{ border-left:3px solid var(--neg); }
+  .tpc.b-bullish .pc-d{ color:var(--pos); background:color-mix(in srgb,var(--pos) 14%,transparent); }
+  .tpc.b-bearish .pc-d{ color:var(--neg); background:color-mix(in srgb,var(--neg) 14%,transparent); }
+  .cdot{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; border:1.5px dashed color-mix(in srgb,var(--muted) 80%,transparent); }
+  .cov-done .cdot{ background:var(--pos); border:1.5px solid var(--pos); box-shadow:0 0 8px color-mix(in srgb,var(--pos) 60%,transparent); }
+  .cov-part .cdot{ border:1.5px solid var(--amber); background:linear-gradient(90deg, var(--amber) 50%, transparent 50%); }
+  .cov-fut .cdot{ opacity:.35; }
+  .tpt{ font-size:10px; font-weight:900; padding:1px 5px; border-radius:6px; }
+  .tpt.long{ color:var(--pos); background:color-mix(in srgb,var(--pos) 16%,transparent); } .tpt.short{ color:var(--neg); background:color-mix(in srgb,var(--neg) 16%,transparent); }
+  .pl-legend{ display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:12px; padding:0 4px; font-size:11.5px; font-weight:700; color:var(--muted); align-items:center; }
+  .pl-legend span{ display:inline-flex; align-items:center; gap:6px; }
+  @media (max-width:600px){ .pl{ padding:12px 10px 14px; } .pl-ctl{ margin-left:0; width:100%; } .pl-days{ width:100%; overflow-x:auto; } .pl-day{ flex:1; } }
+  /* pair selection: board by currency, title picker, desk groups */
+  .seg.bmode{ background:var(--surface-2); padding:2px; border-radius:10px; }
+  .seg.bmode button{ padding:3px 10px; font-size:12px; border-radius:8px; }
+  .bccy{ display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:8px; }
+  .bcc{ position:relative; overflow:hidden; border-radius:14px; border:1px solid color-mix(in srgb,var(--cc) 26%,var(--line)); padding:9px 9px 10px;
+        background:linear-gradient(180deg, color-mix(in srgb,var(--cc) 10%,transparent), transparent 75%); display:flex; flex-direction:column; gap:8px; }
+  .bcc::before{ content:''; position:absolute; left:0; right:0; top:0; height:3px; background:linear-gradient(90deg, var(--cc), transparent); }
+  .bcc header{ display:flex; align-items:center; gap:8px; font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:14px; }
+  .bcc .ccy-code{ width:32px; height:28px; border-radius:9px; font-size:11px; }
+  .bcc .ccy-score{ margin-left:auto; }
+  .bstrip .psw-grp{ padding:3px; gap:4px; }
+  .bstrip .psw-grp .pc{ padding:4px 5px 4px 8px; font-size:12px; }
+  .ptitle-row{ display:flex; align-items:center; gap:8px; }
+  .ptitle-btn{ display:inline-flex; align-items:baseline; gap:2px; border:1px solid transparent; background:transparent; color:var(--ink); border-radius:14px; padding:2px 10px; margin:0 -2px; transition:background .15s, border-color .15s; }
+  .ptitle-btn em{ font-style:normal; opacity:.5; }
+  .ptitle-btn:hover{ background:color-mix(in srgb,var(--pc) 10%,transparent); border-color:color-mix(in srgb,var(--pc) 40%,transparent); }
+  .ptitle-c{ font-size:.45em; color:var(--muted); margin-left:6px; align-self:center; }
+  .pp-sec{ display:grid; gap:8px; margin-bottom:14px; }
+  .pp-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:8px; }
+  .pc.pp-first{ outline:2px solid var(--accent); outline-offset:2px; }
+  .dk-filters{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; margin:12px 0; }
+  .ccy-chips{ display:flex; flex-wrap:wrap; gap:4px; padding:3px; border-radius:12px; background:var(--surface-2); border:1px solid var(--line); }
+  .cchip{ border:none; background:transparent; color:var(--cc, var(--muted)); font-weight:900; font-size:11.5px; letter-spacing:.03em; padding:5px 9px; border-radius:9px; }
+  .cchip:hover{ background:color-mix(in srgb,var(--cc, var(--muted)) 12%,transparent); }
+  .cchip[aria-pressed="true"]{ background:var(--cc, var(--accent)); color:#0B0B18; }
+  .dgrp td{ padding:12px 0 4px !important; background:transparent !important; border:none !important; }
+  .dgrp-l{ position:sticky; left:0; display:inline-flex; align-items:center; gap:8px; padding-left:8px; font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:13px; color:var(--cc); }
+  .dgrp-l .muted{ font-family:'Manrope',sans-serif; font-size:11.5px; font-weight:700; }
+  .dgrp-c{ font-size:10.5px; padding:2px 7px; border-radius:7px; background:color-mix(in srgb,var(--cc) 16%,transparent); border:1px solid color-mix(in srgb,var(--cc) 35%,transparent); }
+  .dpname{ border:none; background:transparent; color:var(--ink); padding:2px 4px; margin:0 -4px; border-radius:7px; font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:14px; }
+  .dpname em{ font-style:normal; opacity:.55; } .dpname.cur{ color:var(--accent); }
+  .dpname:hover{ background:var(--surface-2); text-decoration:underline; text-underline-offset:3px; }
+  @keyframes rowflash{ from{ background:color-mix(in srgb,var(--accent) 22%,transparent); } to{ background:transparent; } }
+  tr.flash td{ animation:rowflash 1.6s ease-out; }
+  /* drawer pair switcher */
+  .pswitch{ grid-column:1 / -1; display:flex; align-items:center; gap:6px; margin:2px -4px 0; min-width:0; }
+  .psw-s{ flex:1; min-width:0; display:flex; gap:4px; align-items:center; overflow-x:auto; scrollbar-width:none; padding:3px 2px; scroll-behavior:smooth;
+          mask-image:linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 14px), transparent); }
+  .psw-s::-webkit-scrollbar{ display:none; }
+  .psw-grp{ display:inline-flex; align-items:center; gap:3px; padding:3px; border-radius:11px; flex:0 0 auto;
+            background:color-mix(in srgb,var(--cc) 12%,transparent); border:1px solid color-mix(in srgb,var(--cc) 30%,transparent); }
+  .psw-g{ font-size:10.5px; font-weight:900; letter-spacing:.04em; color:var(--cc); padding:0 4px 0 6px; white-space:nowrap; }
+  .ps-pair{ display:inline-block; font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:13px; letter-spacing:.02em; padding:3px 10px; border-radius:8px; margin-bottom:6px;
+            color:var(--pc); background:color-mix(in srgb,var(--pc) 15%,transparent); border:1px solid color-mix(in srgb,var(--pc) 35%,transparent); }
+  .ps-pair i{ font-style:normal; opacity:.6; }
+  .psc{ display:inline-flex; align-items:center; gap:5px; padding:4px 8px; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink);
+        font-weight:800; font-size:11.5px; white-space:nowrap; flex:0 0 auto; }
+  .psc .cdot{ width:7px; height:7px; }
+  .psc:hover{ border-color:var(--muted); }
+  .psc[aria-current="true"]{ background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+  .psc[aria-current="true"] .cdot{ border-color:currentColor; }
+  .psw-b{ width:28px; height:28px; flex:0 0 auto; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-size:15px; }
+  .psw-b:hover{ border-color:var(--accent); }
   @media (max-width:900px){ .panel-side{ width:100vw; border-left:none; } }
   /* status chips */
   .stc{ display:inline-flex; align-items:center; gap:7px; }
@@ -821,6 +920,7 @@
 <!-- Data dialog -->
 <script type="application/json" id="promptData">[{"id": "phase1", "group": "weekly", "step": 1, "title": "Phase 1 — Weekly research", "when": "Saturday / Sunday · attach last week's report", "desc": "The AI rebuilds last week from its own research (scheduled + unscheduled news), re-scores every currency and writes the full report for the coming week, including the Section 12 import block.", "text": "WEEKLY FUNDAMENTAL UPDATE — PHASE 1 (research only)\n\nAttached: your report from last week.\n\nUpdate the full analysis for the coming week using only your own research.\nDo NOT ask for or use price action yet — I will send it after you finish.\n\n1. Rebuild last week (search, do not rely on memory). For USD, EUR, GBP, JPY, CHF, CAD,\n   AUD, NZD and XAU, find everything that happened Mon–Fri plus the weekend:\n   - scheduled data and central-bank decisions/speakers\n   - UNSCHEDULED events: political and fiscal crises (governments, budgets, bond spreads —\n     including big euro-area states like France, Italy, Germany), geopolitics, trade policy,\n     commodity shocks, interventions, haven flows, credit stress\n   Cite a source for every event you use.\n2. Re-score every currency from the evidence. Do not anchor on last week's numbers; every\n   change must be justified.\n3. Produce the complete report in the usual structure, valid for the coming week, including\n   Section 12 \"Daily Observer Import\" with \"valid_week\" set to the NEXT ISO week.\n   Bias rule: if the weekly label is Neutral/Two-sided but the horizon or main driver clearly\n   leans one way, set \"bias\" to that direction with conviction \"low\" and keep the original\n   wording in \"summary\".\n4. State the data cut-off (Friday close plus any weekend news) at the top.\n\nWhen you are done, write: \"PHASE 1 COMPLETE — send the price action.\"\n\n----- Section 12 specification -----\nAt the very end of the report, after the Trader Handoff section, add one more section:\n\"12. Daily Observer Import\".\n\nIt must contain:\n- a short line: \"Copy this block and paste it into Daily Observer → Import / export.\"\n- a \"Copy\" button that copies the block below to the clipboard (navigator.clipboard.writeText)\n- a <pre id=\"dobs-import\"> block containing ONE valid JSON object and nothing else\n\nThe JSON must be strictly valid: double quotes only, no comments, no trailing commas, escape inner quotes.\nIt must only restate what is already in the report — do not add new analysis.\n\nSchema:\n{\n  \"format\": \"daily-observer-fundamentals\",\n  \"version\": 1,\n  \"report_date\": \"YYYY-MM-DD\",\n  \"report_title\": \"Forex Fundamental Bias Engine — Week NN\",\n  \"valid_week\": { \"year\": 2026, \"week\": NN },          // ISO week the analysis is FOR (the trading week that starts the Monday after the report)\n  \"currencies\": {\n    \"USD\": { \"score\": 4, \"state\": \"Strong\", \"note\": \"one-line thesis state\" }\n    // same for EUR, GBP, JPY, CHF, CAD, AUD, NZD, XAU\n  },\n  \"pairs\": [                                            // ALL pairs in the 28-pair matrix + XAUUSD\n    {\n      \"pair\": \"EURUSD\",                                 // 6 letters, no slash\n      \"bias\": \"bearish\",                                // bullish | bearish | two-sided | neutral\n      \"conviction\": \"medium\",                           // low | medium | high\n      \"summary\": \"Bearish (EUR -1 vs USD +4)\",          // same wording as the weekly bias history\n      \"base_state\": \"Weak\",                             // Strong | Improving | Neutral | Weakening | Weak\n      \"base_score\": -1,                                 // number from the scorecard\n      \"quote_state\": \"Strong\",\n      \"quote_score\": 4,\n      \"main_driver\": \"one or two sentences\",\n      \"drivers\": [\"secondary driver 1\", \"secondary driver 2\"],      // [] if none\n      \"catalysts\": [ { \"date\": \"28 Oct\", \"event\": \"FOMC decision\", \"imp\": \"CRITICAL\" } ],  // imp: LOW | MEDIUM | HIGH | CRITICAL\n      \"priced\": \"what is already priced in\",\n      \"invalidation\": \"what would invalidate the thesis\",\n      \"horizon\": \"Swing: mild bearish\",\n      \"alignment\": \"Aligned\",                           // Aligned | Partial conflict | Conflicting | Neutral\n      \"alignment_note\": \"short explanation\",\n      \"changed\": \"what changed vs last week for this pair (both currencies)\"\n    }\n  ],\n  \"news\": [                                             // every dated event from the Catalyst Calendar\n    { \"date\": \"2026-10-28\", \"currency\": \"USD\", \"event\": \"FOMC decision\", \"importance\": \"CRITICAL\" }\n    // ISO dates only; one entry per currency (an event for \"USD, XAU\" becomes one USD entry); skip \"Ongoing\"/undated items\n  ]\n}"}, {"id": "export", "group": "weekly", "step": 2, "title": "Export price action", "when": "after the AI says “PHASE 1 COMPLETE”", "action": "export", "desc": "Copy the daily-close export for the week that just ended. Nothing to paste here — use the button."}, {"id": "phase2", "group": "weekly", "step": 3, "title": "Phase 2 — Price-action confirmation", "when": "send together with the price-action export", "desc": "The AI checks its analysis against what price actually did and re-checks only real anomalies. Price can never flip a bias on its own — only a news item it missed or misweighted can change the analysis.", "text": "WEEKLY FUNDAMENTAL UPDATE — PHASE 2 (price-action confirmation)\n\nAttached: my price-action export for last week (\"daily-observer-price-action\" JSON:\ndaily close % per pair). Use it only to CONFIRM your Phase 1 analysis, not to rebuild it.\nFundamentals describe direction over several weeks — a single week of price against the\nbias is normal and is NOT, by itself, evidence that the analysis is wrong.\n\n1. Treat my logged closes as ground truth; fetch real daily closes for every pair in\n   \"pairs_not_logged\". If closes are not available, use ECB reference rates (state the\n   fixing time) and derive the crosses from them; say clearly which days are missing.\n   Build the realized currency-strength ranking (use the crosses, not only the USD pairs,\n   to isolate each currency).\n2. Flag ANOMALIES only:\n   - a pair whose weekly move against the bias you gave it is larger than ~1.5x its normal\n     weekly range (roughly: >0.8% for EURGBP/EURCHF, >1.2% for majors, >1.8% for GBPJPY/XAU)\n   - a currency whose realized rank differs from its score rank by 3 or more places\n   - a currency that moved against its score consistently on the crosses for 2+ sessions\n3. For each anomaly, run a TARGETED re-check for a concrete fundamental cause, with a source\n   (the country's politics, fiscal news, central-bank speakers, interventions, flows,\n   commodities). Then classify:\n   MISSED NEWS · MISWEIGHTED KNOWN NEWS · ALREADY PRICED · FLOWS/POSITIONING ·\n   TECHNICAL RETRACEMENT · NOISE\n   - Only MISSED NEWS or MISWEIGHTED KNOWN NEWS may change a score or a bias.\n   - ALREADY PRICED, FLOWS/POSITIONING, TECHNICAL RETRACEMENT and NOISE never change the bias.\n   - A single week against the bias with no fundamental cause changes nothing.\n     After 2–3 consecutive weeks against the bias with no cause, lower conviction by ONE\n     level only.\n   - Price alone never flips a bias. Never invent a cause to fit the chart.\n   - For each anomaly, state whether it looks like a retracement inside an intact\n     fundamental trend or an early sign the market is pricing something new — and what\n     would confirm it next week.\n4. Output:\n   - \"0a. Price-Action Check\": hit-rate table (last week's bias vs realized move, every pair)\n     and the realized currency ranking vs scores\n   - \"0b. Self-Correction Log\": each anomaly, what you re-checked, the cause and\n     classification, and what changed (or why nothing changed)\n   - the final report, where only MISSED NEWS / MISWEIGHTED KNOWN NEWS corrections are\n     applied; in every affected pair's \"changed\" field, note that the change came from the\n     Phase 2 check\n   - a NEW Section 12 \"Daily Observer Import\" block reflecting the corrections (same format,\n     same \"valid_week\")\n5. Section 12 quality rules (apply even if nothing was corrected):\n   - Rewrite \"alignment\" and \"alignment_note\" for EVERY pair from the realized price data —\n     never leave Phase 1 \"provisional\" wording in the final block.\n   - \"priced\" must be pair-specific text in every pair — no placeholders and no references\n     to other sections of the report.\n   - Any currency score change of 3 points or more versus last week (from Phase 1 or\n     Phase 2) must be listed in 0b with its source.\nIf nothing needed correcting, say so — but still output Section 12 with the rules above applied."}, {"id": "import", "group": "weekly", "step": 4, "title": "Import into Daily Observer", "when": "copy Section 12 from the Phase 2 answer", "action": "import", "desc": "Paste the Section 12 block, choose the next week, the pairs and the sections."}]</script>
 <dialog id="bankDlg" class="panel" aria-label="Bank entry" style="width:min(560px,96vw)"></dialog>
+<dialog id="pairDlg" class="panel" aria-label="Switch pair" style="width:min(680px,94vw)"></dialog>
 <dialog id="moreDlg" class="panel" aria-label="More" style="width:min(420px,94vw)"></dialog>
 <dialog id="lbDlg" class="lb" aria-label="Image viewer"></dialog>
 <dialog id="shareDlg" class="panel" aria-label="Share to Discord" style="width:min(760px,96vw)"></dialog>
@@ -1105,12 +1205,25 @@ function renderStrip(){
     { k:'bear', title:'Bearish', icon:'▼', list: info.filter(x => x.bias==='bearish'), tiers:true },
   ];
   const counts = `<span class="bc bull">▲ ${cols[0].list.length}</span><span class="bc neu">◆ ${cols[1].list.length}</span><span class="bc bear">▼ ${cols[2].list.length}</span>`;
-  if(compact){
+  const bmode = ls.get('do_board_mode', 'bias');
+  const modeSeg = `<div class="seg bmode" role="group" aria-label="Board layout"><button data-bm="bias" aria-pressed="${bmode==='bias'}">By bias</button><button data-bm="ccy" aria-pressed="${bmode==='ccy'}">By currency</button></div>`;
+  const pickBtn = `<button class="bt" id="boardPick" title="Find a pair (P)">${ico('search', 12)} Find pair</button>`;
+  const byP = Object.fromEntries(info.map(x => [x.p, x]));
+  if(bmode==='ccy'){
+    const groups = ccyGroups('base');
+    nav.innerHTML = compact
+      ? `<div class="board compact"><div class="bhead"><b>W${cw.week} pairs</b>${modeSeg}${pickBtn}<button class="bt" id="boardToggle" style="margin-left:auto">Expand ▾</button></div>
+          <div class="bstrip">${groups.map(g => `<span class="psw-grp" style="--cc:${ccyCol(g.c)}"><span class="psw-g">${g.c}/</span>${g.pairs.map(p => chip(byP[p])).join('')}</span>`).join('')}</div></div>`
+      : `<div class="board"><div class="bhead"><b>W${cw.week} pairs</b><span class="muted">grouped by base currency · colour = this week's bias</span>${modeSeg}${pickBtn}<button class="bt" id="boardToggle" style="margin-left:auto">Compact ▴</button></div>
+          <div class="bccy">${groups.map(g => { const sc = ccyScore(g.c, cw.year, cw.week);
+            return `<section class="bcc" style="--cc:${ccyCol(g.c)}"><header><span class="ccy-code">${g.c}</span><span>${(CCY[g.c]||[g.c])[0]}</span>${sc!=null ? `<span class="ccy-score ${sc>=7 ? 'hi' : sc<=3 ? 'lo' : ''}">${fmt(sc, sc%1 ? 1 : 0)}</span>` : ''}</header>
+              <div class="tc">${g.pairs.map(p => chip(byP[p])).join('')}</div></section>`; }).join('')}</div></div>`;
+  } else if(compact){
     const seq = [...cols[0].list.sort((a,b) => tierIdx(a)-tierIdx(b) || byDiv(a,b)), ...cols[1].list.sort(byDiv), ...cols[2].list.sort((a,b) => tierIdx(a)-tierIdx(b) || byDiv(a,b))];
-    nav.innerHTML = `<div class="board compact"><div class="bhead"><b>W${cw.week} bias board</b>${counts}<button class="bt" id="boardToggle">Expand ▾</button></div>
+    nav.innerHTML = `<div class="board compact"><div class="bhead"><b>W${cw.week} bias board</b>${modeSeg}${pickBtn}${counts}<button class="bt" id="boardToggle">Expand ▾</button></div>
       <div class="bstrip">${seq.map(chip).join('')}</div></div>`;
   } else {
-    nav.innerHTML = `<div class="board"><div class="bhead"><b>W${cw.week} bias board</b><span class="muted">sorted by conviction, then divergence</span>${counts}<button class="bt" id="boardToggle">Compact ▴</button></div>
+    nav.innerHTML = `<div class="board"><div class="bhead"><b>W${cw.week} bias board</b><span class="muted">sorted by conviction, then divergence</span>${modeSeg}${pickBtn}${counts}<button class="bt" id="boardToggle">Compact ▴</button></div>
       <div class="bcols">${cols.map(c => `<section class="bcol ${c.k}">
         <header><span class="bi">${c.icon}</span>${c.title}<span class="bn">${c.list.length}</span></header>
         ${!c.list.length ? '<p class="bempty">No pairs this week</p>' : c.tiers
@@ -1118,8 +1231,12 @@ function renderStrip(){
           : [['two-sided','Two-sided'],['neutral','Neutral'],['none','No bias set']].map(([b, l]) => { const ps = c.list.filter(x => x.bias===b).sort(byDiv); return ps.length ? `<div class="tier"><span class="tl">${l}</span><div class="tc">${ps.map(chip).join('')}</div></div>` : ''; }).join('')}
       </section>`).join('')}</div></div>`;
   }
-  nav.querySelectorAll('[data-pair]').forEach(b => b.onclick = async () => { await flushSave(); S.pair = b.dataset.pair; ls.set('do_pair', S.pair); render(); });
+  nav.querySelectorAll('[data-pair]').forEach(b => b.onclick = () => selectPair(b.dataset.pair));
   nav.querySelector('#boardToggle').onclick = () => { ls.set('do_board_compact', !compact); renderStrip(); };
+  nav.querySelectorAll('[data-bm]').forEach(b => b.onclick = () => { ls.set('do_board_mode', b.dataset.bm); renderStrip(); });
+  nav.querySelector('#boardPick').onclick = openPairPicker;
+  const strip = nav.querySelector('.bstrip'), curC = strip?.querySelector('[aria-current="true"]');
+  if(curC) strip.scrollLeft += curC.getBoundingClientRect().left - strip.getBoundingClientRect().left - strip.clientWidth/2 + curC.offsetWidth/2;
 }
 function tierIdx(x){ return ['high','medium','low',''].indexOf(x.conv); }
 function renderMain(){
@@ -1149,7 +1266,7 @@ function syncDrawer(){
   /* the drawer lives directly in <body> so no animated ancestor can trap it under the backdrop */
   const fresh = document.querySelector('#app #panel');
   if(fresh){ document.querySelectorAll('body > #panel').forEach(x => x.remove()); document.body.appendChild(fresh); }
-  else if(!['journal','desk'].includes(S.view)) document.querySelectorAll('body > #panel').forEach(x => x.remove());
+  else if(!['journal','desk','today'].includes(S.view)) document.querySelectorAll('body > #panel').forEach(x => x.remove());
   const p = document.querySelector('body > #panel'), on = !!(p && S.drawerOpen);
   p?.classList.toggle('open', on); drawerBd.classList.toggle('on', on);
   document.documentElement.classList.toggle('drawer-lock', on);
@@ -1214,7 +1331,10 @@ function renderJournal(){
     <div class="jr">
       <section>
         <div class="flex flex-wrap items-end gap-x-5 gap-y-3 mb-4">
-          <div><div class="pairtitle">${p}</div><div class="muted mt-1" style="font-weight:600">${base(p)} / ${quote(p)} · <span id="mStats"></span></div></div>
+          <div><div class="ptitle-row"><button class="ib" id="pPrev" aria-label="Previous pair" title="Previous pair">‹</button>
+              <button class="pairtitle ptitle-btn" id="pairPick" title="Switch pair (P)" style="--pc:${ccyCol(base(p))}">${base(p)}<em>${quote(p)}</em><span class="ptitle-c">▾</span></button>
+              <button class="ib" id="pNext" aria-label="Next pair" title="Next pair">›</button></div>
+            <div class="muted mt-1" style="font-weight:600">${(CCY[base(p)]||[base(p)])[0]} / ${(CCY[quote(p)]||[quote(p)])[0]} · <span id="mStats"></span></div></div>
           <div class="flex items-center gap-2 ml-auto">
             <div class="monthnav">
               <button class="ib" id="mPrev" aria-label="Previous month">‹</button>
@@ -1234,6 +1354,9 @@ function renderJournal(){
       <aside id="panel" class="panel-side" aria-live="polite"></aside>
     </div>`;
   const shift = async n => { await flushSave(); S.month = new Date(S.month.getFullYear(), S.month.getMonth()+n, 1); renderMain(); };
+  document.getElementById('pairPick').onclick = openPairPicker;
+  document.getElementById('pPrev').onclick = () => stepPair(-1);
+  document.getElementById('pNext').onclick = () => stepPair(1);
   document.getElementById('mPrev').onclick = () => shift(-1);
   document.getElementById('mNext').onclick = () => shift(1);
   document.getElementById('goToday').onclick = () => selectDay(defaultDay());
@@ -1246,6 +1369,7 @@ function renderJournal(){
 
 function renderCalendar(){
   if(document.getElementById('deskGrid')) renderDeskGrid();
+  if(document.getElementById('tdBoard')) renderTdBoard();
   const cal = document.getElementById('cal'); if(!cal) return;
   const p = S.pair, b = base(p), q = quote(p), today = iso(new Date()), m = S.month.getMonth(), hold = holdingMap(p);
   let h = `<div class="cal-h wkh">Week</div>${['Monday','Tuesday','Wednesday','Thursday','Friday'].map(d => `<div class="cal-h">${d}</div>`).join('')}`;
@@ -1338,7 +1462,7 @@ function bindChips(root, attr, onChange){
 }
 function panelHead(title, sub){
   return `<div class="ps-head">
-    <div style="min-width:0"><h2>${title}</h2><div class="sub">${sub}</div></div>
+    <div style="min-width:0"><span class="ps-pair" style="--pc:${ccyCol(base(S.pair))}">${base(S.pair)}<i>/</i>${quote(S.pair)}</span><h2>${title}</h2><div class="sub">${sub}</div></div>
     <div class="ps-nav"><button class="ib" id="navPrev" aria-label="Previous">‹</button><button class="ib" id="navNext" aria-label="Next">›</button><button class="ps-x" id="psClose" aria-label="Close panel" title="Close (Esc)">×</button></div>
     <div class="seg mode" role="group" aria-label="Panel mode">
       <button data-mode="view" aria-pressed="${S.mode==='view'}">View</button><button data-mode="edit" aria-pressed="${S.mode==='edit'}">Edit</button>
@@ -1359,6 +1483,9 @@ function renderPanel(){
   S.mode==='edit' ? dayEdit(panel, ctx) : dayView(panel, ctx);
   const step = n => { const d = parseISO(ds); do { d.setDate(d.getDate()+n); } while(d.getDay()===0 || d.getDay()===6); selectDay(iso(d)); };
   bindHead(panel, () => step(-1), () => step(1));
+  panel.querySelector('.ps-head')?.insertAdjacentHTML('beforeend', pairSwitcher(ds));
+  bindPairSwitcher(panel, ds);
+  if(document.getElementById('tdBoard')) renderTdBoard();
   panel.querySelector('#wkBanner').onclick = () => selectWeek(w.year, w.week);
 }
 function dayTitle(ctx){ return `${WD[ctx.dt.getDay()]}, ${ctx.dt.getDate()} ${MONTHS[ctx.dt.getMonth()]}`; }
@@ -2843,6 +2970,133 @@ function renderPrompts(){
 
 /* ---------- Today ---------- */
 function prevWeekday(ds){ const d = parseISO(ds); do { d.setDate(d.getDate()-1); } while(d.getDay()===0 || d.getDay()===6); return iso(d); }
+/* currency groups (shared by the Today launcher and the drawer pair switcher) */
+const CCY = { EUR:['Euro','#5B8CFF'], GBP:['Pound','#C084FC'], AUD:['Aussie','#F5A524'], NZD:['Kiwi','#22D3EE'], USD:['Dollar','#F472B6'],
+              CAD:['Loonie','#F97316'], CHF:['Franc','#94A3B8'], JPY:['Yen','#A3E635'], XAU:['Gold','#FACC15'] };
+const CCY_ORDER = ['EUR','GBP','AUD','NZD','USD','CAD','CHF','JPY','XAU'];
+const ccyCol = c => (CCY[c] || ['', '#8B8BA7'])[1];
+function ccyGroups(mode){
+  const ps = allPairs(), keys = [...new Set([...CCY_ORDER, ...ps.flatMap(p => [base(p), quote(p)])])];
+  return keys.map(c => ({ c, pairs: ps.filter(p => mode==='ccy' ? (base(p)===c || quote(p)===c) : base(p)===c) })).filter(g => g.pairs.length);
+}
+function openPairs(){ const m = new Map(); tjAll().filter(tjIsOpen).forEach(e => m.set(e.pair, e.direction)); return m; }
+S.td = { day:null, group: ls.get('do_td_group', 'base'), filter: ls.get('do_td_f', 'all') };
+function tdDays(){
+  const now = new Date(), k = isoWeek(now), [from] = weekRange(k.year, k.week), today = iso(now);
+  const days = [0,1,2,3,4].map(i => { const d = parseISO(from); d.setDate(d.getDate()+i); return iso(d); });
+  const weekend = now.getDay()===0 || now.getDay()===6;
+  const def = weekend ? days[4] : now.getHours() < 12 && today!==days[0] ? prevWeekday(today) : today;
+  if(!S.td.day || (S.td.day > today && !weekend)) S.td.day = def;
+  return { days, today };
+}
+async function openPairDay(p, ds, mode){
+  await flushSave();
+  const m = mode || (dayCov(S.daily.get(dk(p, ds))).state!=='done' ? 'edit' : S.mode);
+  if(m!==S.mode){ S.mode = m; ls.set('do_mode', m); }
+  if(S.pair!==p){ S.pair = p; ls.set('do_pair', p); }
+  S.sel = { type:'day', day:ds };
+  if(S.view==='journal'){ S.month = firstOfMonth(parseISO(ds)); render(); }
+  else { renderCalendar(); renderPanel(); }
+  openDrawer(); const pn = document.getElementById('panel'); if(pn) pn.scrollTop = 0;
+}
+function renderTdBoard(){
+  const box = document.getElementById('tdBoard'); if(!box) return;
+  const { days, today } = tdDays(), ds = S.td.day, tr = trackedSet(), open = openPairs(), mode = S.td.group, f = S.td.filter;
+  const cov = p => ds > today ? 'fut' : dayCov(S.daily.get(dk(p, ds))).state;
+  const all = allPairs(), doneN = all.filter(p => cov(p)==='done').length;
+  const keep = p => f==='tracked' ? tr.has(p) : f==='todo' ? !['done','fut'].includes(cov(p)) : true;
+  const groups = ccyGroups(mode).map(g => ({ ...g, show: g.pairs.filter(keep) })).filter(g => g.show.length);
+  const chip = p => { const r = curWeekRec(p), b = r?.bias || 'none', dv = pairDiv(r), st = cov(p), od = open.get(p), e = S.daily.get(dk(p, ds));
+    return `<button class="tpc b-${b} cov-${st}" data-tp="${p}" aria-current="${S.drawerOpen && S.pair===p && S.sel?.day===ds}"
+      title="${p} · ${fmtDayShort(ds)} — ${st==='done' ? 'complete' : st==='part' ? 'partial' : st==='fut' ? 'upcoming' : 'nothing logged'}${r?.bias ? ' · '+BIAS_LBL[r.bias]+(r.conviction ? ', '+r.conviction : '') : ''}${e?.trade_status ? ' · '+e.trade_status : ''}">
+      <i class="cdot"></i><span class="pc-n">${base(p)}<i>${quote(p)}</i></span>${od ? `<span class="tpt ${od.toLowerCase()}" title="Open ${od}">${od==='Long' ? '▲' : '▼'}</span>` : ''}${dv!=null ? `<span class="pc-d">${dv}</span>` : ''}</button>`; };
+  box.innerHTML = `
+    <div class="pl-top">
+      <div><h3>Pairs</h3><div class="pl-sub">${fmtDayShort(ds)} · ${doneN}/${all.length} complete · tap a pair to open its day</div></div>
+      <div class="pl-ctl">
+        <div class="pl-days" role="group" aria-label="Day">${days.map(d => { const dt = parseISO(d), n = d > today ? 0 : all.filter(p => dayCov(S.daily.get(dk(p, d))).state==='done').length;
+          return `<button class="pl-day ${n===all.length ? 'full' : ''}" data-tdd="${d}" aria-pressed="${d===ds}" ${d > today ? 'disabled' : ''}>${WD_SHORT[dt.getDay()]} ${dt.getDate()}<small>${d > today ? '—' : n+'/'+all.length}</small></button>`; }).join('')}</div>
+        <div class="seg" role="group" aria-label="Group by"><button data-tdg="base" aria-pressed="${mode==='base'}" title="Each pair once, under its base currency">Base</button><button data-tdg="ccy" aria-pressed="${mode==='ccy'}" title="Every pair under both of its currencies">Currency</button></div>
+        <div class="chips" role="group" aria-label="Filter">${[['all','All'],['todo','To do'],['tracked','★ Tracked']].map(([k,l]) => `<button class="ch" data-tdf="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div>
+      </div>
+    </div>
+    ${groups.length ? `<div class="pl-grid">${groups.map(g => { const cw = isoWeek(new Date()), sc = ccyScore(g.c, cw.year, cw.week), dn = g.pairs.filter(p => cov(p)==='done').length;
+      return `<section class="ccy" style="--cc:${ccyCol(g.c)}">
+        <div class="ccy-h"><span class="ccy-code">${g.c}</span><div class="ccy-t"><b>${(CCY[g.c]||[g.c])[0]}</b><span>${dn}/${g.pairs.length} done</span></div>
+          <div class="ccy-sc">${sc!=null ? `<span class="ccy-score ${sc>=7 ? 'hi' : sc<=3 ? 'lo' : ''}" title="${g.c} score this week">score ${fmt(sc, sc%1 ? 1 : 0)}</span>` : ''}
+            <span class="ccy-prog"><i class="${dn===g.pairs.length ? 'full' : ''}" style="width:${g.pairs.length ? dn/g.pairs.length*100 : 0}%"></i></span></div></div>
+        <div class="ccy-ps">${g.show.map(chip).join('')}</div></section>`; }).join('')}</div>`
+      : `<p class="muted" style="padding:6px 4px">${f==='tracked' ? 'No tracked pairs yet — star them in Desk (☆).' : 'Everything is filled in for this day 🎉'}</p>`}
+    <div class="pl-legend"><span class="cov-done"><i class="cdot"></i>complete</span><span class="cov-part"><i class="cdot"></i>partial</span><span class="cov-none"><i class="cdot"></i>missing</span>
+      <span><b style="color:var(--pos)">▎</b>bullish <b style="color:var(--neg)">▎</b>bearish week</span><span>number = divergence</span><span><span class="tpt long">▲</span> open trade</span></div>`;
+  box.querySelectorAll('[data-tp]').forEach(b => b.onclick = () => openPairDay(b.dataset.tp, ds));
+  box.querySelectorAll('[data-tdd]').forEach(b => b.onclick = () => { S.td.day = b.dataset.tdd; renderTdBoard(); });
+  box.querySelectorAll('[data-tdg]').forEach(b => b.onclick = () => { S.td.group = b.dataset.tdg; ls.set('do_td_group', S.td.group); renderTdBoard(); });
+  box.querySelectorAll('[data-tdf]').forEach(b => b.onclick = () => { S.td.filter = b.dataset.tdf; ls.set('do_td_f', S.td.filter); renderTdBoard(); });
+}
+/* ---------- pair selection (board, title, picker, desk) ---------- */
+const pairOrder = () => ccyGroups('base').flatMap(g => g.pairs);
+const recentPairs = () => ls.get('do_recent_pairs', []).filter(p => allPairs().includes(p));
+async function selectPair(p){
+  await flushSave();
+  ls.set('do_recent_pairs', [p, ...recentPairs().filter(x => x!==p)].slice(0, 6));
+  S.pair = p; ls.set('do_pair', p);
+  if(S.view==='desk'){ renderStrip(); renderDeskGrid(); if(S.drawerOpen && S.sel) renderPanel(); flashDeskRow(p); }
+  else if(S.view==='journal') render();
+  else { S.view = 'journal'; ls.set('do_view', 'journal'); S.drawerOpen = false; render(); }
+}
+function stepPair(n){ const l = pairOrder(), i = l.indexOf(S.pair); selectPair(l[(i + n + l.length) % l.length]); }
+function flashDeskRow(p){
+  const tr = document.querySelector(`#deskGrid tr[data-row="${p}"]`); if(!tr) return;
+  tr.scrollIntoView({ block:'center', behavior:'smooth' }); tr.classList.remove('flash'); void tr.offsetWidth; tr.classList.add('flash');
+}
+const pairDlg = document.getElementById('pairDlg');
+function openPairPicker(){
+  pairDlg.innerHTML = `<div class="dlg-head" style="padding-bottom:10px"><h2>Switch pair</h2>
+      <input id="ppQ" class="inp" type="search" autocomplete="off" placeholder="Type a pair or currency — eurj, jpy, gold… then Enter" aria-label="Find a pair" style="margin-top:12px;font-size:15px;padding:11px 13px"></div>
+    <div class="dlg-body" id="ppBody" style="max-height:64vh;overflow:auto;padding-bottom:18px"></div>`;
+  const q = pairDlg.querySelector('#ppQ'), body = pairDlg.querySelector('#ppBody'); let hits = [];
+  const chip = (p, first) => { const r = curWeekRec(p), dv = pairDiv(r);
+    return `<button class="pc b-${r?.bias || 'none'} ${first ? 'pp-first' : ''}" data-pp="${p}" aria-current="${p===S.pair}" title="${p}${r?.bias ? ' · '+BIAS_LBL[r.bias] : ''}"><span class="pc-n">${base(p)}<i>${quote(p)}</i></span>${dv!=null ? `<span class="pc-d">${dv}</span>` : ''}</button>`; };
+  const draw = () => {
+    const t = q.value.toUpperCase().replace(/[^A-Z]/g, '');
+    const nm = c => (CCY[c] || [''])[0].toUpperCase();
+    const match = p => !t || p.includes(t) || (t.length >= 3 && (nm(base(p)).startsWith(t) || nm(quote(p)).startsWith(t)));
+    hits = pairOrder().filter(match).sort((a, b) => (t ? (b.startsWith(t) - a.startsWith(t)) : 0));
+    const rec = recentPairs();
+    body.innerHTML = (!t && rec.length ? `<div class="pp-sec"><span class="kick">Recent</span><div class="tc">${rec.map(p => chip(p)).join('')}</div></div>` : '')
+      + (hits.length ? `<div class="pp-grid">${ccyGroups('base').map(g => { const ps = g.pairs.filter(match);
+          return ps.length ? `<section class="bcc" style="--cc:${ccyCol(g.c)}"><header><span class="ccy-code">${g.c}</span><span>${(CCY[g.c] || [g.c])[0]}</span></header>
+            <div class="tc">${ps.map(p => chip(p, t && p===hits[0])).join('')}</div></section>` : ''; }).join('')}</div>`
+        : '<p class="muted" style="padding:8px 2px">No pair matches.</p>');
+  };
+  q.oninput = draw;
+  q.onkeydown = ev => { if(ev.key==='Enter' && hits[0]){ ev.preventDefault(); pairDlg.close(); selectPair(hits[0]); } };
+  body.onclick = ev => { const b = ev.target.closest('[data-pp]'); if(b){ pairDlg.close(); selectPair(b.dataset.pp); } };
+  draw(); pairDlg.showModal(); q.focus();
+}
+document.addEventListener('keydown', ev => {
+  if(ev.key.toLowerCase()!=='p' || ev.ctrlKey || ev.metaKey || ev.altKey || document.querySelector('dialog[open]')) return;
+  const t = ev.target; if(t.closest?.('input,textarea,select,[contenteditable="true"]')) return;
+  if(['journal','desk'].includes(S.view) && !S.drawerOpen){ ev.preventDefault(); openPairPicker(); }
+});
+/* pair switcher inside the drawer: every pair grouped by base currency, same day */
+function pairSwitcher(ds){
+  const today = iso(new Date()), cur = S.pair, order = ccyGroups('base');
+  const cov = p => ds > today ? 'fut' : dayCov(S.daily.get(dk(p, ds))).state;
+  return `<div class="pswitch"><button class="psw-b" data-psw="-1" aria-label="Previous pair" title="Previous pair">‹</button>
+    <div class="psw-s" id="pswS">${order.map(g => `<span class="psw-grp" style="--cc:${ccyCol(g.c)}"><span class="psw-g">${g.c}/</span>${g.pairs.map(p =>
+      `<button class="psc cov-${cov(p)}" data-psp="${p}" aria-current="${p===cur}" title="${p}"><i class="cdot"></i>${base(p)===g.c ? quote(p) : p}</button>`).join('')}</span>`).join('')}</div>
+    <button class="psw-b" data-psw="1" aria-label="Next pair" title="Next pair">›</button></div>`;
+}
+function bindPairSwitcher(panel, ds){
+  const s = panel.querySelector('#pswS'); if(!s) return;
+  const list = ccyGroups('base').flatMap(g => g.pairs);
+  s.querySelectorAll('[data-psp]').forEach(b => b.onclick = () => openPairDay(b.dataset.psp, ds));
+  panel.querySelectorAll('[data-psw]').forEach(b => b.onclick = () => { const i = list.indexOf(S.pair), n = list[(i + Number(b.dataset.psw) + list.length) % list.length]; openPairDay(n, ds); });
+  const c = s.querySelector('[aria-current="true"]');
+  if(c){ s.style.scrollBehavior = 'auto'; s.scrollLeft += c.getBoundingClientRect().left - s.getBoundingClientRect().left - s.clientWidth/2 + c.offsetWidth/2; s.style.scrollBehavior = ''; }
+}
 function renderToday(){
   const now = new Date(), today = iso(now), k = isoWeek(now), [wFrom, wTo] = weekRange(k.year, k.week);
   const weekend = now.getDay()===0 || now.getDay()===6, last = weekend || now.getHours() < 12 ? prevWeekday(weekend ? iso(new Date(now.getTime()+864e5)) : today) : today;
@@ -2886,6 +3140,7 @@ function renderToday(){
         <p class="muted" style="font-weight:600;margin-top:6px">${weekend ? 'Weekend — time to review the week and prepare the next one.' : open.length ? `You have ${open.length} open trade${open.length>1?'s':''} to manage.` : 'Flat. Wait for your setup.'}</p></div>
       <div class="td-actions">${weekend ? `<button class="btn btn-primary" data-act="prompts">Weekly review ${ico('spark',14)}</button>` : `<button class="btn btn-primary" data-act="gap">Fill next gap →</button>`}<button class="btn" data-act="journal">Open journal</button></div>
     </div>
+    <div class="pl" id="tdBoard"></div>
     <div class="tj-kpis">
       ${kpi('Open trades', open.length, open.length ? 'pos' : '')}
       ${kpi('This week', wTrades.length ? `${wPips>0?'+':''}${fmt(wPips,1)} pips` : '–', sgn(wPips), wTrades.length ? `${wTrades.length} closed${wProfit ? ' · '+(wProfit>0?'+':'')+money(wProfit) : ''}` : 'no closed trades')}
@@ -2907,9 +3162,6 @@ function renderToday(){
           : '<p class="muted">No high-conviction pairs this week.</p>')}
       ${card('📅 Upcoming catalysts', '', upcoming.length ? `<div class="cats">${upcoming.map(c => `<div class="cat"><time>${esc(c.date)}</time><span>${esc(c.event)} <span class="muted" style="font-size:11.5px">· ${[...c.pairs].length} pair${[...c.pairs].length>1?'s':''}</span></span>${c.imp ? `<span class="imp ${impCls(c.imp)}">${esc(c.imp)}</span>` : ''}</div>`).join('')}</div>`
           : '<p class="muted">No dated catalysts in this week\'s analysis.</p>')}
-      ${card('✍️ This week\'s coverage', link('Desk', 'data-view2="desk"'), covPairs.length ? `<div class="td-cov">${covPairs.slice(0,8).map(p => `<div class="td-cr"><b>${p.slice(0,3)}<em>${p.slice(3)}</em></b>${wDays.map(ds => { const c = dayCov(S.daily.get(dk(p, ds)));
-          return `<button class="td-dot ${ds > today ? 'fut' : c.state}" data-cell="${p}|${ds}" title="${p} · ${fmtDayShort(ds)}"></button>`; }).join('')}</div>`).join('')}</div>`
-          : '<p class="muted">Star the pairs you follow in Desk (☆) and their daily coverage shows up here.</p>')}
       ${card('🏆 Goals', link('Goals', 'data-view2="goals"'), gs.length ? `<div class="td-list">${gs.slice(0,5).map(g => { const st = goalState(g);
           return `<div class="td-goal ${st.done ? 'done' : ''}"><span>${esc(g.emoji || '🎯')} ${esc(g.title)}</span><span class="gbar"><span style="width:${Math.round(st.pct*100)}%" class="${st.done ? 'full' : ''}"></span></span></div>`; }).join('')}</div>`
           : '<p class="muted">No goals for this week yet.</p>')}
@@ -2918,19 +3170,22 @@ function renderToday(){
             ${s.target!=null ? `<span class="gbar"><span style="width:${Math.max(0,Math.min(100, s.pnl/s.target*100))}%" class="${s.passed ? 'full' : ''}"></span></span>` : ''}
             ${s.room!=null ? `<span class="muted" style="font-size:12px">${money(s.room)} to max loss${s.target!=null ? ` · ${money(Math.max(0, s.target - s.pnl))} to target` : ''}</span>` : ''}</div>`; }).join('')}</div>`
           : '<p class="muted">No active accounts.</p>')}
-    </div>`;
+    </div>
+    <aside id="panel" class="panel-side" aria-live="polite"></aside>`;
   const m = document.getElementById('main');
-  m.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const [p, d] = b.dataset.go.split('|'); goTo(p, { type:'day', day:d }); });
+  renderTdBoard();
+  m.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const [p, d] = b.dataset.go.split('|'); openPairDay(p, d, 'view'); });
   m.querySelectorAll('[data-view2]').forEach(b => b.onclick = () => goView(b.dataset.view2));
   m.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { S.pair = b.dataset.pick; ls.set('do_pair', S.pair); goView('journal'); });
   m.querySelectorAll('[data-cell]').forEach(b => b.onclick = async () => { const [p, ds] = b.dataset.cell.split('|'); S.view = 'desk'; ls.set('do_view', 'desk'); S.desk.k = null; render(); openDeskCell(p, ds); });
   m.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => { const a = b.dataset.act;
     if(a==='journal') goView('journal'); else if(a==='data') openData(); else if(a==='prompts') goView('prompts');
-    else { S.desk.k = null; S.view = 'desk'; ls.set('do_view', 'desk'); render(); const g = nextGap(); if(g) openDeskCell(g.p, g.ds); else toast('No gaps this week 🎉'); } });
+    else { S.desk.k = null; const g = nextGap(); if(g){ S.td.day = g.ds; openPairDay(g.p, g.ds); } else toast('No gaps this week 🎉'); } });
+  if(S.sel) renderPanel();
 }
 
 /* ---------- Desk: coverage matrix + editor ---------- */
-S.desk = { k:null, filter: ls.get('do_desk_f', 'all') };
+S.desk = { k:null, filter: ls.get('do_desk_f', 'all'), ccy: ls.get('do_desk_ccy', '') };
 function deskWeek(){ if(!S.desk.k){ const k = isoWeek(new Date()); S.desk.k = { y:k.year, w:k.week }; } return S.desk.k; }
 const trackedSet = () => new Set(ls.get('do_tracked', []));
 function dayCov(e){
@@ -2950,7 +3205,9 @@ function deskData(){
   if(f==='tracked') rows = rows.filter(r => r.tracked);
   else if(f==='gaps') rows = rows.filter(r => r.gaps > 0 || !r.fund);
   else if(f==='active') rows = rows.filter(r => r.touched || r.tracked);
-  rows.sort((a,b) => (b.tracked - a.tracked));
+  const cf = S.desk.ccy; if(cf) rows = rows.filter(r => base(r.p)===cf || quote(r.p)===cf);
+  const ord = pairOrder();
+  rows.sort((a,b) => (b.tracked - a.tracked) || ord.indexOf(a.p) - ord.indexOf(b.p));
   return { y, w, days, today, rows };
 }
 function nextGap(){
@@ -2983,8 +3240,15 @@ function renderDesk(){
     <div class="jr">
       <section>
         <div class="card dsum" id="deskSum"></div>
-        <div class="chips" style="margin:12px 0" role="group" aria-label="Filter">
-          ${[['all','All pairs'],['tracked','★ Tracked'],['active','Active this week'],['gaps','Has gaps']].map(([k,l]) => `<button class="ch" data-df="${k}" aria-pressed="${S.desk.filter===k}">${l}</button>`).join('')}
+        <div class="dk-filters">
+          <div class="chips" role="group" aria-label="Filter">
+            ${[['all','All pairs'],['tracked','★ Tracked'],['active','Active this week'],['gaps','Has gaps']].map(([k,l]) => `<button class="ch" data-df="${k}" aria-pressed="${S.desk.filter===k}">${l}</button>`).join('')}
+          </div>
+          <div class="ccy-chips" role="group" aria-label="Currency">
+            <button class="cchip" data-dcf="" aria-pressed="${!S.desk.ccy}">All</button>
+            ${CCY_ORDER.filter(c => allPairs().some(p => base(p)===c || quote(p)===c)).map(c => `<button class="cchip" data-dcf="${c}" style="--cc:${ccyCol(c)}" aria-pressed="${S.desk.ccy===c}" title="Only pairs with ${c}">${c}</button>`).join('')}
+          </div>
+          <button class="bt" id="dkPick" title="Find a pair (P)">${ico('search', 12)} Find pair</button>
         </div>
         <div class="dwrap card" id="deskGrid"></div>
         <div class="legend">
@@ -3000,6 +3264,8 @@ function renderDesk(){
   document.getElementById('dkNow').onclick = () => { S.desk.k = null; renderMain(); };
   document.getElementById('dkGap').onclick = () => { const g = nextGap(); if(!g) return toast('No gaps this week — everything is filled in 🎉'); openDeskCell(g.p, g.ds); };
   document.querySelectorAll('[data-df]').forEach(b => b.onclick = () => { S.desk.filter = b.dataset.df; ls.set('do_desk_f', b.dataset.df); renderDeskGrid(); document.querySelectorAll('[data-df]').forEach(x => x.setAttribute('aria-pressed', String(x===b))); });
+  document.querySelectorAll('[data-dcf]').forEach(b => b.onclick = () => { S.desk.ccy = b.dataset.dcf; ls.set('do_desk_ccy', S.desk.ccy); renderDeskGrid(); document.querySelectorAll('[data-dcf]').forEach(x => x.setAttribute('aria-pressed', String(x===b))); });
+  document.getElementById('dkPick').onclick = openPairPicker;
   renderDeskGrid(); renderPanel();
 }
 function renderDeskGrid(){
@@ -3018,11 +3284,15 @@ function renderDeskGrid(){
   const selDay = S.sel?.type==='day' ? S.sel.day : null, selWk = S.sel?.type==='week' ? `${S.sel.y}|${S.sel.w}` : null;
   grid.innerHTML = rows.length ? `<table class="dtable"><thead><tr><th class="dsticky">Pair</th>
       ${days.map(ds => { const d = parseISO(ds); return `<th class="${ds===today ? 'dtoday' : ''}">${WD_SHORT[d.getDay()]} <span>${d.getDate()}</span></th>`; }).join('')}<th>Fundamentals</th></tr></thead>
-    <tbody>${rows.map(r => { const b = curWeekRec(r.p)?.bias || 'none', fr = r.fund;
-      return `<tr>
+    <tbody>${(() => { let lastG = null; return rows.map(r => { const b = curWeekRec(r.p)?.bias || 'none', fr = r.fund;
+      const g = r.tracked && S.desk.filter!=='tracked' ? '★' : base(r.p), gRows = rows.filter(x => (x.tracked && S.desk.filter!=='tracked' ? '★' : base(x.p))===g);
+      const head = g!==lastG ? `<tr class="dgrp" style="--cc:${g==='★' ? 'var(--amber)' : ccyCol(g)}"><td colspan="${days.length+2}"><span class="dgrp-l"><span class="dgrp-c">${g==='★' ? '★' : g}</span>${g==='★' ? 'Tracked' : (CCY[g]||[g])[0]}
+          <span class="muted">${gRows.reduce((t,x) => t + x.done, 0)}/${gRows.reduce((t,x) => t + x.due, 0)} days</span></span></td></tr>` : '';
+      lastG = g;
+      return `${head}<tr data-row="${r.p}">
         <td class="dsticky"><div class="dpair">
           <button class="dstar ${r.tracked ? 'on' : ''}" data-star="${r.p}" aria-pressed="${r.tracked}" aria-label="Track ${r.p}">${r.tracked ? '★' : '☆'}</button>
-          <i class="fdot ${b}"></i><b class="${r.p===S.pair ? 'cur' : ''}">${r.p.slice(0,3)}<em>${r.p.slice(3)}</em></b>
+          <i class="fdot ${b}"></i><button class="dpname ${r.p===S.pair ? 'cur' : ''}" data-dp="${r.p}" title="Open ${r.p} journal">${r.p.slice(0,3)}<em>${r.p.slice(3)}</em></button>
           <span class="dprog" title="${r.done}/${r.due} days complete"><span style="width:${r.due ? r.done/r.due*100 : 0}%" class="${r.due && r.done===r.due ? 'full' : ''}"></span></span>
         </div></td>
         ${r.cells.map(c => { const st = c.future ? 'fut' : c.state, sel = r.p===S.pair && selDay===c.ds, e = c.e || {};
@@ -3034,12 +3304,14 @@ function renderDeskGrid(){
           </button></td>`; }).join('')}
         <td><button class="dfund ${fr ? 'ok b-'+(fr.bias||'none') : 'miss'} ${r.p===S.pair && selWk===`${y}|${w}` ? 'sel' : ''}" data-fund="${r.p}">
           ${fr ? `${fr.bias ? BIAS_LBL[fr.bias] : 'Notes'}${fr.conviction ? ` <em>${fr.conviction[0].toUpperCase()}</em>` : ''}` : '+ add'}</button></td>
-      </tr>`; }).join('')}</tbody></table>`
+      </tr>`; }).join(''); })()}</tbody></table>`
     : `<div class="empty"><div class="orb" aria-hidden="true"></div><p>${S.desk.filter==='tracked' ? 'No tracked pairs yet — tap ☆ next to a pair to track it.' : 'Nothing to show for this filter.'}</p></div>`;
   grid.querySelectorAll('[data-cell]').forEach(b => b.onclick = () => { const [p, ds] = b.dataset.cell.split('|'); openDeskCell(p, ds); });
   grid.querySelectorAll('[data-fund]').forEach(b => b.onclick = async () => { await flushSave(); const p = b.dataset.fund;
     if(!S.weekly.get(wk(p, y, w))){ S.mode = 'edit'; ls.set('do_mode', 'edit'); }
     if(S.pair!==p){ S.pair = p; ls.set('do_pair', p); renderStrip(); } selectWeek(y, w); });
+  grid.querySelectorAll('[data-dp]').forEach(b => b.onclick = async () => { await flushSave(); S.pair = b.dataset.dp; ls.set('do_pair', S.pair);
+    ls.set('do_recent_pairs', [S.pair, ...recentPairs().filter(x => x!==S.pair)].slice(0, 6)); goView('journal'); });
   grid.querySelectorAll('[data-star]').forEach(b => b.onclick = () => { const t = trackedSet(), p = b.dataset.star; t.has(p) ? t.delete(p) : t.add(p); ls.set('do_tracked', [...t]); renderDeskGrid(); });
 }
 
