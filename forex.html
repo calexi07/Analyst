@@ -831,6 +831,45 @@
   .pl-legend{ display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:12px; padding:0 4px; font-size:11.5px; font-weight:700; color:var(--muted); align-items:center; }
   .pl-legend span{ display:inline-flex; align-items:center; gap:6px; }
   @media (max-width:600px){ .pl{ padding:12px 10px 14px; } .pl-ctl{ margin-left:0; width:100%; } .pl-days{ width:100%; overflow-x:auto; } .pl-day{ flex:1; } }
+  /* ===== quick add trade + pending ===== */
+  .qa-dock{ position:fixed; right:22px; bottom:22px; z-index:40; display:flex; align-items:center; gap:10px; }
+  .qa-fab{ display:inline-flex; align-items:center; gap:8px; height:52px; padding:0 20px 0 16px; border-radius:999px; border:none; background:var(--accent); color:var(--on-accent);
+           font-weight:800; font-size:15px; box-shadow:0 10px 30px color-mix(in srgb,var(--accent) 35%,transparent), 0 4px 12px rgba(0,0,0,.3); transition:transform .12s; }
+  .qa-fab:hover{ transform:translateY(-2px); }
+  .qa-plus{ font-size:26px; line-height:1; margin-top:-2px; }
+  .qa-pend{ display:inline-flex; align-items:center; gap:6px; height:44px; padding:0 16px; border-radius:999px; border:1px solid color-mix(in srgb,var(--amber) 55%,var(--line));
+            background:color-mix(in srgb,var(--amber) 16%,var(--surface)); color:var(--ink); font-weight:700; font-size:13.5px; box-shadow:0 6px 20px rgba(0,0,0,.3);
+            animation:pendPulse 2.4s ease-in-out infinite; }
+  .qa-pend b{ color:var(--amber); font-size:15px; }
+  @keyframes pendPulse{ 0%,100%{ box-shadow:0 6px 20px rgba(0,0,0,.3), 0 0 0 0 color-mix(in srgb,var(--amber) 40%,transparent); } 50%{ box-shadow:0 6px 20px rgba(0,0,0,.3), 0 0 0 6px transparent; } }
+  @media (prefers-reduced-motion: reduce){ .qa-pend{ animation:none; } }
+  @media (max-width:900px){ .qa-dock{ right:14px; bottom:calc(80px + env(safe-area-inset-bottom,0px)); } .qa-fab{ height:48px; padding:0 16px 0 13px; } .qa-pend .qa-l{ display:none; } }
+  .qa{ display:grid; gap:16px; }
+  .qa .tc{ display:flex; flex-wrap:wrap; gap:6px; }
+  .qa-seg{ display:flex; width:100%; background:var(--surface-2); }
+  .qa-seg button{ flex:1; padding:9px 10px; font-size:14px; }
+  .qa-seg .qd-long[aria-pressed="true"]{ background:var(--pos); color:#04241A; }
+  .qa-seg .qd-short[aria-pressed="true"]{ background:var(--neg); color:#2A0610; }
+  .qa label{ display:block; }
+  .qa-more summary{ cursor:pointer; font-weight:700; font-size:13px; color:var(--muted); }
+  .qa-more[open] summary{ margin-bottom:10px; }
+  .g3{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .pd-list{ display:grid; gap:8px; }
+  .pd-item{ display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:14px; border:1px solid color-mix(in srgb,var(--amber) 35%,var(--line));
+            background:linear-gradient(100deg, color-mix(in srgb,var(--amber) 9%,transparent), transparent 70%), var(--surface-2); }
+  .pd-b{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+  .pd-b b{ font-family:'Bricolage Grotesque',sans-serif; font-size:16px; } .pd-b b em{ font-style:normal; opacity:.55; }
+  .pd-b .muted{ font-size:12.5px; font-weight:600; }
+  .pd-miss{ display:flex; flex-wrap:wrap; gap:4px; margin-top:2px; }
+  .pd-m{ font-size:10.5px; font-weight:800; padding:2px 7px; border-radius:6px; color:var(--amber); background:color-mix(in srgb,var(--amber) 14%,transparent); }
+  .pd-m.soft{ color:var(--muted); background:var(--surface); }
+  .pd-act{ display:flex; gap:6px; align-items:center; }
+  @media (max-width:560px){ .pd-item{ flex-wrap:wrap; } .pd-act{ width:100%; } .pd-act .btn{ flex:1; } }
+  .td-pend{ margin-bottom:18px; padding:16px; border-radius:20px; border:1px solid color-mix(in srgb,var(--amber) 40%,var(--line)); background:var(--surface); display:grid; gap:12px; }
+  .td-pend h3{ margin:0; }
+  .pend-bar{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:10px 18px; font-size:13px; border-bottom:1px solid var(--line);
+             background:color-mix(in srgb,var(--amber) 12%,var(--surface)); }
+  .pend-bar > span{ flex:1; min-width:200px; }
   /* ===== wide reading view (day · View mode) ===== */
   .panel-side.wide{ width:min(1380px, calc(100vw - 64px)); transition:transform .28s cubic-bezier(.2,.8,.2,1), width .25s ease; }
   .panel-side.wide .ps-head{ grid-template-columns:auto minmax(0,1fr) 210px auto; grid-template-areas:"title switch seg nav"; align-items:center; gap:10px 18px; padding:14px 22px; }
@@ -961,6 +1000,8 @@
 <!-- Data dialog -->
 <script type="application/json" id="promptData">[{"id": "phase1", "group": "weekly", "step": 1, "title": "Phase 1 — Weekly research", "when": "Saturday / Sunday · attach last week's report", "desc": "The AI rebuilds last week from its own research (scheduled + unscheduled news), re-scores every currency and writes the full report for the coming week, including the Section 12 import block.", "text": "WEEKLY FUNDAMENTAL UPDATE — PHASE 1 (research only)\n\nAttached: your report from last week.\n\nUpdate the full analysis for the coming week using only your own research.\nDo NOT ask for or use price action yet — I will send it after you finish.\n\n1. Rebuild last week (search, do not rely on memory). For USD, EUR, GBP, JPY, CHF, CAD,\n   AUD, NZD and XAU, find everything that happened Mon–Fri plus the weekend:\n   - scheduled data and central-bank decisions/speakers\n   - UNSCHEDULED events: political and fiscal crises (governments, budgets, bond spreads —\n     including big euro-area states like France, Italy, Germany), geopolitics, trade policy,\n     commodity shocks, interventions, haven flows, credit stress\n   Cite a source for every event you use.\n2. Re-score every currency from the evidence. Do not anchor on last week's numbers; every\n   change must be justified.\n3. Produce the complete report in the usual structure, valid for the coming week, including\n   Section 12 \"Daily Observer Import\" with \"valid_week\" set to the NEXT ISO week.\n   Bias rule: if the weekly label is Neutral/Two-sided but the horizon or main driver clearly\n   leans one way, set \"bias\" to that direction with conviction \"low\" and keep the original\n   wording in \"summary\".\n4. State the data cut-off (Friday close plus any weekend news) at the top.\n\nWhen you are done, write: \"PHASE 1 COMPLETE — send the price action.\"\n\n----- Section 12 specification -----\nAt the very end of the report, after the Trader Handoff section, add one more section:\n\"12. Daily Observer Import\".\n\nIt must contain:\n- a short line: \"Copy this block and paste it into Daily Observer → Import / export.\"\n- a \"Copy\" button that copies the block below to the clipboard (navigator.clipboard.writeText)\n- a <pre id=\"dobs-import\"> block containing ONE valid JSON object and nothing else\n\nThe JSON must be strictly valid: double quotes only, no comments, no trailing commas, escape inner quotes.\nIt must only restate what is already in the report — do not add new analysis.\n\nSchema:\n{\n  \"format\": \"daily-observer-fundamentals\",\n  \"version\": 1,\n  \"report_date\": \"YYYY-MM-DD\",\n  \"report_title\": \"Forex Fundamental Bias Engine — Week NN\",\n  \"valid_week\": { \"year\": 2026, \"week\": NN },          // ISO week the analysis is FOR (the trading week that starts the Monday after the report)\n  \"currencies\": {\n    \"USD\": { \"score\": 4, \"state\": \"Strong\", \"note\": \"one-line thesis state\" }\n    // same for EUR, GBP, JPY, CHF, CAD, AUD, NZD, XAU\n  },\n  \"pairs\": [                                            // ALL pairs in the 28-pair matrix + XAUUSD\n    {\n      \"pair\": \"EURUSD\",                                 // 6 letters, no slash\n      \"bias\": \"bearish\",                                // bullish | bearish | two-sided | neutral\n      \"conviction\": \"medium\",                           // low | medium | high\n      \"summary\": \"Bearish (EUR -1 vs USD +4)\",          // same wording as the weekly bias history\n      \"base_state\": \"Weak\",                             // Strong | Improving | Neutral | Weakening | Weak\n      \"base_score\": -1,                                 // number from the scorecard\n      \"quote_state\": \"Strong\",\n      \"quote_score\": 4,\n      \"main_driver\": \"one or two sentences\",\n      \"drivers\": [\"secondary driver 1\", \"secondary driver 2\"],      // [] if none\n      \"catalysts\": [ { \"date\": \"28 Oct\", \"event\": \"FOMC decision\", \"imp\": \"CRITICAL\" } ],  // imp: LOW | MEDIUM | HIGH | CRITICAL\n      \"priced\": \"what is already priced in\",\n      \"invalidation\": \"what would invalidate the thesis\",\n      \"horizon\": \"Swing: mild bearish\",\n      \"alignment\": \"Aligned\",                           // Aligned | Partial conflict | Conflicting | Neutral\n      \"alignment_note\": \"short explanation\",\n      \"changed\": \"what changed vs last week for this pair (both currencies)\"\n    }\n  ],\n  \"news\": [                                             // every dated event from the Catalyst Calendar\n    { \"date\": \"2026-10-28\", \"currency\": \"USD\", \"event\": \"FOMC decision\", \"importance\": \"CRITICAL\" }\n    // ISO dates only; one entry per currency (an event for \"USD, XAU\" becomes one USD entry); skip \"Ongoing\"/undated items\n  ]\n}"}, {"id": "export", "group": "weekly", "step": 2, "title": "Export price action", "when": "after the AI says “PHASE 1 COMPLETE”", "action": "export", "desc": "Copy the daily-close export for the week that just ended. Nothing to paste here — use the button."}, {"id": "phase2", "group": "weekly", "step": 3, "title": "Phase 2 — Price-action confirmation", "when": "send together with the price-action export", "desc": "The AI checks its analysis against what price actually did and re-checks only real anomalies. Price can never flip a bias on its own — only a news item it missed or misweighted can change the analysis.", "text": "WEEKLY FUNDAMENTAL UPDATE — PHASE 2 (price-action confirmation)\n\nAttached: my price-action export for last week (\"daily-observer-price-action\" JSON:\ndaily close % per pair). Use it only to CONFIRM your Phase 1 analysis, not to rebuild it.\nFundamentals describe direction over several weeks — a single week of price against the\nbias is normal and is NOT, by itself, evidence that the analysis is wrong.\n\n1. Treat my logged closes as ground truth; fetch real daily closes for every pair in\n   \"pairs_not_logged\". If closes are not available, use ECB reference rates (state the\n   fixing time) and derive the crosses from them; say clearly which days are missing.\n   Build the realized currency-strength ranking (use the crosses, not only the USD pairs,\n   to isolate each currency).\n2. Flag ANOMALIES only:\n   - a pair whose weekly move against the bias you gave it is larger than ~1.5x its normal\n     weekly range (roughly: >0.8% for EURGBP/EURCHF, >1.2% for majors, >1.8% for GBPJPY/XAU)\n   - a currency whose realized rank differs from its score rank by 3 or more places\n   - a currency that moved against its score consistently on the crosses for 2+ sessions\n3. For each anomaly, run a TARGETED re-check for a concrete fundamental cause, with a source\n   (the country's politics, fiscal news, central-bank speakers, interventions, flows,\n   commodities). Then classify:\n   MISSED NEWS · MISWEIGHTED KNOWN NEWS · ALREADY PRICED · FLOWS/POSITIONING ·\n   TECHNICAL RETRACEMENT · NOISE\n   - Only MISSED NEWS or MISWEIGHTED KNOWN NEWS may change a score or a bias.\n   - ALREADY PRICED, FLOWS/POSITIONING, TECHNICAL RETRACEMENT and NOISE never change the bias.\n   - A single week against the bias with no fundamental cause changes nothing.\n     After 2–3 consecutive weeks against the bias with no cause, lower conviction by ONE\n     level only.\n   - Price alone never flips a bias. Never invent a cause to fit the chart.\n   - For each anomaly, state whether it looks like a retracement inside an intact\n     fundamental trend or an early sign the market is pricing something new — and what\n     would confirm it next week.\n4. Output:\n   - \"0a. Price-Action Check\": hit-rate table (last week's bias vs realized move, every pair)\n     and the realized currency ranking vs scores\n   - \"0b. Self-Correction Log\": each anomaly, what you re-checked, the cause and\n     classification, and what changed (or why nothing changed)\n   - the final report, where only MISSED NEWS / MISWEIGHTED KNOWN NEWS corrections are\n     applied; in every affected pair's \"changed\" field, note that the change came from the\n     Phase 2 check\n   - a NEW Section 12 \"Daily Observer Import\" block reflecting the corrections (same format,\n     same \"valid_week\")\n5. Section 12 quality rules (apply even if nothing was corrected):\n   - Rewrite \"alignment\" and \"alignment_note\" for EVERY pair from the realized price data —\n     never leave Phase 1 \"provisional\" wording in the final block.\n   - \"priced\" must be pair-specific text in every pair — no placeholders and no references\n     to other sections of the report.\n   - Any currency score change of 3 points or more versus last week (from Phase 1 or\n     Phase 2) must be listed in 0b with its source.\nIf nothing needed correcting, say so — but still output Section 12 with the rules above applied."}, {"id": "import", "group": "weekly", "step": 4, "title": "Import into Daily Observer", "when": "copy Section 12 from the Phase 2 answer", "action": "import", "desc": "Paste the Section 12 block, choose the next week, the pairs and the sections."}]</script>
 <dialog id="bankDlg" class="panel" aria-label="Bank entry" style="width:min(560px,96vw)"></dialog>
+<dialog id="qaDlg" class="panel" aria-label="Quick add trade" style="width:min(520px,94vw)"></dialog>
+<dialog id="pendDlg" class="panel" aria-label="Trades to complete" style="width:min(620px,94vw)"></dialog>
 <dialog id="pairDlg" class="panel" aria-label="Switch pair" style="width:min(680px,94vw)"></dialog>
 <dialog id="moreDlg" class="panel" aria-label="More" style="width:min(420px,94vw)"></dialog>
 <dialog id="lbDlg" class="lb" aria-label="Image viewer"></dialog>
@@ -1221,6 +1262,7 @@ function render(){
   document.getElementById('sideCol').onclick = () => { ls.set('do_side_mini', !mini); render(); };
   document.getElementById('bnMore').onclick = openMore;
   renderMain();
+  refreshDock();
 }
 function openMore(){
   const d = document.getElementById('moreDlg'), light = document.documentElement.dataset.theme === 'light';
@@ -1493,7 +1535,7 @@ function setSave(state, msg){
 function schedule(fn, delay=700){ pending = fn(); clearTimeout(timer); setSave('dirty'); timer = setTimeout(flushSave, delay); }
 async function flushSave(){
   clearTimeout(timer); if(!pending) return; const job = pending; pending = null; setSave('saving');
-  try{ await job.run(); setSave('ok'); renderCalendar(); }catch(e){ console.error(e); setSave('err', e.message); }
+  try{ await job.run(); setSave('ok'); renderCalendar(); checkPending(); }catch(e){ console.error(e); setSave('err', e.message); }
 }
 window.addEventListener('beforeunload', ev => { if(pending){ flushSave(); ev.preventDefault(); } });
 
@@ -1538,6 +1580,14 @@ function renderPanel(){
   bindHead(panel, () => step(-1), () => step(1));
   panel.querySelector('.ps-head')?.insertAdjacentHTML('beforeend', pairSwitcher(ds));
   bindPairSwitcher(panel, ds);
+  const pkey = dk(p, ds);
+  if(pendingRaw().includes(pkey) && ctx.e.direction){
+    const miss = missingOf(ctx.e);
+    panel.querySelector('.ps-head')?.insertAdjacentHTML('afterend', `<div class="pend-bar"><span>⏳ <b>Quick-added trade</b>${miss.length ? ` — still missing: ${miss.join(' · ')}` : ''}</span>
+      ${S.mode==='view' ? '<button class="bt" id="pbEdit">Complete →</button>' : ''}<button class="bt" id="pbDone">Mark done</button></div>`);
+    panel.querySelector('#pbEdit')?.addEventListener('click', () => setMode('edit'));
+    panel.querySelector('#pbDone').onclick = async () => { await setPending(pendingRaw().filter(k => k!==pkey)); refreshDock(); renderPanel(); };
+  }
   if(document.getElementById('tdBoard')) renderTdBoard();
   panel.querySelector('#wkBanner').onclick = () => selectWeek(w.year, w.week);
 }
@@ -3103,6 +3153,139 @@ function renderTdBoard(){
   box.querySelectorAll('[data-tdg]').forEach(b => b.onclick = () => { S.td.group = b.dataset.tdg; ls.set('do_td_group', S.td.group); renderTdBoard(); });
   box.querySelectorAll('[data-tdf]').forEach(b => b.onclick = () => { S.td.filter = b.dataset.tdf; ls.set('do_td_f', S.td.filter); renderTdBoard(); });
 }
+/* ---------- quick add trade + "to complete" reminders ---------- */
+/* pending = quick-added trades still missing details; list of "PAIR|YYYY-MM-DD" synced via do_settings */
+function pendingRaw(){ return Array.isArray(S.settings?.pending_trades) ? S.settings.pending_trades : ls.get('do_pending', []); }
+function pendingList(){ return pendingRaw().filter(k => S.daily.get(k)?.direction); }
+async function setPending(list){
+  S.settings.pending_trades = list; ls.set('do_pending', list);
+  try{ const { error } = await sb.from('do_settings').upsert({ key:'pending_trades', value:list }, { onConflict:'key' }); if(error) throw error; }
+  catch(e){ console.warn('pending not synced', e); }
+}
+function missingOf(e){
+  const m = [];
+  if(e.entry_price==null) m.push('Entry');
+  if(e.sl==null) m.push('SL');
+  if(S.accounts.size && !tradeAccts(e).length) m.push('Account');
+  if(!(e.daily_obs || e.h4_obs || e.h1_obs)) m.push('Top-down');
+  return m;
+}
+const softMissing = e => (e.tv_daily || e.tv_4h || e.tv_1h) ? [] : ['Screenshot'];
+/* drop finished / deleted trades from the list (runs after every save) */
+async function checkPending(){
+  const raw = pendingRaw(), keep = raw.filter(k => { const e = S.daily.get(k); return e?.direction && missingOf(e).length; });
+  if(keep.length !== raw.length){ const done = raw.filter(k => !keep.includes(k) && S.daily.get(k)?.direction);
+    await setPending(keep); if(done.length) toast(`✓ ${done.map(k => k.split('|')[0]).join(', ')} complete`); }
+  refreshDock();
+}
+async function completeTrade(key){
+  const [p, day] = key.split('|');
+  document.querySelectorAll('dialog[open]').forEach(d => d.close());
+  if(['journal','desk','today'].includes(S.view)) return openPairDay(p, day, 'edit');
+  await flushSave();
+  S.pair = p; ls.set('do_pair', p); S.view = 'journal'; ls.set('do_view', 'journal'); S.mode = 'edit'; ls.set('do_mode', 'edit');
+  S.sel = { type:'day', day }; S.month = firstOfMonth(parseISO(day)); S.drawerOpen = true; render();
+}
+function pendItems(){
+  return pendingList().map(k => { const e = S.daily.get(k), miss = missingOf(e), soft = softMissing(e);
+    return `<div class="pd-item">
+      <span class="tj-dir ${e.direction.toLowerCase()}">${e.direction==='Long' ? '▲' : '▼'}</span>
+      <div class="pd-b"><b>${base(e.pair)}<em>${quote(e.pair)}</em></b><span class="muted">${fmtDayShort(e.day)}${e.entry_time ? ' · '+esc(e.entry_time) : ''}${e.setup_tf ? ' · '+esc(e.setup_tf) : ''}</span>
+        <div class="pd-miss">${miss.map(x => `<span class="pd-m">${x}</span>`).join('')}${soft.map(x => `<span class="pd-m soft">${x}</span>`).join('')}</div></div>
+      <div class="pd-act"><button class="btn btn-primary" data-pc="${k}">Complete →</button><button class="bt" data-pdone="${k}" title="Remove from the list">Done</button></div></div>`; }).join('');
+}
+function bindPend(root){
+  root.querySelectorAll('[data-pc]').forEach(b => b.onclick = () => completeTrade(b.dataset.pc));
+  root.querySelectorAll('[data-pdone]').forEach(b => b.onclick = async () => { await setPending(pendingRaw().filter(k => k!==b.dataset.pdone)); refreshDock();
+    if(root.id==='pendDlg'){ pendingList().length ? openPending() : root.close(); } if(S.view==='today') renderMain(); });
+}
+const pendDlg = document.getElementById('pendDlg');
+function openPending(){
+  pendDlg.innerHTML = `<div class="dlg-head"><h2>⏳ Trades to complete</h2><p class="muted" style="font-size:13px;margin-top:4px">Quick-added trades stay here until entry, SL${S.accounts.size ? ', account' : ''} and your top-down are filled in.</p></div>
+    <div class="dlg-body pd-list">${pendItems() || '<p class="muted">All done 🎉</p>'}</div>`;
+  bindPend(pendDlg); if(!pendDlg.open) pendDlg.showModal();
+}
+const qaDock = (() => { const d = document.createElement('div'); d.className = 'qa-dock'; document.body.appendChild(d); return d; })();
+function refreshDock(){
+  if(!CONFIGURED){ qaDock.innerHTML = ''; return; }
+  const n = pendingList().length;
+  qaDock.innerHTML = `${n ? `<button class="qa-pend" id="qaPend" title="Trades to complete">⏳ <b>${n}</b><span class="qa-l"> trade${n>1 ? 's' : ''} to complete</span></button>` : ''}
+    <button class="qa-fab" id="qaFab" title="Quick add trade (T)" aria-label="Quick add trade"><span class="qa-plus">+</span><span class="qa-l">Trade</span></button>`;
+  qaDock.querySelector('#qaFab').onclick = openQuickAdd;
+  qaDock.querySelector('#qaPend')?.addEventListener('click', openPending);
+}
+const qaDlg = document.getElementById('qaDlg');
+function openQuickAdd(){
+  const now = new Date(), Q = { pair:S.pair, dir:null, tf:null, accts:new Set() };
+  const accs = [...S.accounts.values()].filter(a => (a.status||'active')==='active');
+  qaDlg.innerHTML = `<div class="dlg-head"><h2>Quick trade</h2><p class="muted" style="font-size:13px;margin-top:4px">Just the basics now — the rest later. It stays in ⏳ until you complete it.</p></div>
+    <div class="dlg-body qa">
+      <div><span class="lbl">Pair</span><input id="qaQ" class="inp" autocomplete="off" placeholder="Search — eurj, gbpusd, gold…" style="margin-bottom:8px"><div class="tc" id="qaPairs"></div></div>
+      <div class="g2">
+        <div><span class="lbl">Direction</span><div class="seg qa-seg" role="group"><button type="button" data-qd="Long" class="qd-long">▲ Long</button><button type="button" data-qd="Short" class="qd-short">▼ Short</button></div></div>
+        <div><span class="lbl">Setup</span><div class="seg qa-seg" role="group"><button type="button" data-qt="1H">1H</button><button type="button" data-qt="4H">4H</button></div></div>
+      </div>
+      <div class="g2">
+        <label><span class="lbl">Date</span><input id="qaDate" class="inp" type="date" value="${iso(now)}"></label>
+        <label><span class="lbl">Entry time</span><input id="qaTime" class="inp" type="time" value="${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}"></label>
+      </div>
+      <details class="qa-more"><summary>Optional — entry, SL, TP${accs.length ? ', account' : ''}</summary>
+        <div class="g3"><input class="inp num" id="qaEntry" inputmode="decimal" placeholder="Entry"><input class="inp num" id="qaSl" inputmode="decimal" placeholder="SL"><input class="inp num" id="qaTp" inputmode="decimal" placeholder="TP"></div>
+        ${accs.length ? `<div class="chips" id="qaAccs" style="margin-top:10px">${accs.map(a => `<button type="button" class="ch" data-qa-acc="${a.id}" aria-pressed="false">${esc(a.name)}</button>`).join('')}</div>` : ''}
+      </details>
+    </div>
+    <div class="dlg-foot" style="display:flex;align-items:center;gap:10px"><span id="qaMsg" class="neg" style="font-size:12.5px;font-weight:700;margin-right:auto"></span>
+      <button class="btn" id="qaCancel">Cancel</button><button class="btn btn-primary" id="qaSave">Add trade</button></div>`;
+  const q = qaDlg.querySelector('#qaQ'), box = qaDlg.querySelector('#qaPairs');
+  let hits = [];
+  const drawPairs = () => {
+    const t = q.value.toUpperCase().replace(/[^A-Z]/g, ''), nm = c => (CCY[c] || [''])[0].toUpperCase();
+    hits = t ? pairOrder().filter(p => p.includes(t) || (t.length >= 3 && (nm(base(p)).startsWith(t) || nm(quote(p)).startsWith(t)))).sort((a,b) => b.startsWith(t) - a.startsWith(t)).slice(0, 14)
+      : [...new Set([Q.pair, ...recentPairs(), ...trackedSet()])].filter(p => allPairs().includes(p)).slice(0, 10);
+    if(t && hits.length===1) Q.pair = hits[0];
+    box.innerHTML = hits.length ? hits.map(p => { const r = curWeekRec(p);
+      return `<button type="button" class="pc b-${r?.bias || 'none'}" data-qp="${p}" aria-current="${p===Q.pair}"><span class="pc-n">${base(p)}<i>${quote(p)}</i></span></button>`; }).join('')
+      : '<span class="muted" style="font-size:12.5px">No pair matches.</span>';
+  };
+  q.oninput = drawPairs;
+  q.onkeydown = ev => { if(ev.key==='Enter' && hits[0]){ ev.preventDefault(); Q.pair = hits[0]; q.value = ''; drawPairs(); } };
+  box.onclick = ev => { const b = ev.target.closest('[data-qp]'); if(b){ Q.pair = b.dataset.qp; drawPairs(); } };
+  const seg = (attr, key) => qaDlg.querySelectorAll(`[${attr}]`).forEach(b => b.onclick = () => {
+    Q[key] = Q[key]===b.getAttribute(attr) ? null : b.getAttribute(attr);
+    qaDlg.querySelectorAll(`[${attr}]`).forEach(x => x.setAttribute('aria-pressed', String(x.getAttribute(attr)===Q[key]))); });
+  seg('data-qd', 'dir'); seg('data-qt', 'tf');
+  qaDlg.querySelectorAll('[data-qa-acc]').forEach(b => b.onclick = () => { const id = b.dataset.qaAcc; Q.accts.has(id) ? Q.accts.delete(id) : Q.accts.add(id); b.setAttribute('aria-pressed', String(Q.accts.has(id))); });
+  qaDlg.querySelector('#qaCancel').onclick = () => qaDlg.close();
+  qaDlg.querySelector('#qaSave').onclick = async () => {
+    const msg = qaDlg.querySelector('#qaMsg'), ds = qaDlg.querySelector('#qaDate').value, tm = qaDlg.querySelector('#qaTime').value;
+    if(!Q.pair) return msg.textContent = 'Pick a pair.';
+    if(!Q.dir) return msg.textContent = 'Long or Short?';
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(ds)) return msg.textContent = 'Pick a date.';
+    const key = dk(Q.pair, ds), ex = S.daily.get(key);
+    if(ex?.direction && !confirm(`${Q.pair} already has a ${ex.direction} trade on ${fmtDayShort(ds)}. Overwrite its direction / setup / time?`)) return;
+    const row = { pair:Q.pair, day:ds, direction:Q.dir, setup_tf:Q.tf, entry_time:tm || null, trade_status: ex?.trade_status && ex.trade_status!=='No trade' ? ex.trade_status : 'In trade' };
+    const n = id => parseNum(qaDlg.querySelector(id).value);
+    if(n('#qaEntry')!=null) row.entry_price = n('#qaEntry'); if(n('#qaSl')!=null) row.sl = n('#qaSl'); if(n('#qaTp')!=null) row.tp = n('#qaTp');
+    if(Q.accts.size){ row.trade_accounts = [...Q.accts].map(id => ({ id, profit:null })); row.account_id = row.trade_accounts[0].id; }
+    const btn = qaDlg.querySelector('#qaSave'); btn.disabled = true; btn.textContent = 'Saving…';
+    try{
+      await flushSave();
+      const { data, error } = await sb.from('do_daily').upsert(row, { onConflict:'pair,day' }).select().single();
+      if(error) throw error;
+      S.daily.set(key, data);
+      ls.set('do_recent_pairs', [Q.pair, ...recentPairs().filter(x => x!==Q.pair)].slice(0, 6));
+      if(missingOf(data).length) await setPending([...pendingRaw().filter(k => k!==key), key]);
+      qaDlg.close(); render();
+      toast(`${Q.dir==='Long' ? '▲' : '▼'} ${Q.pair} added${missingOf(data).length ? ' — complete it later from ⏳' : ''}`);
+    }catch(e){ console.error(e); msg.textContent = e.message || String(e); btn.disabled = false; btn.textContent = 'Add trade'; }
+  };
+  drawPairs(); qaDlg.showModal(); setTimeout(() => q.focus(), 30);
+}
+document.addEventListener('keydown', ev => {
+  if(ev.key.toLowerCase()!=='t' || ev.ctrlKey || ev.metaKey || ev.altKey || !CONFIGURED || document.querySelector('dialog[open]')) return;
+  if(ev.target.closest?.('input,textarea,select,[contenteditable="true"]')) return;
+  ev.preventDefault(); openQuickAdd();
+});
 /* ---------- pair selection (board, title, picker, desk) ---------- */
 const pairOrder = () => ccyGroups('base').flatMap(g => g.pairs);
 const recentPairs = () => ls.get('do_recent_pairs', []).filter(p => allPairs().includes(p));
@@ -3209,6 +3392,7 @@ function renderToday(){
         <p class="muted" style="font-weight:600;margin-top:6px">${weekend ? 'Weekend — time to review the week and prepare the next one.' : open.length ? `You have ${open.length} open trade${open.length>1?'s':''} to manage.` : 'Flat. Wait for your setup.'}</p></div>
       <div class="td-actions">${weekend ? `<button class="btn btn-primary" data-act="prompts">Weekly review ${ico('spark',14)}</button>` : `<button class="btn btn-primary" data-act="gap">Fill next gap →</button>`}<button class="btn" data-act="journal">Open journal</button></div>
     </div>
+    ${pendingList().length ? `<section class="td-pend"><div class="td-h"><h3>⏳ Trades to complete</h3><span class="muted" style="font-size:12px;font-weight:700">quick-added — add entry, SL${S.accounts.size ? ', account' : ''} and top-down</span></div><div class="pd-list">${pendItems()}</div></section>` : ''}
     <div class="pl" id="tdBoard"></div>
     <div class="tj-kpis">
       ${kpi('Open trades', open.length, open.length ? 'pos' : '')}
@@ -3243,6 +3427,7 @@ function renderToday(){
     <aside id="panel" class="panel-side" aria-live="polite"></aside>`;
   const m = document.getElementById('main');
   renderTdBoard();
+  const tp = m.querySelector('.td-pend'); if(tp) bindPend(tp);
   m.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const [p, d] = b.dataset.go.split('|'); openPairDay(p, d, 'view'); });
   m.querySelectorAll('[data-view2]').forEach(b => b.onclick = () => goView(b.dataset.view2));
   m.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { S.pair = b.dataset.pick; ls.set('do_pair', S.pair); goView('journal'); });
