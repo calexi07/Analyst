@@ -832,6 +832,9 @@
   .pl-legend span{ display:inline-flex; align-items:center; gap:6px; }
   @media (max-width:600px){ .pl{ padding:12px 10px 14px; } .pl-ctl{ margin-left:0; width:100%; } .pl-days{ width:100%; overflow-x:auto; } .pl-day{ flex:1; } }
   /* ===== several trades per day ===== */
+  .tl-also{ font-size:12px; font-weight:700; color:var(--muted); margin:2px 0 4px; }
+  .tj-tnotes{ padding:10px 12px; border-radius:12px; background:var(--surface-2); border:1px solid var(--line); }
+  .tj-tnotes p{ white-space:pre-line; font-size:13.5px; margin:4px 0 0; }
   .trs-h{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
   .trs-h h4{ margin:0; }
   .trs-add{ display:flex; gap:6px; }
@@ -3960,6 +3963,8 @@ function tjTimeline(e){
           ${r?.daily_change!=null ? `<span class="cd-c ${sgn(r.daily_change)}">${pct(r.daily_change)}</span>` : ''}
           ${r?.daily_change!=null ? `<span class="tl-cum ${sgn(cum)}" title="Cumulative daily closes in the trade's direction">${cum>0?'+':''}${cum.toFixed(2)}% for you</span>` : ''}
           ${r?.trade_status ? stBadge(r.trade_status) : ''}</div>
+        ${(() => { const others = [...S.trades.values()].filter(t => t.id!==e.id && t.pair===e.pair && t.day <= ds && (t.exit_date || (!t.result ? iso(new Date()) : t.day)) >= ds);
+          return others.length ? `<p class="tl-also">Also running: ${others.map(t => `<span class="${t.direction==='Long' ? 'pos' : 'neg'}">${t.direction==='Long' ? '▲' : '▼'} ${t.direction}${t.setup_tf ? ' '+esc(t.setup_tf) : ''}</span>${t.day===ds && t.entry_time ? ' from '+esc(t.entry_time) : ''}`).join(', ')}</p>` : ''; })()}
         ${shots.length ? `<div class="tl-shots">${shots.map(([l, u, sn]) => `<a class="tl-shot" href="${esc(u)}" target="_blank" rel="noopener"><img src="${sn}" alt="${l} chart ${fmtDayShort(ds)}" loading="lazy" onerror="this.closest('.tl-shot').remove()"><span>${l}</span></a>`).join('')}</div>` : ''}
         ${tfs.some(([,o]) => r[o]) ? `<div class="tl-notes">${tfs.filter(([,o]) => r[o]).map(([l,o]) => `<p><span class="tfl">${l}</span> ${esc(r[o])}</p>`).join('')}</div>` : ''}
         ${r?.action ? `<p class="muted" style="font-size:12.5px;margin-top:4px">→ ${esc(r.action)}</p>` : ''}
@@ -3981,15 +3986,14 @@ function tjRow(e){
       ${res}
     </div>
     ${open ? `<div class="tj-det">
-      <div class="tj-dgrid">
-        ${[['Entry', e.entry_price], ['SL', e.sl], ['TP', e.tp], ['Duration', e.duration || (mins!=null ? fmtDur(mins) : null)], ['Risk', e.risk!=null ? e.risk+'%' : null], ['Session', e.session]].filter(([,v]) => v!=null && v!=='')
-          .map(([l,v]) => `<div><span class="kick">${l}</span><b>${esc(v)}</b></div>`).join('')}
-      </div>
+      ${(() => { const g = [['Entry', e.entry_price], ['SL', e.sl], ['TP', e.tp], ['Duration', e.duration || (mins!=null ? fmtDur(mins) : null)], ['Risk', e.risk!=null ? e.risk+'%' : null], ['Session', e.session]].filter(([,v]) => v!=null && v!=='');
+        return g.length ? `<div class="tj-dgrid">${g.map(([l,v]) => `<div><span class="kick">${l}</span><b>${esc(v)}</b></div>`).join('')}</div>` : ''; })()}
       ${accs.length ? `<div class="tk-accts">${accs.map(x => `<span class="tk-acc">${esc(S.accounts.get(x.id).name)}${x.profit!=null ? ` <b class="${sgn(x.profit)}">${x.profit>0?'+':''}${money(Number(x.profit))}</b>` : ''}</span>`).join('')}</div>` : ''}
       ${e._inferred ? '<p class="hint" style="margin:0">⚠️ Result not set in the journal — counted as <b>' + ({W:'Win',L:'Loss',BE:'Break-even'}[e.result]) + '</b> from its P/L. Open the entry day and pick W/L to make it official.</p>' : ''}
       ${(e.tags||[]).length ? tagPills(e.tags) : ''}
+      ${e.notes ? `<div class="tj-tnotes"><span class="kick">Trade notes</span><p>${esc(e.notes)}</p></div>` : ''}
       ${tjTimeline(e)}
-      <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn" data-tjshare="${e.id}">📣 Share to Discord</button><button class="btn btn-primary" data-tjgo="${e.pair}|${e.day}">Open in journal ›</button></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn" data-tjshare="${e.id}">📣 Share to Discord</button><button class="btn btn-primary" data-tjgo="${e.pair}|${e.day}" data-tjid="${e.id}">Open in journal ›</button></div>
     </div>` : ''}
   </article>`;
 }
