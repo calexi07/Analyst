@@ -831,6 +831,29 @@
   .pl-legend{ display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:12px; padding:0 4px; font-size:11.5px; font-weight:700; color:var(--muted); align-items:center; }
   .pl-legend span{ display:inline-flex; align-items:center; gap:6px; }
   @media (max-width:600px){ .pl{ padding:12px 10px 14px; } .pl-ctl{ margin-left:0; width:100%; } .pl-days{ width:100%; overflow-x:auto; } .pl-day{ flex:1; } }
+  /* ===== several trades per day ===== */
+  .trs-h{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .trs-h h4{ margin:0; }
+  .trs-add{ display:flex; gap:6px; }
+  .trs-add .btn{ padding:6px 12px; font-size:13px; font-weight:800; }
+  .trs-add .add-long{ color:var(--pos); border-color:color-mix(in srgb,var(--pos) 40%,var(--line)); }
+  .trs-add .add-short{ color:var(--neg); border-color:color-mix(in srgb,var(--neg) 40%,var(--line)); }
+  .trs-add .add-long:hover{ background:color-mix(in srgb,var(--pos) 12%,transparent); } .trs-add .add-short:hover{ background:color-mix(in srgb,var(--neg) 12%,transparent); }
+  .trcard{ border:1px solid var(--line); border-radius:16px; background:var(--surface-2); margin-top:10px; overflow:hidden; position:relative; }
+  .trcard::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--muted); }
+  .trcard.long::before{ background:var(--pos); } .trcard.short::before{ background:var(--neg); }
+  .trcard > summary{ list-style:none; cursor:pointer; display:flex; align-items:center; gap:10px; padding:11px 12px 11px 16px; }
+  .trcard > summary::-webkit-details-marker{ display:none; }
+  .trc-dir{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:15px; }
+  .trcard.long .trc-dir{ color:var(--pos); } .trcard.short .trc-dir{ color:var(--neg); }
+  .trc-meta{ flex:1; min-width:0; font-size:12.5px; font-weight:700; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .trc-p{ font-weight:800; font-size:12.5px; }
+  .trc-del{ width:28px; height:28px; border-radius:8px; border:1px solid var(--line); background:var(--surface); color:var(--muted); font-size:16px; line-height:1; display:grid; place-items:center; }
+  .trc-del:hover{ color:var(--neg); border-color:var(--neg); }
+  .trcard[open] > summary{ border-bottom:1px solid var(--line); }
+  .trc-body{ display:grid; gap:12px; padding:12px 12px 14px 16px; }
+  .tk-notes{ white-space:pre-line; font-size:13px; margin:10px 0 0; color:var(--ink); }
+  .cd-trade.more{ color:var(--muted); font-weight:700; }
   /* ===== quick add trade + pending ===== */
   .qa-dock{ position:fixed; right:22px; bottom:22px; z-index:40; display:flex; align-items:center; gap:10px; }
   .qa-fab{ display:inline-flex; align-items:center; gap:8px; height:52px; padding:0 20px 0 16px; border-radius:999px; border:none; background:var(--accent); color:var(--on-accent);
@@ -1086,7 +1109,11 @@ const MONTHS = ['January','February','March','April','May','June','July','August
 const WD = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const BIAS_LBL = { bullish:'Bullish', bearish:'Bearish', 'two-sided':'Two-sided', neutral:'Neutral' };
 const CONV_LBL = { low:'mild', medium:'medium conviction', high:'high conviction' };
-const TEXT_F = ['trade_status','session','direction','result','entry_time','exit_time','duration','daily_obs','h4_obs','h1_obs','tv_daily','tv_4h','tv_1h','action','setup_tf','exit_date'];
+/* day row (do_daily) = observations only; trades live in do_trades (several per pair per day) */
+const TEXT_F = ['trade_status','daily_obs','h4_obs','h1_obs','tv_daily','tv_4h','tv_1h','action'];
+const TR_TEXT_F = ['direction','setup_tf','session','result','entry_time','exit_time','exit_date','duration'];
+const TR_NUM_F  = ['entry_price','sl','tp','pips','r_multiple','risk','profit'];
+const TR_ALL_F  = [...TR_TEXT_F, ...TR_NUM_F, 'account_id', 'trade_accounts'];
 const exitDay = e => e.exit_date || e.day;
 /* accounts a trade was taken on: [{ id, profit }] (falls back to the older single account_id) */
 function tradeAccts(e){
@@ -1103,7 +1130,7 @@ function tradeMinutes(e){
 /* open / multi-day trades: map of date -> trade row that is held on that date (after entry day) */
 function holdingMap(pair){
   const map = {}, today = iso(new Date());
-  S.daily.forEach(e => {
+  S.trades.forEach(e => {
     if(e.pair!==pair || !e.direction) return;
     const open = !e.exit_date && !e.result;
     const end = e.exit_date || (open ? today : null); if(!end || end <= e.day) return;
@@ -1112,7 +1139,15 @@ function holdingMap(pair){
   });
   return map;
 }
-const NUM_F  = ['r_multiple','risk','profit','entry_price','sl','tp','pips','daily_change','daily_pips'];
+const NUM_F  = ['daily_change','daily_pips'];
+/* trades of one pair on one entry day, oldest first */
+function dayTrades(p, ds){
+  return [...S.trades.values()].filter(t => t.pair===p && t.day===ds)
+    .sort((a,b) => (a.entry_time||'99').localeCompare(b.entry_time||'99') || String(a.created_at||'').localeCompare(String(b.created_at||'')));
+}
+/* a trade enriched with its entry day's observations (what the trade views, analytics and share expect) */
+function tradeFull(t){ const d = S.daily.get(dk(t.pair, t.day)) || {}; return { ...d, ...t }; }
+function noTradesTable(){ toast('Run migration-trades.sql in Supabase first — trades are read-only until then.'); }
 
 /* ---------- safe localStorage ---------- */
 const ls = {
@@ -1173,6 +1208,13 @@ async function loadAll(){
   S.settings = Object.fromEntries(st.map(r => [r.key, r.value]));
   S.bank.rows = new Map(bk.map(r => [r.id, r]));
   S.goals = new Map(g.map(r => [r.id, r]));
+  /* trades: own table; until migration-trades.sql has run, read the old one-trade-per-day columns (read-only) */
+  let tr = null;
+  try{ tr = await fetchAll('do_trades'); S.legacyTrades = false; }
+  catch(e){ console.warn('do_trades missing — legacy trades', e); S.legacyTrades = true; }
+  if(S.legacyTrades) tr = d.filter(r => r.direction).map(r => { const t = { id:'L:'+dk(r.pair, r.day), pair:r.pair, day:r.day }; TR_ALL_F.forEach(f => t[f] = r[f] ?? null); return t; });
+  S.trades = new Map(tr.map(t => [t.id, t]));
+  d.forEach(r => { TR_ALL_F.forEach(f => delete r[f]); });   /* day rows carry observations only */
   S.daily = new Map(d.map(r => [dk(r.pair, r.day), r]));
   S.weekly = new Map(w.map(r => [wk(r.pair, r.year, r.week), r]));
   S.news = new Map(n.map(r => [nk(r.currency, r.day), r]));
@@ -1275,7 +1317,7 @@ function openMore(){
   d.querySelectorAll('[data-ma]').forEach(b => b.onclick = () => { d.close(); ({ share:openShare, data:openData, theme:() => document.getElementById('themeBtn').click() })[b.dataset.ma](); });
   d.showModal();
 }
-function tjOpenCount(){ let n = 0; S.daily.forEach(e => { if(e.direction && !e.result && !e.exit_date) n++; }); return n; }
+function tjOpenCount(){ let n = 0; S.trades.forEach(e => { if(e.direction && !e.result && !e.exit_date) n++; }); return n; }
 function todayGapCount(){
   const tr = [...trackedSet()]; if(!tr.length) return 0;
   const k = isoWeek(new Date()), [from] = weekRange(k.year, k.week), today = iso(new Date()); let n = 0;
@@ -1370,6 +1412,7 @@ function openDrawer(){ const was = S.drawerOpen; S.drawerOpen = true; syncDrawer
 document.addEventListener('keydown', ev => { if(ev.key==='Escape' && S.drawerOpen && !document.querySelector('dialog[open]')){ ev.preventDefault(); closeDrawer(); } });
 /* custom day statuses (quick picks), synced through do_settings with a local fallback */
 S.settings = {};
+S.trades = new Map();
 function customStatuses(){ return Array.isArray(S.settings.day_statuses) ? S.settings.day_statuses : ls.get('do_statuses', []); }
 async function setCustomStatuses(list){
   S.settings.day_statuses = list; ls.set('do_statuses', list);
@@ -1479,14 +1522,17 @@ function renderCalendar(){
       const ds = iso(dt), e = S.daily.get(dk(p, ds)) || {};
       const news = [[b, S.news.get(nk(b,ds))], [q, S.news.get(nk(q,ds))]].filter(([,n]) => n);
       const sel = S.sel.type==='day' && S.sel.day===ds;
-      const trade = e.direction ? `<div class="cd-trade ${e.direction.toLowerCase()}">${e.direction==='Long' ? '▲' : '▼'}<span class="t-full"> ${e.direction}${e.setup_tf ? ' '+e.setup_tf : ''}</span>${e.result ? ` · ${e.result}` : ''}${e.pips!=null ? `<span class="t-full num"> · ${e.pips>0?'+':''}${fmt(e.pips,1)}p</span>` : ''}</div>` : '';
-      h += `<button class="cd ${dt.getMonth()!==m ? 'out':''} ${sel ? 'sel':''} ${ds===today ? 'today':''} ${e.result ? 'res-'+e.result : ''}" data-day="${ds}"
+      const trs = dayTrades(p, ds), rs = trs.map(t => t.result).filter(Boolean);
+      const dres = rs.includes('W') && !rs.includes('L') ? 'W' : rs.includes('L') && !rs.includes('W') ? 'L' : rs.length && rs.every(r => r==='BE') ? 'BE' : '';
+      const trade = trs.slice(0, 2).map(t => `<div class="cd-trade ${t.direction.toLowerCase()}">${t.direction==='Long' ? '▲' : '▼'}<span class="t-full"> ${t.direction}${t.setup_tf ? ' '+t.setup_tf : ''}</span>${t.result ? ` · ${t.result}` : ''}${t.pips!=null ? `<span class="t-full num"> · ${t.pips>0?'+':''}${fmt(t.pips,1)}p</span>` : ''}</div>`).join('')
+        + (trs.length > 2 ? `<div class="cd-trade more">+${trs.length-2} more</div>` : '');
+      h += `<button class="cd ${dt.getMonth()!==m ? 'out':''} ${sel ? 'sel':''} ${ds===today ? 'today':''} ${dres ? 'res-'+dres : ''}" data-day="${ds}"
           aria-label="${WD[dt.getDay()]} ${dt.getDate()} ${MONTHS[dt.getMonth()]}${e.trade_status ? ', '+esc(e.trade_status) : ''}" aria-pressed="${sel}">
         <div class="cd-top"><span class="cd-n">${dt.getDate()}</span>${e.daily_change!=null ? `<span class="cd-c ${sgn(e.daily_change)}">${pct(e.daily_change)}</span>` : ''}</div>
         ${stBadge(e.trade_status)}
         ${trade}
-        ${!e.direction && hold[ds] ? `<div class="cd-hold ${hold[ds].t.direction.toLowerCase()} ${hold[ds].exit && hold[ds].t.result ? 'hx-'+hold[ds].t.result : ''}">${hold[ds].exit ? `⇥ Exit${hold[ds].t.result ? ' · '+hold[ds].t.result : ''}${hold[ds].t.pips!=null ? `<span class="t-full"> · ${hold[ds].t.pips>0?'+':''}${fmt(hold[ds].t.pips,1)}p</span>` : ''}` : `⋯ Holding <span class="t-full">${hold[ds].t.direction}</span>`}</div>` : ''}
-        ${e.action && !e.direction ? `<div class="cd-act">→ ${esc(e.action)}</div>` : ''}
+        ${!trs.length && hold[ds] ? `<div class="cd-hold ${hold[ds].t.direction.toLowerCase()} ${hold[ds].exit && hold[ds].t.result ? 'hx-'+hold[ds].t.result : ''}">${hold[ds].exit ? `⇥ Exit${hold[ds].t.result ? ' · '+hold[ds].t.result : ''}${hold[ds].t.pips!=null ? `<span class="t-full"> · ${hold[ds].t.pips>0?'+':''}${fmt(hold[ds].t.pips,1)}p</span>` : ''}` : `⋯ Holding <span class="t-full">${hold[ds].t.direction}</span>`}</div>` : ''}
+        ${e.action && !trs.length ? `<div class="cd-act">→ ${esc(e.action)}</div>` : ''}
         <div class="cd-foot">${news.map(([c,n]) => `<span class="nchip" title="${esc(n.events)}">${c}</span>`).join('')}
           ${e.id ? `<span class="odots" aria-hidden="true">${['daily_obs','h4_obs','h1_obs'].map(f => `<span class="${e[f] ? 'on':''}"></span>`).join('')}</span>` : ''}</div>
       </button>`;
@@ -1499,8 +1545,8 @@ function renderCalendar(){
 function monthStats(){
   const y = S.month.getFullYear(), m = S.month.getMonth();
   const es = [...S.daily.values()].filter(e => e.pair===S.pair && parseISO(e.day).getFullYear()===y && parseISO(e.day).getMonth()===m);
-  const tr = es.filter(e => ['W','L','BE'].includes(e.result));
-  if(!es.length) return 'no observations this month';
+  const tr = [...S.trades.values()].filter(e => e.pair===S.pair && ['W','L','BE'].includes(e.result) && parseISO(e.day).getFullYear()===y && parseISO(e.day).getMonth()===m);
+  if(!es.length && !tr.length) return 'no observations this month';
   const w = tr.filter(e => e.result==='W').length, l = tr.filter(e => e.result==='L').length, pips = tr.reduce((s,e) => s+(e.pips||0), 0);
   return `${es.length} day${es.length===1?'':'s'} · ${tr.length} trade${tr.length===1?'':'s'}${tr.length ? ` · ${w}W/${l}L · ${pips>0?'+':''}${fmt(pips,1)} pips` : ''}`;
 }
@@ -1546,13 +1592,13 @@ function chipGroup(field, options, value, extraCls = () => ''){
     <input type="hidden" data-f="${field}" value="${esc(value||'')}">`;
 }
 function bindChips(root, attr, onChange){
-  root.querySelectorAll('[data-chips]').forEach(g => g.addEventListener('click', ev => {
+  root.querySelectorAll('[data-chips]').forEach(g => { if(attr!=='data-tf' && g.closest('[data-trade]')) return; g.addEventListener('click', ev => {
     const btn = ev.target.closest('.ch'); if(!btn) return;
     const hid = root.querySelector(`[${attr}="${g.dataset.chips}"]`), on = btn.getAttribute('aria-pressed') !== 'true';
     g.querySelectorAll('.ch').forEach(c => c.setAttribute('aria-pressed', 'false'));
     btn.setAttribute('aria-pressed', String(on)); hid.value = on ? btn.dataset.v : '';
     onChange(g.dataset.chips);
-  }));
+  }); });
 }
 function panelHead(title, sub){
   return `<div class="ps-head">
@@ -1580,14 +1626,18 @@ function renderPanel(){
   bindHead(panel, () => step(-1), () => step(1));
   panel.querySelector('.ps-head')?.insertAdjacentHTML('beforeend', pairSwitcher(ds));
   bindPairSwitcher(panel, ds);
-  const pkey = dk(p, ds);
-  if(pendingRaw().includes(pkey) && ctx.e.direction){
-    const miss = missingOf(ctx.e);
-    panel.querySelector('.ps-head')?.insertAdjacentHTML('afterend', `<div class="pend-bar"><span>⏳ <b>Quick-added trade</b>${miss.length ? ` — still missing: ${miss.join(' · ')}` : ''}</span>
-      ${S.mode==='view' ? '<button class="bt" id="pbEdit">Complete →</button>' : ''}<button class="bt" id="pbDone">Mark done</button></div>`);
-    panel.querySelector('#pbEdit')?.addEventListener('click', () => setMode('edit'));
-    panel.querySelector('#pbDone').onclick = async () => { await setPending(pendingRaw().filter(k => k!==pkey)); refreshDock(); renderPanel(); };
+  const pend = dayTrades(p, ds).filter(t => pendingList().includes(t.id));
+  if(pend.length){
+    panel.querySelector('.ps-head')?.insertAdjacentHTML('afterend', pend.map(t => { const miss = missingOf(tradeFull(t));
+      return `<div class="pend-bar"><span>⏳ <b>Quick-added ${t.direction==='Long' ? '▲' : '▼'} ${t.direction}${t.setup_tf ? ' '+esc(t.setup_tf) : ''}</b>${miss.length ? ` — still missing: ${miss.join(' · ')}` : ''}</span>
+        ${S.mode==='view' ? `<button class="bt" data-pbedit="${t.id}">Complete →</button>` : ''}<button class="bt" data-pbdone="${t.id}">Mark done</button></div>`; }).join(''));
+    panel.querySelectorAll('[data-pbedit]').forEach(b => b.onclick = () => { S.openTrade = b.dataset.pbedit; setMode('edit'); });
+    panel.querySelectorAll('[data-pbdone]').forEach(b => b.onclick = async () => { await setPending(pendingList().filter(k => k!==b.dataset.pbdone)); refreshDock(); renderPanel(); });
   }
+  /* jump to a specific trade card (from ⏳ Complete) */
+  if(S.mode==='edit' && S.openTrade){ const c = panel.querySelector(`[data-trade="${S.openTrade}"]`);
+    if(c){ setTimeout(() => panel.scrollTo({ top: c.getBoundingClientRect().top - panel.getBoundingClientRect().top + panel.scrollTop - (panel.querySelector('.ps-head')?.offsetHeight || 0) - 12, behavior:'smooth' }), 60); }
+    S.openTrade = null; }
   if(document.getElementById('tdBoard')) renderTdBoard();
   panel.querySelector('#wkBanner').onclick = () => selectWeek(w.year, w.week);
 }
@@ -1599,16 +1649,29 @@ function wkBanner(ctx){
     ${wr?.fundamentals ? `<p>${esc(wr.fundamentals)}</p>` : ''}</button>`;
 }
 
-/* ---- day: view ---- */
-function dayView(panel, ctx){
-  const { p, ds, e, b, q } = ctx;
-  const bn = S.news.get(nk(b,ds))?.events, qn = S.news.get(nk(q,ds))?.events;
-  const held = holdingMap(p)[ds], empty = !e.id && !bn && !qn && !held;
-  const tfs = [['Daily','daily_obs','tv_daily'],['4H','h4_obs','tv_4h'],['1H','h1_obs','tv_1h']].filter(([,o,t]) => e[o] || e[t]);
+/* ---- one trade, read-only ---- */
+function tradeTicket(e){
   const stats = [['Entry', e.entry_price], ['SL', e.sl], ['TP', e.tp],
     ['Pips', e.pips!=null ? `${e.pips>0?'+':''}${fmt(e.pips,1)}` : null, sgn(e.pips)], ['R', e.r_multiple!=null ? fmt(e.r_multiple) : null, sgn(e.r_multiple)],
     ['Risk', e.risk!=null ? fmt(e.risk)+'%' : null], ['Profit', e.profit!=null ? `${e.profit>0?'+':''}${fmt(e.profit)}$` : null, sgn(e.profit)], ['Duration', e.duration]]
     .filter(([,v]) => v!=null && v!=='');
+  return `<div class="ticket ${e.direction.toLowerCase()} ${e.result ? 'res-'+e.result : ''}">
+        <div class="tk-top"><span class="tk-dir">${e.direction==='Long' ? '▲' : '▼'} ${e.direction}</span>${e.setup_tf ? `<span class="tfl">${esc(e.setup_tf)} setup</span>` : ''}${e.session ? `<span class="muted" style="font-weight:700">${esc(e.session)}</span>` : ''}
+          ${e.result ? `<span class="tk-res r-${e.result}">${{W:'Win',L:'Loss',BE:'Break-even'}[e.result] || esc(e.result)}</span>` : ''}</div>
+        ${tradeAccts(e).some(x => S.accounts.get(x.id)) ? `<div class="tk-accts">${tradeAccts(e).filter(x => S.accounts.get(x.id)).map(x =>
+          `<span class="tk-acc">${esc(S.accounts.get(x.id).name)}${x.profit!=null ? ` <b class="${sgn(x.profit)}">${x.profit>0?'+':''}${money(Number(x.profit))}</b>` : ''}</span>`).join('')}</div>` : ''}
+        ${stats.length ? `<div class="tk-grid">${stats.map(([l,v,c]) => `<div><span class="kick">${l}</span><b class="${c||''}">${esc(v)}</b></div>`).join('')}</div>` : ''}
+        ${e.notes ? `<p class="tk-notes">${esc(e.notes)}</p>` : ''}
+        <div class="tk-time">⏱ ${fmtDayShort(e.day)}${e.entry_time ? ' '+esc(e.entry_time) : ''} → ${e.exit_date || e.exit_time ? `${fmtDayShort(exitDay(e))}${e.exit_time ? ' '+esc(e.exit_time) : ''}` : (e.result ? 'closed' : 'still open')}${e.duration ? ` · ${esc(e.duration)}` : ''}</div>
+      </div>`;
+}
+/* ---- day: view ---- */
+function dayView(panel, ctx){
+  const { p, ds, e, b, q } = ctx;
+  const bn = S.news.get(nk(b,ds))?.events, qn = S.news.get(nk(q,ds))?.events;
+  const held = holdingMap(p)[ds], empty = !e.id && !bn && !qn && !held && !dayTrades(p, ds).length;
+  const tfs = [['Daily','daily_obs','tv_daily'],['4H','h4_obs','tv_4h'],['1H','h1_obs','tv_1h']].filter(([,o,t]) => e[o] || e[t]);
+  const trs = dayTrades(p, ds);
   panel.innerHTML = `<div class="ps">
     ${panelHead(dayTitle(ctx), `${p} · ${ctx.dt.getFullYear()}`)}
     ${empty ? `${wkBanner(ctx)}<div class="empty"><div class="orb" aria-hidden="true"></div><p>No observations for this day yet.</p><button class="btn btn-primary" id="startEdit">Start observing</button></div>` : `
@@ -1626,14 +1689,7 @@ function dayView(panel, ctx){
       ${held ? `<button class="holdcard ${held.t.direction.toLowerCase()}" id="goEntry"><span class="kick">${held.exit ? 'Trade closed today' : 'Open trade'}</span>
         <b>${held.t.direction==='Long' ? '▲' : '▼'} ${held.t.direction}${held.t.setup_tf ? ' · '+esc(held.t.setup_tf)+' setup' : ''}</b>
         <span class="muted">entered ${fmtDayShort(held.t.day)}${held.exit && held.t.result ? ` · <span class="${held.t.result==='W' ? 'pos' : held.t.result==='L' ? 'neg' : ''}">${held.t.result}</span>` : ''} — view entry ›</span></button>` : ''}
-      ${e.direction ? `<div class="ticket ${e.direction.toLowerCase()} ${e.result ? 'res-'+e.result : ''}">
-        <div class="tk-top"><span class="tk-dir">${e.direction==='Long' ? '▲' : '▼'} ${e.direction}</span>${e.setup_tf ? `<span class="tfl">${esc(e.setup_tf)} setup</span>` : ''}${e.session ? `<span class="muted" style="font-weight:700">${esc(e.session)}</span>` : ''}
-          ${e.result ? `<span class="tk-res r-${e.result}">${{W:'Win',L:'Loss',BE:'Break-even'}[e.result] || esc(e.result)}</span>` : ''}</div>
-        ${tradeAccts(e).some(x => S.accounts.get(x.id)) ? `<div class="tk-accts">${tradeAccts(e).filter(x => S.accounts.get(x.id)).map(x =>
-          `<span class="tk-acc">${esc(S.accounts.get(x.id).name)}${x.profit!=null ? ` <b class="${sgn(x.profit)}">${x.profit>0?'+':''}${money(Number(x.profit))}</b>` : ''}</span>`).join('')}</div>` : ''}
-        ${stats.length ? `<div class="tk-grid">${stats.map(([l,v,c]) => `<div><span class="kick">${l}</span><b class="${c||''}">${esc(v)}</b></div>`).join('')}</div>` : ''}
-        <div class="tk-time">⏱ ${fmtDayShort(e.day)}${e.entry_time ? ' '+esc(e.entry_time) : ''} → ${e.exit_date || e.exit_time ? `${fmtDayShort(exitDay(e))}${e.exit_time ? ' '+esc(e.exit_time) : ''}` : (e.result ? 'closed' : 'still open')}${e.duration ? ` · ${esc(e.duration)}` : ''}</div>
-      </div>` : ''}
+      ${trs.map(tradeTicket).join('')}
       ${bn || qn ? `<div class="vsec"><h4>News</h4><div class="news2">
         ${[[b,bn],[q,qn]].map(([c,t]) => `<div><span class="ncur">${c}</span>${t ? `<ul class="nl">${newsList(t)}</ul>` : '<p class="muted" style="font-size:13px">—</p>'}</div>`).join('')}
       </div></div>` : ''}
@@ -1664,7 +1720,7 @@ function fmtDayShort(ds){ const d = parseISO(ds); return `${WD_SHORT[d.getDay()]
 /* ---- day: edit ---- */
 function dayEdit(panel, ctx){
   const { p, ds, e } = ctx;
-  const hasTrade = !!(e.direction || ['yes','in','closed'].includes(statusKey(e.trade_status)));
+  const trs = dayTrades(p, ds);
   const v = f => esc(e[f] ?? '');
   const tfTab = S.tfTab || 'daily';
   const TFS = [['daily','Daily','daily_obs','tv_daily'],['4h','4H','h4_obs','tv_4h'],['1h','1H','h1_obs','tv_1h']];
@@ -1690,27 +1746,12 @@ function dayEdit(panel, ctx){
         <textarea class="inp" data-f="${o}" rows="4" aria-label="${l} observations" placeholder="What do you see on ${l}? Structure, liquidity, MA, plan…">${v(o)}</textarea>
         <input class="inp tv-in" data-f="${t}" type="url" value="${v(t)}" aria-label="TradingView link ${l}" placeholder="📸 TradingView link (${l})"></div>`).join('')}
     </div>
-    <details class="sec trade" ${hasTrade ? 'open' : ''}><summary><h4>Trade <small>${e.direction ? esc(e.direction) + (e.result ? ' · '+esc(e.result) : '') : 'optional'}</small></h4></summary>
-      <div style="display:grid;gap:12px">
-        <div class="g2"><div><span class="lbl">Direction</span>${chipGroup('direction', ['Long','Short'], e.direction)}</div>
-          <div><span class="lbl">Setup timeframe</span>${chipGroup('setup_tf', ['1H','4H'], e.setup_tf)}</div></div>
-        <div><span class="lbl">Session</span>${chipGroup('session', SESSIONS, e.session)}</div>
-        <div><span class="lbl">Result</span>${chipGroup('result', ['W','L','BE'], e.result, o => o)}</div>
-        <div><span class="lbl">Accounts <span style="font-weight:600">· every account you took this setup on</span></span>${(() => { const cur = tradeAccts(e), ids = cur.map(x => x.id);
-          const accs = [...S.accounts.values()].filter(a => (a.status||'active')==='active' || ids.includes(a.id));
-          return accs.length ? `<div class="chips" id="acctBox">${accs.map(a => `<button type="button" class="ch" data-a="${a.id}" aria-pressed="${ids.includes(a.id)}">${esc(a.name)}</button>`).join('')}</div>
-            <div id="acctRows" class="accrows">${acctRowsHtml(cur)}</div>`
-            : '<p class="hint" style="margin:0">Add an account in the Accounts tab to link this trade to a challenge.</p>'; })()}</div>
-        <div class="g3">
-          ${numIn('entry_price','Entry')}${numIn('sl','SL')}${numIn('tp','TP')}
-          ${numIn('entry_time','Entry hour','time')}
-          <div><label class="lbl" for="i_exit_date">Exit date</label><input id="i_exit_date" class="inp num" data-f="exit_date" type="date" min="${ds}" value="${v('exit_date')}"></div>
-          ${numIn('exit_time','Exit hour','time')}
-          <div><label class="lbl" for="i_duration">Duration</label><input id="i_duration" class="inp" data-f="duration" value="${v('duration')}" placeholder="auto"></div>
-          ${numIn('pips','Pips')}${numIn('r_multiple','R')}${numIn('risk','Risk %')}${numIn('profit','Profit $')}
-        </div>
-        <p class="hint" id="rrHint" style="margin:0"></p>
-      </div></details>
+    <div class="sec trades-sec">
+      <div class="trs-h"><h4>Trades <small>${trs.length ? trs.length + ' on this day' : 'none yet'}</small></h4>
+        <div class="trs-add"><button type="button" class="btn add-long" data-addtr="Long">+ ▲ Long</button><button type="button" class="btn add-short" data-addtr="Short">+ ▼ Short</button></div></div>
+      ${trs.map(t => tradeCard(t, ds, trs.length===1 || t.id===S.openTrade)).join('')}
+      ${!trs.length ? '<p class="hint" style="margin:0">Took a setup? Add it here — you can log several trades on the same day (e.g. one 4H and one 1H).</p>' : ''}
+    </div>
     <div class="sec"><h4>Plan for tomorrow</h4>${chipGroup('action', ACTIONS, e.action)}
       <input class="inp" style="margin-top:8px" data-f-alt="action" placeholder="or type a custom action…" aria-label="Custom action"></div>
     <div class="editfoot sticky-foot">
@@ -1748,7 +1789,6 @@ function dayEdit(panel, ctx){
     const on = b.getAttribute('aria-pressed')!=='true';
     panel.querySelectorAll('[data-st]').forEach(x => x.setAttribute('aria-pressed', 'false'));
     b.setAttribute('aria-pressed', String(on)); stHid.value = on ? b.dataset.st : '';
-    if(on && ['yes','in','closed'].includes(statusKey(b.dataset.st))) panel.querySelector('details.trade').open = true;
     save(); flushSave();
   });
   const addSt = async () => { const inp = panel.querySelector('#stNew'), t = inp.value.trim().replace(/\s+/g,' '); if(!t) return;
@@ -1757,40 +1797,14 @@ function dayEdit(panel, ctx){
     stHid.value = exists || t; save(); await flushSave(); renderPanel(); toast(exists ? `Status set to “${exists}”` : `“${t}” added to quick picks`); };
   panel.querySelector('#stSave').onclick = addSt;
   panel.querySelector('#stNew').addEventListener('keydown', ev => { if(ev.key==='Enter'){ ev.preventDefault(); addSt(); } if(ev.key==='Escape'){ ev.stopPropagation(); panel.querySelector('#stAddRow').hidden = true; } });
-  const syncProfit = () => {
-    const rows = readAcctRows(panel), pf = panel.querySelector('[data-f="profit"]');
-    if(rows.length){ const vals = rows.map(r => r.profit).filter(v => v!=null); pf.value = vals.length ? +vals.reduce((t,v) => t+v, 0).toFixed(2) : ''; pf.readOnly = true; pf.title = 'Sum of the per-account profits below'; pf.classList.add('ro'); }
-    else { pf.readOnly = false; pf.title = ''; pf.classList.remove('ro'); }
-  };
-  const bindRows = () => panel.querySelectorAll('[data-ap]').forEach(i => i.addEventListener('input', () => { syncProfit(); save(); }));
-  panel.querySelector('#acctBox')?.addEventListener('click', ev => { const b = ev.target.closest('[data-a]'); if(!b) return;
-    b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed')!=='true'));
-    const prev = Object.fromEntries(readAcctRows(panel).map(r => [r.id, r.profit]));
-    const sel = [...panel.querySelectorAll('#acctBox [data-a][aria-pressed="true"]')].map(x => ({ id:x.dataset.a, profit: prev[x.dataset.a] ?? null }));
-    panel.querySelector('#acctRows').innerHTML = acctRowsHtml(sel); bindRows(); syncProfit(); save(); flushSave(); });
-  bindRows(); if(panel.querySelector('#acctRows')) syncProfit();
   const alt = panel.querySelector('[data-f-alt="action"]');
   alt.addEventListener('input', () => { const h = panel.querySelector('[data-f="action"]'); h.value = alt.value.trim();
     panel.querySelectorAll('[data-chips="action"] .ch').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.v === h.value))); save(); });
-  const rr = () => {
-    const g = f => parseNum(panel.querySelector(`[data-f="${f}"]`).value), en = g('entry_price'), sl = g('sl'), tp = g('tp'), ps = pipSize(p), parts = [];
-    if(en!=null && sl!=null) parts.push(`SL ${fmt(Math.abs(en-sl)/ps,1)} pips`);
-    if(en!=null && tp!=null) parts.push(`TP ${fmt(Math.abs(tp-en)/ps,1)} pips`);
-    if(en!=null && sl!=null && tp!=null && en!==sl) parts.push(`RR 1:${fmt(Math.abs(tp-en)/Math.abs(en-sl))}`);
-    panel.querySelector('#rrHint').textContent = parts.join(' · ');
-  };
-  ['entry_price','sl','tp'].forEach(f => panel.querySelector(`[data-f="${f}"]`).addEventListener('input', rr)); rr();
-  const dur = panel.querySelector('[data-f="duration"]');
-  ['entry_time','exit_time','exit_date'].forEach(f => panel.querySelector(`[data-f="${f}"]`).addEventListener('change', () => {
-    if(dur.value && !dur.dataset.auto) return;
-    const g = f => panel.querySelector(`[data-f="${f}"]`).value;
-    const m = tradeMinutes({ day:ds, entry_time:g('entry_time'), exit_time:g('exit_time'), exit_date:g('exit_date') });
-    if(m==null) return; dur.value = fmtDur(m); dur.dataset.auto = '1'; save();
-  }));
-  dur.addEventListener('input', () => delete dur.dataset.auto);
+  panel.querySelectorAll('[data-trade]').forEach(card => bindTradeCard(card, ds, save));
+  panel.querySelectorAll('[data-addtr]').forEach(b => b.onclick = async () => { const t = await addTrade(p, ds, b.dataset.addtr); if(t){ S.openTrade = t.id; renderCalendar(); renderPanel(); refreshDock(); } });
   panel.querySelector('#doneEdit').onclick = () => setMode('view');
   panel.querySelector('#pDel')?.addEventListener('click', async () => {
-    const cur = S.daily.get(dk(p, ds)); if(!cur || !confirm('Delete this day\'s observations and trade? News stays, since it is shared per currency.')) return;
+    const cur = S.daily.get(dk(p, ds)); if(!cur || !confirm('Delete this day\'s observations? Trades on this day are kept. News stays, since it is shared per currency.')) return;
     pending = null; clearTimeout(timer);
     const { error } = await sb.from('do_daily').delete().eq('id', cur.id); if(error) return toast(error.message);
     S.daily.delete(dk(p, ds)); renderCalendar(); renderPanel(); toast('Day deleted');
@@ -1803,26 +1817,148 @@ function acctRowsHtml(list){
     + (list.length > 1 ? '<p class="hint" style="margin:0">Enter the result on each account — lot sizes usually differ. The total goes into Profit $.</p>' : '');
 }
 function readAcctRows(panel){ return [...panel.querySelectorAll('[data-arow]')].map(r => ({ id:r.dataset.arow, profit: parseNum(r.querySelector('[data-ap]').value) })); }
+/* strip the old one-trade-per-day columns from a do_daily row returned by Supabase */
+function dayRow(r){ if(r) TR_ALL_F.forEach(f => delete r[f]); return r; }
 function collectDay(panel){
   const p = S.pair, ds = S.sel.day, row = { pair:p, day:ds };
   for(const f of TEXT_F){ const el = panel.querySelector(`[data-f="${f}"]`); row[f] = el ? (el.value.trim() || null) : null; }
   for(const f of NUM_F){ const el = panel.querySelector(`[data-f="${f}"]`); row[f] = el ? parseNum(el.value) : null; }
   if(!S.hasPips) delete row.daily_pips;
   const tb = panel.querySelector('#tagBox'); row.tags = tb ? [...tb.querySelectorAll('[data-t][aria-pressed="true"]')].map(b => b.dataset.t) : (S.daily.get(dk(p, ds))?.tags || []);
-  row.trade_accounts = readAcctRows(panel);
-  row.account_id = row.trade_accounts[0]?.id || null;
-  if(row.trade_accounts.some(x => x.profit!=null)) row.profit = +row.trade_accounts.reduce((t,x) => t + (x.profit||0), 0).toFixed(2);
+  const cards = [...panel.querySelectorAll('[data-trade]')].map(card => ({ id:card.dataset.trade, t:collectTrade(card) }));
   const nbEl = panel.querySelector('[data-news="base"]'), nqEl = panel.querySelector('[data-news="quote"]');
   return { run: async () => {
-    const has = [...TEXT_F, ...NUM_F].some(f => row[f] != null) || row.tags.length || row.trade_accounts.length, ex = S.daily.get(dk(p, ds));
+    const has = [...TEXT_F, ...NUM_F].some(f => row[f] != null) || row.tags.length, ex = S.daily.get(dk(p, ds));
     if(has){
       const { data, error } = await sb.from('do_daily').upsert(row, { onConflict:'pair,day' }).select().single();
-      if(error) throw error; S.daily.set(dk(p, ds), data);
+      if(error) throw error; S.daily.set(dk(p, ds), dayRow(data));
     } else if(ex){
       const { error } = await sb.from('do_daily').delete().eq('id', ex.id); if(error) throw error; S.daily.delete(dk(p, ds));
     }
+    for(const { id, t } of cards){
+      const old = S.trades.get(id); if(!old) continue;
+      const changed = Object.keys(t).some(k => JSON.stringify(t[k] ?? null) !== JSON.stringify(old[k] ?? null));
+      if(!changed) continue;
+      if(S.legacyTrades){ noTradesTable(); continue; }
+      const { data, error } = await sb.from('do_trades').update(t).eq('id', id).select().single();
+      if(error) throw error; S.trades.set(id, data);
+    }
     if(nbEl) await saveNews(base(p), ds, nbEl.value); if(nqEl) await saveNews(quote(p), ds, nqEl.value);
   }};
+}
+/* ---- trades inside the day editor ---- */
+function tChips(field, options, value){
+  const opts = [...options]; if(value && !opts.includes(value)) opts.push(value);
+  return `<div class="chips" role="group" data-chips="${field}">${opts.map(o => `<button type="button" class="ch ${field==='result' ? o : ''}" data-v="${esc(o)}" aria-pressed="${o===value}">${esc(o)}</button>`).join('')}</div>
+    <input type="hidden" data-tf="${field}" value="${esc(value||'')}">`;
+}
+function tradeCard(t, ds, open){
+  const v = f => esc(t[f] ?? '');
+  const numIn = (f, l, type) => `<div><label class="lbl">${l}</label><input class="inp num" data-tf="${f}" ${type==='time' ? 'type="time"' : 'inputmode="decimal"'} value="${v(f)}" aria-label="${l}"></div>`;
+  const cur = tradeAccts(t), ids = cur.map(x => x.id);
+  const accs = [...S.accounts.values()].filter(a => (a.status||'active')==='active' || ids.includes(a.id));
+  return `<details class="trcard ${t.direction.toLowerCase()}" data-trade="${t.id}" ${open ? 'open' : ''}>
+    <summary><span class="trc-dir">${t.direction==='Long' ? '▲' : '▼'} ${t.direction}</span>
+      <span class="trc-meta">${[t.setup_tf, t.entry_time, t.result ? ({W:'Win',L:'Loss',BE:'BE'}[t.result] || t.result) : ''].filter(Boolean).map(esc).join(' · ') || '<span class="muted">tap to edit</span>'}</span>
+      ${t.pips!=null ? `<span class="num ${sgn(t.pips)} trc-p">${t.pips>0?'+':''}${fmt(t.pips,1)}p</span>` : ''}
+      <button type="button" class="trc-del" data-deltr="${t.id}" title="Delete this trade" aria-label="Delete this trade">×</button></summary>
+    <div class="trc-body">
+      <div class="g2"><div><span class="lbl">Direction</span>${tChips('direction', ['Long','Short'], t.direction)}</div>
+        <div><span class="lbl">Setup timeframe</span>${tChips('setup_tf', ['1H','4H'], t.setup_tf)}</div></div>
+      <div><span class="lbl">Session</span>${tChips('session', SESSIONS, t.session)}</div>
+      <div><span class="lbl">Result</span>${tChips('result', ['W','L','BE'], t.result)}</div>
+      <div><span class="lbl">Accounts <span style="font-weight:600">· every account you took this setup on</span></span>
+        ${accs.length ? `<div class="chips acctBox">${accs.map(a => `<button type="button" class="ch" data-a="${a.id}" aria-pressed="${ids.includes(a.id)}">${esc(a.name)}</button>`).join('')}</div>
+          <div class="accrows acctRows">${acctRowsHtml(cur)}</div>` : '<p class="hint" style="margin:0">Add an account in the Accounts tab to link this trade to a challenge.</p>'}</div>
+      <div class="g3">
+        ${numIn('entry_price','Entry')}${numIn('sl','SL')}${numIn('tp','TP')}
+        ${numIn('entry_time','Entry hour','time')}
+        <div><label class="lbl">Exit date</label><input class="inp num" data-tf="exit_date" type="date" min="${ds}" value="${v('exit_date')}" aria-label="Exit date"></div>
+        ${numIn('exit_time','Exit hour','time')}
+        <div><label class="lbl">Duration</label><input class="inp" data-tf="duration" value="${v('duration')}" placeholder="auto" aria-label="Duration"></div>
+        ${numIn('pips','Pips')}${numIn('r_multiple','R')}${numIn('risk','Risk %')}${numIn('profit','Profit $')}
+      </div>
+      <p class="hint rrHint" style="margin:0"></p>
+      ${S.legacyTrades ? '' : `<textarea class="inp" data-tf="notes" rows="2" placeholder="Trade notes — why you took it, management, lessons… (optional)" aria-label="Trade notes">${v('notes')}</textarea>`}
+    </div></details>`;
+}
+function collectTrade(card){
+  const t = {};
+  TR_TEXT_F.forEach(f => { const el = card.querySelector(`[data-tf="${f}"]`); if(el) t[f] = el.value.trim() || null; });
+  TR_NUM_F.forEach(f => { const el = card.querySelector(`[data-tf="${f}"]`); if(el) t[f] = parseNum(el.value); });
+  const nt = card.querySelector('[data-tf="notes"]'); if(nt) t.notes = nt.value.trim() || null;
+  if(card.querySelector('.acctBox')){ t.trade_accounts = readAcctRows(card); t.account_id = t.trade_accounts[0]?.id || null;
+    if(t.trade_accounts.some(x => x.profit!=null)) t.profit = +t.trade_accounts.reduce((s,x) => s + (x.profit||0), 0).toFixed(2); }
+  if(!t.direction) delete t.direction;   /* a trade always keeps a direction */
+  return t;
+}
+function bindTradeCard(card, ds, save){
+  const p = S.pair, q = sel => card.querySelector(sel);
+  card.querySelectorAll('[data-tf]').forEach(el => el.addEventListener('input', save));
+  card.querySelectorAll('textarea').forEach(t => { autosize(t); t.addEventListener('input', () => autosize(t)); });
+  const meta = () => { const g = f => q(`[data-tf="${f}"]`)?.value || '', r = g('result');
+    q('.trc-meta').innerHTML = [g('setup_tf'), g('entry_time'), r ? ({W:'Win',L:'Loss',BE:'BE'}[r] || r) : ''].filter(Boolean).map(esc).join(' · ') || '<span class="muted">tap to edit</span>'; };
+  card.addEventListener('input', meta);
+  bindChips(card, 'data-tf', field => {
+    meta();
+    if(field==='direction'){ let d = q('[data-tf="direction"]').value;
+      if(!d){ d = S.trades.get(card.dataset.trade)?.direction; q('[data-tf="direction"]').value = d;   /* a trade always has a direction */
+        card.querySelectorAll('[data-chips="direction"] .ch').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.v===d))); }
+      if(d){ card.classList.toggle('long', d==='Long'); card.classList.toggle('short', d==='Short');
+      q('.trc-dir').textContent = `${d==='Long' ? '▲' : '▼'} ${d}`; } }
+    save(); flushSave();
+  });
+  const syncProfit = () => {
+    const rows = readAcctRows(card), pf = q('[data-tf="profit"]');
+    if(rows.length){ const vals = rows.map(r => r.profit).filter(v => v!=null); pf.value = vals.length ? +vals.reduce((t,v) => t+v, 0).toFixed(2) : ''; pf.readOnly = true; pf.title = 'Sum of the per-account profits below'; pf.classList.add('ro'); }
+    else { pf.readOnly = false; pf.title = ''; pf.classList.remove('ro'); }
+  };
+  const bindRows = () => card.querySelectorAll('[data-ap]').forEach(i => i.addEventListener('input', () => { syncProfit(); save(); }));
+  q('.acctBox')?.addEventListener('click', ev => { const b = ev.target.closest('[data-a]'); if(!b) return;
+    b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed')!=='true'));
+    const prev = Object.fromEntries(readAcctRows(card).map(r => [r.id, r.profit]));
+    const sel = [...card.querySelectorAll('.acctBox [data-a][aria-pressed="true"]')].map(x => ({ id:x.dataset.a, profit: prev[x.dataset.a] ?? null }));
+    q('.acctRows').innerHTML = acctRowsHtml(sel); bindRows(); syncProfit(); save(); flushSave(); });
+  bindRows(); if(q('.acctRows')) syncProfit();
+  const rr = () => {
+    const g = f => parseNum(q(`[data-tf="${f}"]`).value), en = g('entry_price'), sl = g('sl'), tp = g('tp'), ps = pipSize(p), parts = [];
+    if(en!=null && sl!=null) parts.push(`SL ${fmt(Math.abs(en-sl)/ps,1)} pips`);
+    if(en!=null && tp!=null) parts.push(`TP ${fmt(Math.abs(tp-en)/ps,1)} pips`);
+    if(en!=null && sl!=null && tp!=null && en!==sl) parts.push(`RR 1:${fmt(Math.abs(tp-en)/Math.abs(en-sl))}`);
+    q('.rrHint').textContent = parts.join(' · ');
+  };
+  ['entry_price','sl','tp'].forEach(f => q(`[data-tf="${f}"]`).addEventListener('input', rr)); rr();
+  const dur = q('[data-tf="duration"]');
+  ['entry_time','exit_time','exit_date'].forEach(f => q(`[data-tf="${f}"]`).addEventListener('change', () => {
+    if(dur.value && !dur.dataset.auto) return;
+    const g = f => q(`[data-tf="${f}"]`).value;
+    const m = tradeMinutes({ day:ds, entry_time:g('entry_time'), exit_time:g('exit_time'), exit_date:g('exit_date') });
+    if(m==null) return; dur.value = fmtDur(m); dur.dataset.auto = '1'; save();
+  }));
+  dur.addEventListener('input', () => delete dur.dataset.auto);
+  q('[data-deltr]').addEventListener('click', ev => { ev.preventDefault(); ev.stopPropagation(); deleteTrade(card.dataset.trade); });
+}
+async function addTrade(p, ds, dir, extra = {}){
+  if(S.legacyTrades){ noTradesTable(); return null; }
+  await flushSave();
+  const now = new Date(), hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const { data, error } = await sb.from('do_trades').insert({ pair:p, day:ds, direction:dir, entry_time: ds===iso(now) ? hhmm : null, ...extra }).select().single();
+  if(error){ toast('Not saved: ' + error.message); return null; }
+  S.trades.set(data.id, data);
+  const day = S.daily.get(dk(p, ds));
+  if(!day?.trade_status || day.trade_status==='No trade'){
+    const { data:dd } = await sb.from('do_daily').upsert({ pair:p, day:ds, trade_status:'In trade' }, { onConflict:'pair,day' }).select().single();
+    if(dd) S.daily.set(dk(p, ds), dayRow(dd));
+  }
+  return data;
+}
+async function deleteTrade(id){
+  if(S.legacyTrades) return noTradesTable();
+  const t = S.trades.get(id); if(!t || !confirm(`Delete this ${t.direction} trade on ${t.pair}? Observations of the day are kept.`)) return;
+  await flushSave();
+  const { error } = await sb.from('do_trades').delete().eq('id', id); if(error) return toast(error.message);
+  S.trades.delete(id); if(pendingRaw().includes(id)) await setPending(pendingList().filter(k => k!==id));
+  renderCalendar(); renderPanel(); refreshDock(); toast('Trade deleted');
 }
 
 /* ---- week ---- */
@@ -1846,7 +1982,7 @@ function weekDays(p, days){
   return days.map(d => { const ds = iso(d), e = S.daily.get(dk(p, ds)) || {}; return `<button class="wkday" data-goday="${ds}">
     <span class="disp" style="font-weight:700;width:48px">${WD_SHORT[d.getDay()]} ${d.getDate()}</span>
     ${e.trade_status ? stBadge(e.trade_status) : '<span class="muted" style="font-size:12.5px">—</span>'}
-    ${e.direction ? `<span style="font-size:12.5px;font-weight:800" class="${e.direction==='Long' ? 'pos' : 'neg'}">${e.direction==='Long' ? '▲' : '▼'}${e.result ? ' '+e.result : ''}</span>` : ''}
+    ${dayTrades(p, ds).map(t => `<span style="font-size:12.5px;font-weight:800" class="${t.direction==='Long' ? 'pos' : 'neg'}">${t.direction==='Long' ? '▲' : '▼'}${t.result ? ' '+t.result : ''}</span>`).join(' ')}
     <span class="num ${sgn(e.daily_change)}" style="margin-left:auto;font-size:12.5px;font-weight:800">${e.daily_change!=null ? pct(e.daily_change) : ''}</span></button>`; }).join('');
 }
 const CCY_STATES = ['Strong','Improving','Neutral','Weakening','Weak'];
@@ -2027,7 +2163,7 @@ const ACC_STATUS = { active:'Active', payout:'Payout reached', passed:'Passed', 
 const money = n => n==null ? '–' : `${n<0 ? '−' : ''}$${Math.abs(n).toLocaleString('en-US',{ maximumFractionDigits:0 })}`;
 function acctStats(a){
   const size = Number(a.size) || 0;
-  const tr = [...S.daily.values()].map(e => { const x = tradeAccts(e).find(t => t.id===a.id); return x && x.profit!=null ? { ...e, profit:Number(x.profit) } : null; })
+  const tr = [...S.trades.values()].map(e => { const x = tradeAccts(e).find(t => t.id===a.id); return x && x.profit!=null ? { ...e, profit:Number(x.profit) } : null; })
     .filter(Boolean).sort((x,y) => exitDay(x).localeCompare(exitDay(y)));
   let bal = size, low = size; const curve = [{ day:a.start_date || (tr[0]?.day ?? ''), bal:size }], byDay = {};
   tr.forEach(t => { bal += Number(t.profit); low = Math.min(low, bal); curve.push({ day:exitDay(t), bal }); byDay[exitDay(t)] = (byDay[exitDay(t)]||0) + Number(t.profit); });
@@ -2252,7 +2388,7 @@ function openAcct(a){
   acctDlg.querySelector('#acctDel')?.addEventListener('click', async () => {
     if(!confirm('Delete this account? Trades stay in the journal, just unlinked.')) return;
     const { error } = await sb.from('do_accounts').delete().eq('id', a.id); if(error) return toast(error.message);
-    S.accounts.delete(a.id); S.daily.forEach(e => { if(e.account_id===a.id) e.account_id = null; if(Array.isArray(e.trade_accounts)) e.trade_accounts = e.trade_accounts.filter(x => x.id!==a.id); });
+    S.accounts.delete(a.id); S.trades.forEach(e => { if(e.account_id===a.id) e.account_id = null; if(Array.isArray(e.trade_accounts)) e.trade_accounts = e.trade_accounts.filter(x => x.id!==a.id); });
     S.selAcct = null; acctDlg.close(); renderMain();
   });
   acctDlg.showModal();
@@ -2332,7 +2468,7 @@ const goalWeek = () => { if(!S.gw){ const w = isoWeek(new Date()); S.gw = { y:w.
 function weekRange(y, w){ const m = mondayOf(y, w), e = new Date(m); e.setDate(m.getDate()+6); return [iso(m), iso(e)]; }
 function goalAuto(g, y, w){
   const [a, b] = weekRange(y, w), inW = d => d >= a && d <= b;
-  const trades = [...S.daily.values()].filter(e => e.direction);
+  const trades = [...S.trades.values()];
   switch(g.source){
     case 'acct_pct': case 'acct_usd': {
       const acc = S.accounts.get(g.account_id); if(!acc) return null;
@@ -3156,7 +3292,9 @@ function renderTdBoard(){
 /* ---------- quick add trade + "to complete" reminders ---------- */
 /* pending = quick-added trades still missing details; list of "PAIR|YYYY-MM-DD" synced via do_settings */
 function pendingRaw(){ return Array.isArray(S.settings?.pending_trades) ? S.settings.pending_trades : ls.get('do_pending', []); }
-function pendingList(){ return pendingRaw().filter(k => S.daily.get(k)?.direction); }
+/* older entries were "PAIR|day" keys — map them to that day's first trade */
+function pendingId(k){ if(S.trades.has(k)) return k; if(k.includes('|')){ const [p, d] = k.split('|'); return dayTrades(p, d)[0]?.id || null; } return null; }
+function pendingList(){ return [...new Set(pendingRaw().map(pendingId).filter(Boolean))]; }
 async function setPending(list){
   S.settings.pending_trades = list; ls.set('do_pending', list);
   try{ const { error } = await sb.from('do_settings').upsert({ key:'pending_trades', value:list }, { onConflict:'key' }); if(error) throw error; }
@@ -3173,13 +3311,13 @@ function missingOf(e){
 const softMissing = e => (e.tv_daily || e.tv_4h || e.tv_1h) ? [] : ['Screenshot'];
 /* drop finished / deleted trades from the list (runs after every save) */
 async function checkPending(){
-  const raw = pendingRaw(), keep = raw.filter(k => { const e = S.daily.get(k); return e?.direction && missingOf(e).length; });
-  if(keep.length !== raw.length){ const done = raw.filter(k => !keep.includes(k) && S.daily.get(k)?.direction);
-    await setPending(keep); if(done.length) toast(`✓ ${done.map(k => k.split('|')[0]).join(', ')} complete`); }
+  const raw = pendingRaw(), ids = pendingList(), keep = ids.filter(id => missingOf(tradeFull(S.trades.get(id))).length);
+  if(keep.length !== raw.length || keep.some((k, i) => k!==raw[i])){ const done = ids.filter(id => !keep.includes(id));
+    await setPending(keep); if(done.length) toast(`✓ ${done.map(id => S.trades.get(id).pair).join(', ')} complete`); }
   refreshDock();
 }
-async function completeTrade(key){
-  const [p, day] = key.split('|');
+async function completeTrade(id){
+  const t = S.trades.get(id); if(!t) return; const p = t.pair, day = t.day; S.openTrade = id;
   document.querySelectorAll('dialog[open]').forEach(d => d.close());
   if(['journal','desk','today'].includes(S.view)) return openPairDay(p, day, 'edit');
   await flushSave();
@@ -3187,7 +3325,7 @@ async function completeTrade(key){
   S.sel = { type:'day', day }; S.month = firstOfMonth(parseISO(day)); S.drawerOpen = true; render();
 }
 function pendItems(){
-  return pendingList().map(k => { const e = S.daily.get(k), miss = missingOf(e), soft = softMissing(e);
+  return pendingList().map(k => { const e = tradeFull(S.trades.get(k)), miss = missingOf(e), soft = softMissing(e);
     return `<div class="pd-item">
       <span class="tj-dir ${e.direction.toLowerCase()}">${e.direction==='Long' ? '▲' : '▼'}</span>
       <div class="pd-b"><b>${base(e.pair)}<em>${quote(e.pair)}</em></b><span class="muted">${fmtDayShort(e.day)}${e.entry_time ? ' · '+esc(e.entry_time) : ''}${e.setup_tf ? ' · '+esc(e.setup_tf) : ''}</span>
@@ -3196,7 +3334,7 @@ function pendItems(){
 }
 function bindPend(root){
   root.querySelectorAll('[data-pc]').forEach(b => b.onclick = () => completeTrade(b.dataset.pc));
-  root.querySelectorAll('[data-pdone]').forEach(b => b.onclick = async () => { await setPending(pendingRaw().filter(k => k!==b.dataset.pdone)); refreshDock();
+  root.querySelectorAll('[data-pdone]').forEach(b => b.onclick = async () => { await setPending(pendingList().filter(k => k!==b.dataset.pdone)); refreshDock();
     if(root.id==='pendDlg'){ pendingList().length ? openPending() : root.close(); } if(S.view==='today') renderMain(); });
 }
 const pendDlg = document.getElementById('pendDlg');
@@ -3261,22 +3399,21 @@ function openQuickAdd(){
     if(!Q.pair) return msg.textContent = 'Pick a pair.';
     if(!Q.dir) return msg.textContent = 'Long or Short?';
     if(!/^\d{4}-\d{2}-\d{2}$/.test(ds)) return msg.textContent = 'Pick a date.';
-    const key = dk(Q.pair, ds), ex = S.daily.get(key);
-    if(ex?.direction && !confirm(`${Q.pair} already has a ${ex.direction} trade on ${fmtDayShort(ds)}. Overwrite its direction / setup / time?`)) return;
-    const row = { pair:Q.pair, day:ds, direction:Q.dir, setup_tf:Q.tf, entry_time:tm || null, trade_status: ex?.trade_status && ex.trade_status!=='No trade' ? ex.trade_status : 'In trade' };
+    const same = dayTrades(Q.pair, ds).filter(t => t.direction===Q.dir && (t.setup_tf||'')===(Q.tf||''));
+    if(same.length && !confirm(`${Q.pair} already has a ${Q.dir}${Q.tf ? ' '+Q.tf : ''} trade on ${fmtDayShort(ds)}. Add another one?`)) return;
+    const extra = { setup_tf:Q.tf, entry_time:tm || null };
     const n = id => parseNum(qaDlg.querySelector(id).value);
-    if(n('#qaEntry')!=null) row.entry_price = n('#qaEntry'); if(n('#qaSl')!=null) row.sl = n('#qaSl'); if(n('#qaTp')!=null) row.tp = n('#qaTp');
-    if(Q.accts.size){ row.trade_accounts = [...Q.accts].map(id => ({ id, profit:null })); row.account_id = row.trade_accounts[0].id; }
+    if(n('#qaEntry')!=null) extra.entry_price = n('#qaEntry'); if(n('#qaSl')!=null) extra.sl = n('#qaSl'); if(n('#qaTp')!=null) extra.tp = n('#qaTp');
+    if(Q.accts.size){ extra.trade_accounts = [...Q.accts].map(id => ({ id, profit:null })); extra.account_id = extra.trade_accounts[0].id; }
     const btn = qaDlg.querySelector('#qaSave'); btn.disabled = true; btn.textContent = 'Saving…';
     try{
-      await flushSave();
-      const { data, error } = await sb.from('do_daily').upsert(row, { onConflict:'pair,day' }).select().single();
-      if(error) throw error;
-      S.daily.set(key, data);
+      const data = await addTrade(Q.pair, ds, Q.dir, extra);
+      if(!data) throw new Error('not saved');
       ls.set('do_recent_pairs', [Q.pair, ...recentPairs().filter(x => x!==Q.pair)].slice(0, 6));
-      if(missingOf(data).length) await setPending([...pendingRaw().filter(k => k!==key), key]);
+      const miss = missingOf(tradeFull(data)).length;
+      if(miss) await setPending([...pendingList().filter(k => k!==data.id), data.id]);
       qaDlg.close(); render();
-      toast(`${Q.dir==='Long' ? '▲' : '▼'} ${Q.pair} added${missingOf(data).length ? ' — complete it later from ⏳' : ''}`);
+      toast(`${Q.dir==='Long' ? '▲' : '▼'} ${Q.pair} added${miss ? ' — complete it later from ⏳' : ''}`);
     }catch(e){ console.error(e); msg.textContent = e.message || String(e); btn.disabled = false; btn.textContent = 'Add trade'; }
   };
   drawPairs(); qaDlg.showModal(); setTimeout(() => q.focus(), 30);
@@ -3553,7 +3690,7 @@ function renderDeskGrid(){
           return `<td><button class="dc ${st} ${sel ? 'sel' : ''} ${c.ds===today ? 'tday' : ''}" data-cell="${r.p}|${c.ds}"
               title="${r.p} · ${fmtDayShort(c.ds)} — ${c.future ? 'upcoming' : c.state==='done' ? 'complete' : c.state==='part' ? 'partial: missing ' + ['close','d','h4','h1'].filter(k => !c.parts[k]).map(k => ({close:'close %',d:'Daily',h4:'4H',h1:'1H'}[k])).join(', ') : 'nothing logged'}">
             <span class="dc-t">${e.daily_change!=null ? `<b class="${sgn(e.daily_change)}">${pct(e.daily_change)}</b>` : `<span class="dc-m">${c.future ? '' : c.state==='none' ? 'missing' : '—'}</span>`}
-              ${e.direction ? `<span class="${e.direction==='Long' ? 'pos' : 'neg'}" style="font-weight:900">${e.direction==='Long' ? '▲' : '▼'}</span>` : ''}</span>
+              ${dayTrades(r.p, c.ds).map(t => `<span class="${t.direction==='Long' ? 'pos' : 'neg'}" style="font-weight:900">${t.direction==='Long' ? '▲' : '▼'}</span>`).join('')}</span>
             <span class="dsegs">${['close','d','h4','h1'].map(k => `<i class="${c.parts[k] ? 'on' : ''}"></i>`).join('')}</span>
           </button></td>`; }).join('')}
         <td><button class="dfund ${fr ? 'ok b-'+(fr.bias||'none') : 'miss'} ${r.p===S.pair && selWk===`${y}|${w}` ? 'sel' : ''}" data-fund="${r.p}">
@@ -3677,7 +3814,7 @@ function openTradeShare(e){
 
 /* ---------- Trades: full journal ---------- */
 S.tj = { period: ls.get('do_tj_period','all'), metric: ls.get('do_tj_metric','usd'), dir:'all', res:'all', pair:'all', acct:'all', tf:'all', sess:'all', tag:'all', q:'', sort:'new', open:null };
-function tjAll(){ return [...S.daily.values()].filter(e => e.direction).map(tjInfer); }
+function tjAll(){ return [...S.trades.values()].map(t => tjInfer(tradeFull(t))); }
 const tjIsOpen = e => !e.result && !e.exit_date;
 /* a trade with an exit date but no W/L set is still closed — infer the result from P/L */
 function tjInfer(e){
@@ -3796,7 +3933,7 @@ function renderTrades(){
   document.getElementById('tjReset')?.addEventListener('click', () => { Object.assign(S.tj, { dir:'all', res:'all', pair:'all', acct:'all', tf:'all', sess:'all', tag:'all', q:'' }); renderMain(); });
   document.querySelectorAll('[data-tjpair]').forEach(b => b.onclick = () => set('pair', b.dataset.tjpair));
   document.querySelectorAll('[data-tjgo]').forEach(b => b.onclick = ev => { ev.stopPropagation(); const [p, d] = b.dataset.tjgo.split('|'); goTo(p, { type:'day', day:d }); });
-  document.querySelectorAll('[data-tjshare]').forEach(b => b.onclick = ev => { ev.stopPropagation(); const t = tjAll().find(x => `${x.pair}|${x.day}`===b.dataset.tjshare); if(t) openTradeShare(t); });
+  document.querySelectorAll('[data-tjshare]').forEach(b => b.onclick = ev => { ev.stopPropagation(); const t = tjAll().find(x => x.id===b.dataset.tjshare); if(t) openTradeShare(t); });
   document.querySelectorAll('[data-tjrow]').forEach(r => r.onclick = ev => { if(ev.target.closest('a,[data-tjgo],[data-tjshare]')) return; S.tj.open = S.tj.open===r.dataset.tjrow ? null : r.dataset.tjrow; renderMain(); });
   if(st.curve.length > 1){
     const ink = cssv('--accent'), last = st.curve.at(-1).v;
@@ -3831,7 +3968,7 @@ function tjTimeline(e){
   return `<div class="tl-wrap"><div class="tl-top"><h4>How the trade played out</h4><span class="muted">${days.length} day${days.length===1?'':'s'}${tjIsOpen(e) ? ' · still open' : ''}</span></div><ol class="tlx">${items}</ol></div>`;
 }
 function tjRow(e){
-  const k = `${e.pair}|${e.day}`, open = S.tj.open===k, isO = tjIsOpen(e), mins = tradeMinutes(e), accs = tradeAccts(e).filter(x => S.accounts.get(x.id));
+  const k = e.id, open = S.tj.open===k, isO = tjIsOpen(e), mins = tradeMinutes(e), accs = tradeAccts(e).filter(x => S.accounts.get(x.id));
   const res = isO ? '<span class="tj-res o">Open</span>' : `<span class="tj-res ${e.result}" ${e._inferred ? 'title="W/L not set in the journal — inferred from P/L"' : ''}>${{W:'Win',L:'Loss',BE:'BE'}[e.result] || '–'}${e._inferred ? ' *' : ''}</span>`;
   return `<article class="tj-tr ${open ? 'open' : ''} ${e.result ? 'tjr-'+e.result : 'tjr-o'}" data-tjrow="${k}">
     <div class="tj-main">
@@ -3852,7 +3989,7 @@ function tjRow(e){
       ${e._inferred ? '<p class="hint" style="margin:0">⚠️ Result not set in the journal — counted as <b>' + ({W:'Win',L:'Loss',BE:'Break-even'}[e.result]) + '</b> from its P/L. Open the entry day and pick W/L to make it official.</p>' : ''}
       ${(e.tags||[]).length ? tagPills(e.tags) : ''}
       ${tjTimeline(e)}
-      <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn" data-tjshare="${e.pair}|${e.day}">📣 Share to Discord</button><button class="btn btn-primary" data-tjgo="${e.pair}|${e.day}">Open in journal ›</button></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn" data-tjshare="${e.id}">📣 Share to Discord</button><button class="btn btn-primary" data-tjgo="${e.pair}|${e.day}">Open in journal ›</button></div>
     </div>` : ''}
   </article>`;
 }
@@ -3892,7 +4029,8 @@ function mkChart(id, type, labels, datasets, opts={}){
       scales:{ x:{ ticks:{ color:tc, maxRotation:0, autoSkip:true }, grid:{ color:gc } }, y:{ ticks:{ color:tc }, grid:{ color:gc }, ...(opts.y||{}) } } } }));
 }
 function renderAnalysis(){
-  const es = scoped(), trades = es.filter(e => ['W','L','BE'].includes(e.result) && (S.acct==='all' || (S.acct==='none' ? !tradeAccts(e).length : tradeAccts(e).some(x => x.id===S.acct))))
+  const es = scoped(), from0 = periodStart(), trades = tjAll().filter(e => (S.scope==='all' || e.pair===S.pair) && e.day >= from0).sort((a,b) => a.day.localeCompare(b.day) || (a.entry_time||'').localeCompare(b.entry_time||''))
+    .filter(e => ['W','L','BE'].includes(e.result) && (S.acct==='all' || (S.acct==='none' ? !tradeAccts(e).length : tradeAccts(e).some(x => x.id===S.acct))))
     .map(e => { if(S.acct==='all' || S.acct==='none') return e; const x = tradeAccts(e).find(t => t.id===S.acct); return { ...e, profit: x?.profit ?? null }; });
   const tagStats = groupStats(trades.flatMap(t => (t.tags||[]).map(tag => ({ ...t, _tag:tag }))), t => t._tag).sort((a,b) => b.n-a.n).slice(0,14);
   const W = trades.filter(t => t.result==='W'), L = trades.filter(t => t.result==='L');
@@ -4002,7 +4140,7 @@ function renderOverview(){
   const cw = isoWeek(new Date());
   const rows = allPairs().map(p => {
     const es = [...S.daily.values()].filter(e => e.pair===p);
-    const tr = es.filter(e => ['W','L','BE'].includes(e.result));
+    const tr = [...S.trades.values()].filter(e => e.pair===p && ['W','L','BE'].includes(e.result));
     const w = tr.filter(e => e.result==='W').length, l = tr.filter(e => e.result==='L').length;
     const last = es.reduce((m,e) => e.day > m ? e.day : m, '');
     const wr = S.weekly.get(wk(p, cw.year, cw.week));
@@ -4045,11 +4183,13 @@ function download(name, text, type){
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 document.getElementById('expJson').onclick = () => download(`daily-observer-backup-${iso(new Date())}.json`,
-  JSON.stringify({ version:2, daily:[...S.daily.values()], weekly:[...S.weekly.values()], news:[...S.news.values()], accounts:[...S.accounts.values()], goals:[...S.goals.values()], bank:[...S.bank.rows.values()] }, null, 1), 'application/json');
+  JSON.stringify({ version:3, daily:[...S.daily.values()], trades: S.legacyTrades ? [] : [...S.trades.values()], weekly:[...S.weekly.values()], news:[...S.news.values()], accounts:[...S.accounts.values()], goals:[...S.goals.values()], bank:[...S.bank.rows.values()] }, null, 1), 'application/json');
 document.getElementById('expCsv').onclick = () => {
-  const p = S.pair, cols = ['day',...TEXT_F.slice(0,7),'r_multiple','risk','profit','entry_price','sl','tp','pips','daily_change','daily_obs','h4_obs','h1_obs','tv_daily','tv_4h','tv_1h','action'];
+  const p = S.pair, dayCols = ['trade_status','daily_change','daily_obs','h4_obs','h1_obs','tv_daily','tv_4h','tv_1h','action'], trCols = [...TR_TEXT_F, ...TR_NUM_F], cols = ['day', ...trCols, ...dayCols];
   const q = v => v==null ? '' : /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g,'""')}"` : String(v);
-  const rows = [...S.daily.values()].filter(e => e.pair===p).sort((a,b) => a.day.localeCompare(b.day));
+  /* one line per trade (days without a trade get one line with empty trade columns) */
+  const days = [...new Set([...[...S.daily.values()].filter(e => e.pair===p).map(e => e.day), ...[...S.trades.values()].filter(t => t.pair===p).map(t => t.day)])].sort();
+  const rows = days.flatMap(ds => { const d = S.daily.get(dk(p, ds)) || { pair:p, day:ds }, trs = dayTrades(p, ds); return trs.length ? trs.map(t => ({ ...d, ...t })) : [d]; });
   const head = [...cols, `${base(p)}_news`, `${quote(p)}_news`, 'bias', 'fundamentals'];
   const lines = rows.map(e => { const w = isoWeek(parseISO(e.day)), wr = S.weekly.get(wk(p,w.year,w.week));
     return [...cols.map(c => q(e[c])), q(S.news.get(nk(base(p),e.day))?.events), q(S.news.get(nk(quote(p),e.day))?.events), q(wr?.bias), q(wr?.fundamentals)].join(','); });
@@ -4060,11 +4200,18 @@ document.getElementById('jsonFile').onchange = async ev => {
   try{
     const j = JSON.parse(await f.text());
     const clean = arr => (arr||[]).map(({ id, created_at, updated_at, user_id, ...r }) => r);
-    if(!confirm(`Import: ${j.daily?.length||0} days, ${j.weekly?.length||0} weeks, ${j.news?.length||0} news items. Existing records on the same dates will be overwritten. Continue?`)) return;
+    /* trades: v3 backups have their own list; older ones keep the trade on the day row */
+    const legacyTr = (j.daily||[]).filter(d => d.direction).map(d => { const t = { pair:d.pair, day:d.day }; TR_ALL_F.forEach(f => { if(d[f]!=null) t[f] = d[f]; }); return t; });
+    const trades = Array.isArray(j.trades) && j.trades.length ? j.trades.map(({ created_at, updated_at, ...r }) => r)
+      : legacyTr.filter(t => !dayTrades(t.pair, t.day).length);
+    if(!confirm(`Import: ${j.daily?.length||0} days, ${trades.length} trades, ${j.weekly?.length||0} weeks, ${j.news?.length||0} news items. Existing records on the same dates will be overwritten. Continue?`)) return;
     if(j.accounts?.length) await upsertChunks('do_accounts', j.accounts.map(({ created_at, ...r }) => r), 'id');
     if(j.goals?.length) await upsertChunks('do_goals', j.goals.map(({ created_at, ...r }) => r), 'id');
     if(j.bank?.length) await upsertChunks('do_bank', j.bank.map(({ created_at, ...r }) => r), 'id');
-    await upsertChunks('do_daily', clean(j.daily), 'pair,day');
+    await upsertChunks('do_daily', clean(j.daily).map(r => dayRow({ ...r })), 'pair,day');
+    if(trades.length){ if(S.legacyTrades) noTradesTable();
+      else if(trades.every(t => t.id)) await upsertChunks('do_trades', trades, 'id');
+      else { for(let i = 0; i < trades.length; i += 400){ const { error } = await sb.from('do_trades').insert(trades.slice(i, i+400)); if(error) throw error; } } }
     await upsertChunks('do_weekly', clean(j.weekly), 'pair,year,week');
     await upsertChunks('do_news', clean(j.news), 'currency,day');
     await loadAll(); dataDlg.close(); render(); toast('Backup imported');
@@ -4152,15 +4299,16 @@ document.getElementById('csvFile').onchange = async ev => {
       daily_obs:'dailyobservations', h4_obs:'4hobservations', h1_obs:'1hobservations', tv_daily:'tvdaily', tv_4h:'tv4h', tv_1h:'tv1h', action:'actions' };
     const newsCols = H.map((h,i) => { const m = h.match(/^([a-z]{3})news$/); return m ? { i, cur:m[1].toUpperCase() } : null; }).filter(Boolean);
     const dI = col('date'), fI = col('fundamentals');
-    const daily = [], news = [], weekly = new Map();
+    const daily = [], news = [], weekly = new Map(), trades = [];
     for(const r of rows.slice(hi+1)){
       const day = parseDateLoose(r[dI]); if(!day) continue;
       const val = k => { const i = col(MAP[k]); if(i < 0) return null; const v = (r[i]||'').trim(); return v==='' || v==='-' ? null : v; };
-      const row = { pair:p, day };
+      const row = { pair:p, day }, tr = { pair:p, day };
       for(const f of TEXT_F) row[f] = val(f);
-      for(const f of NUM_F.filter(f => f!=='daily_change' && f!=='daily_pips')) row[f] = parseNum(val(f));
-      if(row.result){ const u = row.result.toUpperCase(); row.result = u.startsWith('W') ? 'W' : u.startsWith('L') ? 'L' : u.startsWith('B') ? 'BE' : row.result; }
-      if(row.direction){ row.direction = /short/i.test(row.direction) ? 'Short' : /long/i.test(row.direction) ? 'Long' : row.direction; }
+      for(const f of TR_TEXT_F) if(MAP[f]) tr[f] = val(f);
+      for(const f of TR_NUM_F) tr[f] = parseNum(val(f));
+      if(tr.result){ const u = tr.result.toUpperCase(); tr.result = u.startsWith('W') ? 'W' : u.startsWith('L') ? 'L' : u.startsWith('B') ? 'BE' : tr.result; }
+      if(tr.direction){ tr.direction = /short/i.test(tr.direction) ? 'Short' : /long/i.test(tr.direction) ? 'Long' : tr.direction; trades.push(tr); }
       const m = (row.daily_obs||'').match(/closed[^\d+\-−]*([+\-−]?\d+(?:[.,]\d+)?)\s*%/i);
       row.daily_change = m ? parseNum(m[1]) : null;
       if([...TEXT_F, ...NUM_F].some(f => row[f] != null)) daily.push(row);
@@ -4173,8 +4321,10 @@ document.getElementById('csvFile').onchange = async ev => {
     }
     const dedupe = (arr, key) => [...new Map(arr.map(x => [key(x), x])).values()];
     const nws = dedupe(news, n => n.currency+n.day);
-    if(!confirm(`Import into ${p}: ${daily.length} days, ${weekly.size} weeks with fundamentals, ${nws.length} news items (${[...new Set(nws.map(n=>n.currency))].join(', ') || '—'}). Existing days will be overwritten. Continue?`)) return;
+    const newTr = dedupe(trades, t => t.day).filter(t => !dayTrades(p, t.day).some(x => x.direction===t.direction));
+    if(!confirm(`Import into ${p}: ${daily.length} days, ${newTr.length} new trades, ${weekly.size} weeks with fundamentals, ${nws.length} news items (${[...new Set(nws.map(n=>n.currency))].join(', ') || '—'}). Existing days will be overwritten. Continue?`)) return;
     await upsertChunks('do_daily', dedupe(daily, d => d.day), 'pair,day');
+    if(newTr.length){ if(S.legacyTrades) noTradesTable(); else { const { error } = await sb.from('do_trades').insert(newTr); if(error) throw error; } }
     await upsertChunks('do_weekly', [...weekly.values()], 'pair,year,week');
     await upsertChunks('do_news', nws, 'currency,day');
     await loadAll(); dataDlg.close();
