@@ -3480,8 +3480,7 @@ function deriveSetups(){
           const cnd = candleAt(x.pair, x.tf, t - 90e3);
           if(!cnd){
             if(now - t < (TF_MS[x.tf] || 36e5) + 20*60e3){ x.pend = g; return; }       /* candle not in yet — check on the next refresh */
-            const priceOk = bp==null || L==null || (x.dir==='Long' ? Number(bp) > Number(L) : Number(bp) < Number(L));
-            if(priceOk){ x.bos = { ...g, level:gl, unverified:true }; x.stage = 'formed'; x.line = gl ?? g.price ?? null; x.pend = null; }
+            x.pend = null; (x.wicks = x.wicks || []).push({ at:g.at, why:`no heartbeat candle for the ${hhmm(g.at)} break — check the chart` });   /* unchecked → doesn't count */
             return;
           }
           const r = bodyBreak(x, cnd);
