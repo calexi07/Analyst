@@ -839,7 +839,11 @@
   .su-fs b{ display:block; font-size:13px; } .su-fs span:not(.su-fn){ display:block; font-size:11.5px; color:var(--muted); font-weight:600; line-height:1.35; margin-top:2px; }
   .su-fn{ flex:0 0 auto; width:24px; height:24px; border-radius:8px; display:grid; place-items:center; font-weight:900; font-size:12px; background:var(--accent); color:var(--on-accent); }
   .su-arrow{ align-self:center; color:var(--muted); font-weight:900; }
-  .su-board{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; align-items:start; margin-bottom:18px; }
+  .su-tf{ margin-bottom:18px; }
+  .su-tfh{ display:flex; align-items:center; gap:10px; margin:0 2px 10px; }
+  .su-tfh b{ font-family:'Bricolage Grotesque',sans-serif; font-size:18px; }
+  .su-tfh .muted{ font-size:12.5px; font-weight:700; }
+  .su-board{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; align-items:start; }
   @media (max-width:1100px){ .su-board{ grid-template-columns:1fr; } }
   .su-col{ border-radius:18px; border:1px solid var(--line); padding:12px; display:grid; gap:10px; background:var(--surface); position:relative; overflow:hidden; }
   .su-col::before{ content:''; position:absolute; left:0; right:0; top:0; height:3px; }
@@ -3381,7 +3385,6 @@ function deriveSetups(){
       const side = liqSide(g), dir = side==='sell' ? 'Long' : side==='buy' ? 'Short' : null, wr = biasAt(g.pair, g.at), bias = wr?.bias || null;
       const same = live.find(s => s.stage==='forming' && s.dir===dir && s.tf===g.tf);
       if(same){ same.liqs.push(g); same.liq = g; continue; }          /* another sweep on the same side refreshes the forming setup */
-      live.filter(s => s.stage==='forming' && dir && s.dir!==dir).forEach(s => { s.stage = 'invalid'; s.why = 'Opposite liquidity taken first'; s.endAt = g.at; });
       const aligned = (bias==='bullish' && dir==='Long') || (bias==='bearish' && dir==='Short');
       const su = { key:g.id, pair:g.pair, tf:g.tf, dir, side, bias, conviction:wr?.conviction || null, div:pairDiv(wr), liq:g, liqs:[g], bos:null, retest:null, startAt:g.at,
         stage: dir && aligned ? 'forming' : 'ignored',
@@ -3390,16 +3393,14 @@ function deriveSetups(){
     } else if(g.kind==='bos'){
       /* confirmation = the break closes beyond the swept level, opposite to the sweep:
          Long (sell-side taken at X) → break price above X · Short (buy-side taken at X) → break price below X */
-      const bp = g.price ?? g.level; let hit = null, wrong = null;
-      for(const x of [...live].reverse().filter(x => x.stage==='forming')){
+      const bp = g.price ?? g.level;
+      live.filter(x => x.stage==='forming').forEach(x => {
         const L = x.liq.level ?? x.liq.extreme; let ok;
         if(bp!=null && L!=null) ok = x.dir==='Long' ? Number(bp) > Number(L) : Number(bp) < Number(L);
         else if(g.side) ok = (g.side==='bull') === (x.dir==='Long');
         else ok = true;
-        if(ok){ hit = x; break; } if(!wrong) wrong = x;
-      }
-      if(hit){ hit.bos = g; hit.stage = 'formed'; hit.line = g.level ?? g.price ?? null; }
-      else if(wrong && bp!=null){ wrong.stage = 'invalid'; wrong.why = `Structure broke ${wrong.dir==='Long' ? 'below' : 'above'} the swept level`; wrong.endAt = g.at; }
+        if(ok){ x.bos = g; x.stage = 'formed'; x.line = g.level ?? g.price ?? null; }
+      });
     } else if(g.kind==='liqx'){
       /* a candle closed its whole body beyond the swept level → that liquidity is no longer valid */
       const dir = g.side==='sell' ? 'Long' : g.side==='buy' ? 'Short' : null;
@@ -3407,8 +3408,7 @@ function deriveSetups(){
           && (g.level==null || x.liq.level==null || Math.abs(Number(x.liq.level) - Number(g.level)) <= Math.abs(Number(g.level))*0.0005))
         .forEach(x => { x.stage = 'invalid'; x.why = `Body closed ${x.dir==='Long' ? 'below' : 'above'} the swept level${g.price!=null ? ' ('+lvl(g.price)+')' : ''}`; x.endAt = g.at; });
     } else if(g.kind==='retest'){
-      const s = [...live].reverse().find(x => x.stage==='formed');
-      if(s){ s.retest = g; s.stage = 'retest'; }
+      live.filter(x => x.stage==='formed').forEach(x => { x.retest = g; x.stage = 'retest'; });
     }
   }
   open.forEach(list => list.forEach(s => close(s, now)));
@@ -3436,7 +3436,7 @@ function suCard(s){
   const st = [
     ['Bias', s.bias ? `${BIAS_LBL[s.bias] || s.bias}${s.conviction ? ' · '+s.conviction : ''}${s.div!=null ? ' · div '+s.div : ''}` : 'not set', 'ok'],
     ['Liquidity', `${s.side==='sell' ? 'Sell-side (low)' : 'Buy-side (high)'}${s.liq.level!=null ? ' '+lvl(s.liq.level) : ''} · ${hhmm(s.liq.at)}${s.liqs.length > 1 ? ` · ${s.liqs.length} sweeps` : ''}`, 'ok'],
-    ['Fractal break', s.bos ? `${(s.bos.price ?? s.bos.level)!=null ? lvl(s.bos.price ?? s.bos.level) + ((s.liq.level ?? s.liq.extreme)!=null ? ` ${s.dir==='Long' ? '>' : '<'} ${lvl(s.liq.level ?? s.liq.extreme)} ✓` : '') : (s.dir==='Long' ? 'Bullish' : 'Bearish') + ' break'} · ${hhmm(s.bos.at)}${s.bos.tf && s.bos.tf!==s.tf ? ' · '+esc(s.bos.tf) : ''}` : `needs a close ${s.dir==='Long' ? 'above' : 'below'} ${(s.liq.level ?? s.liq.extreme)!=null ? lvl(s.liq.level ?? s.liq.extreme) : 'the swept level'}…`, s.bos ? 'ok' : s.stage==='forming' ? 'now' : ''],
+    ['Fractal break', s.bos ? `${(s.bos.price ?? s.bos.level)!=null ? lvl(s.bos.price ?? s.bos.level) + ((s.liq.level ?? s.liq.extreme)!=null ? ` ${s.dir==='Long' ? '>' : '<'} ${lvl(s.liq.level ?? s.liq.extreme)} ✓` : '') : (s.dir==='Long' ? 'Bullish' : 'Bearish') + ' break'} · ${hhmm(s.bos.at)}${s.bos.tf && s.bos.tf!==s.tf ? ' · '+esc(s.bos.tf) : ''}` : `waiting · confirms on a close ${s.dir==='Long' ? 'above' : 'below'} the swept ${s.dir==='Long' ? 'low' : 'high'}${(s.liq.level ?? s.liq.extreme)!=null ? ' ('+lvl(s.liq.level ?? s.liq.extreme)+')' : ''}`, s.bos ? 'ok' : s.stage==='forming' ? 'now' : ''],
     ['Retest', s.retest ? (s.retest.manual ? 'marked by you' : `back at the line · ${hhmm(s.retest.at)}`) : s.bos ? `waiting for price back at ${s.line!=null ? lvl(s.line) : 'the break line'}…` : '—', s.retest ? 'ok' : s.stage==='formed' ? 'now' : ''],
   ];
   return `<article class="su-card ${s.dir.toLowerCase()} st-${s.stage}" data-su="${s.key}">
@@ -3449,11 +3449,13 @@ function suCard(s){
         <button class="bt" data-suskip="${s.key}">Skip</button><button class="btn btn-primary" data-sutake="${s.key}">Take</button></div></div>
   </article>`;
 }
+const TF_RANK = { '1M':9, '1W':8, '1D':7, 'D1':7, '8H':6, '4H':5, '2H':4, '1H':3, '30m':2, '15m':1, '5m':0 };
+function suTfs(all){ return [...new Set(['4H', '1H', ...all.map(x => x.tf)])].sort((a,b) => (TF_RANK[b] ?? -1) - (TF_RANK[a] ?? -1)); }
 function renderSetups(){
   const m = document.getElementById('main');
   if(S.signalsMissing){ m.innerHTML = `<div class="pairtitle">Setups <span class="beta">beta</span></div><div class="card" style="margin-top:16px"><p>Run <b>migration-signals.sql</b> in Supabase, then reload — the signals table doesn't exist yet.</p></div>`; return; }
   const all = deriveSetups(), col = st => all.filter(s => s.stage===st);
-  const H = S.su.hist, hist = all.filter(s => ['taken','skipped','expired','invalid','ignored'].includes(s.stage) && (H==='all' ? s.stage!=='ignored' : s.stage===H));
+  const H = S.su.hist, HT = S.su.htf || 'all', hist = all.filter(s => ['taken','skipped','expired','invalid','ignored'].includes(s.stage) && (H==='all' ? s.stage!=='ignored' : s.stage===H) && (HT==='all' || s.tf===HT));
   const d30 = Date.now() - 30*864e5, rec = all.filter(s => tms(s.startAt) >= d30 && s.stage!=='ignored');
   const formedN = rec.filter(s => s.bos).length, takenN = rec.filter(s => s.stage==='taken').length;
   const wh = `${SUPABASE_URL}/functions/v1/tv-signal?key=YOUR_TV_SECRET`;
@@ -3465,15 +3467,18 @@ function renderSetups(){
     <div class="su-flow">${[['1','Fundamental bias','bullish → longs only · bearish → shorts only'],['2','Liquidity taken','old low/high swept, candle closes back with a wick'],['3','Fractal break','body close beyond the swept price — above for longs, below for shorts'],['4','Retest','price returns to the break line (your supply/demand)'],['⚡','Execute','take the trade from the card']]
       .map(([n,t,d]) => `<div class="su-fs"><span class="su-fn">${n}</span><div><b>${t}</b><span>${d}</span></div></div>`).join('<span class="su-arrow">→</span>')}</div>
     ${S.su.sim ? simPanel() : ''}
-    <div class="su-board">
-      ${[['forming','Forming','liquidity taken · waiting for the break'],['formed','Formed','structure broke · waiting for the retest'],['retest','At entry zone','price is back at the line']].map(([k,t,sub]) => { const list = col(k);
+    ${suTfs(all).map(tf => { const act = all.filter(x => x.tf===tf && ['forming','formed','retest'].includes(x.stage));
+      return `<section class="su-tf"><header class="su-tfh"><b>${esc(tf)} setups</b><span class="muted">${act.length} active</span></header>
+      <div class="su-board">
+      ${[['forming','Forming','liquidity taken · waiting for the break'],['formed','Formed','structure broke · waiting for the retest'],['retest','At entry zone','price is back at the line']].map(([k,t,sub]) => { const list = act.filter(x => x.stage===k);
         return `<section class="su-col c-${k}"><header><b>${t}</b><span class="bn">${list.length}</span><span class="muted">${sub}</span></header>
-          ${list.length ? list.map(suCard).join('') : `<p class="su-empty">${k==='forming' ? 'No liquidity sweep in the bias direction right now.' : 'Nothing here yet.'}</p>`}</section>`; }).join('')}
-    </div>
+          ${list.length ? list.map(suCard).join('') : `<p class="su-empty">${k==='forming' ? `No ${esc(tf)} sweep in the bias direction right now.` : 'Nothing here yet.'}</p>`}</section>`; }).join('')}
+      </div></section>`; }).join('')}
     <section class="card su-hist">
       <div class="td-h" style="flex-wrap:wrap;gap:10px"><h3>History</h3>
         <span class="muted" style="font-size:12.5px;font-weight:700">last 30 days · ${rec.length} sweep${rec.length===1 ? "" : "s"} in bias · ${formedN} formed (${rec.length ? Math.round(formedN/rec.length*100) : 0}%) · ${takenN} taken</span>
-        <div class="chips" style="margin-left:auto">${[['all','All'],['taken','Taken'],['skipped','Skipped'],['expired','Expired'],['invalid','Invalid'],['ignored','Ignored (against bias)']].map(([k,l]) => `<button class="ch" data-suh="${k}" aria-pressed="${H===k}">${l}</button>`).join('')}</div></div>
+        <div class="chips" style="margin-left:auto">${['all', ...suTfs(all)].map(t => `<button class="ch" data-suht="${t}" aria-pressed="${HT===t}">${t==='all' ? 'All TF' : esc(t)}</button>`).join('')}</div>
+        <div class="chips">${[['all','All'],['taken','Taken'],['skipped','Skipped'],['expired','Expired'],['invalid','Invalid'],['ignored','Ignored (against bias)']].map(([k,l]) => `<button class="ch" data-suh="${k}" aria-pressed="${H===k}">${l}</button>`).join('')}</div></div>
       ${hist.length ? `<div class="su-hl">${hist.slice(0, 80).map(s => `<div class="su-hr st-${s.stage}">
           <span class="${s.dir==='Long' ? 'pos' : s.dir==='Short' ? 'neg' : 'muted'}" style="font-weight:900">${s.dir==='Long' ? '▲' : s.dir==='Short' ? '▼' : '•'}</span>
           <b>${base(s.pair)}<em>${quote(s.pair)}</em></b><span class="tfl">${esc(s.tf)}</span>
@@ -3515,6 +3520,7 @@ function bindSetups(m, all){
   m.querySelector('#suRefresh').onclick = async () => { await loadSignals(); renderMain(); toast('Signals refreshed'); };
   m.querySelector('#suSimBtn').onclick = () => { S.su.sim = !S.su.sim; renderMain(); };
   m.querySelectorAll('[data-suh]').forEach(b => b.onclick = () => { S.su.hist = b.dataset.suh; ls.set('do_su_hist', S.su.hist); renderMain(); });
+  m.querySelectorAll('[data-suht]').forEach(b => b.onclick = () => { S.su.htf = b.dataset.suht; renderMain(); });
   m.querySelectorAll('[data-sutrade]').forEach(b => b.onclick = () => completeTrade(b.dataset.sutrade));
   m.querySelectorAll('[data-suret]').forEach(b => b.onclick = async () => { if(await markSetup(b.dataset.suret, 'retest')) renderMain(); });
   m.querySelectorAll('[data-suskip]').forEach(b => b.onclick = () => {
