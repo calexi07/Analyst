@@ -3537,7 +3537,7 @@ async function markSetup(key, status, extra = {}){
   S.setupMarks.set(key, data); return true;
 }
 const TV_INT = { '1m':'1', '5m':'5', '15m':'15', '30m':'30', '1H':'60', '2H':'120', '4H':'240', '1D':'D' };
-const tvUrl = (p, tf) => `https://www.tradingview.com/chart/?symbol=${encodeURIComponent((S.settings?.tv_prefix || 'OANDA:') + p)}&interval=${TV_INT[tf] || '60'}`;
+const tvUrl = (p, tf) => `https://www.tradingview.com/chart/?symbol=${encodeURIComponent((S.settings?.tv_prefix || 'FOREXCOM:') + p)}&interval=${TV_INT[tf] || '60'}`;
 function ago(at){ const m = Math.round((Date.now() - tms(at))/60000); return m < 1 ? 'now' : m < 60 ? `${m}m ago` : m < 1440 ? `${Math.floor(m/60)}h ${m%60 ? (m%60)+'m ' : ''}ago` : `${Math.floor(m/1440)}d ago`; }
 const hhmm = at => { const d = new Date(at); return `${WD_SHORT[d.getDay()]} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
 const lvl = v => v==null ? '' : String(+Number(v).toFixed(5));
