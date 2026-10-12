@@ -3602,6 +3602,10 @@ const SU_DEF = { forming:24, formed:24 };   /* hours a stage may wait before it 
 const suWin = () => ({ ...SU_DEF, ...(S.settings?.setup_windows || ls.get('do_su_win', {})) });
 const tms = v => new Date(v).getTime();
 function biasAt(pair, at){ const k = isoWeek(new Date(at)); return S.weekly.get(wk(pair, k.year, k.week)) || null; }
+function mergeLiq(liqs, dir){
+  const last = liqs[liqs.length-1], ex = liqs.map(x => x.extreme ?? x.level).filter(v => v!=null).map(Number);
+  return { ...last, extreme: ex.length ? (dir==='Short' ? Math.max(...ex) : Math.min(...ex)) : last.extreme, merged: liqs.length };
+}
 function liqSide(g){ return g.side || (g.level!=null && g.price!=null ? (Number(g.price) > Number(g.level) ? 'sell' : 'buy') : null); }
 /* entry zone: from the fractal-break line to the extreme (wick) of the candle that took the liquidity */
 function suZone(s){
@@ -3622,9 +3626,12 @@ function deriveSetups(){
     const live = list.filter(s => ['forming','formed','retest'].includes(s.stage)); open.set(k, live);
     if(g.kind==='liq'){
       const side = liqSide(g), dir = side==='sell' ? 'Long' : side==='buy' ? 'Short' : null, wr = biasAt(g.pair, g.at), bias = wr?.bias || null;
-      /* every sweep is its own setup — only a repeat of the very same sweep (same level, same TF) is merged */
-      const same = live.find(s => s.dir===dir && s.tf===g.tf && s.liq.level!=null && g.level!=null && Math.abs(Number(s.liq.level) - Number(g.level)) <= Math.abs(Number(g.level))*0.00005);
-      if(same){ same.liqs.push(g); continue; }
+      /* a new sweep on the same side and timeframe while the setup still waits for its break → the LATEST sweep becomes the reference;
+         the stop goes to the most extreme wick of all of them (if price went further, that wick is the new base) */
+      const same = live.find(s => s.stage==='forming' && s.dir===dir && s.tf===g.tf);
+      if(same){ same.liqs.push(g); same.liq = mergeLiq(same.liqs, dir); continue; }
+      const dup = live.find(s => s.dir===dir && s.tf===g.tf && s.liq.level!=null && g.level!=null && Math.abs(Number(s.liq.level) - Number(g.level)) <= Math.abs(Number(g.level))*0.00005);
+      if(dup){ dup.liqs.push(g); continue; }   /* the very same sweep sent twice */
       const aligned = (bias==='bullish' && dir==='Long') || (bias==='bearish' && dir==='Short');
       const su = { key:g.id, pair:g.pair, tf:g.tf, dir, side, bias, conviction:wr?.conviction || null, div:pairDiv(wr), liq:g, liqs:[g], bos:null, retest:null, startAt:g.at,
         stage: dir && aligned ? 'forming' : 'ignored',
@@ -3791,7 +3798,7 @@ function suCard(s){
   const tr = suOpenTrade(s), pl = s.bos ? suPlan(s) : null, step = sxStep(s, tr), nx = sxNext(s, tr, pl), L = s.dir==='Long';
   const lv = tr ? livePL(tr) : null;
   const rows = [
-    ['Liquidity', `${s.side==='sell' ? 'Sell-side' : 'Buy-side'} ${sxPx(s.liq.level)}`, hhmm(s.liq.at)],
+    ['Liquidity', `${s.side==='sell' ? 'Sell-side' : 'Buy-side'} ${sxPx(s.liq.level)}${s.liqs.length > 1 ? ` (${s.liqs.length} sweeps, stop at the ${s.dir==='Short' ? 'highest' : 'lowest'} wick ${sxPx(s.liq.extreme)})` : ''}`, hhmm(s.liq.at)],
     s.bos ? ['Break', s.bos.checked ? `Close ${lvl(s.bos.price)} ${L ? 'above' : 'below'} ${lvl(s.bos.level)}${s.bos.second ? ' (2nd candle)' : ''}` : `Line ${sxPx(s.line)}`, hhmm(s.bos.at)] : null,
     s.retest ? ['Retest', s.retest.manual ? 'Marked by you' : `Touched ${sxPx(s.retest.price)}`, s.retest.auto ? `${s.retest.tf} ${hhmm(s.retest.at).slice(-5)}` : hhmm(s.retest.at)] : null,
   ].filter(Boolean);
