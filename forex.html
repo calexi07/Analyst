@@ -3718,8 +3718,23 @@ function deriveSetups(){
   return all.sort((a,b) => tms(b.startAt) - tms(a.startAt));
 }
 /* did this candle close its BODY beyond the fractal opposite to the sweep? (and beyond the swept level) */
+/* the heartbeat sends the last fractal; if that fractal was printed by the rollover candle (1H or lower), find the previous real one
+   from the stored candles (2 candles each side, rollover never a fractal). No real fractal found → null (the break doesn't count). */
+function cleanFractal(idx, pair, tf, cnd, long){
+  const f = long ? cnd.fh : cnd.fl; if(f==null || (TF_MS[tf] || 0) > 36e5) return f;
+  const a = idx.get(pair+'|'+tf) || [], i = a.findIndex(c => c.t===cnd.t); if(i < 0) return f;
+  const lo = Math.max(0, i - 80), val = c => long ? (isRoll(c.t, tf) ? c.l : c.h) : (isRoll(c.t, tf) ? c.h : c.l);
+  const src = a.slice(lo, i).reverse().find(c => Math.abs((long ? c.h : c.l) - f) <= Math.abs(f)*1e-7);
+  if(!src || !isRoll(src.t, tf)) return f;
+  for(let j = i - 3; j >= lo + 2; j--){
+    const c = a[j]; if(isRoll(c.t, tf)) continue;
+    const v = val(c), nb = [a[j-2], a[j-1], a[j+1], a[j+2]];
+    if(nb.every(n => n && (long ? val(n) < v : val(n) > v))) return v;
+  }
+  return null;
+}
 function bodyBreak(x, c){
-  const L = x.liq.level ?? x.liq.extreme, long = x.dir==='Long', f = long ? c.fh : c.fl;
+  const L = x.liq.level ?? x.liq.extreme, long = x.dir==='Long', f = cleanFractal(S.candleIdx, x.pair, x.tf, c, long);
   if(f==null || c.c==null) return { ok:false, reason:'none', why:'no fractal in the candle data' };
   /* sell: the fractal must sit BELOW the swept high (buy: ABOVE the swept low) — otherwise the break is invalid */
   if(L!=null && (long ? f <= Number(L) : f >= Number(L))) return { ok:false, reason:'side', line:f, why:`fractal ${lvl(f)} is ${long ? 'below the swept low' : 'above the swept high'} ${lvl(L)}` };
