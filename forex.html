@@ -3390,10 +3390,17 @@ const engineOn = () => { const at = S.settings?.engine?.at; return !!at && Date.
 S.candles = new Map(); S.candleIdx = new Map(); S.candleMax = 0; S.candlesMissing = false;
 const TF_MS = { '5m':3e5, '15m':9e5, '30m':18e5, '1H':36e5, '2H':72e5, '4H':144e5, '8H':288e5, '1D':864e5 };
 async function loadCandles(){
-  const since = new Date(S.candleMax ? S.candleMax - 8*36e5 : Date.now() - 12*864e5).toISOString(), size = 1000;
+  /* only pairs that had a sweep in the last 30 days, from their first sweep on (setups don't expire) */
+  const cut = Date.now() - 30*864e5, first = new Map();
+  S.signals.forEach(g => { const t = tms(g.at); if(g.kind==='liq' && t >= cut && (!first.has(g.pair) || t < first.get(g.pair))) first.set(g.pair, t); });
+  const pairs = [...first.keys()]; if(!pairs.length){ S.candleIdx = new Map(); return; }
+  const fresh = pairs.filter(p => !S.candlePairs?.has(p));   /* new pair → load its history once */
+  const from0 = Math.min(...pairs.map(p => first.get(p))) - 864e5;
+  const since = new Date(S.candleMax && !fresh.length ? S.candleMax - 8*36e5 : from0).toISOString(), size = 1000;
+  S.candlePairs = new Set(pairs);
   try{
     for(let from = 0; ; from += size){
-      const { data, error } = await sb.from('do_candles').select('*').gte('t', since).order('t').range(from, from + size - 1);
+      const { data, error } = await sb.from('do_candles').select('*').in('pair', pairs).gte('t', since).order('t').range(from, from + size - 1);
       if(error) throw error;
       for(const r of data){ const c = { pair:r.pair, tf:r.tf, t:tms(r.t), o:numOr(r.o), h:numOr(r.h), l:numOr(r.l), c:numOr(r.c), fh:numOr(r.fh), fl:numOr(r.fl) };
         S.candles.set(`${c.pair}|${c.tf}|${c.t}`, c); if(c.t > S.candleMax) S.candleMax = c.t; }
@@ -3413,8 +3420,9 @@ function candleAt(pair, tf, ms){
   return null;
 }
 /* is the heartbeat running for this timeframe? (any candle in the last 4 days — covers weekends) */
-const hbOn = tf => [...S.candleIdx.entries()].some(([k, a]) => k.endsWith('|'+tf) && a.length && Date.now() - a[a.length-1].t < 4*864e5);
-function hbLast(tf){ let m = 0; S.candleIdx.forEach((a, k) => { if(k.endsWith('|'+tf) && a.length) m = Math.max(m, a[a.length-1].t); }); return m ? m + (TF_MS[tf] || 0) : 0; }
+const hbSet = tf => { const v = S.settings?.['hb_'+tf]; return v?.t ? tms(v.t) : 0; };   /* last heartbeat the server stored */
+const hbOn = tf => Date.now() - hbSet(tf) < 4*864e5 || [...S.candleIdx.entries()].some(([k, a]) => k.endsWith('|'+tf) && a.length && Date.now() - a[a.length-1].t < 4*864e5);
+function hbLast(tf){ let m = hbSet(tf); S.candleIdx.forEach((a, k) => { if(k.endsWith('|'+tf) && a.length) m = Math.max(m, a[a.length-1].t); }); return m ? m + (TF_MS[tf] || 0) : 0; }
 const suAutoClose = () => (S.settings?.su_autoclose ?? ls.get('do_su_autoclose', true)) !== false;
 const suAuto = () => (S.settings?.su_auto ?? ls.get('do_su_auto', true)) !== false;   /* auto-take the trade when the heartbeat sees the retest */
 async function saveSettingKey(key, value){
@@ -3435,10 +3443,8 @@ function suZone(s){
 const suZoneTxt = s => { const z = suZone(s); return z ? `${lvl(z.line)} → ${lvl(z.ext)}` : ''; };
 function deriveSetups(){
   const win = suWin(), H = 3600e3, now = Date.now(), all = [], open = new Map();
-  const close = (s, t) => {   /* expire if a stage waited too long */
-    if(s.stage==='forming' && t - tms(s.startAt) > win.forming*H){ s.stage = 'expired'; s.why = `No fractal break within ${win.forming}h`; s.endAt = new Date(tms(s.startAt) + win.forming*H).toISOString(); }
-    else if(s.stage==='formed' && t - tms(s.bos.at) > win.formed*H){ s.stage = 'expired'; s.why = `No retest within ${win.formed}h`; s.endAt = new Date(tms(s.bos.at) + win.formed*H).toISOString(); }
-  };
+  const close = () => {};   /* setups never expire — they end only on invalidation, Take or Skip */
+
   /* candles join the replay as events at their CLOSE time (for retests, and for breaks in "candles only" mode) */
   const cev = [...S.candles.values()].filter(c => TF_MS[c.tf]).map(c => ({ kind:'candle', pair:c.pair, tf:c.tf, at:new Date(c.t + TF_MS[c.tf]).toISOString(), cnd:c }));
   const sigs = [...S.signals, ...cev].sort((a,b) => tms(a.at) - tms(b.at) || (a.cnd && b.cnd ? (TF_MS[a.cnd.tf] || 0) - (TF_MS[b.cnd.tf] || 0) : 0));
@@ -3448,8 +3454,9 @@ function deriveSetups(){
     const live = list.filter(s => ['forming','formed','retest'].includes(s.stage)); open.set(k, live);
     if(g.kind==='liq'){
       const side = liqSide(g), dir = side==='sell' ? 'Long' : side==='buy' ? 'Short' : null, wr = biasAt(g.pair, g.at), bias = wr?.bias || null;
-      const same = live.find(s => s.stage==='forming' && s.dir===dir && s.tf===g.tf);
-      if(same){ same.liqs.push(g); same.liq = g; continue; }          /* another sweep on the same side refreshes the forming setup */
+      /* every sweep is its own setup — only a repeat of the very same sweep (same level, same TF) is merged */
+      const same = live.find(s => s.dir===dir && s.tf===g.tf && s.liq.level!=null && g.level!=null && Math.abs(Number(s.liq.level) - Number(g.level)) <= Math.abs(Number(g.level))*0.00005);
+      if(same){ same.liqs.push(g); continue; }
       const aligned = (bias==='bullish' && dir==='Long') || (bias==='bearish' && dir==='Short');
       const su = { key:g.id, pair:g.pair, tf:g.tf, dir, side, bias, conviction:wr?.conviction || null, div:pairDiv(wr), liq:g, liqs:[g], bos:null, retest:null, startAt:g.at,
         stage: dir && aligned ? 'forming' : 'ignored',
@@ -3541,7 +3548,9 @@ const tvUrl = (p, tf) => `https://www.tradingview.com/chart/?symbol=${encodeURIC
 function ago(at){ const m = Math.round((Date.now() - tms(at))/60000); return m < 1 ? 'now' : m < 60 ? `${m}m ago` : m < 1440 ? `${Math.floor(m/60)}h ${m%60 ? (m%60)+'m ' : ''}ago` : `${Math.floor(m/1440)}d ago`; }
 const hhmm = at => { const d = new Date(at); return `${WD_SHORT[d.getDay()]} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
 const lvl = v => v==null ? '' : String(+Number(v).toFixed(5));
-function suExpiry(s){ const win = suWin(), H = 3600e3;
+function suExpiry(s){ return s.stage==='forming' ? `waiting ${ago(s.startAt).replace(' ago','')}` : s.stage==='formed' && s.bos?.at ? `formed ${ago(s.bos.at)}` : '';
+}
+function suExpiryOld(s){ const win = suWin(), H = 3600e3;
   const end = s.stage==='forming' ? tms(s.startAt) + win.forming*H : s.stage==='formed' ? tms(s.bos.at) + win.formed*H : null;
   if(!end) return ''; const m = Math.max(0, Math.round((end - Date.now())/60000)); return m < 60 ? `expires in ${m}m` : `expires in ${Math.floor(m/60)}h`; }
 function suCard(s){
