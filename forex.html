@@ -3681,6 +3681,11 @@ function deriveSetups(){
         .forEach(x => { x.stage = 'invalid'; x.why = `Body closed ${x.dir==='Long' ? 'below' : 'above'} the swept level${g.price!=null ? ' ('+lvl(g.price)+')' : ''}`; x.endAt = g.at; });
     } else if(g.kind==='candle'){
       const c = g.cnd, len = TF_MS[c.tf];
+      /* while waiting for the break: if price runs further past the sweep (wick only, no body close beyond the level), that extreme becomes the stop */
+      live.filter(x => x.stage==='forming' && x.tf===c.tf && c.t >= tms(x.startAt) - 60e3 && c.h!=null && c.l!=null).forEach(x => {
+        const ext = x.liq.extreme ?? x.liq.level; if(ext==null) return;
+        if(x.dir==='Short' ? c.h > Number(ext) : c.l < Number(ext)) x.liq = { ...x.liq, extreme: x.dir==='Short' ? c.h : c.l, extMovedAt: c.t };
+      });
       /* retest: a candle (same or lower timeframe) after the break reaches the zone */
       live.filter(x => x.stage==='formed' && (TF_RANK[c.tf] ?? 0) <= (TF_RANK[x.tf] ?? 0)).forEach(x => {
         const bc = x.bos.candle ? x.bos.candle.t + (TF_MS[x.bos.candle.tf] || 0) : tms(x.bos.at) - 120e3, z = suZone(x);
@@ -3798,7 +3803,8 @@ function suCard(s){
   const tr = suOpenTrade(s), pl = s.bos ? suPlan(s) : null, step = sxStep(s, tr), nx = sxNext(s, tr, pl), L = s.dir==='Long';
   const lv = tr ? livePL(tr) : null;
   const rows = [
-    ['Liquidity', `${s.side==='sell' ? 'Sell-side' : 'Buy-side'} ${sxPx(s.liq.level)}${s.liqs.length > 1 ? ` (${s.liqs.length} sweeps, stop at the ${s.dir==='Short' ? 'highest' : 'lowest'} wick ${sxPx(s.liq.extreme)})` : ''}`, hhmm(s.liq.at)],
+    ['Liquidity', `${s.side==='sell' ? 'Sell-side' : 'Buy-side'} ${sxPx(s.liq.level)}${s.liqs.length > 1 ? ` (${s.liqs.length} sweeps)` : ''}`, hhmm(s.liq.at)],
+    (s.liqs.length > 1 || s.liq.extMovedAt) ? ['Stop', `Moved to the ${s.dir==='Short' ? 'highest' : 'lowest'} wick ${sxPx(s.liq.extreme)}`, s.liq.extMovedAt ? hhmm(new Date(s.liq.extMovedAt)) : hhmm(s.liq.at)] : null,
     s.bos ? ['Break', s.bos.checked ? `Close ${lvl(s.bos.price)} ${L ? 'above' : 'below'} ${lvl(s.bos.level)}${s.bos.second ? ' (2nd candle)' : ''}` : `Line ${sxPx(s.line)}`, hhmm(s.bos.at)] : null,
     s.retest ? ['Retest', s.retest.manual ? 'Marked by you' : `Touched ${sxPx(s.retest.price)}`, s.retest.auto ? `${s.retest.tf} ${hhmm(s.retest.at).slice(-5)}` : hhmm(s.retest.at)] : null,
   ].filter(Boolean);
