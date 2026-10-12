@@ -3405,6 +3405,7 @@ function candleAt(pair, tf, ms){
 /* is the heartbeat running for this timeframe? (any candle in the last 4 days — covers weekends) */
 const hbOn = tf => [...S.candleIdx.entries()].some(([k, a]) => k.endsWith('|'+tf) && a.length && Date.now() - a[a.length-1].t < 4*864e5);
 function hbLast(tf){ let m = 0; S.candleIdx.forEach((a, k) => { if(k.endsWith('|'+tf) && a.length) m = Math.max(m, a[a.length-1].t); }); return m ? m + (TF_MS[tf] || 0) : 0; }
+const suAutoClose = () => (S.settings?.su_autoclose ?? ls.get('do_su_autoclose', true)) !== false;
 const suAuto = () => (S.settings?.su_auto ?? ls.get('do_su_auto', true)) !== false;   /* auto-take the trade when the heartbeat sees the retest */
 async function saveSettingKey(key, value){
   S.settings[key] = value;
@@ -3430,7 +3431,7 @@ function deriveSetups(){
   };
   /* candles join the replay as events at their CLOSE time (for retests, and for breaks in "candles only" mode) */
   const cev = [...S.candles.values()].filter(c => TF_MS[c.tf]).map(c => ({ kind:'candle', pair:c.pair, tf:c.tf, at:new Date(c.t + TF_MS[c.tf]).toISOString(), cnd:c }));
-  const sigs = [...S.signals, ...cev].sort((a,b) => tms(a.at) - tms(b.at));
+  const sigs = [...S.signals, ...cev].sort((a,b) => tms(a.at) - tms(b.at) || (a.cnd && b.cnd ? (TF_MS[a.cnd.tf] || 0) - (TF_MS[b.cnd.tf] || 0) : 0));
   for(const g of sigs){
     const k = g.pair, t = tms(g.at), list = (open.get(k) || []);   /* per pair: the break may come on a lower timeframe than the sweep */
     list.forEach(s => close(s, t));
@@ -3486,7 +3487,7 @@ function deriveSetups(){
       live.filter(x => x.stage==='formed' && (TF_RANK[c.tf] ?? 0) <= (TF_RANK[x.tf] ?? 0)).forEach(x => {
         const bc = x.bos.candle ? x.bos.candle.t + (TF_MS[x.bos.candle.tf] || 0) : tms(x.bos.at) - 120e3, z = suZone(x);
         if(!z || c.t < bc - 60e3) return;
-        if(x.dir==='Long' ? c.l <= z.top : c.h >= z.bot){ x.retest = { kind:'retest', at:g.at, price:x.dir==='Long' ? c.l : c.h, tf:c.tf, auto:true }; x.stage = 'retest'; }
+        if(x.dir==='Long' ? c.l <= z.top : c.h >= z.bot){ x.retest = { kind:'retest', at:new Date(c.t).toISOString(), closeAt:g.at, price:x.dir==='Long' ? c.l : c.h, tf:c.tf, auto:true }; x.stage = 'retest'; }
       });
     } else if(g.kind==='retest'){
       live.filter(x => x.stage==='formed' && (!g.tf || g.tf==='?' || x.tf===g.tf)).forEach(x => {
@@ -3540,7 +3541,7 @@ function suCard(s){
     ['Fractal break', s.bos?.checked ? `body close ${lvl(s.bos.price)} ${s.dir==='Long' ? '>' : '<'} fractal ${lvl(s.bos.level)} ✓ · ${hhmm(s.bos.at)}${s.bos.source==='candle' ? ' · from candles' : ''}`
       : !s.bos && s.pend ? `break alert ${hhmm(s.pend.at)} · checking the candle close…`
       : s.bos ? `${(s.bos.price ?? s.bos.level)!=null ? lvl(s.bos.price ?? s.bos.level) + ((s.liq.level ?? s.liq.extreme)!=null ? ` ${s.dir==='Long' ? '>' : '<'} ${lvl(s.liq.level ?? s.liq.extreme)} ✓` : '') : (s.dir==='Long' ? 'Bullish' : 'Bearish') + ' break'} · ${hhmm(s.bos.at)}${s.bos.tf && s.bos.tf!==s.tf ? ' · '+esc(s.bos.tf) : ''}${s.bos.unverified ? ' · candle not checked' : ''}` : `waiting · needs a body close ${s.dir==='Long' ? 'above the last fractal high' : 'below the last fractal low'}${s.wicks?.length ? ` · ${s.wicks.length} break${s.wicks.length > 1 ? 's' : ''} ignored (${s.wicks[s.wicks.length-1].why})` : ''}`, s.bos ? 'ok' : s.stage==='forming' ? 'now' : ''],
-    ['Retest', s.retest ? `${s.retest.manual ? 'marked by you' : 'price in the zone' + (s.retest.price!=null ? ' · '+lvl(s.retest.price) : '') + (s.retest.auto ? ' · '+esc(s.retest.tf)+' candle' : '') + ' · ' + hhmm(s.retest.at)}${suZone(s) ? ' · zone '+suZoneTxt(s) : ''}` : s.bos ? (suZone(s) ? `waiting · zone ${suZoneTxt(s)}` : 'waiting for price back at the break line…') : '—', s.retest ? 'ok' : s.stage==='formed' ? 'now' : ''],
+    ['Retest', s.retest ? `${s.retest.manual ? 'marked by you' : 'price in the zone' + (s.retest.price!=null ? ' · '+lvl(s.retest.price) : '') + (s.retest.auto ? ` · ${esc(s.retest.tf)} candle ${hhmm(s.retest.at)}–${hhmm(s.retest.closeAt).slice(-5)}` : ' · ' + hhmm(s.retest.at))}${suZone(s) ? ' · zone '+suZoneTxt(s) : ''}` : s.bos ? (suZone(s) ? `waiting · zone ${suZoneTxt(s)}` : 'waiting for price back at the break line…') : '—', s.retest ? 'ok' : s.stage==='formed' ? 'now' : ''],
   ];
   const pl = s.bos ? suPlan(s) : null;
   if(pl) st.push(['Trade plan', `Entry ${lvl(pl.entry)} · SL ${lvl(pl.sl)} · TP ${lvl(pl.tp)} (2R)`, s.stage==='retest' ? 'now' : 'ok']);
@@ -3610,9 +3611,10 @@ function renderSetups(){
 function hbBar(){
   const st = tf => { const last = hbLast(tf); if(!last) return `<span class="hb-s off" title="No ${tf} candles yet">${tf} · off</span>`;
     const late = Date.now() - last > 2*TF_MS[tf] + 10*60e3; return `<span class="hb-s ${late ? 'late' : 'on'}" title="Last ${tf} candle closed ${new Date(last).toLocaleString()}">${tf} · ${late ? 'last' : '✓'} ${hhmm(last)}</span>`; };
-  return `<div class="hb-bar"><span class="lbl" style="margin:0">Heartbeat</span>${S.candlesMissing ? '<span class="hb-s off" title="Run migration-candles.sql in Supabase">table missing</span>' : st('1H') + st('4H')}
+  return `<div class="hb-bar"><span class="lbl" style="margin:0">Heartbeat</span>${S.candlesMissing ? '<span class="hb-s off" title="Run migration-candles.sql in Supabase">table missing</span>' : (hbLast('15m') ? st('15m') : '') + st('1H') + st('4H')}
     <span class="hb-sep"></span>
     <label class="hb-auto" title="When a heartbeat candle comes back to the retest line, the trade is created by itself: entry at the line, SL at the wick of the sweep candle, TP at 2R"><input type="checkbox" id="suAuto" ${suAuto() ? 'checked' : ''}> Auto-take at retest <span class="muted">(entry line · SL sweep wick · TP 2R)</span></label>
+    <label class="hb-auto" title="Setup trades are closed by themselves when a heartbeat candle reaches the TP (W, +2R) or the SL (L, −1R). SL and TP in one candle → counted as SL."><input type="checkbox" id="suAutoClose" ${suAutoClose() ? 'checked' : ''}> Auto-close at TP / SL</label>
     <span class="muted hb-note">${hbOn('1H') || hbOn('4H') ? 'Fractal alert → valid only if the fractal is beyond the liquidity (below the swept high for sells, above the swept low for buys) and the candle closed with its body · wicks ignored · retest line = the broken fractal' : 'add the DO Heartbeat indicator to check body closes and spot the retest — until then fractal alerts are checked only against the liquidity'}</span></div>`;
 }
 function simPanel(){
@@ -3633,7 +3635,7 @@ function simPanel(){
     <div class="su-simbtns"><span class="lbl" style="margin:0;align-self:center">Heartbeat candle · price = fractal</span>
       <button class="btn" data-simc="body|up">Body close above</button><button class="btn" data-simc="wick|up">Wick above only</button>
       <button class="btn" data-simc="body|down">Body close below</button><button class="btn" data-simc="wick|down">Wick below only</button>
-      <button class="btn" data-simc="touch|">Back at the line</button></div></section>`;
+      <button class="btn" data-simc="touch|">Back at the line</button><button class="btn" data-simc="tp|">Next candle → TP</button><button class="btn" data-simc="sl|">Next candle → SL</button></div></section>`;
 }
 /* create the trade for a setup — by hand (Take) or automatically when the heartbeat sees the retest */
 async function takeSetup(s, auto = false){
@@ -3665,9 +3667,59 @@ async function autoTakeSetups(){
   finally{ S.autoTaking = false; }
   return n;
 }
+/* setup trades: walk the heartbeat candles after the entry — TP first = W (+R), SL = L (−1R). Finest timeframe available is used. */
+S.autoClosing = false;
+async function autoCloseTrades(){
+  if(S.autoClosing || !CONFIGURED || S.legacyTrades || !suAutoClose() || !S.candleIdx.size) return 0;
+  S.autoClosing = true; let n = 0;
+  try{
+    const ids = new Set([...S.setupMarks.values()].filter(m => m.status==='taken' && m.trade_id).map(m => m.trade_id));
+    for(const id of ids){
+      const t = S.trades.get(id); if(!t || t.result) continue;
+      const r = tradeOutcome(t); if(!r) continue;
+      const exitD = new Date(r.at), exit_date = iso(exitD), exit_time = `${String(exitD.getHours()).padStart(2,'0')}:${String(exitD.getMinutes()).padStart(2,'0')}`;
+      const upd = { result:r.result, exit_date, exit_time, pips:r.pips, r_multiple:r.R,
+        notes: `${t.notes ? t.notes + '\n' : ''}[Auto] ${r.result==='W' ? 'TP' : 'SL'} hit in the ${r.tf} candle ${hhmm(r.at)}${r.both ? ' (TP and SL in the same candle — counted as SL)' : ''}.` };
+      const mins = tradeMinutes({ ...t, ...upd }); if(mins!=null) upd.duration = fmtDur(mins);
+      const { data, error } = await sb.from('do_trades').update(upd).eq('id', id).select().single();
+      if(error){ console.warn('auto-close failed', error); continue; }
+      S.trades.set(id, data); n++;
+      /* day status → Closed trade once every trade of that day is closed */
+      const day = S.daily.get(dk(t.pair, t.day));
+      if(day?.trade_status==='In trade' && dayTrades(t.pair, t.day).every(x => x.result)){
+        const { data:dd } = await sb.from('do_daily').upsert({ pair:t.pair, day:t.day, trade_status:'Closed trade' }, { onConflict:'pair,day' }).select().single();
+        if(dd) S.daily.set(dk(t.pair, t.day), dayRow(dd));
+      }
+      toast(`${r.result==='W' ? '✅ TP' : '❌ SL'} · ${t.direction==='Long' ? '▲' : '▼'} ${t.pair} closed ${r.R > 0 ? '+' : ''}${fmt(r.R, 1)}R (${r.pips > 0 ? '+' : ''}${fmt(r.pips, 1)} pips)`);
+    }
+  }catch(e){ console.warn('auto-close failed', e); }
+  finally{ S.autoClosing = false; }
+  return n;
+}
+function tradeOutcome(t){
+  const E = numOr(t.entry_price), SL = numOr(t.sl), TP = numOr(t.tp), long = t.direction==='Long';
+  if(E==null || SL==null || TP==null || !t.day) return null;
+  if(long ? !(SL < E && TP > E) : !(SL > E && TP < E)) return null;
+  const start = new Date(`${t.day}T${t.entry_time || '00:00'}`).getTime(); if(isNaN(start)) return null;
+  const tf = ['15m','1H','4H'].find(f => (S.candleIdx.get(t.pair+'|'+f) || []).some(c => c.t + TF_MS[f] > start)); if(!tf) return null;
+  const len = TF_MS[tf], ps = pipSize(t.pair), risk = Math.abs(E - SL);
+  let filled = false;
+  for(const c of S.candleIdx.get(t.pair+'|'+tf)){
+    if(c.t + len <= start) continue;
+    if(!filled){ if(long ? c.l <= E : c.h >= E){ filled = true;
+        /* entry candle: only the SL can be trusted (the TP may have printed before the entry) */
+        if(long ? c.l <= SL : c.h >= SL) return { result:'L', at:c.t, tf, pips:+((SL - E)/ps*(long ? 1 : -1)).toFixed(1), R:-1 }; }
+      continue; }
+    const sl = long ? c.l <= SL : c.h >= SL, tp = long ? c.h >= TP : c.l <= TP;
+    if(sl) return { result:'L', at:c.t, tf, both:tp, pips:+((SL - E)/ps*(long ? 1 : -1)).toFixed(1), R:-1 };
+    if(tp) return { result:'W', at:c.t, tf, pips:+((TP - E)/ps*(long ? 1 : -1)).toFixed(1), R:+(Math.abs(TP - E)/risk).toFixed(2) };
+  }
+  return null;
+}
+async function autoRun(){ const a = await autoTakeSetups(), b = await autoCloseTrades(); return a + b; }
 function bindSetups(m, all){
   const byKey = new Map(all.map(s => [s.key, s]));
-  m.querySelector('#suRefresh').onclick = async () => { await loadSignals(); const n = await autoTakeSetups(); renderMain(); if(!n) toast('Signals refreshed'); };
+  m.querySelector('#suRefresh').onclick = async () => { await loadSignals(); const n = await autoRun(); renderMain(); if(!n) toast('Signals refreshed'); };
   m.querySelector('#suSimBtn').onclick = () => { S.su.sim = !S.su.sim; renderMain(); };
   m.querySelectorAll('[data-suh]').forEach(b => b.onclick = () => { S.su.hist = b.dataset.suh; ls.set('do_su_hist', S.su.hist); renderMain(); });
   m.querySelectorAll('[data-suht]').forEach(b => b.onclick = () => { S.su.htf = b.dataset.suht; renderMain(); });
@@ -3694,18 +3746,28 @@ function bindSetups(m, all){
     if(error) return toast('Not saved: ' + error.message);
     S.signals.push(data); renderMain(); toast(`Test signal: ${kind}${side ? ' · '+side : ''} on ${row.pair} ${row.tf}`);
   });
-  m.querySelector('#suAuto')?.addEventListener('change', async e => { ls.set('do_su_auto', e.target.checked); await saveSettingKey('su_auto', e.target.checked); if(e.target.checked) await autoTakeSetups(); renderMain(); });
+  m.querySelector('#suAuto')?.addEventListener('change', async e => { ls.set('do_su_auto', e.target.checked); await saveSettingKey('su_auto', e.target.checked); if(e.target.checked) await autoRun(); renderMain(); });
+  m.querySelector('#suAutoClose')?.addEventListener('change', async e => { ls.set('do_su_autoclose', e.target.checked); await saveSettingKey('su_autoclose', e.target.checked); if(e.target.checked) await autoRun(); renderMain(); });
   m.querySelectorAll('[data-simc]').forEach(b => b.onclick = async () => {
-    const [how, way] = b.dataset.simc.split('|'), F = parseNum(m.querySelector('#simLvl').value), tf = stf.value, len = TF_MS[tf];
+    const [how, way] = b.dataset.simc.split('|'), tf = stf.value, len = TF_MS[tf];
+    let F = parseNum(m.querySelector('#simLvl').value), t0 = null, ex = null;
+    if(how==='tp' || how==='sl'){   /* move the open setup trade on this pair to its TP / SL */
+      const ids = new Set([...S.setupMarks.values()].filter(x => x.trade_id).map(x => x.trade_id));
+      const tr = [...S.trades.values()].filter(x => ids.has(x.id) && x.pair===sp.value && !x.result).pop();
+      if(!tr || tr.tp==null || tr.sl==null) return toast('No open setup trade with SL/TP on ' + sp.value);
+      const a = S.candleIdx.get(sp.value+'|'+tf) || [], last = a.length ? a[a.length-1].t : Math.floor(Date.now()/len)*len;
+      F = Number(tr.entry_price); t0 = last + len; ex = Number(how==='tp' ? tr.tp : tr.sl);
+    }
     if(F==null) return toast('Type the fractal price first');
     const d = F*0.0003, up = way==='up', t = Math.floor((Date.now() - 90e3)/len)*len;
-    const c = how==='touch' ? { o:F, h:F+d, l:F-d, c:F, fh:F+20*d, fl:F-20*d }   /* the next candle trades through the line */
+    const c = ex!=null ? { o:F, h:Math.max(F, ex) + d/10, l:Math.min(F, ex) - d/10, c:F, fh:null, fl:null }
+      : how==='touch' ? { o:F, h:F+d, l:F-d, c:F, fh:F+20*d, fl:F-20*d }   /* the next candle trades through the line */
       : up ? { o:F-d, h:F+2*d, l:F-2*d, c: how==='body' ? F+d : F-d/2, fh:F, fl:F-20*d } : { o:F+d, h:F+2*d, l:F-2*d, c: how==='body' ? F-d : F+d/2, fh:F+20*d, fl:F };
-    const row = { pair:sp.value, tf, t:new Date(how==='touch' ? t + len : t).toISOString(), ...c };
+    const row = { pair:sp.value, tf, t:new Date(t0 ?? (how==='touch' ? t + len : t)).toISOString(), ...c };
     const { error } = await sb.from('do_candles').upsert(row, { onConflict:'pair,tf,t' }); if(error) return toast('Not saved: ' + error.message);
     const k = tms(row.t), cc = { pair:row.pair, tf, t:k, ...c }; S.candles.set(`${row.pair}|${tf}|${k}`, cc); S.candleMax = Math.max(S.candleMax, k);
     S.candleIdx = new Map(); for(const x of S.candles.values()){ const kk = x.pair+'|'+x.tf; if(!S.candleIdx.has(kk)) S.candleIdx.set(kk, []); S.candleIdx.get(kk).push(x); } S.candleIdx.forEach(a => a.sort((x, y) => x.t - y.t));
-    const n = await autoTakeSetups(); renderMain(); if(!n) toast(`Test candle: ${how}${way ? ' '+way : ''} on ${row.pair} ${tf}`);
+    const n = await autoRun(); renderMain(); if(!n) toast(`Test candle: ${how}${way ? ' '+way : ''} on ${row.pair} ${tf}`);
   });
   m.querySelector('#simClear')?.addEventListener('click', async () => {
     const test = S.signals.filter(g => g.source==='test'); if(!test.length) return toast('No test signals');
@@ -3720,7 +3782,7 @@ function bindSetups(m, all){
 setInterval(async () => {
   if(!CONFIGURED || document.visibilityState!=='visible') return;
   await loadSignals();
-  const n = await autoTakeSetups(), busy = document.querySelector('dialog[open]') || document.querySelector('.su-skip') || S.drawerOpen;
+  const n = await autoRun(), busy = document.querySelector('dialog[open]') || document.querySelector('.su-skip') || S.drawerOpen;
   if(!busy && (S.view==='setups' || n)) renderMain();
   if(n) refreshDock?.();
 }, 60000);
@@ -4777,7 +4839,7 @@ document.getElementById('csvFile').onchange = async ev => {
     try{ await loadAll(); }catch(e){ console.error(e); toast('Could not load data: ' + e.message); }
   }
   render();
-  if(CONFIGURED && await autoTakeSetups()){ render(); refreshDock?.(); }
+  if(CONFIGURED && await autoRun()){ render(); refreshDock?.(); }
 })();
 </script>
 </body>
