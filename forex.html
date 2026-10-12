@@ -870,6 +870,8 @@
   .su-steps li.now i{ border:1.5px solid var(--amber); background:color-mix(in srgb,var(--amber) 35%,transparent); animation:pendPulse 2s infinite; }
   .su-steps li b{ font-weight:800; } .su-steps li span{ color:var(--muted); font-weight:600; min-width:0; }
   .su-steps li.ok span{ color:var(--ink); }
+  .su-steps li.win i{ background:var(--pos); border:1.5px solid var(--pos); animation:pendPulse 2s infinite; } .su-steps li.loss i{ background:var(--neg); border:1.5px solid var(--neg); animation:pendPulse 2s infinite; }
+  .su-card.st-intrade{ box-shadow:0 0 0 1px color-mix(in srgb,var(--accent, #c8f560) 55%,transparent), 0 8px 26px color-mix(in srgb,var(--accent, #c8f560) 14%,transparent); }
   .su-foot{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .su-foot > .muted{ font-size:11.5px; font-weight:700; }
   .su-act{ display:flex; gap:6px; margin-left:auto; align-items:center; }
@@ -3562,16 +3564,20 @@ function suCard(s){
       : s.bos ? `${(s.bos.price ?? s.bos.level)!=null ? lvl(s.bos.price ?? s.bos.level) + ((s.liq.level ?? s.liq.extreme)!=null ? ` ${s.dir==='Long' ? '>' : '<'} ${lvl(s.liq.level ?? s.liq.extreme)} ✓` : '') : (s.dir==='Long' ? 'Bullish' : 'Bearish') + ' break'} · ${hhmm(s.bos.at)}${s.bos.tf && s.bos.tf!==s.tf ? ' · '+esc(s.bos.tf) : ''}${s.bos.unverified ? ' · candle not checked' : ''}` : `waiting · needs a body close ${s.dir==='Long' ? 'above the last fractal high' : 'below the last fractal low'}${s.wicks?.length ? ` · ${s.wicks.length} break${s.wicks.length > 1 ? 's' : ''} ignored (${s.wicks[s.wicks.length-1].why})` : ''}`, s.bos ? 'ok' : s.stage==='forming' ? 'now' : ''],
     ['Retest', s.retest ? `${s.retest.manual ? 'marked by you' : 'price in the zone' + (s.retest.price!=null ? ' · '+lvl(s.retest.price) : '') + (s.retest.auto ? ` · ${esc(s.retest.tf)} candle ${hhmm(s.retest.at)}–${hhmm(s.retest.closeAt).slice(-5)}` : ' · ' + hhmm(s.retest.at))}${suZone(s) ? ' · zone '+suZoneTxt(s) : ''}` : s.bos ? (suZone(s) ? `waiting · zone ${suZoneTxt(s)}` : 'waiting for price back at the break line…') : '—', s.retest ? 'ok' : s.stage==='formed' ? 'now' : ''],
   ];
-  const pl = s.bos ? suPlan(s) : null;
-  if(pl) st.push(['Trade plan', `Entry ${lvl(pl.entry)} · SL ${lvl(pl.sl)} · TP ${lvl(pl.tp)} (2R)`, s.stage==='retest' ? 'now' : 'ok']);
-  return `<article class="su-card ${s.dir.toLowerCase()} st-${s.stage}" data-su="${s.key}">
+  const pl = s.bos ? suPlan(s) : null, tr = suOpenTrade(s);
+  if(tr){
+    const lv = livePL(tr);
+    st.push(['Position', `${tr.direction==='Long' ? 'Buy' : 'Sell'} ${lvl(tr.entry_price)} · SL ${lvl(tr.sl)} · TP ${lvl(tr.tp)} · since ${fmtDayShort(tr.day)} ${esc(tr.entry_time || '')}`, 'ok']);
+    st.push(['Live', lv ? `${lv.pips >= 0 ? '+' : ''}${fmt(lv.pips, 1)} pips · ${lv.R >= 0 ? '+' : ''}${fmt(lv.R, 2)}R · price ${lvl(lv.price)} (${lv.tf} ${hhmm(lv.at)}) · max DD ${fmt(lv.dd, 2)}R · best +${fmt(lv.best, 2)}R` : 'waiting for the next heartbeat candle…', lv ? (lv.R >= 0 ? 'win' : 'loss') : 'now']);
+  } else if(pl) st.push(['Trade plan', `Entry ${lvl(pl.entry)} · SL ${lvl(pl.sl)} · TP ${lvl(pl.tp)} (2R)`, s.stage==='retest' ? 'now' : 'ok']);
+  return `<article class="su-card ${s.dir.toLowerCase()} st-${tr ? 'intrade' : s.stage}" data-su="${s.key}">
     <header class="su-h"><b class="su-pair">${base(s.pair)}<em>${quote(s.pair)}</em></b><span class="su-dir">${s.dir==='Long' ? '▲ Long' : '▼ Short'}</span><span class="tfl">${esc(s.tf)}</span>
       <span class="su-age" title="${new Date(s.startAt).toLocaleString()}">${ago(s.startAt)}</span></header>
-    <ol class="su-steps">${st.map(([l,v,c]) => `<li class="${c}"><i></i><b>${l}</b><span>${esc(v)}</span></li>`).join('')}</ol>
+    <ol class="su-steps">${st.map(([l,v,c]) => `<li class="${c}"><i></i><b>${l}</b><span ${c==='win' ? 'style="color:var(--pos);font-weight:800"' : c==='loss' ? 'style="color:var(--neg);font-weight:800"' : ''}>${esc(v)}</span></li>`).join('')}</ol>
     <div class="su-foot"><span class="muted">${suExpiry(s)}</span>
       <div class="su-act"><a class="bt" href="${tvUrl(s.pair, s.tf)}" target="_blank" rel="noopener">Chart ↗</a>
-        ${s.stage==='formed' ? `<button class="bt" data-suret="${s.key}">In the zone</button>` : ''}
-        <button class="bt" data-suskip="${s.key}">Skip</button><button class="btn btn-primary" data-sutake="${s.key}">Take</button></div></div>
+        ${tr ? `<button class="btn btn-primary" data-sutrade="${tr.id}">Trade ›</button>` : `${s.stage==='formed' ? `<button class="bt" data-suret="${s.key}">In the zone</button>` : ''}
+        <button class="bt" data-suskip="${s.key}">Skip</button><button class="btn btn-primary" data-sutake="${s.key}">Take</button>`}</div></div>
   </article>`;
 }
 const TF_RANK = { '1M':9, '1W':8, '1D':7, 'D1':7, '8H':6, '4H':5, '2H':4, '1H':3, '30m':2, '15m':1, '5m':0 };
@@ -3594,10 +3600,10 @@ function renderSetups(){
     ${hbBar()}
     ${alertPlan()}
     ${S.su.sim ? simPanel() : ''}
-    ${suTfs(all).map(tf => { const act = all.filter(x => x.tf===tf && ['forming','formed','retest'].includes(x.stage));
+    ${suTfs(all).map(tf => { const act = all.filter(x => x.tf===tf && (['forming','formed','retest'].includes(x.stage) || suOpenTrade(x)));
       return `<section class="su-tf"><header class="su-tfh"><b>${esc(tf)} setups</b><span class="muted">${act.length} active</span></header>
       <div class="su-board">
-      ${[['forming','Forming','liquidity taken · waiting for the break'],['formed','Formed','structure broke · waiting for the retest'],['retest','At entry zone','price is back at the line']].map(([k,t,sub]) => { const list = act.filter(x => x.stage===k);
+      ${[['forming','Forming','liquidity taken · waiting for the break'],['formed','Formed','structure broke · waiting for the retest'],['retest','In trade','entry hit · live P/L from the heartbeat']].map(([k,t,sub]) => { const list = act.filter(x => x.stage===k || (k==='retest' && suOpenTrade(x)));
         return `<section class="su-col c-${k}"><header><b>${t}</b><span class="bn">${list.length}</span><span class="muted">${sub}</span></header>
           ${list.length ? list.map(suCard).join('') : `<p class="su-empty">${k==='forming' ? `No ${esc(tf)} sweep in the bias direction right now.` : 'Nothing here yet.'}</p>`}</section>`; }).join('')}
       </div></section>`; }).join('')}
@@ -3735,6 +3741,19 @@ async function autoCloseTrades(){
   }catch(e){ console.warn('auto-close failed', e); }
   finally{ S.autoClosing = false; }
   return n;
+}
+/* setup whose trade is still open */
+function suOpenTrade(s){ if(s.stage!=='taken' || !s.trade_id) return null; const t = S.trades.get(s.trade_id); return t && !t.result ? t : null; }
+/* live P/L of an open trade from the latest heartbeat candle (finest timeframe available) */
+function livePL(t){
+  const E = numOr(t.entry_price), SL = numOr(t.sl), long = t.direction==='Long'; if(E==null || !t.day) return null;
+  const start = new Date(`${t.day}T${t.entry_time || '00:00'}`).getTime(); if(isNaN(start)) return null;
+  const tf = ['15m','1H','4H'].find(f => (S.candleIdx.get(t.pair+'|'+f) || []).some(c => c.t + TF_MS[f] > start)); if(!tf) return null;
+  const a = (S.candleIdx.get(t.pair+'|'+tf) || []).filter(c => c.t + TF_MS[tf] > start); if(!a.length) return null;
+  const ps = pipSize(t.pair), riskP = SL!=null ? Math.abs(E - SL)/ps : null, dirm = long ? 1 : -1, last = a[a.length-1];
+  const worst = long ? Math.min(...a.map(c => c.l)) : Math.max(...a.map(c => c.h)), bestP = long ? Math.max(...a.map(c => c.h)) : Math.min(...a.map(c => c.l));
+  const pips = (last.c - E)/ps*dirm, R = v => riskP ? v/riskP : 0;
+  return { pips, R:R(pips), price:last.c, at:new Date(last.t + TF_MS[tf]).toISOString(), tf, dd:Math.min(0, R((worst - E)/ps*dirm)), best:Math.max(0, R((bestP - E)/ps*dirm)) };
 }
 function tradeOutcome(t){
   const E = numOr(t.entry_price), SL = numOr(t.sl), TP = numOr(t.tp), long = t.direction==='Long';
