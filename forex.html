@@ -3711,6 +3711,32 @@ function suPlan(s){
   const dg = E >= 20 ? 3 : 5, rd = v => Number(v.toFixed(dg));
   return { entry:rd(E), sl:rd(SL), tp:rd(s.dir==='Long' ? E + 2*r : E - 2*r) };
 }
+/* undo "Taken" / "Skipped": the setup goes back to its stage; a trade it logged is deleted from the journal */
+async function undoSetup(s){
+  if(!s) return;
+  const t = s.trade_id ? S.trades.get(s.trade_id) : null;
+  const msg = s.stage==='taken'
+    ? `Undo "Taken" on ${s.pair} ${s.tf}?${t ? `\n\nThe ${t.direction} trade it logged${t.entry_price!=null || t.result ? ` (${[t.entry_price!=null ? 'entry '+lvl(t.entry_price) : '', t.result ? 'result '+t.result : ''].filter(Boolean).join(', ')})` : ''} will be deleted from the journal.` : ''}\n\nThe setup goes back on the board and keeps sending alerts.`
+    : `Undo "Skipped" on ${s.pair} ${s.tf}? The setup goes back on the board.`;
+  if(!confirm(msg)) return;
+  const { error } = await sb.from('do_setup_marks').delete().eq('setup_key', s.key);
+  if(error) return toast('Not undone: ' + error.message);
+  S.setupMarks.delete(s.key);
+  if(t && !S.legacyTrades){
+    const { error:e2 } = await sb.from('do_trades').delete().eq('id', t.id);
+    if(e2) toast('Setup restored, but the trade could not be deleted: ' + e2.message);
+    else {
+      S.trades.delete(t.id);
+      if(pendingRaw().includes(t.id)) await setPending(pendingList().filter(k => k!==t.id));
+      const day = S.daily.get(dk(t.pair, t.day));
+      if(day?.trade_status==='In trade' && !dayTrades(t.pair, t.day).length){
+        const { data:dd } = await sb.from('do_daily').upsert({ pair:t.pair, day:t.day, trade_status:null }, { onConflict:'pair,day' }).select().single();
+        if(dd) S.daily.set(dk(t.pair, t.day), dayRow(dd));
+      }
+    }
+  }
+  refreshDock?.(); renderMain(); toast(`${s.pair} ${s.tf} is back on the board`);
+}
 async function markSetup(key, status, extra = {}){
   const row = { setup_key:key, status, reason:extra.reason ?? null, trade_id:extra.trade_id ?? null, updated_at:new Date().toISOString() };
   const { data, error } = await sb.from('do_setup_marks').upsert(row, { onConflict:'setup_key' }).select().single();
@@ -3790,7 +3816,7 @@ function suCard(s){
     <dl class="sx-rows">${rows.map(([k, v, t]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd><dd class="t">${esc(t)}</dd></div>`).join('')}
       <div><dt>Bias</dt><dd>${s.bias ? `${BIAS_LBL[s.bias] || s.bias}${s.conviction ? ', '+esc(s.conviction) : ''}` : 'not set'}</dd><dd class="t">${s.div!=null ? 'div '+s.div : ''}</dd></div></dl>
     <footer class="sx-foot"><a class="bt" href="${tvUrl(s.pair, s.tf)}" target="_blank" rel="noopener">Chart ↗</a>
-      ${tr ? `<button class="btn btn-primary" data-sutrade="${tr.id}">Open trade</button>`
+      ${tr ? `<button class="bt" data-suundo="${s.key}" title="Taken by mistake? Put the setup back and delete the trade it logged">Undo take</button><button class="btn btn-primary" data-sutrade="${tr.id}">Open trade</button>`
         : `<button class="bt" data-suskip="${s.key}">Skip</button>${s.stage==='formed' ? `<button class="bt" data-suret="${s.key}" title="Mark that price came back to the line">At the line</button>` : ''}<button class="btn ${s.stage==='forming' ? '' : 'btn-primary'}" data-sutake="${s.key}">Take</button>`}</footer>
   </article>`;
 }
@@ -3869,7 +3895,8 @@ function sxHistory(all){
         <span class="sx-hr-w">${hhmm(s.startAt)}</span>${s.why ? `<small class="sx-hr-why">${esc(s.why)}</small>` : ''}
         <span class="sx-hr-trail">${[s.liq ? 'Sweep' : '', s.bos ? 'Break' : '', s.retest ? 'Retest' : ''].filter(Boolean).join(' › ')}</span>
         ${res(s)}<span class="su-tag t-${s.stage}">${{taken:'Taken',skipped:'Skipped',expired:'Expired',invalid:'Invalid',ignored:'Against bias'}[s.stage]}</span>
-        ${s.trade_id && S.trades.get(s.trade_id) ? `<button class="bt" data-sutrade="${s.trade_id}">Trade</button>` : ''}</div>`).join('')}</div>`
+        ${s.trade_id && S.trades.get(s.trade_id) ? `<button class="bt" data-sutrade="${s.trade_id}">Trade</button>` : ''}
+        ${['taken','skipped'].includes(s.stage) ? `<button class="bt sx-undo" data-suundo="${s.key}" title="${s.stage==='taken' ? 'Taken by mistake? Put the setup back and delete the trade it logged' : 'Put the setup back on the board'}">Undo</button>` : ''}</div>`).join('')}</div>`
       : '<p class="sx-empty">Nothing here yet. Finished, skipped and invalidated setups are listed here.</p>'}`;
 }
 function sxGuide(){
@@ -4024,6 +4051,7 @@ async function autoRun(){ if(engineOn()) return 0; const a = await autoTakeSetup
 function bindSetups(m, all){
   const byKey = new Map(all.map(s => [s.key, s]));
   m.querySelector('#suRefresh').onclick = async () => { await liveRefresh(); renderMain(); };
+  m.querySelectorAll('[data-suundo]').forEach(b => b.onclick = () => undoSetup(byKey.get(b.dataset.suundo)));
   m.querySelectorAll('[data-suseen]').forEach(b => b.onclick = async () => { const s = byKey.get(b.dataset.suseen); if(!s) return;
     const card = b.closest('.sx'); card.classList.remove('is-new'); card.querySelector('.sx-new')?.remove(); await sxMarkSeen([s]); renderMain(); });
   m.querySelector('#suAllSeen')?.addEventListener('click', async () => { await sxMarkSeen(all.filter(sxIsNew)); renderMain(); });
