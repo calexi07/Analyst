@@ -909,6 +909,143 @@
   .hb-auto{ display:inline-flex; align-items:center; gap:7px; font-size:12.5px; font-weight:800; cursor:pointer; }
   .hb-auto input{ width:16px; height:16px; accent-color:var(--accent, #c8f560); }
   .hb-auto .muted{ font-weight:600; }
+  /* ---------- Setups ---------- */
+  .sx-top{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px 20px; margin-bottom:18px; }
+  .sx-top h1{ margin:0; }
+  .sx-sub{ margin:6px 0 0; color:var(--muted); font-weight:600; max-width:62ch; }
+  .sx-top-r{ display:flex; align-items:center; gap:8px; margin-left:auto; flex-wrap:wrap; }
+  .sx-status{ display:flex; align-items:center; gap:4px; padding:4px; border:1px solid var(--line); border-radius:999px; background:var(--surface); }
+  .sx-eng, .sx-hb{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:800; white-space:nowrap; }
+  .sx-eng{ background:var(--surface-2); color:var(--muted); }
+  .sx-status.on .sx-eng{ color:var(--pos); background:color-mix(in srgb,var(--pos) 12%,transparent); }
+  .sx-eng i, .sx-hb i{ width:7px; height:7px; border-radius:50%; background:currentColor; }
+  .sx-status.on .sx-eng i{ box-shadow:0 0 0 0 color-mix(in srgb,var(--pos) 60%,transparent); animation:sxPing 2.4s infinite; }
+  .sx-hb{ padding:4px 7px; color:var(--muted); } .sx-hb.on i{ background:var(--pos); } .sx-hb.late i{ background:var(--amber); } .sx-hb.off i{ background:transparent; border:1.5px solid var(--muted); }
+  @keyframes sxPing{ 0%{ box-shadow:0 0 0 0 color-mix(in srgb,var(--pos) 55%,transparent); } 70%,100%{ box-shadow:0 0 0 7px transparent; } }
+
+  .sx-stats{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+  .sx-stat{ --c:var(--muted); position:relative; display:grid; gap:2px; text-align:left; padding:12px 14px 12px 16px; border-radius:16px; border:1px solid var(--line); background:var(--surface); color:var(--ink); overflow:hidden; }
+  .sx-stat::before{ content:''; position:absolute; left:0; top:12px; bottom:12px; width:3px; border-radius:0 3px 3px 0; background:var(--c); }
+  .sx-stat.s-forming{ --c:var(--amber); } .sx-stat.s-formed{ --c:var(--info); } .sx-stat.s-trade{ --c:var(--accent); } .sx-stat.s-month{ --c:var(--violet); }
+  button.sx-stat:hover{ border-color:color-mix(in srgb,var(--c) 45%,var(--line)); }
+  .sx-stat[aria-selected="true"]{ border-color:color-mix(in srgb,var(--c) 60%,var(--line)); background:linear-gradient(135deg, color-mix(in srgb,var(--c) 10%,var(--surface)), var(--surface) 70%); }
+  .sx-stat-n{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:28px; line-height:1.05; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+  .sx-stat-t{ font-weight:800; font-size:13px; }
+  .sx-stat-x{ font-size:12px; font-weight:600; color:var(--muted); }
+
+  .sx-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px; margin-bottom:14px; }
+  .sx-switches{ display:flex; flex-wrap:wrap; gap:8px 16px; margin-left:auto; }
+  .sx-sw{ display:inline-flex; align-items:center; gap:9px; font-size:13px; font-weight:700; cursor:pointer; user-select:none; }
+  .sx-sw input{ position:absolute; opacity:0; width:1px; height:1px; }
+  .sx-sw i{ position:relative; width:34px; height:20px; border-radius:999px; background:var(--surface-2); border:1px solid var(--line); transition:background .2s; flex:none; }
+  .sx-sw i::after{ content:''; position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:var(--muted); transition:transform .2s, background .2s; }
+  .sx-sw input:checked + i{ background:color-mix(in srgb,var(--accent) 30%,var(--surface-2)); border-color:color-mix(in srgb,var(--accent) 55%,var(--line)); }
+  .sx-sw input:checked + i::after{ transform:translateX(14px); background:var(--accent); }
+  .sx-sw input:focus-visible + i{ outline:2px solid var(--focus); outline-offset:2px; }
+
+  .sx-board{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; align-items:start; margin-bottom:18px; }
+  .sx-col{ display:grid; gap:12px; padding:12px; border-radius:20px; border:1px solid var(--line); background:color-mix(in srgb,var(--surface) 55%,transparent); scroll-margin-top:16px; }
+  .sx-col > header{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; padding:2px 4px 0; }
+  .sx-col > header b{ font-family:'Bricolage Grotesque',sans-serif; font-size:17px; }
+  .sx-col > header p{ width:100%; margin:0; font-size:12px; font-weight:600; color:var(--muted); }
+  .sx-col.c-forming > header b::before, .sx-col.c-formed > header b::before, .sx-col.c-trade > header b::before{ content:''; display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:8px; vertical-align:middle; }
+  .sx-col.c-forming > header b::before{ background:var(--amber); } .sx-col.c-formed > header b::before{ background:var(--info); } .sx-col.c-trade > header b::before{ background:var(--accent); }
+  .sx-empty{ margin:0; padding:16px 14px; border:1px dashed var(--line); border-radius:14px; color:var(--muted); font-size:12.5px; font-weight:600; line-height:1.45; }
+  @media (max-width:900px){
+    .sx-stats{ grid-template-columns:repeat(3,minmax(0,1fr)); } .sx-stat.s-month{ grid-column:1/-1; }
+    .sx-stat{ padding:10px 10px 10px 13px; } .sx-stat-n{ font-size:24px; } .sx-stat-x{ display:none; } .sx-stat.s-month .sx-stat-x{ display:block; }
+    .sx-board{ grid-template-columns:1fr; }
+    .sx-board[data-stage="forming"] .sx-col:not(.c-forming), .sx-board[data-stage="formed"] .sx-col:not(.c-formed), .sx-board[data-stage="trade"] .sx-col:not(.c-trade){ display:none; }
+    .sx-col{ padding:0; border:0; background:none; }
+    .sx-switches{ margin-left:0; }
+    .sx-top-r{ margin-left:0; width:100%; flex-wrap:nowrap; } .sx-top-r .btn{ margin-left:auto; flex:none; }
+    .sx-stat.s-month{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; } .sx-stat.s-month .sx-stat-n{ font-size:20px; }
+    .sx-hr-why{ flex-basis:100%; order:9; white-space:normal; }
+    .sx-hr-trail{ margin-left:0; order:8; flex-basis:100%; }
+  }
+  @media (max-width:420px){ .sx-hb{ padding:4px 5px; } .sx-eng{ padding:4px 8px; } }
+
+  .sx{ --d:var(--pos); position:relative; display:grid; gap:12px; padding:14px 14px 12px 17px; border-radius:16px; border:1px solid var(--line); background:var(--surface); box-shadow:inset 3px 0 0 var(--d); }
+  .sx.short{ --d:var(--neg); }
+  .sx.st-formed{ border-color:color-mix(in srgb,var(--info) 40%,var(--line)); }
+  .sx.st-retest{ border-color:color-mix(in srgb,var(--pos) 55%,var(--line)); box-shadow:inset 3px 0 0 var(--d), 0 10px 28px color-mix(in srgb,var(--pos) 14%,transparent); }
+  .sx.st-intrade{ border-color:color-mix(in srgb,var(--accent) 50%,var(--line)); box-shadow:inset 3px 0 0 var(--d), 0 10px 28px color-mix(in srgb,var(--accent) 12%,transparent); }
+  .sx-head{ display:flex; align-items:flex-start; gap:10px; }
+  .sx-id{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 9px; }
+  .sx-pair{ font-family:'Bricolage Grotesque',sans-serif; font-size:21px; line-height:1; letter-spacing:-.02em; } .sx-pair em{ font-style:normal; opacity:.45; }
+  .sx-dir{ font-weight:800; font-size:13px; color:var(--d); }
+  .sx-age{ margin-left:auto; font-size:12px; font-weight:700; color:var(--muted); white-space:nowrap; }
+
+  .sx-track{ list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(5,1fr); gap:4px; }
+  .sx-track li{ display:grid; gap:5px; font-size:10.5px; font-weight:700; color:var(--muted); min-width:0; }
+  .sx-track li i{ height:4px; border-radius:999px; background:var(--line); }
+  .sx-track li.done i{ background:var(--pos); }
+  .sx-track li.now i{ background:var(--amber); animation:sxGlow 1.8s ease-in-out infinite; }
+  .sx.st-formed .sx-track li.now i{ background:var(--info); } .sx.st-retest .sx-track li.now i, .sx.st-intrade .sx-track li.now i{ background:var(--accent); }
+  .sx-track li.now span{ color:var(--ink); }
+  .sx-track li span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  @keyframes sxGlow{ 50%{ opacity:.45; } }
+
+  .sx-next{ --t:var(--amber); margin:0; padding:9px 12px; border-radius:12px; font-size:13.5px; font-weight:800; line-height:1.35; background:color-mix(in srgb,var(--t) 11%,transparent); color:var(--ink); border:1px solid color-mix(in srgb,var(--t) 26%,transparent); }
+  .sx-next.t-order{ --t:var(--info); } .sx-next.t-go{ --t:var(--pos); } .sx-next.t-trade{ --t:var(--accent); }
+  .sx-warn{ margin:-4px 0 0; font-size:12px; font-weight:600; color:var(--amber); }
+
+  .sx-plan{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+  .sx-plan > div{ display:grid; gap:1px; padding:8px 10px; border-radius:12px; background:var(--surface-2); }
+  .sx-plan span{ font-size:11.5px; font-weight:700; color:var(--muted); }
+  .sx-plan b{ font-family:'Bricolage Grotesque',sans-serif; font-size:16px; font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+  .sx-plan .sl{ background:color-mix(in srgb,var(--neg) 10%,var(--surface-2)); } .sx-plan .sl b{ color:var(--neg); }
+  .sx-plan .tp{ background:color-mix(in srgb,var(--pos) 10%,var(--surface-2)); } .sx-plan .tp b{ color:var(--pos); }
+
+  .sx-live{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px 18px; }
+  .sx-live > div{ display:grid; }
+  .sx-r{ font-family:'Bricolage Grotesque',sans-serif; font-size:34px; font-weight:800; line-height:1; letter-spacing:-.03em; font-variant-numeric:tabular-nums; }
+  .sx-live.up .sx-r{ color:var(--pos); } .sx-live.dn .sx-r{ color:var(--neg); }
+  .sx-live > div span{ font-size:12.5px; font-weight:700; color:var(--muted); }
+  .sx-live dl{ display:flex; gap:14px; margin:0 0 2px auto; }
+  .sx-live dl div{ display:grid; } .sx-live dt{ font-size:11px; font-weight:700; color:var(--muted); } .sx-live dd{ margin:0; font-size:13px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .sx-rail{ display:grid; gap:6px; }
+  .sx-rail-bar{ position:relative; height:8px; border-radius:999px; background:var(--surface-2); }
+  .sx-rail-loss, .sx-rail-win{ position:absolute; top:0; bottom:0; }
+  .sx-rail-loss{ left:0; border-radius:999px 0 0 999px; background:color-mix(in srgb,var(--neg) 35%,transparent); }
+  .sx-rail-win{ right:0; border-radius:0 999px 999px 0; background:color-mix(in srgb,var(--pos) 35%,transparent); }
+  .sx-rail-entry{ position:absolute; top:-3px; width:2px; height:14px; margin-left:-1px; background:var(--ink); border-radius:2px; }
+  .sx-rail-now{ position:absolute; top:50%; width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%; border:3px solid var(--surface); background:var(--pos); box-shadow:0 0 0 1px var(--pos); }
+  .sx-rail-now.dn{ background:var(--neg); box-shadow:0 0 0 1px var(--neg); }
+  .sx-rail-lbl{ position:relative; display:flex; justify-content:space-between; font-size:11px; font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums; min-height:15px; }
+  .sx-rail-lbl span:nth-child(2){ position:absolute; transform:translateX(-50%); color:var(--ink); white-space:nowrap; }
+
+  .sx-rows{ display:grid; gap:4px; margin:0; padding-top:10px; border-top:1px solid var(--line); }
+  .sx-rows > div{ display:grid; grid-template-columns:72px 1fr auto; gap:8px; font-size:12.5px; align-items:baseline; }
+  .sx-rows dt{ color:var(--muted); font-weight:700; } .sx-rows dd{ margin:0; font-weight:700; min-width:0; } .sx-rows dd.t{ color:var(--muted); font-weight:600; font-size:11.5px; white-space:nowrap; }
+  .sx-foot{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+  .sx-foot .bt:first-child{ margin-right:auto; }
+  .sx-foot .btn{ padding:6px 16px; }
+  .sx .su-skip{ display:grid; gap:6px; padding-top:10px; border-top:1px dashed var(--line); }
+
+  .sx-tools{ padding:0; overflow:hidden; margin-bottom:16px; }
+  .sx-tabs{ display:flex; gap:2px; padding:6px 10px 0; border-bottom:1px solid var(--line); overflow-x:auto; scrollbar-width:none; }
+  .sx-tabs button{ padding:10px 12px; border:0; border-bottom:2px solid transparent; background:none; color:var(--muted); font-weight:800; font-size:13.5px; white-space:nowrap; margin-bottom:-1px; }
+  .sx-tabs button[aria-selected="true"]{ color:var(--ink); border-bottom-color:var(--accent); }
+  .sx-tool{ padding:16px; display:grid; gap:12px; }
+  .sx-tool .su-sim{ margin:0; box-shadow:none; border:0; padding:0; background:none; }
+  .sx-tool-sum{ margin:0; font-size:13px; font-weight:600; color:var(--muted); }
+  .sx-filters{ display:flex; flex-wrap:wrap; gap:8px 16px; justify-content:space-between; }
+  .sx-hist{ display:grid; gap:4px; }
+  .sx-hr{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; padding:9px 12px; border-radius:12px; background:var(--surface-2); font-size:13px; }
+  .sx-hr-dir{ font-weight:900; } .sx-hr-p{ font-family:'Bricolage Grotesque',sans-serif; font-size:15px; } .sx-hr-p em{ font-style:normal; opacity:.45; }
+  .sx-hr-w{ font-weight:700; color:var(--muted); font-size:12px; white-space:nowrap; }
+  .sx-hr-why{ flex:1; min-width:0; font-size:12px; font-weight:600; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sx-hr-trail{ margin-left:auto; }
+  .sx-hr-trail{ font-size:12px; font-weight:700; color:var(--muted); }
+  .sx-res{ font-size:12px; font-weight:800; padding:2px 8px; border-radius:999px; background:var(--surface); color:var(--muted); }
+  .sx-res.w{ color:var(--pos); background:color-mix(in srgb,var(--pos) 12%,transparent); } .sx-res.l{ color:var(--neg); background:color-mix(in srgb,var(--neg) 12%,transparent); }
+  .sx-guide{ list-style:none; counter-reset:g; margin:0; padding:0; display:grid; gap:10px; }
+  .sx-guide li{ counter-increment:g; display:grid; grid-template-columns:28px 1fr; column-gap:10px; font-size:13px; }
+  .sx-guide li::before{ content:counter(g); grid-row:span 2; width:26px; height:26px; border-radius:9px; display:grid; place-items:center; font-weight:900; font-size:12px; background:var(--surface-2); border:1px solid var(--line); }
+  .sx-guide b{ font-weight:800; } .sx-guide span{ color:var(--muted); font-weight:600; }
+  .sx-conn{ border-top:1px solid var(--line); padding-top:10px; font-size:13px; } .sx-conn summary{ cursor:pointer; font-weight:800; } .sx-conn p{ margin:8px 0 4px; }
+  @media (prefers-reduced-motion: reduce){ .sx-track li.now i, .sx-status.on .sx-eng i{ animation:none; } .sx-sw i, .sx-sw i::after{ transition:none; } }
   .su-help summary{ cursor:pointer; }
   .su-help[open]{ display:grid; gap:8px; }
   .su-code{ margin:0; padding:10px 12px; border-radius:10px; background:var(--field); border:1px solid var(--line); font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; white-space:pre-wrap; word-break:break-all; }
@@ -3554,94 +3691,151 @@ function suExpiry(s){ return s.stage==='forming' ? `waiting ${ago(s.startAt).rep
 function suExpiryOld(s){ const win = suWin(), H = 3600e3;
   const end = s.stage==='forming' ? tms(s.startAt) + win.forming*H : s.stage==='formed' ? tms(s.bos.at) + win.formed*H : null;
   if(!end) return ''; const m = Math.max(0, Math.round((end - Date.now())/60000)); return m < 60 ? `expires in ${m}m` : `expires in ${Math.floor(m/60)}h`; }
+/* ---- Setups UI ---- */
+const SX_STEPS = ['Bias','Liquidity','Break','Retest','Trade'];
+/* how far a setup has come: 1 bias · 2 liquidity · 3 break · 4 retest · 5 trade */
+function sxStep(s, tr){ return tr ? 5 : s.retest ? 4 : s.bos ? 3 : 2; }
+const sxPx = v => v==null ? '—' : lvl(v);
+/* the one line that tells you what to do next */
+function sxNext(s, tr, pl){
+  const L = s.dir==='Long';
+  if(tr) return { tone:'trade', text:`In trade since ${esc(tr.entry_time || fmtDayShort(tr.day))}` };
+  if(s.stage==='retest') return { tone:'go', text: pl ? `Price is at the line. Take the ${L ? 'buy' : 'sell'} at ${lvl(pl.entry)}` : 'Price is back at the line' };
+  if(s.stage==='formed') return { tone:'order', text: pl ? `Place a limit ${L ? 'buy' : 'sell'} at ${lvl(pl.entry)}` : 'Wait for price to come back to the break line' };
+  if(s.pend) return { tone:'wait', text:`Break alert at ${hhmm(s.pend.at).slice(-5)}, checking the candle close` };
+  return { tone:'wait', text:`Waiting for a ${L ? 'bullish' : 'bearish'} body close ${L ? 'above the last fractal high' : 'below the last fractal low'}` };
+}
+/* price rail for an open trade: SL ─ entry ─ TP with the live price */
+function sxRail(tr, lv){
+  const E = numOr(tr.entry_price), SL = numOr(tr.sl), TP = numOr(tr.tp); if(E==null || SL==null || TP==null || SL===TP) return '';
+  const pos = v => Math.max(0, Math.min(100, (v - SL)/(TP - SL)*100));
+  const pe = pos(E), pp = lv ? pos(lv.price) : null;
+  return `<div class="sx-rail" role="img" aria-label="Price between stop loss and take profit">
+    <div class="sx-rail-bar"><i class="sx-rail-loss" style="width:${pe}%"></i><i class="sx-rail-win" style="left:${pe}%"></i>
+      <b class="sx-rail-entry" style="left:${pe}%"></b>${pp!=null ? `<b class="sx-rail-now ${lv.R >= 0 ? 'up' : 'dn'}" style="left:${pp}%"></b>` : ''}</div>
+    <div class="sx-rail-lbl"><span>SL ${lvl(SL)}</span><span style="left:${pe}%">Entry ${lvl(E)}</span><span>TP ${lvl(TP)}</span></div></div>`;
+}
 function suCard(s){
-  const st = [
-    ['Bias', s.bias ? `${BIAS_LBL[s.bias] || s.bias}${s.conviction ? ' · '+s.conviction : ''}${s.div!=null ? ' · div '+s.div : ''}` : 'not set', 'ok'],
-    ['Liquidity', `${s.side==='sell' ? 'Sell-side (low)' : 'Buy-side (high)'}${s.liq.level!=null ? ' '+lvl(s.liq.level) : ''} · ${hhmm(s.liq.at)}${s.liqs.length > 1 ? ` · ${s.liqs.length} sweeps` : ''}`, 'ok'],
-    ['Fractal break', s.bos?.checked ? `body close ${lvl(s.bos.price)} ${s.dir==='Long' ? '>' : '<'} fractal ${lvl(s.bos.level)} ✓ · ${hhmm(s.bos.at)}${s.bos.source==='candle' ? ' · from candles' : ''}`
-      : !s.bos && s.pend ? `break alert ${hhmm(s.pend.at)} · checking the candle close…`
-      : s.bos ? `${(s.bos.price ?? s.bos.level)!=null ? lvl(s.bos.price ?? s.bos.level) + ((s.liq.level ?? s.liq.extreme)!=null ? ` ${s.dir==='Long' ? '>' : '<'} ${lvl(s.liq.level ?? s.liq.extreme)} ✓` : '') : (s.dir==='Long' ? 'Bullish' : 'Bearish') + ' break'} · ${hhmm(s.bos.at)}${s.bos.tf && s.bos.tf!==s.tf ? ' · '+esc(s.bos.tf) : ''}${s.bos.unverified ? ' · candle not checked' : ''}` : `waiting · needs a body close ${s.dir==='Long' ? 'above the last fractal high' : 'below the last fractal low'}${s.wicks?.length ? ` · ${s.wicks.length} break${s.wicks.length > 1 ? 's' : ''} ignored (${s.wicks[s.wicks.length-1].why})` : ''}`, s.bos ? 'ok' : s.stage==='forming' ? 'now' : ''],
-    ['Retest', s.retest ? `${s.retest.manual ? 'marked by you' : 'price in the zone' + (s.retest.price!=null ? ' · '+lvl(s.retest.price) : '') + (s.retest.auto ? ` · ${esc(s.retest.tf)} candle ${hhmm(s.retest.at)}–${hhmm(s.retest.closeAt).slice(-5)}` : ' · ' + hhmm(s.retest.at))}${suZone(s) ? ' · zone '+suZoneTxt(s) : ''}` : s.bos ? (suZone(s) ? `waiting · zone ${suZoneTxt(s)}` : 'waiting for price back at the break line…') : '—', s.retest ? 'ok' : s.stage==='formed' ? 'now' : ''],
-  ];
-  const pl = s.bos ? suPlan(s) : null, tr = suOpenTrade(s);
-  if(tr){
-    const lv = livePL(tr);
-    st.push(['Position', `${tr.direction==='Long' ? 'Buy' : 'Sell'} ${lvl(tr.entry_price)} · SL ${lvl(tr.sl)} · TP ${lvl(tr.tp)} · since ${fmtDayShort(tr.day)} ${esc(tr.entry_time || '')}`, 'ok']);
-    st.push(['Live', lv ? `${lv.pips >= 0 ? '+' : ''}${fmt(lv.pips, 1)} pips · ${lv.R >= 0 ? '+' : ''}${fmt(lv.R, 2)}R · price ${lvl(lv.price)} (${lv.tf} ${hhmm(lv.at)}) · max DD ${fmt(lv.dd, 2)}R · best +${fmt(lv.best, 2)}R` : 'waiting for the next heartbeat candle…', lv ? (lv.R >= 0 ? 'win' : 'loss') : 'now']);
-  } else if(pl) st.push(['Trade plan', `Entry ${lvl(pl.entry)} · SL ${lvl(pl.sl)} · TP ${lvl(pl.tp)} (2R)`, s.stage==='retest' ? 'now' : 'ok']);
-  return `<article class="su-card ${s.dir.toLowerCase()} st-${tr ? 'intrade' : s.stage}" data-su="${s.key}">
-    <header class="su-h"><b class="su-pair">${base(s.pair)}<em>${quote(s.pair)}</em></b><span class="su-dir">${s.dir==='Long' ? '▲ Long' : '▼ Short'}</span><span class="tfl">${esc(s.tf)}</span>
-      <span class="su-age" title="${new Date(s.startAt).toLocaleString()}">${ago(s.startAt)}</span></header>
-    <ol class="su-steps">${st.map(([l,v,c]) => `<li class="${c}"><i></i><b>${l}</b><span ${c==='win' ? 'style="color:var(--pos);font-weight:800"' : c==='loss' ? 'style="color:var(--neg);font-weight:800"' : ''}>${esc(v)}</span></li>`).join('')}</ol>
-    <div class="su-foot"><span class="muted">${suExpiry(s)}</span>
-      <div class="su-act"><a class="bt" href="${tvUrl(s.pair, s.tf)}" target="_blank" rel="noopener">Chart ↗</a>
-        ${tr ? `<button class="btn btn-primary" data-sutrade="${tr.id}">Trade ›</button>` : `${s.stage==='formed' ? `<button class="bt" data-suret="${s.key}">In the zone</button>` : ''}
-        <button class="bt" data-suskip="${s.key}">Skip</button><button class="btn btn-primary" data-sutake="${s.key}">Take</button>`}</div></div>
+  const tr = suOpenTrade(s), pl = s.bos ? suPlan(s) : null, step = sxStep(s, tr), nx = sxNext(s, tr, pl), L = s.dir==='Long';
+  const lv = tr ? livePL(tr) : null;
+  const rows = [
+    ['Liquidity', `${s.side==='sell' ? 'Sell-side' : 'Buy-side'} ${sxPx(s.liq.level)}`, hhmm(s.liq.at)],
+    s.bos ? ['Break', s.bos.checked ? `Close ${lvl(s.bos.price)} ${L ? 'above' : 'below'} ${lvl(s.bos.level)}` : `Line ${sxPx(s.line)}`, hhmm(s.bos.at)] : null,
+    s.retest ? ['Retest', s.retest.manual ? 'Marked by you' : `Touched ${sxPx(s.retest.price)}`, s.retest.auto ? `${s.retest.tf} ${hhmm(s.retest.at).slice(-5)}` : hhmm(s.retest.at)] : null,
+  ].filter(Boolean);
+  const warn = !s.bos && s.wicks?.length ? s.wicks[s.wicks.length-1].why : '';
+  const levels = tr ? { e:tr.entry_price, sl:tr.sl, tp:tr.tp } : pl ? { e:pl.entry, sl:pl.sl, tp:pl.tp } : null;
+  return `<article class="sx ${L ? 'long' : 'short'} st-${tr ? 'intrade' : s.stage}" data-su="${s.key}">
+    <header class="sx-head">
+      <div class="sx-id"><b class="sx-pair">${base(s.pair)}<em>${quote(s.pair)}</em></b>
+        <span class="sx-dir">${L ? '▲ Long' : '▼ Short'}</span><span class="tfl">${esc(s.tf)}</span></div>
+      <span class="sx-age" title="${new Date(s.startAt).toLocaleString()}">${ago(s.startAt)}</span>
+    </header>
+    <ol class="sx-track" aria-label="Setup progress: step ${step} of 5">${SX_STEPS.map((t, i) => `<li class="${i+1 < step ? 'done' : i+1===step ? 'now' : ''}"><i></i><span>${t}</span></li>`).join('')}</ol>
+    <p class="sx-next t-${nx.tone}">${nx.text}</p>
+    ${warn ? `<p class="sx-warn">${esc(warn)}</p>` : ''}
+    ${tr ? `<div class="sx-live ${lv ? (lv.R >= 0 ? 'up' : 'dn') : ''}">
+        <div><b class="sx-r">${lv ? `${lv.R >= 0 ? '+' : ''}${fmt(lv.R, 2)}R` : '…'}</b><span>${lv ? `${lv.pips >= 0 ? '+' : ''}${fmt(lv.pips, 1)} pips` : 'waiting for the next candle'}</span></div>
+        ${lv ? `<dl><div><dt>Price</dt><dd>${lvl(lv.price)}</dd></div><div><dt>Worst</dt><dd>${fmt(lv.dd, 2)}R</dd></div><div><dt>Best</dt><dd>+${fmt(lv.best, 2)}R</dd></div></dl>` : ''}
+      </div>${sxRail(tr, lv)}`
+    : levels ? `<div class="sx-plan"><div><span>Entry</span><b>${sxPx(levels.e)}</b></div><div class="sl"><span>Stop</span><b>${sxPx(levels.sl)}</b></div><div class="tp"><span>Target 2R</span><b>${sxPx(levels.tp)}</b></div></div>` : ''}
+    <dl class="sx-rows">${rows.map(([k, v, t]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd><dd class="t">${esc(t)}</dd></div>`).join('')}
+      <div><dt>Bias</dt><dd>${s.bias ? `${BIAS_LBL[s.bias] || s.bias}${s.conviction ? ', '+esc(s.conviction) : ''}` : 'not set'}</dd><dd class="t">${s.div!=null ? 'div '+s.div : ''}</dd></div></dl>
+    <footer class="sx-foot"><a class="bt" href="${tvUrl(s.pair, s.tf)}" target="_blank" rel="noopener">Chart ↗</a>
+      ${tr ? `<button class="btn btn-primary" data-sutrade="${tr.id}">Open trade</button>`
+        : `<button class="bt" data-suskip="${s.key}">Skip</button>${s.stage==='formed' ? `<button class="bt" data-suret="${s.key}" title="Mark that price came back to the line">At the line</button>` : ''}<button class="btn ${s.stage==='forming' ? '' : 'btn-primary'}" data-sutake="${s.key}">Take</button>`}</footer>
   </article>`;
 }
 const TF_RANK = { '1M':9, '1W':8, '1D':7, 'D1':7, '8H':6, '4H':5, '2H':4, '1H':3, '30m':2, '15m':1, '5m':0 };
 function suTfs(all){ return [...new Set(['4H', '1H', ...all.map(x => x.tf)])].sort((a,b) => (TF_RANK[b] ?? -1) - (TF_RANK[a] ?? -1)); }
+const SX_COLS = [['forming','Forming','Liquidity taken, waiting for the break'],['formed','Formed','Structure broke, set the limit order'],['trade','Entry and trades','At the line or in a trade, live from the heartbeat']];
 function renderSetups(){
   const m = document.getElementById('main');
-  if(S.signalsMissing){ m.innerHTML = `<div class="pairtitle">Setups <span class="beta">beta</span></div><div class="card" style="margin-top:16px"><p>Run <b>migration-signals.sql</b> in Supabase, then reload — the signals table doesn't exist yet.</p></div>`; return; }
-  const all = deriveSetups(), col = st => all.filter(s => s.stage===st);
-  const H = S.su.hist, HT = S.su.htf || 'all', hist = all.filter(s => ['taken','skipped','expired','invalid','ignored'].includes(s.stage) && (H==='all' ? s.stage!=='ignored' : s.stage===H) && (HT==='all' || s.tf===HT));
-  const d30 = Date.now() - 30*864e5, rec = all.filter(s => tms(s.startAt) >= d30 && s.stage!=='ignored');
-  const formedN = rec.filter(s => s.bos).length, takenN = rec.filter(s => s.stage==='taken').length;
-  const wh = `${SUPABASE_URL}/functions/v1/tv-signal?key=YOUR_TV_SECRET`;
+  if(S.signalsMissing){ m.innerHTML = `<div class="pairtitle">Setups <span class="beta">beta</span></div><div class="card" style="margin-top:16px"><p>Run <b>migration-signals.sql</b> in Supabase, then reload. The signals table doesn't exist yet.</p></div>`; return; }
+  const all = deriveSetups(), tf = S.su.tf || 'all';
+  const inTf = x => tf==='all' || x.tf===tf;
+  const colOf = x => suOpenTrade(x) ? 'trade' : x.stage==='retest' ? 'trade' : ['forming','formed'].includes(x.stage) ? x.stage : null;
+  const act = all.filter(x => colOf(x) && inTf(x));
+  const by = k => act.filter(x => colOf(x)===k).sort((a, b) => tms(b.bos?.at || b.startAt) - tms(a.bos?.at || a.startAt));
+  const cols = Object.fromEntries(SX_COLS.map(([k]) => [k, by(k)]));
+  const live = cols.trade.map(x => suOpenTrade(x)).filter(Boolean).map(livePL).filter(Boolean), liveR = live.reduce((a, l) => a + l.R, 0);
+  /* last 30 days, trades that came from setups */
+  const d30 = Date.now() - 30*864e5, done = all.filter(s => s.stage==='taken' && tms(s.startAt) >= d30).map(s => S.trades.get(s.trade_id)).filter(t => t?.result);
+  const wins = done.filter(t => t.result==='W').length, netR = done.reduce((a, t) => a + (Number(t.r_multiple) || 0), 0);
+  const stage = S.su.stage || (cols.trade.length ? 'trade' : cols.formed.length ? 'formed' : 'forming');
+  const tool = S.su.tool || 'history';
   m.innerHTML = `
-    <div class="flex flex-wrap items-end gap-x-5 gap-y-3 mb-4">
-      <div><div class="pairtitle">Setups <span class="beta">beta</span></div><div class="muted mt-1" style="font-weight:600">Your model, step by step — only setups in the direction of the weekly fundamental bias.</div></div>
-      <div class="flex items-center gap-2 ml-auto"><button class="btn" id="suRefresh">↻ Refresh</button><button class="btn" id="suSimBtn" aria-pressed="${S.su.sim}">🧪 Simulate alert</button></div>
+    <header class="sx-top">
+      <div><h1 class="pairtitle">Setups <span class="beta">beta</span></h1>
+        <p class="sx-sub">Bias, liquidity, break, retest, trade. Only setups in the direction of your weekly bias.</p></div>
+      <div class="sx-top-r">${sxStatus()}<button class="btn" id="suRefresh" title="Load the latest signals">↻ Refresh</button></div>
+    </header>
+    <div class="sx-stats" role="tablist" aria-label="Stages">
+      ${SX_COLS.map(([k, t]) => `<button class="sx-stat s-${k}" role="tab" data-sustage="${k}" aria-selected="${stage===k}">
+        <span class="sx-stat-n">${cols[k].length}</span><span class="sx-stat-t">${t}</span>
+        <span class="sx-stat-x">${k==='trade' ? (live.length ? `${liveR >= 0 ? '+' : ''}${fmt(liveR, 2)}R open` : 'nothing open') : k==='formed' ? (cols.formed.length ? 'orders to place' : 'none waiting') : (cols.forming.length ? 'watching' : 'no sweeps')}</span></button>`).join('')}
+      <div class="sx-stat s-month"><span class="sx-stat-n">${done.length ? `${netR >= 0 ? '+' : ''}${fmt(netR, 1)}R` : '0'}</span><span class="sx-stat-t">Last 30 days</span>
+        <span class="sx-stat-x">${done.length ? `${wins} of ${done.length} trades won` : 'no closed setup trades yet'}</span></div>
     </div>
-    <div class="su-flow">${[['1','Fundamental bias','bullish → longs only · bearish → shorts only'],['2','Liquidity taken','old low/high swept, candle closes back with a wick'],['3','Fractal break','fractal below the swept high (sells) / above the swept low (buys), body close — a wick doesn\'t count'],["4","Retest","a heartbeat candle comes back to the break line"],['⚡','Auto entry','entry at the line · SL at the sweep wick · TP 2R']]
-      .map(([n,t,d]) => `<div class="su-fs"><span class="su-fn">${n}</span><div><b>${t}</b><span>${d}</span></div></div>`).join('<span class="su-arrow">→</span>')}</div>
-    ${hbBar()}
-    ${alertPlan()}
-    ${S.su.sim ? simPanel() : ''}
-    ${suTfs(all).map(tf => { const act = all.filter(x => x.tf===tf && (['forming','formed','retest'].includes(x.stage) || suOpenTrade(x)));
-      return `<section class="su-tf"><header class="su-tfh"><b>${esc(tf)} setups</b><span class="muted">${act.length} active</span></header>
-      <div class="su-board">
-      ${[['forming','Forming','liquidity taken · waiting for the break'],['formed','Formed','structure broke · waiting for the retest'],['retest','In trade','entry hit · live P/L from the heartbeat']].map(([k,t,sub]) => { const list = act.filter(x => x.stage===k || (k==='retest' && suOpenTrade(x)));
-        return `<section class="su-col c-${k}"><header><b>${t}</b><span class="bn">${list.length}</span><span class="muted">${sub}</span></header>
-          ${list.length ? list.map(suCard).join('') : `<p class="su-empty">${k==='forming' ? `No ${esc(tf)} sweep in the bias direction right now.` : 'Nothing here yet.'}</p>`}</section>`; }).join('')}
-      </div></section>`; }).join('')}
-    <section class="card su-hist">
-      <div class="td-h" style="flex-wrap:wrap;gap:10px"><h3>History</h3>
-        <span class="muted" style="font-size:12.5px;font-weight:700">last 30 days · ${rec.length} sweep${rec.length===1 ? "" : "s"} in bias · ${formedN} formed (${rec.length ? Math.round(formedN/rec.length*100) : 0}%) · ${takenN} taken</span>
-        <div class="chips" style="margin-left:auto">${['all', ...suTfs(all)].map(t => `<button class="ch" data-suht="${t}" aria-pressed="${HT===t}">${t==='all' ? 'All TF' : esc(t)}</button>`).join('')}</div>
-        <div class="chips">${[['all','All'],['taken','Taken'],['skipped','Skipped'],['expired','Expired'],['invalid','Invalid'],['ignored','Ignored (against bias)']].map(([k,l]) => `<button class="ch" data-suh="${k}" aria-pressed="${H===k}">${l}</button>`).join('')}</div></div>
-      ${hist.length ? `<div class="su-hl">${hist.slice(0, 80).map(s => `<div class="su-hr st-${s.stage}">
-          <span class="${s.dir==='Long' ? 'pos' : s.dir==='Short' ? 'neg' : 'muted'}" style="font-weight:900">${s.dir==='Long' ? '▲' : s.dir==='Short' ? '▼' : '•'}</span>
-          <b>${base(s.pair)}<em>${quote(s.pair)}</em></b><span class="tfl">${esc(s.tf)}</span>
-          <span class="muted su-hw">${hhmm(s.startAt)} · ${[s.liq ? 'sweep' : '', s.bos ? 'break' : '', s.retest ? 'retest' : ''].filter(Boolean).join(' → ')}${s.why ? ' · '+esc(s.why) : ''}</span>
-          <span class="su-tag t-${s.stage}">${{taken:'Taken',skipped:'Skipped',expired:'Expired',invalid:'Invalid',ignored:'Ignored'}[s.stage]}</span>
-          ${s.trade_id && S.trades.get(s.trade_id) ? `<button class="bt" data-sutrade="${s.trade_id}">Trade ›</button>` : ''}</div>`).join('')}</div>`
-        : '<p class="muted">Nothing yet.</p>'}
-    </section>
-    <details class="card su-help"><summary><b>How to connect the indicators</b> <span class="muted">— webhook + alert messages</span></summary>
-      <p class="muted" style="font-size:13px">Deploy <b>tv-signal</b> in Supabase (same steps as tv-daily, Verify JWT off). Every alert below uses this webhook:</p>
-      <pre class="su-code">${esc(wh)}</pre>
-      <p style="font-size:13px"><b>Liquidity indicator</b> — use the <b>Daily Observer</b> version of “Liquidity stop hunt”. Condition <b>Any alert() function call</b>, the webhook above, nothing else: it sends confirmed sweeps (side, level, close) when the analysis candle closes, and an invalidation when a later candle closes its whole body beyond the swept level.</p>
-      <p style="font-size:13px"><b>Heartbeat</b> — the <b>DO Heartbeat</b> indicator sends every pair's closed 1H / 4H candle plus the last fractal high/low. Add it twice (Timeframe 60 and 240), condition <b>Any alert() function call</b>, the webhook above, notifications off. With it the site keeps a fractal break only when the candle <b>closed its body</b> beyond the fractal (wicks are ignored), takes the fractal as the break line and spots the retest by itself. Needs <b>migration-candles.sql</b>.</p>
-      <p style="font-size:13px"><b>Fractal indicator</b> (no source needed) — best: condition <b>Crossing Up</b> (bullish pairs) or <b>Crossing Down</b> (bearish pairs) on its fractal line, trigger <b>Once per bar close</b>, so the alert fires on the body close through the line. There the <i>Message</i> is yours — paste:</p>
-      <pre class="su-code">{"kind":"bos","pair":"{{ticker}}","tf":"{{interval}}","price":{{close}}}</pre>
-      <p class="muted" style="font-size:12.5px">The site checks the break price against the swept price: above it confirms a long, below it confirms a short, the wrong side invalidates the setup.</p>
-      <p style="font-size:13px">Fallback — <b>Any alert() function call</b> (fixed text, no price): put the context in the webhook URL instead:</p>
-      <pre class="su-code">${esc(wh)}&kind=bos&pair=EURUSD&tf=60</pre>
-    </details>`;
+    <div class="sx-bar">
+      <div class="seg" role="group" aria-label="Timeframe">${['all', ...suTfs(all)].map(t => `<button data-sutf="${t}" aria-pressed="${tf===t}">${t==='all' ? 'All timeframes' : esc(t)}</button>`).join('')}</div>
+      <div class="sx-switches">
+        <label class="sx-sw" title="When the heartbeat sees price back at the line, the trade is logged: entry at the line, stop at the sweep wick, target 2R"><input type="checkbox" id="suAuto" ${suAuto() ? 'checked' : ''}><i></i>Auto-take at retest</label>
+        <label class="sx-sw" title="Setup trades close by themselves at the target (+2R) or the stop (−1R)"><input type="checkbox" id="suAutoClose" ${suAutoClose() ? 'checked' : ''}><i></i>Auto-close at TP / SL</label>
+      </div>
+    </div>
+    <div class="sx-board" data-stage="${stage}">
+      ${SX_COLS.map(([k, t, sub]) => `<section class="sx-col c-${k}" aria-label="${t}">
+        <header><b>${t}</b><span class="bn">${cols[k].length}</span><p>${sub}</p></header>
+        ${cols[k].length ? cols[k].map(suCard).join('') : `<div class="sx-empty">${k==='forming' ? 'No sweep in the bias direction right now. New ones show up here as soon as the liquidity alert fires.' : k==='formed' ? 'When a forming setup gets its body-close break, it moves here with the order to place.' : 'Trades appear here once price comes back to the line.'}</div>`}
+      </section>`).join('')}
+    </div>
+    <section class="sx-tools card">
+      <div class="sx-tabs" role="tablist">${[['history','History'],['plan','Alert plan'],['sim','Simulator'],['guide','How it works']].map(([k, l]) => `<button role="tab" data-sutool="${k}" aria-selected="${tool===k}">${l}</button>`).join('')}</div>
+      <div class="sx-tool">${tool==='history' ? sxHistory(all) : tool==='plan' ? alertPlan() : tool==='sim' ? simPanel() : sxGuide()}</div>
+    </section>`;
   bindSetups(m, all);
 }
-/* heartbeat status + where fractal breaks come from */
-function hbBar(){
-  const st = tf => { const last = hbLast(tf); if(!last) return `<span class="hb-s off" title="No ${tf} candles yet">${tf} · off</span>`;
-    const late = Date.now() - last > 2*TF_MS[tf] + 10*60e3; return `<span class="hb-s ${late ? 'late' : 'on'}" title="Last ${tf} candle closed ${new Date(last).toLocaleString()}">${tf} · ${late ? 'last' : '✓'} ${hhmm(last)}</span>`; };
-  return `<div class="hb-bar"><span class="lbl" style="margin:0">Heartbeat</span>${S.candlesMissing ? '<span class="hb-s off" title="Run migration-candles.sql in Supabase">table missing</span>' : (hbLast('15m') ? st('15m') : '') + st('1H') + st('4H')}
-    <span class="hb-sep"></span>
-    <label class="hb-auto" title="When a heartbeat candle comes back to the retest line, the trade is created by itself: entry at the line, SL at the wick of the sweep candle, TP at 2R"><input type="checkbox" id="suAuto" ${suAuto() ? 'checked' : ''}> Auto-take at retest <span class="muted">(entry line · SL sweep wick · TP 2R)</span></label>
-    <label class="hb-auto" title="Setup trades are closed by themselves when a heartbeat candle reaches the TP (W, +2R) or the SL (L, −1R). SL and TP in one candle → counted as SL."><input type="checkbox" id="suAutoClose" ${suAutoClose() ? 'checked' : ''}> Auto-close at TP / SL</label>
-    <span class="hb-note hb-eng">${engineOn() ? `<b class="pos">● Server engine on</b> · last run ${hhmm(S.settings.engine.at)} — trades are logged and closed even with the site closed · phone alerts: ${S.settings.engine.channel==='telegram' ? '<b>Telegram</b>' : `ntfy topic <code>${esc(S.settings.engine.topic || '')}</code> — link Telegram to switch`}` : `<b class="muted">○ Server engine not seen yet</b> — the site does the auto-take / auto-close while it is open`}</span>
-    <span class="muted hb-note">${hbOn('15m') || hbOn('1H') || hbOn('4H') ? 'Fractal alert → valid only if the fractal is beyond the liquidity (below the swept high for sells, above the swept low for buys) and the candle closed with its body · wicks ignored · retest line = the broken fractal' : 'add the DO Heartbeat indicator to check body closes and spot the retest — until then fractal alerts are checked only against the liquidity'}</span></div>`;
+/* compact live status: engine + heartbeat per timeframe */
+function sxStatus(){
+  const dot = tf => { const last = hbLast(tf); const st = !last ? 'off' : Date.now() - last > 2*TF_MS[tf] + 10*60e3 ? 'late' : 'on';
+    return `<span class="sx-hb ${st}" title="${tf} heartbeat: ${last ? 'last candle closed '+new Date(last).toLocaleString() : 'nothing received yet'}"><i></i>${tf}</span>`; };
+  const eng = engineOn(), ch = S.settings?.engine?.channel==='telegram' ? 'Telegram' : 'ntfy';
+  return `<div class="sx-status ${eng ? 'on' : ''}" title="${eng ? `Server engine ran ${ago(S.settings.engine.at)}. Trades are logged and closed and phone alerts go out even with this page closed.` : 'Server engine not seen yet. This page does the auto-take and auto-close while it is open.'}">
+    <span class="sx-eng"><i></i>${eng ? `Live · alerts on ${ch}` : 'Browser only'}</span>${S.candlesMissing ? '<span class="sx-hb off"><i></i>no candles table</span>' : ['15m','1H','4H'].map(dot).join('')}</div>`;
+}
+function sxHistory(all){
+  const H = S.su.hist, HT = S.su.htf || 'all';
+  const hist = all.filter(s => ['taken','skipped','expired','invalid','ignored'].includes(s.stage) && (H==='all' ? s.stage!=='ignored' : s.stage===H) && (HT==='all' || s.tf===HT));
+  const d30 = Date.now() - 30*864e5, rec = all.filter(s => tms(s.startAt) >= d30 && s.stage!=='ignored');
+  const formedN = rec.filter(s => s.bos).length, takenN = rec.filter(s => s.stage==='taken').length;
+  const res = s => { const t = s.trade_id && S.trades.get(s.trade_id); return t?.result ? `<span class="sx-res ${t.result==='W' ? 'w' : t.result==='L' ? 'l' : ''}">${t.result==='W' ? 'Win' : t.result==='L' ? 'Loss' : esc(t.result)}${t.r_multiple!=null ? ` ${Number(t.r_multiple) > 0 ? '+' : ''}${fmt(Number(t.r_multiple), 1)}R` : ''}</span>` : t ? '<span class="sx-res">Open</span>' : ''; };
+  return `<p class="sx-tool-sum">Last 30 days: ${rec.length} sweep${rec.length===1 ? '' : 's'} in the bias direction, ${formedN} formed (${rec.length ? Math.round(formedN/rec.length*100) : 0}%), ${takenN} taken.</p>
+    <div class="sx-filters"><div class="chips">${[['all','All'],['taken','Taken'],['skipped','Skipped'],['invalid','Invalid'],['ignored','Against bias']].map(([k,l]) => `<button class="ch" data-suh="${k}" aria-pressed="${H===k}">${l}</button>`).join('')}</div>
+      <div class="chips">${['all', ...suTfs(all)].map(t => `<button class="ch" data-suht="${t}" aria-pressed="${HT===t}">${t==='all' ? 'All TF' : esc(t)}</button>`).join('')}</div></div>
+    ${hist.length ? `<div class="sx-hist">${hist.slice(0, 80).map(s => `<div class="sx-hr">
+        <span class="sx-hr-dir ${s.dir==='Long' ? 'pos' : s.dir==='Short' ? 'neg' : 'muted'}">${s.dir==='Long' ? '▲' : s.dir==='Short' ? '▼' : '•'}</span>
+        <b class="sx-hr-p">${base(s.pair)}<em>${quote(s.pair)}</em></b><span class="tfl">${esc(s.tf)}</span>
+        <span class="sx-hr-w">${hhmm(s.startAt)}</span>${s.why ? `<small class="sx-hr-why">${esc(s.why)}</small>` : ''}
+        <span class="sx-hr-trail">${[s.liq ? 'Sweep' : '', s.bos ? 'Break' : '', s.retest ? 'Retest' : ''].filter(Boolean).join(' › ')}</span>
+        ${res(s)}<span class="su-tag t-${s.stage}">${{taken:'Taken',skipped:'Skipped',expired:'Expired',invalid:'Invalid',ignored:'Against bias'}[s.stage]}</span>
+        ${s.trade_id && S.trades.get(s.trade_id) ? `<button class="bt" data-sutrade="${s.trade_id}">Trade</button>` : ''}</div>`).join('')}</div>`
+      : '<p class="sx-empty">Nothing here yet. Finished, skipped and invalidated setups are listed here.</p>'}`;
+}
+function sxGuide(){
+  const wh = `${SUPABASE_URL}/functions/v1/tv-signal?key=YOUR_TV_SECRET`;
+  return `<ol class="sx-guide">
+      <li><b>Bias</b><span>Only bullish pairs give longs and only bearish pairs give shorts. Neutral pairs are ignored.</span></li>
+      <li><b>Liquidity</b><span>An old high or low is swept and the candle closes back with a wick. That starts a setup.</span></li>
+      <li><b>Break</b><span>The fractal has to sit beyond the liquidity and a candle has to close its body through it. A wick doesn't count. The broken fractal becomes the line.</span></li>
+      <li><b>Retest</b><span>When a heartbeat candle comes back to the line, the trade is logged: entry at the line, stop at the sweep wick, target 2R.</span></li>
+      <li><b>Trade</b><span>The heartbeat follows the trade and closes it at the target or the stop. A body close beyond the swept level cancels the setup at any stage before the entry.</span></li>
+    </ol>
+    <details class="sx-conn"><summary>Connecting the indicators</summary>
+      <p>Every alert uses this webhook (deploy <b>tv-signal</b> with Verify JWT off):</p><pre class="su-code">${esc(wh)}</pre>
+      <p><b>Liquidity</b> (Daily Observer version) and <b>DO Heartbeat</b> (15, 60 and 240): condition <i>Any alert() function call</i>, the webhook above.</p>
+      <p><b>Fractal indicator</b>: <i>Any alert() function call</i>, with the pair and timeframe in the webhook:</p><pre class="su-code">${esc(wh)}&kind=bos&pair=EURUSD&tf=60</pre>
+    </details>`;
 }
 /* which pairs need their TradingView alerts ON this week: only bullish / bearish bias — neutral setups are ignored anyway */
 function alertPlan(){
@@ -3652,15 +3846,15 @@ function alertPlan(){
   const on = rows.filter(r => r.b), off = rows.filter(r => !r.b), turnOn = on.filter(r => !r.was), pause = off.filter(r => r.was);
   const chip = r => `<span class="ap-p ${r.b || 'n'}">${r.b==='bullish' ? '▲' : r.b==='bearish' ? '▼' : '·'} ${r.p}</span>`;
   const set = rows.some(r => S.weekly.has(wk(r.p, w.year, w.week)));
-  return `<details class="card su-plan" ${wkend ? 'open' : ''}><summary><b>Alert plan · week ${w.week}</b> <span class="muted">— ${on.length} pairs active (${on.length*2} fractal + ${on.length*2} liquidity alerts) · ${off.length} on pause</span></summary>
-    <div class="seg" role="group" style="margin:10px 0"><button data-apw="cur" aria-pressed="${which==='cur'}">This week</button><button data-apw="next" aria-pressed="${which==='next'}">Next week</button></div>
+  return `<div class="su-plan"><p class="sx-tool-sum">Week ${w.week}: ${on.length} pairs need alerts (${on.length*2} fractal and ${on.length*2} liquidity), ${off.length} can be paused. The heartbeat covers every pair and stays on.</p>
+    <div class="seg" role="group" style="margin:0 0 10px"><button data-apw="cur" aria-pressed="${which==='cur'}">This week</button><button data-apw="next" aria-pressed="${which==='next'}">Next week</button></div>
     ${!set ? `<p class="muted">No weekly bias saved for week ${w.week} yet — fill in the fundamentals first.</p>` : `
     ${turnOn.length || pause.length ? `<div class="ap-chg">${turnOn.length ? `<div><span class="lbl">▶ Turn ON (new this week)</span><div class="ap-list">${turnOn.map(chip).join('')}</div></div>` : ''}
       ${pause.length ? `<div><span class="lbl">⏸ Pause (now neutral)</span><div class="ap-list">${pause.map(chip).join('')}</div></div>` : ''}</div>` : '<p class="muted" style="font-size:12.5px">Same pairs as last week — nothing to switch.</p>'}
     <div class="ap-all"><div><span class="lbl">Active · ${on.length}</span><div class="ap-list">${on.map(chip).join('') || '<span class="muted">none</span>'}</div></div>
       <div><span class="lbl">On pause · ${off.length}</span><div class="ap-list">${off.map(chip).join('')}</div></div></div>
-    <p class="muted" style="font-size:12px;margin-top:8px">In TradingView → Alerts, pause / resume the fractal and liquidity alerts of these pairs. Heartbeat (3 alerts) stays on — it covers every pair.</p>`}
-  </details>`;
+    <p class="muted" style="font-size:12px;margin-top:10px">In TradingView, open Alerts and pause or resume the fractal and liquidity alerts of these pairs.</p>`}
+  </div>`;
 }
 function simPanel(){
   const ps = allPairs(), cur = ls.get('do_su_simp', S.pair), tf = ls.get('do_su_simtf', '1H'), r = curWeekRec(cur);
@@ -3778,13 +3972,16 @@ async function autoRun(){ if(engineOn()) return 0; const a = await autoTakeSetup
 function bindSetups(m, all){
   const byKey = new Map(all.map(s => [s.key, s]));
   m.querySelector('#suRefresh').onclick = async () => { await loadSignals(); const n = await autoRun(); renderMain(); if(!n) toast('Signals refreshed'); };
-  m.querySelector('#suSimBtn').onclick = () => { S.su.sim = !S.su.sim; renderMain(); };
+  m.querySelectorAll('[data-sutf]').forEach(b => b.onclick = () => { S.su.tf = b.dataset.sutf; renderMain(); });
+  m.querySelectorAll('[data-sustage]').forEach(b => b.onclick = () => { S.su.stage = b.dataset.sustage; m.querySelector('.sx-board').dataset.stage = S.su.stage;
+    m.querySelectorAll('[data-sustage]').forEach(x => x.setAttribute('aria-selected', x===b)); if(innerWidth > 900) m.querySelector('.sx-col.c-'+S.su.stage)?.scrollIntoView({ behavior:'smooth', block:'nearest' }); });
+  m.querySelectorAll('[data-sutool]').forEach(b => b.onclick = () => { S.su.tool = b.dataset.sutool; renderMain(); });
   m.querySelectorAll('[data-suh]').forEach(b => b.onclick = () => { S.su.hist = b.dataset.suh; ls.set('do_su_hist', S.su.hist); renderMain(); });
   m.querySelectorAll('[data-suht]').forEach(b => b.onclick = () => { S.su.htf = b.dataset.suht; renderMain(); });
   m.querySelectorAll('[data-sutrade]').forEach(b => b.onclick = () => completeTrade(b.dataset.sutrade));
   m.querySelectorAll('[data-suret]').forEach(b => b.onclick = async () => { if(await markSetup(b.dataset.suret, 'retest')) renderMain(); });
   m.querySelectorAll('[data-suskip]').forEach(b => b.onclick = () => {
-    const card = b.closest('.su-card'); if(card.querySelector('.su-skip')) return;
+    const card = b.closest('.sx'); if(card.querySelector('.su-skip')) return;
     card.insertAdjacentHTML('beforeend', `<div class="su-skip"><span class="lbl">Why skip?</span><div class="chips">${['No confirmation','News risk','Late / missed it','Not at the desk','Against my read','Other'].map(r => `<button class="ch" data-sr="${r}">${r}</button>`).join('')}</div></div>`);
     card.querySelectorAll('[data-sr]').forEach(x => x.onclick = async () => { if(await markSetup(b.dataset.suskip, 'skipped', { reason:x.dataset.sr })){ toast('Setup skipped'); renderMain(); } }); });
   m.querySelectorAll('[data-sutake]').forEach(b => b.onclick = async () => {
@@ -3804,7 +4001,7 @@ function bindSetups(m, all){
     if(error) return toast('Not saved: ' + error.message);
     S.signals.push(data); renderMain(); toast(`Test signal: ${kind}${side ? ' · '+side : ''} on ${row.pair} ${row.tf}`);
   });
-  m.querySelectorAll('[data-apw]').forEach(b => b.onclick = () => { S.su.apw = b.dataset.apw; renderMain(); document.querySelector('.su-plan')?.setAttribute('open', ''); });
+  m.querySelectorAll('[data-apw]').forEach(b => b.onclick = () => { S.su.apw = b.dataset.apw; renderMain(); });
   m.querySelector('#suAuto')?.addEventListener('change', async e => { ls.set('do_su_auto', e.target.checked); await saveSettingKey('su_auto', e.target.checked); if(e.target.checked) await autoRun(); renderMain(); });
   m.querySelector('#suAutoClose')?.addEventListener('change', async e => { ls.set('do_su_autoclose', e.target.checked); await saveSettingKey('su_autoclose', e.target.checked); if(e.target.checked) await autoRun(); renderMain(); });
   m.querySelectorAll('[data-simc]').forEach(b => b.onclick = async () => {
