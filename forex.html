@@ -897,6 +897,13 @@
   .hb-s.on{ color:var(--pos); } .hb-s.late{ color:#d97706; } .hb-s.off{ color:var(--muted); }
   .hb-sep{ width:1px; align-self:stretch; background:var(--line); }
   .hb-note{ font-size:12px; font-weight:600; flex-basis:100%; }
+  .su-plan{ margin:0 0 14px; padding:12px 16px; } .su-plan summary{ cursor:pointer; font-size:13.5px; }
+  .ap-chg, .ap-all{ display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:10px 18px; margin-top:8px; }
+  .ap-chg{ padding:10px 12px; border:1px dashed var(--line); border-radius:10px; }
+  .ap-list{ display:flex; flex-wrap:wrap; gap:5px; margin-top:4px; }
+  .ap-p{ font-size:12px; font-weight:800; padding:3px 8px; border-radius:999px; background:var(--surface-2); white-space:nowrap; }
+  .ap-p.bullish{ color:var(--pos); } .ap-p.bearish{ color:var(--neg); } .ap-p.n{ color:var(--muted); }
+  .hb-eng{ font-size:12.5px; font-weight:600; } .hb-eng code{ font-weight:800; padding:1px 6px; border-radius:6px; background:var(--surface-2); }
   .hb-auto{ display:inline-flex; align-items:center; gap:7px; font-size:12.5px; font-weight:800; cursor:pointer; }
   .hb-auto input{ width:16px; height:16px; accent-color:var(--accent, #c8f560); }
   .hb-auto .muted{ font-weight:600; }
@@ -3375,7 +3382,10 @@ async function loadSignals(){
     S.signals = sg; S.setupMarks = new Map(mk.map(m => [m.setup_key, m])); S.signalsMissing = false; }
   catch(e){ console.warn('signals not available', e); S.signals = []; S.setupMarks = new Map(); S.signalsMissing = true; }
   if(!S.signalsMissing) await loadCandles();
+  try{ const { data } = await sb.from('do_settings').select('*').range(0, 999); (data || []).forEach(r => { if(['engine','hb_15m','hb_1H','hb_4H'].includes(r.key)) S.settings[r.key] = r.value; }); }catch(e){ /* keep what we have */ }
 }
+/* the server engine (tv-signal) is running → it does the auto-take / auto-close; the browser only shows */
+const engineOn = () => { const at = S.settings?.engine?.at; return !!at && Date.now() - tms(at) < 40*60e3; };
 /* heartbeat candles (DO Heartbeat indicator → do_candles): only the last ~12 days, then just what's new */
 S.candles = new Map(); S.candleIdx = new Map(); S.candleMax = 0; S.candlesMissing = false;
 const TF_MS = { '5m':3e5, '15m':9e5, '30m':18e5, '1H':36e5, '2H':72e5, '4H':144e5, '8H':288e5, '1D':864e5 };
@@ -3573,6 +3583,7 @@ function renderSetups(){
     <div class="su-flow">${[['1','Fundamental bias','bullish → longs only · bearish → shorts only'],['2','Liquidity taken','old low/high swept, candle closes back with a wick'],['3','Fractal break','fractal below the swept high (sells) / above the swept low (buys), body close — a wick doesn\'t count'],["4","Retest","a heartbeat candle comes back to the break line"],['⚡','Auto entry','entry at the line · SL at the sweep wick · TP 2R']]
       .map(([n,t,d]) => `<div class="su-fs"><span class="su-fn">${n}</span><div><b>${t}</b><span>${d}</span></div></div>`).join('<span class="su-arrow">→</span>')}</div>
     ${hbBar()}
+    ${alertPlan()}
     ${S.su.sim ? simPanel() : ''}
     ${suTfs(all).map(tf => { const act = all.filter(x => x.tf===tf && ['forming','formed','retest'].includes(x.stage));
       return `<section class="su-tf"><header class="su-tfh"><b>${esc(tf)} setups</b><span class="muted">${act.length} active</span></header>
@@ -3615,7 +3626,27 @@ function hbBar(){
     <span class="hb-sep"></span>
     <label class="hb-auto" title="When a heartbeat candle comes back to the retest line, the trade is created by itself: entry at the line, SL at the wick of the sweep candle, TP at 2R"><input type="checkbox" id="suAuto" ${suAuto() ? 'checked' : ''}> Auto-take at retest <span class="muted">(entry line · SL sweep wick · TP 2R)</span></label>
     <label class="hb-auto" title="Setup trades are closed by themselves when a heartbeat candle reaches the TP (W, +2R) or the SL (L, −1R). SL and TP in one candle → counted as SL."><input type="checkbox" id="suAutoClose" ${suAutoClose() ? 'checked' : ''}> Auto-close at TP / SL</label>
-    <span class="muted hb-note">${hbOn('1H') || hbOn('4H') ? 'Fractal alert → valid only if the fractal is beyond the liquidity (below the swept high for sells, above the swept low for buys) and the candle closed with its body · wicks ignored · retest line = the broken fractal' : 'add the DO Heartbeat indicator to check body closes and spot the retest — until then fractal alerts are checked only against the liquidity'}</span></div>`;
+    <span class="hb-note hb-eng">${engineOn() ? `<b class="pos">● Server engine on</b> · last run ${hhmm(S.settings.engine.at)} — trades are logged and closed even with the site closed · phone alerts: ntfy topic <code>${esc(S.settings.engine.topic || '')}</code>` : `<b class="muted">○ Server engine not seen yet</b> — the site does the auto-take / auto-close while it is open`}</span>
+    <span class="muted hb-note">${hbOn('15m') || hbOn('1H') || hbOn('4H') ? 'Fractal alert → valid only if the fractal is beyond the liquidity (below the swept high for sells, above the swept low for buys) and the candle closed with its body · wicks ignored · retest line = the broken fractal' : 'add the DO Heartbeat indicator to check body closes and spot the retest — until then fractal alerts are checked only against the liquidity'}</span></div>`;
+}
+/* which pairs need their TradingView alerts ON this week: only bullish / bearish bias — neutral setups are ignored anyway */
+function alertPlan(){
+  const now = new Date(), wkend = [0,6].includes(now.getDay()), nx = new Date(now); nx.setDate(nx.getDate() + 7);
+  const which = S.su.apw || (wkend ? 'next' : 'cur'), w = isoWeek(which==='next' ? nx : now), pw = prevWeek(w.year, w.week);
+  const dirOf = (p, y, k) => { const b = S.weekly.get(wk(p, y, k))?.bias; return b==='bullish' || b==='bearish' ? b : null; };
+  const rows = allPairs().map(p => ({ p, b:dirOf(p, w.year, w.week), was:dirOf(p, pw.year, pw.week) }));
+  const on = rows.filter(r => r.b), off = rows.filter(r => !r.b), turnOn = on.filter(r => !r.was), pause = off.filter(r => r.was);
+  const chip = r => `<span class="ap-p ${r.b || 'n'}">${r.b==='bullish' ? '▲' : r.b==='bearish' ? '▼' : '·'} ${r.p}</span>`;
+  const set = rows.some(r => S.weekly.has(wk(r.p, w.year, w.week)));
+  return `<details class="card su-plan" ${wkend ? 'open' : ''}><summary><b>Alert plan · week ${w.week}</b> <span class="muted">— ${on.length} pairs active (${on.length*2} fractal + ${on.length*2} liquidity alerts) · ${off.length} on pause</span></summary>
+    <div class="seg" role="group" style="margin:10px 0"><button data-apw="cur" aria-pressed="${which==='cur'}">This week</button><button data-apw="next" aria-pressed="${which==='next'}">Next week</button></div>
+    ${!set ? `<p class="muted">No weekly bias saved for week ${w.week} yet — fill in the fundamentals first.</p>` : `
+    ${turnOn.length || pause.length ? `<div class="ap-chg">${turnOn.length ? `<div><span class="lbl">▶ Turn ON (new this week)</span><div class="ap-list">${turnOn.map(chip).join('')}</div></div>` : ''}
+      ${pause.length ? `<div><span class="lbl">⏸ Pause (now neutral)</span><div class="ap-list">${pause.map(chip).join('')}</div></div>` : ''}</div>` : '<p class="muted" style="font-size:12.5px">Same pairs as last week — nothing to switch.</p>'}
+    <div class="ap-all"><div><span class="lbl">Active · ${on.length}</span><div class="ap-list">${on.map(chip).join('') || '<span class="muted">none</span>'}</div></div>
+      <div><span class="lbl">On pause · ${off.length}</span><div class="ap-list">${off.map(chip).join('')}</div></div></div>
+    <p class="muted" style="font-size:12px;margin-top:8px">In TradingView → Alerts, pause / resume the fractal and liquidity alerts of these pairs. Heartbeat (3 alerts) stays on — it covers every pair.</p>`}
+  </details>`;
 }
 function simPanel(){
   const ps = allPairs(), cur = ls.get('do_su_simp', S.pair), tf = ls.get('do_su_simtf', '1H'), r = curWeekRec(cur);
@@ -3716,7 +3747,7 @@ function tradeOutcome(t){
   }
   return null;
 }
-async function autoRun(){ const a = await autoTakeSetups(), b = await autoCloseTrades(); return a + b; }
+async function autoRun(){ if(engineOn()) return 0; const a = await autoTakeSetups(), b = await autoCloseTrades(); return a + b; }
 function bindSetups(m, all){
   const byKey = new Map(all.map(s => [s.key, s]));
   m.querySelector('#suRefresh').onclick = async () => { await loadSignals(); const n = await autoRun(); renderMain(); if(!n) toast('Signals refreshed'); };
@@ -3746,6 +3777,7 @@ function bindSetups(m, all){
     if(error) return toast('Not saved: ' + error.message);
     S.signals.push(data); renderMain(); toast(`Test signal: ${kind}${side ? ' · '+side : ''} on ${row.pair} ${row.tf}`);
   });
+  m.querySelectorAll('[data-apw]').forEach(b => b.onclick = () => { S.su.apw = b.dataset.apw; renderMain(); document.querySelector('.su-plan')?.setAttribute('open', ''); });
   m.querySelector('#suAuto')?.addEventListener('change', async e => { ls.set('do_su_auto', e.target.checked); await saveSettingKey('su_auto', e.target.checked); if(e.target.checked) await autoRun(); renderMain(); });
   m.querySelector('#suAutoClose')?.addEventListener('change', async e => { ls.set('do_su_autoclose', e.target.checked); await saveSettingKey('su_autoclose', e.target.checked); if(e.target.checked) await autoRun(); renderMain(); });
   m.querySelectorAll('[data-simc]').forEach(b => b.onclick = async () => {
@@ -4839,6 +4871,7 @@ document.getElementById('csvFile').onchange = async ev => {
     try{ await loadAll(); }catch(e){ console.error(e); toast('Could not load data: ' + e.message); }
   }
   render();
+  if(CONFIGURED){ const tz = Intl.DateTimeFormat().resolvedOptions().timeZone; if(tz && S.settings && S.settings.tz!==tz) saveSettingKey('tz', tz); }
   if(CONFIGURED && await autoRun()){ render(); refreshDock?.(); }
 })();
 </script>
