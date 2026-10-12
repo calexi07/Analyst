@@ -3615,6 +3615,13 @@ function suZone(s){
   return { line:Number(line), ext:Number(ext), top:Math.max(Number(line), Number(ext)), bot:Math.min(Number(line), Number(ext)) };
 }
 const suZoneTxt = s => { const z = suZone(s); return z ? `${lvl(z.line)} → ${lvl(z.ext)}` : ''; };
+/* rollover: 00:00–01:00 Romania (17:00 New York) prints artificial spread — nothing that happens in that hour counts:
+   no liquidity, fractal break, invalidation, stop/zone level, entry, TP or SL. 4H candles are used normally. */
+const NYF = new Intl.DateTimeFormat('en-US', { timeZone:'America/New_York', hour:'numeric', hourCycle:'h23' }), nyCache = new Map();
+function nyHour(ms){ const k = Math.floor(ms/6e4); let v = nyCache.get(k); if(v===undefined){ v = Number(NYF.format(new Date(ms))) % 24; nyCache.set(k, v); } return v; }
+/* a candle of 1H or less that opens in the rollover hour (17:00 New York = 00:00 Romania); 4H candles count normally */
+const isRoll = (ms, tf) => nyHour(ms)===17 && (TF_MS[tf] || 0) <= 36e5;
+const sigStart = g => tms(g.at) - (TF_MS[g.tf] || 0);
 function deriveSetups(){
   const win = suWin(), H = 3600e3, now = Date.now(), all = [], open = new Map();
   const close = () => {};   /* setups never expire — they end only on invalidation, Take or Skip */
@@ -3628,6 +3635,7 @@ function deriveSetups(){
     const live = list.filter(s => ['forming','formed','retest'].includes(s.stage)); open.set(k, live);
     if(g.kind==='liq'){
       const side = liqSide(g), dir = side==='sell' ? 'Long' : side==='buy' ? 'Short' : null, wr = biasAt(g.pair, g.at), bias = wr?.bias || null;
+      if(TF_MS[g.tf] && isRoll(sigStart(g), g.tf)){ all.push({ key:g.id, pair:g.pair, tf:g.tf, dir, side, bias, liq:g, liqs:[g], startAt:g.at, stage:'ignored', why:'Rollover candle (00:00 RO)' }); continue; }
       /* a new sweep on the same side and timeframe while the setup still waits for its break → the LATEST sweep becomes the reference;
          the stop goes to the most extreme wick of all of them (if price went further, that wick is the new base) */
       const same = live.find(s => s.stage==='forming' && s.dir===dir && s.tf===g.tf);
@@ -3658,13 +3666,14 @@ function deriveSetups(){
             x.pend = null; (x.wicks = x.wicks || []).push({ at:g.at, why:`no heartbeat candle for the ${hhmm(g.at)} break — check the chart` });   /* unchecked → doesn't count */
             return;
           }
+          if(isRoll(cnd.t, x.tf)){ x.pend = null; (x.wicks = x.wicks || []).push({ at:g.at, why:'break made by the rollover candle, ignored' }); return; }
           const r = bodyBreak(x, cnd);
           x.pend = null;
           if(r.ok){ x.bos = { ...g, price:cnd.c, level:r.line, candle:cnd, checked:true }; x.stage = 'formed'; x.line = r.line; }
           else if(r.reason==='wick'){
             /* wick only → the NEXT candle decides: body close beyond the same fractal = valid, otherwise the setup is invalid */
-            const len = TF_MS[x.tf], nx = (S.candleIdx.get(x.pair+'|'+x.tf) || []).find(c => c.t >= cnd.t + len), f = r.line;
-            if(!nx){ x.pend = { ...g, wick:true, line:f, next:cnd.t + 2*len }; return; }
+            const len = TF_MS[x.tf], nx = (S.candleIdx.get(x.pair+'|'+x.tf) || []).find(c => c.t >= cnd.t + len && !isRoll(c.t, x.tf)), f = r.line;   /* rollover skipped */
+            if(!nx){ let nt = cnd.t + len; if(isRoll(nt, x.tf)) nt += len; x.pend = { ...g, wick:true, line:f, next:nt + len }; return; }
             if(x.dir==='Long' ? nx.c > f : nx.c < f){ x.bos = { ...g, at:new Date(nx.t + len).toISOString(), price:nx.c, level:f, candle:nx, checked:true, second:true }; x.stage = 'formed'; x.line = f; }
             else { x.stage = 'invalid'; x.endAt = new Date(nx.t + len).toISOString(); x.why = `Wick break at ${hhmm(new Date(cnd.t + len)).slice(-5)}, the next candle didn't close beyond ${lvl(f)}`; }
           }
@@ -3676,6 +3685,7 @@ function deriveSetups(){
         else (x.wicks = x.wicks || []).push({ at:g.at, why:`break ${lvl(bp)} ${x.dir==='Long' ? 'below the swept low' : 'above the swept high'} ${lvl(L)}` });
       });
     } else if(g.kind==='liqx'){
+      if(TF_MS[g.tf] && isRoll(sigStart(g), g.tf)) continue;   /* a body close in the rollover candle doesn't invalidate */
       /* a candle closed its whole body beyond the swept level → that liquidity is no longer valid */
       const dir = g.side==='sell' ? 'Long' : g.side==='buy' ? 'Short' : null;
       live.filter(x => ['forming','formed','retest'].includes(x.stage) && (!dir || x.dir===dir) && x.tf===g.tf
@@ -3684,12 +3694,12 @@ function deriveSetups(){
     } else if(g.kind==='candle'){
       const c = g.cnd, len = TF_MS[c.tf];
       /* while waiting for the break: if price runs further past the sweep (wick only, no body close beyond the level), that extreme becomes the stop */
-      live.filter(x => x.stage==='forming' && x.tf===c.tf && c.t >= tms(x.startAt) - 60e3 && c.h!=null && c.l!=null).forEach(x => {
+      live.filter(x => x.stage==='forming' && x.tf===c.tf && c.t >= tms(x.startAt) - 60e3 && c.h!=null && c.l!=null && !isRoll(c.t, c.tf)).forEach(x => {
         const ext = x.liq.extreme ?? x.liq.level; if(ext==null) return;
         if(x.dir==='Short' ? c.h > Number(ext) : c.l < Number(ext)) x.liq = { ...x.liq, extreme: x.dir==='Short' ? c.h : c.l, extMovedAt: c.t };
       });
       /* retest: a candle (same or lower timeframe) after the break reaches the zone */
-      live.filter(x => x.stage==='formed' && (TF_RANK[c.tf] ?? 0) <= (TF_RANK[x.tf] ?? 0)).forEach(x => {
+      live.filter(x => x.stage==='formed' && (TF_RANK[c.tf] ?? 0) <= (TF_RANK[x.tf] ?? 0) && !isRoll(c.t, c.tf)).forEach(x => {   /* no entry inside the rollover hour */
         const bc = x.bos.candle ? x.bos.candle.t + (TF_MS[x.bos.candle.tf] || 0) : tms(x.bos.at) - 120e3, z = suZone(x);
         if(!z || c.t < bc - 60e3) return;
         if(x.dir==='Long' ? c.l <= z.top : c.h >= z.bot){ x.retest = { kind:'retest', at:new Date(c.t).toISOString(), closeAt:g.at, price:x.dir==='Long' ? c.l : c.h, tf:c.tf, auto:true }; x.stage = 'retest'; }
@@ -4035,7 +4045,7 @@ function livePL(t){
   const E = numOr(t.entry_price), SL = numOr(t.sl), long = t.direction==='Long'; if(E==null || !t.day) return null;
   const start = new Date(`${t.day}T${t.entry_time || '00:00'}`).getTime(); if(isNaN(start)) return null;
   /* every heartbeat timeframe after the entry: the price comes from the candle that closed last (1m when it runs), worst / best from all of them */
-  const a = ['1m','15m','1H','4H'].flatMap(f => (S.candleIdx.get(t.pair+'|'+f) || []).filter(c => c.t >= start - (f==='1m' ? 6e4 : 0) && c.c!=null).map(c => ({ ...c, end:c.t + TF_MS[f], tf:f })));
+  const a = ['1m','15m','1H','4H'].flatMap(f => (S.candleIdx.get(t.pair+'|'+f) || []).filter(c => c.t >= start - (f==='1m' ? 6e4 : 0) && c.c!=null && !isRoll(c.t, f)).map(c => ({ ...c, end:c.t + TF_MS[f], tf:f })));
   if(!a.length) return null;
   const last = a.reduce((x, y) => y.end > x.end || (y.end===x.end && TF_MS[y.tf] < TF_MS[x.tf]) ? y : x);
   const ps = pipSize(t.pair), riskP = SL!=null ? Math.abs(E - SL)/ps : null, dirm = long ? 1 : -1;
@@ -4052,7 +4062,7 @@ function tradeOutcome(t){
   const len = TF_MS[tf], ps = pipSize(t.pair), risk = Math.abs(E - SL);
   let filled = false;
   for(const c of S.candleIdx.get(t.pair+'|'+tf)){
-    if(c.t + len <= start) continue;
+    if(c.t + len <= start || isRoll(c.t, tf)) continue;   /* rollover hour ignored */
     if(!filled){ if(long ? c.l <= E : c.h >= E){ filled = true;
         /* entry candle: only the SL can be trusted (the TP may have printed before the entry) */
         if(long ? c.l <= SL : c.h >= SL) return { result:'L', at:c.t, tf, pips:+((SL - E)/ps*(long ? 1 : -1)).toFixed(1), R:-1 }; }
