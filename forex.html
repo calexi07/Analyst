@@ -1240,7 +1240,7 @@ const ls = {
 };
 
 const S = {
-  view: ls.get('do_view','today'), pair: ls.get('do_pair','EURUSD'),
+  view: new URLSearchParams(location.search).get('view') || ls.get('do_view','today'), pair: ls.get('do_pair','EURUSD'),
   month: firstOfMonth(new Date()), scope: ls.get('do_scope','pair'), period: ls.get('do_period','all'), metric:'pips',
   daily:new Map(), weekly:new Map(), news:new Map(), charts:[], extra: ls.get('do_extra_pairs', []),
   sel:null, goals:new Map(), gw:null, accounts:new Map(), selAcct:null, acct: ls.get('do_acct','all')
@@ -4899,7 +4899,9 @@ document.getElementById('csvFile').onchange = async ev => {
     try{ await loadAll(); }catch(e){ console.error(e); toast('Could not load data: ' + e.message); }
   }
   render();
-  if(CONFIGURED){ const tz = Intl.DateTimeFormat().resolvedOptions().timeZone; if(tz && S.settings && S.settings.tz!==tz) saveSettingKey('tz', tz); }
+  if(CONFIGURED){ const tz = Intl.DateTimeFormat().resolvedOptions().timeZone; if(tz && S.settings && S.settings.tz!==tz) saveSettingKey('tz', tz);
+    /* address of this site, for the "Setups" button in phone notifications */
+    const site = location.origin + location.pathname; if(location.protocol.startsWith('http') && S.settings && S.settings.site_url!==site) saveSettingKey('site_url', site); }
   if(CONFIGURED && await autoRun()){ render(); refreshDock?.(); }
 })();
 </script>
