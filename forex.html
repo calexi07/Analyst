@@ -970,6 +970,15 @@
   .sx.st-formed{ border-color:color-mix(in srgb,var(--info) 40%,var(--line)); }
   .sx.st-retest{ border-color:color-mix(in srgb,var(--pos) 55%,var(--line)); box-shadow:inset 3px 0 0 var(--d), 0 10px 28px color-mix(in srgb,var(--pos) 14%,transparent); }
   .sx.st-intrade{ border-color:color-mix(in srgb,var(--accent) 50%,var(--line)); box-shadow:inset 3px 0 0 var(--d), 0 10px 28px color-mix(in srgb,var(--accent) 12%,transparent); }
+  .sx.is-new{ border-color:var(--accent); box-shadow:inset 3px 0 0 var(--d), 0 0 0 1px var(--accent), 0 12px 30px color-mix(in srgb,var(--accent) 16%,transparent); }
+  .sx-new{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin:-4px -4px -2px -7px; padding:6px 6px 6px 10px; border-radius:11px; background:color-mix(in srgb,var(--accent) 14%,transparent); }
+  .sx-new span{ display:inline-flex; align-items:center; gap:7px; font-size:12.5px; font-weight:800; color:var(--ink); }
+  .sx-new span i{ width:8px; height:8px; border-radius:50%; background:var(--accent); animation:sxGlow 1.4s ease-in-out infinite; }
+  .sx-seen{ border:0; border-radius:999px; padding:5px 12px; font-size:12.5px; font-weight:800; background:var(--accent); color:var(--on-accent); }
+  .sx-seen:focus-visible, .sx-allseen:focus-visible{ outline:2px solid var(--focus); outline-offset:2px; }
+  .sx-stat-new{ font-family:'Manrope',sans-serif; font-style:normal; font-size:11px; font-weight:800; margin-left:8px; padding:2px 8px; border-radius:999px; background:var(--accent); color:var(--on-accent); vertical-align:middle; letter-spacing:0; }
+  .sx-allseen{ border-color:color-mix(in srgb,var(--accent) 55%,var(--line)); }
+  @media (prefers-reduced-motion: reduce){ .sx-new span i{ animation:none; } }
   .sx-head{ display:flex; align-items:flex-start; gap:10px; }
   .sx-id{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 9px; }
   .sx-pair{ font-family:'Bricolage Grotesque',sans-serif; font-size:21px; line-height:1; letter-spacing:-.02em; } .sx-pair em{ font-style:normal; opacity:.45; }
@@ -3521,13 +3530,13 @@ async function loadSignals(){
     S.signals = sg; S.setupMarks = new Map(mk.map(m => [m.setup_key, m])); S.signalsMissing = false; }
   catch(e){ console.warn('signals not available', e); S.signals = []; S.setupMarks = new Map(); S.signalsMissing = true; }
   if(!S.signalsMissing) await loadCandles();
-  try{ const { data } = await sb.from('do_settings').select('*').range(0, 999); (data || []).forEach(r => { if(['engine','hb_15m','hb_1H','hb_4H'].includes(r.key)) S.settings[r.key] = r.value; }); }catch(e){ /* keep what we have */ }
+  try{ const { data } = await sb.from('do_settings').select('*').range(0, 999); (data || []).forEach(r => { if(['engine','hb_1m','hb_15m','hb_1H','hb_4H'].includes(r.key)) S.settings[r.key] = r.value; }); }catch(e){ /* keep what we have */ }
 }
 /* the server engine (tv-signal) is running → it does the auto-take / auto-close; the browser only shows */
 const engineOn = () => { const at = S.settings?.engine?.at; return !!at && Date.now() - tms(at) < 40*60e3; };
 /* heartbeat candles (DO Heartbeat indicator → do_candles): only the last ~12 days, then just what's new */
 S.candles = new Map(); S.candleIdx = new Map(); S.candleMax = 0; S.candlesMissing = false;
-const TF_MS = { '5m':3e5, '15m':9e5, '30m':18e5, '1H':36e5, '2H':72e5, '4H':144e5, '8H':288e5, '1D':864e5 };
+const TF_MS = { '1m':6e4, '3m':18e4, '5m':3e5, '15m':9e5, '30m':18e5, '1H':36e5, '2H':72e5, '4H':144e5, '8H':288e5, '1D':864e5 };
 async function loadCandles(){
   /* only pairs that had a sweep in the last 30 days, from their first sweep on (setups don't expire) */
   const cut = Date.now() - 30*864e5, first = new Map();
@@ -3539,7 +3548,8 @@ async function loadCandles(){
   S.candlePairs = new Set(pairs);
   try{
     for(let from = 0; ; from += size){
-      const { data, error } = await sb.from('do_candles').select('*').in('pair', pairs).gte('t', since).order('t').range(from, from + size - 1);
+      /* 1m candles stay on the server (the engine uses them); the page works from 15m and up */
+      const { data, error } = await sb.from('do_candles').select('*').in('pair', pairs).neq('tf', '1m').gte('t', since).order('t').range(from, from + size - 1);
       if(error) throw error;
       for(const r of data){ const c = { pair:r.pair, tf:r.tf, t:tms(r.t), o:numOr(r.o), h:numOr(r.h), l:numOr(r.l), c:numOr(r.c), fh:numOr(r.fh), fl:numOr(r.fl) };
         S.candles.set(`${c.pair}|${c.tf}|${c.t}`, c); if(c.t > S.candleMax) S.candleMax = c.t; }
@@ -3715,6 +3725,15 @@ function sxRail(tr, lv){
       <b class="sx-rail-entry" style="left:${pe}%"></b>${pp!=null ? `<b class="sx-rail-now ${lv.R >= 0 ? 'up' : 'dn'}" style="left:${pp}%"></b>` : ''}</div>
     <div class="sx-rail-lbl"><span>SL ${lvl(SL)}</span><span style="left:${pe}%">Entry ${lvl(E)}</span><span>TP ${lvl(TP)}</span></div></div>`;
 }
+/* "new" cards: a setup is new until you mark it seen; it becomes new again when it moves to the next stage */
+const sxCol = s => suOpenTrade(s) || s.stage==='retest' ? 'trade' : s.stage;
+function sxSeen(){ const v = S.settings?.su_seen; return v && typeof v==='object' ? v : (ls.get('do_su_seen', null) || null); }
+const sxIsNew = s => { const m = sxSeen(); return !!m && m[s.key]!==sxCol(s); };
+async function sxMarkSeen(list){
+  const m = { ...(sxSeen() || {}) }; list.forEach(s => m[s.key] = sxCol(s));
+  ls.set('do_su_seen', m); await saveSettingKey('su_seen', m);
+}
+const SX_NEW_LBL = { forming:'New sweep', formed:'Just formed', trade:'Entry hit' };
 function suCard(s){
   const tr = suOpenTrade(s), pl = s.bos ? suPlan(s) : null, step = sxStep(s, tr), nx = sxNext(s, tr, pl), L = s.dir==='Long';
   const lv = tr ? livePL(tr) : null;
@@ -3725,7 +3744,9 @@ function suCard(s){
   ].filter(Boolean);
   const warn = !s.bos && s.wicks?.length ? s.wicks[s.wicks.length-1].why : '';
   const levels = tr ? { e:tr.entry_price, sl:tr.sl, tp:tr.tp } : pl ? { e:pl.entry, sl:pl.sl, tp:pl.tp } : null;
-  return `<article class="sx ${L ? 'long' : 'short'} st-${tr ? 'intrade' : s.stage}" data-su="${s.key}">
+  const isNew = sxIsNew(s);
+  return `<article class="sx ${L ? 'long' : 'short'} st-${tr ? 'intrade' : s.stage}${isNew ? ' is-new' : ''}" data-su="${s.key}">
+    ${isNew ? `<div class="sx-new"><span><i></i>${SX_NEW_LBL[sxCol(s)] || 'New'}</span><button class="sx-seen" data-suseen="${s.key}" title="Mark as seen">✓ Seen</button></div>` : ''}
     <header class="sx-head">
       <div class="sx-id"><b class="sx-pair">${base(s.pair)}<em>${quote(s.pair)}</em></b>
         <span class="sx-dir">${L ? '▲ Long' : '▼ Short'}</span><span class="tfl">${esc(s.tf)}</span></div>
@@ -3746,7 +3767,7 @@ function suCard(s){
         : `<button class="bt" data-suskip="${s.key}">Skip</button>${s.stage==='formed' ? `<button class="bt" data-suret="${s.key}" title="Mark that price came back to the line">At the line</button>` : ''}<button class="btn ${s.stage==='forming' ? '' : 'btn-primary'}" data-sutake="${s.key}">Take</button>`}</footer>
   </article>`;
 }
-const TF_RANK = { '1M':9, '1W':8, '1D':7, 'D1':7, '8H':6, '4H':5, '2H':4, '1H':3, '30m':2, '15m':1, '5m':0 };
+const TF_RANK = { '1M':9, '1W':8, '1D':7, 'D1':7, '8H':6, '4H':5, '2H':4, '1H':3, '30m':2, '15m':1, '5m':0, '3m':-1, '1m':-2 };
 function suTfs(all){ return [...new Set(['4H', '1H', ...all.map(x => x.tf)])].sort((a,b) => (TF_RANK[b] ?? -1) - (TF_RANK[a] ?? -1)); }
 const SX_COLS = [['forming','Forming','Liquidity taken, waiting for the break'],['formed','Formed','Structure broke, set the limit order'],['trade','Entry and trades','At the line or in a trade, live from the heartbeat']];
 function renderSetups(){
@@ -3758,6 +3779,8 @@ function renderSetups(){
   const act = all.filter(x => colOf(x) && inTf(x));
   const by = k => act.filter(x => colOf(x)===k).sort((a, b) => tms(b.bos?.at || b.startAt) - tms(a.bos?.at || a.startAt));
   const cols = Object.fromEntries(SX_COLS.map(([k]) => [k, by(k)]));
+  if(!sxSeen()){ const init = {}; act.forEach(x => init[x.key] = sxCol(x)); ls.set('do_su_seen', init); S.settings.su_seen = init; saveSettingKey('su_seen', init); }
+  const fresh = act.filter(sxIsNew), newIn = k => cols[k].filter(sxIsNew).length;
   const live = cols.trade.map(x => suOpenTrade(x)).filter(Boolean).map(livePL).filter(Boolean), liveR = live.reduce((a, l) => a + l.R, 0);
   /* last 30 days, trades that came from setups */
   const d30 = Date.now() - 30*864e5, done = all.filter(s => s.stage==='taken' && tms(s.startAt) >= d30).map(s => S.trades.get(s.trade_id)).filter(t => t?.result);
@@ -3768,11 +3791,11 @@ function renderSetups(){
     <header class="sx-top">
       <div><h1 class="pairtitle">Setups <span class="beta">beta</span></h1>
         <p class="sx-sub">Bias, liquidity, break, retest, trade. Only setups in the direction of your weekly bias.</p></div>
-      <div class="sx-top-r">${sxStatus()}<button class="btn" id="suRefresh" title="Load the latest signals">↻ Refresh</button></div>
+      <div class="sx-top-r">${sxStatus()}${fresh.length ? `<button class="btn sx-allseen" id="suAllSeen" title="Mark every new card as seen">✓ ${fresh.length} new, mark seen</button>` : ''}<button class="btn" id="suRefresh" title="Load the latest signals">↻ Refresh</button></div>
     </header>
     <div class="sx-stats" role="tablist" aria-label="Stages">
       ${SX_COLS.map(([k, t]) => `<button class="sx-stat s-${k}" role="tab" data-sustage="${k}" aria-selected="${stage===k}">
-        <span class="sx-stat-n">${cols[k].length}</span><span class="sx-stat-t">${t}</span>
+        <span class="sx-stat-n">${cols[k].length}${newIn(k) ? `<em class="sx-stat-new">${newIn(k)} new</em>` : ''}</span><span class="sx-stat-t">${t}</span>
         <span class="sx-stat-x">${k==='trade' ? (live.length ? `${liveR >= 0 ? '+' : ''}${fmt(liveR, 2)}R open` : 'nothing open') : k==='formed' ? (cols.formed.length ? 'orders to place' : 'none waiting') : (cols.forming.length ? 'watching' : 'no sweeps')}</span></button>`).join('')}
       <div class="sx-stat s-month"><span class="sx-stat-n">${done.length ? `${netR >= 0 ? '+' : ''}${fmt(netR, 1)}R` : '0'}</span><span class="sx-stat-t">Last 30 days</span>
         <span class="sx-stat-x">${done.length ? `${wins} of ${done.length} trades won` : 'no closed setup trades yet'}</span></div>
@@ -3787,7 +3810,7 @@ function renderSetups(){
     <div class="sx-board" data-stage="${stage}">
       ${SX_COLS.map(([k, t, sub]) => `<section class="sx-col c-${k}" aria-label="${t}">
         <header><b>${t}</b><span class="bn">${cols[k].length}</span><p>${sub}</p></header>
-        ${cols[k].length ? cols[k].map(suCard).join('') : `<div class="sx-empty">${k==='forming' ? 'No sweep in the bias direction right now. New ones show up here as soon as the liquidity alert fires.' : k==='formed' ? 'When a forming setup gets its body-close break, it moves here with the order to place.' : 'Trades appear here once price comes back to the line.'}</div>`}
+        ${cols[k].length ? [...cols[k].filter(sxIsNew), ...cols[k].filter(x => !sxIsNew(x))].map(suCard).join('') : `<div class="sx-empty">${k==='forming' ? 'No sweep in the bias direction right now. New ones show up here as soon as the liquidity alert fires.' : k==='formed' ? 'When a forming setup gets its body-close break, it moves here with the order to place.' : 'Trades appear here once price comes back to the line.'}</div>`}
       </section>`).join('')}
     </div>
     <section class="sx-tools card">
@@ -3802,7 +3825,7 @@ function sxStatus(){
     return `<span class="sx-hb ${st}" title="${tf} heartbeat: ${last ? 'last candle closed '+new Date(last).toLocaleString() : 'nothing received yet'}"><i></i>${tf}</span>`; };
   const eng = engineOn(), ch = S.settings?.engine?.channel==='telegram' ? 'Telegram' : 'ntfy';
   return `<div class="sx-status ${eng ? 'on' : ''}" title="${eng ? `Server engine ran ${ago(S.settings.engine.at)}. Trades are logged and closed and phone alerts go out even with this page closed.` : 'Server engine not seen yet. This page does the auto-take and auto-close while it is open.'}">
-    <span class="sx-eng"><i></i>${eng ? `Live · alerts on ${ch}` : 'Browser only'}</span>${S.candlesMissing ? '<span class="sx-hb off"><i></i>no candles table</span>' : ['15m','1H','4H'].map(dot).join('')}</div>`;
+    <span class="sx-eng"><i></i>${eng ? `Live · alerts on ${ch}` : 'Browser only'}</span>${S.candlesMissing ? '<span class="sx-hb off"><i></i>no candles table</span>' : [...(hbLast('1m') ? ['1m'] : []), '15m','1H','4H'].map(dot).join('')}</div>`;
 }
 function sxHistory(all){
   const H = S.su.hist, HT = S.su.htf || 'all';
@@ -3972,6 +3995,9 @@ async function autoRun(){ if(engineOn()) return 0; const a = await autoTakeSetup
 function bindSetups(m, all){
   const byKey = new Map(all.map(s => [s.key, s]));
   m.querySelector('#suRefresh').onclick = async () => { await loadSignals(); const n = await autoRun(); renderMain(); if(!n) toast('Signals refreshed'); };
+  m.querySelectorAll('[data-suseen]').forEach(b => b.onclick = async () => { const s = byKey.get(b.dataset.suseen); if(!s) return;
+    const card = b.closest('.sx'); card.classList.remove('is-new'); card.querySelector('.sx-new')?.remove(); await sxMarkSeen([s]); renderMain(); });
+  m.querySelector('#suAllSeen')?.addEventListener('click', async () => { await sxMarkSeen(all.filter(sxIsNew)); renderMain(); });
   m.querySelectorAll('[data-sutf]').forEach(b => b.onclick = () => { S.su.tf = b.dataset.sutf; renderMain(); });
   m.querySelectorAll('[data-sustage]').forEach(b => b.onclick = () => { S.su.stage = b.dataset.sustage; m.querySelector('.sx-board').dataset.stage = S.su.stage;
     m.querySelectorAll('[data-sustage]').forEach(x => x.setAttribute('aria-selected', x===b)); if(innerWidth > 900) m.querySelector('.sx-col.c-'+S.su.stage)?.scrollIntoView({ behavior:'smooth', block:'nearest' }); });
