@@ -897,6 +897,9 @@
   .hb-s.on{ color:var(--pos); } .hb-s.late{ color:#d97706; } .hb-s.off{ color:var(--muted); }
   .hb-sep{ width:1px; align-self:stretch; background:var(--line); }
   .hb-note{ font-size:12px; font-weight:600; flex-basis:100%; }
+  .hb-auto{ display:inline-flex; align-items:center; gap:7px; font-size:12.5px; font-weight:800; cursor:pointer; }
+  .hb-auto input{ width:16px; height:16px; accent-color:var(--accent, #c8f560); }
+  .hb-auto .muted{ font-weight:600; }
   .su-help summary{ cursor:pointer; }
   .su-help[open]{ display:grid; gap:8px; }
   .su-code{ margin:0; padding:10px 12px; border-radius:10px; background:var(--field); border:1px solid var(--line); font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12px; white-space:pre-wrap; word-break:break-all; }
@@ -3402,7 +3405,7 @@ function candleAt(pair, tf, ms){
 /* is the heartbeat running for this timeframe? (any candle in the last 4 days — covers weekends) */
 const hbOn = tf => [...S.candleIdx.entries()].some(([k, a]) => k.endsWith('|'+tf) && a.length && Date.now() - a[a.length-1].t < 4*864e5);
 function hbLast(tf){ let m = 0; S.candleIdx.forEach((a, k) => { if(k.endsWith('|'+tf) && a.length) m = Math.max(m, a[a.length-1].t); }); return m ? m + (TF_MS[tf] || 0) : 0; }
-const suBreakMode = () => S.settings?.su_break || ls.get('do_su_brk', 'alerts');   /* 'alerts' = fractal alerts checked by candles · 'candles' = candles only */
+const suAuto = () => (S.settings?.su_auto ?? ls.get('do_su_auto', true)) !== false;   /* auto-take the trade when the heartbeat sees the retest */
 async function saveSettingKey(key, value){
   S.settings[key] = value;
   try{ const { error } = await sb.from('do_settings').upsert({ key, value }, { onConflict:'key' }); if(error) throw error; }
@@ -3425,7 +3428,6 @@ function deriveSetups(){
     if(s.stage==='forming' && t - tms(s.startAt) > win.forming*H){ s.stage = 'expired'; s.why = `No fractal break within ${win.forming}h`; s.endAt = new Date(tms(s.startAt) + win.forming*H).toISOString(); }
     else if(s.stage==='formed' && t - tms(s.bos.at) > win.formed*H){ s.stage = 'expired'; s.why = `No retest within ${win.formed}h`; s.endAt = new Date(tms(s.bos.at) + win.formed*H).toISOString(); }
   };
-  const mode = suBreakMode();
   /* candles join the replay as events at their CLOSE time (for retests, and for breaks in "candles only" mode) */
   const cev = [...S.candles.values()].filter(c => TF_MS[c.tf]).map(c => ({ kind:'candle', pair:c.pair, tf:c.tf, at:new Date(c.t + TF_MS[c.tf]).toISOString(), cnd:c }));
   const sigs = [...S.signals, ...cev].sort((a,b) => tms(a.at) - tms(b.at));
@@ -3448,7 +3450,6 @@ function deriveSetups(){
       /* "level" from a plot is used only if it looks like a price (within 5% of the close) — a 1/0 signal value is ignored */
       const lvOk = g.level!=null && (g.price==null || Math.abs(Number(g.level) - Number(g.price)) <= Math.abs(Number(g.price))*0.05) && Number(g.level) > 0;
       const gl = lvOk ? g.level : null, bp = g.price ?? gl;
-      if(mode==='candles' && hbOn(g.tf && g.tf!=='?' ? g.tf : '1H')) continue;   /* breaks come from the heartbeat candles only */
       live.filter(x => x.stage==='forming' && (!g.tf || g.tf==='?' || x.tf===g.tf)).forEach(x => {
         const L = x.liq.level ?? x.liq.extreme;
         /* a bullish reversal only confirms longs, a bearish one only shorts */
@@ -3466,11 +3467,12 @@ function deriveSetups(){
           const r = bodyBreak(x, cnd);
           x.pend = null;
           if(r.ok){ x.bos = { ...g, price:cnd.c, level:r.line, candle:cnd, checked:true }; x.stage = 'formed'; x.line = r.line; }
-          else if(r.wick) (x.wicks = x.wicks || []).push({ at:g.at, why:r.why });
+          else if(r.reason!=='none') (x.wicks = x.wicks || []).push({ at:g.at, why:r.why });
           return;
         }
         const priceOk = bp==null || L==null || (x.dir==='Long' ? Number(bp) > Number(L) : Number(bp) < Number(L));
         if(priceOk){ x.bos = { ...g, level:gl }; x.stage = 'formed'; x.line = gl ?? g.price ?? null; }
+        else (x.wicks = x.wicks || []).push({ at:g.at, why:`break ${lvl(bp)} ${x.dir==='Long' ? 'below the swept low' : 'above the swept high'} ${lvl(L)}` });
       });
     } else if(g.kind==='liqx'){
       /* a candle closed its whole body beyond the swept level → that liquidity is no longer valid */
@@ -3480,12 +3482,6 @@ function deriveSetups(){
         .forEach(x => { x.stage = 'invalid'; x.why = `Body closed ${x.dir==='Long' ? 'below' : 'above'} the swept level${g.price!=null ? ' ('+lvl(g.price)+')' : ''}`; x.endAt = g.at; });
     } else if(g.kind==='candle'){
       const c = g.cnd, len = TF_MS[c.tf];
-      /* candles only: the first candle after the sweep that closes its body beyond the opposite fractal = the break */
-      if(mode==='candles') live.filter(x => x.stage==='forming' && x.tf===c.tf && c.t >= tms(x.liq.at) - 60e3).forEach(x => {
-        const r = bodyBreak(x, c);
-        if(r.ok){ x.bos = { kind:'bos', tf:c.tf, at:g.at, price:c.c, level:r.line, candle:c, checked:true, source:'candle' }; x.stage = 'formed'; x.line = r.line; x.pend = null; }
-        else if(r.wick) (x.wicks = x.wicks || []).push({ at:g.at, why:r.why });
-      });
       /* retest: a candle (same or lower timeframe) after the break reaches the zone */
       live.filter(x => x.stage==='formed' && (TF_RANK[c.tf] ?? 0) <= (TF_RANK[x.tf] ?? 0)).forEach(x => {
         const bc = x.bos.candle ? x.bos.candle.t + (TF_MS[x.bos.candle.tf] || 0) : tms(x.bos.at) - 120e3, z = suZone(x);
@@ -3508,11 +3504,20 @@ function deriveSetups(){
 /* did this candle close its BODY beyond the fractal opposite to the sweep? (and beyond the swept level) */
 function bodyBreak(x, c){
   const L = x.liq.level ?? x.liq.extreme, long = x.dir==='Long', f = long ? c.fh : c.fl;
-  if(f==null || c.c==null) return { ok:false, why:'no fractal in the candle data' };
-  const beyondF = long ? c.c > f : c.c < f, beyondL = L==null || (long ? c.c > Number(L) : c.c < Number(L));
-  if(beyondF && beyondL) return { ok:true, line:f };
+  if(f==null || c.c==null) return { ok:false, reason:'none', why:'no fractal in the candle data' };
+  /* sell: the fractal must sit BELOW the swept high (buy: ABOVE the swept low) — otherwise the break is invalid */
+  if(L!=null && (long ? f <= Number(L) : f >= Number(L))) return { ok:false, reason:'side', line:f, why:`fractal ${lvl(f)} is ${long ? 'below the swept low' : 'above the swept high'} ${lvl(L)}` };
+  if(long ? c.c > f : c.c < f) return { ok:true, line:f };
   const wick = long ? c.h > f : c.l < f;
-  return { ok:false, wick, line:f, why: wick ? `wick through ${lvl(f)}, body closed ${long ? 'below' : 'above'} (${lvl(c.c)})` : `no close ${long ? 'above' : 'below'} ${lvl(f)}` };
+  return { ok:false, reason: wick ? 'wick' : 'none', line:f, why: wick ? `wick through ${lvl(f)}, body closed ${long ? 'below' : 'above'} (${lvl(c.c)})` : `no close ${long ? 'above' : 'below'} ${lvl(f)}` };
+}
+/* trade plan: entry at the retest line, SL at the wick of the candle that took the liquidity, TP at 2R */
+function suPlan(s){
+  const e = s.line, sl = s.liq?.extreme ?? s.liq?.level; if(e==null || sl==null) return null;
+  const E = Number(e), SL = Number(sl), r = Math.abs(E - SL);
+  if(!r || (s.dir==='Long' ? SL >= E : SL <= E)) return null;
+  const dg = E >= 20 ? 3 : 5, rd = v => Number(v.toFixed(dg));
+  return { entry:rd(E), sl:rd(SL), tp:rd(s.dir==='Long' ? E + 2*r : E - 2*r) };
 }
 async function markSetup(key, status, extra = {}){
   const row = { setup_key:key, status, reason:extra.reason ?? null, trade_id:extra.trade_id ?? null, updated_at:new Date().toISOString() };
@@ -3534,9 +3539,11 @@ function suCard(s){
     ['Liquidity', `${s.side==='sell' ? 'Sell-side (low)' : 'Buy-side (high)'}${s.liq.level!=null ? ' '+lvl(s.liq.level) : ''} · ${hhmm(s.liq.at)}${s.liqs.length > 1 ? ` · ${s.liqs.length} sweeps` : ''}`, 'ok'],
     ['Fractal break', s.bos?.checked ? `body close ${lvl(s.bos.price)} ${s.dir==='Long' ? '>' : '<'} fractal ${lvl(s.bos.level)} ✓ · ${hhmm(s.bos.at)}${s.bos.source==='candle' ? ' · from candles' : ''}`
       : !s.bos && s.pend ? `break alert ${hhmm(s.pend.at)} · checking the candle close…`
-      : s.bos ? `${(s.bos.price ?? s.bos.level)!=null ? lvl(s.bos.price ?? s.bos.level) + ((s.liq.level ?? s.liq.extreme)!=null ? ` ${s.dir==='Long' ? '>' : '<'} ${lvl(s.liq.level ?? s.liq.extreme)} ✓` : '') : (s.dir==='Long' ? 'Bullish' : 'Bearish') + ' break'} · ${hhmm(s.bos.at)}${s.bos.tf && s.bos.tf!==s.tf ? ' · '+esc(s.bos.tf) : ''}${s.bos.unverified ? ' · candle not checked' : ''}` : `waiting · needs a body close ${s.dir==='Long' ? 'above the last fractal high' : 'below the last fractal low'}${s.wicks?.length ? ` · ${s.wicks.length} wick break${s.wicks.length > 1 ? 's' : ''} ignored (${s.wicks[s.wicks.length-1].why})` : ''}`, s.bos ? 'ok' : s.stage==='forming' ? 'now' : ''],
+      : s.bos ? `${(s.bos.price ?? s.bos.level)!=null ? lvl(s.bos.price ?? s.bos.level) + ((s.liq.level ?? s.liq.extreme)!=null ? ` ${s.dir==='Long' ? '>' : '<'} ${lvl(s.liq.level ?? s.liq.extreme)} ✓` : '') : (s.dir==='Long' ? 'Bullish' : 'Bearish') + ' break'} · ${hhmm(s.bos.at)}${s.bos.tf && s.bos.tf!==s.tf ? ' · '+esc(s.bos.tf) : ''}${s.bos.unverified ? ' · candle not checked' : ''}` : `waiting · needs a body close ${s.dir==='Long' ? 'above the last fractal high' : 'below the last fractal low'}${s.wicks?.length ? ` · ${s.wicks.length} break${s.wicks.length > 1 ? 's' : ''} ignored (${s.wicks[s.wicks.length-1].why})` : ''}`, s.bos ? 'ok' : s.stage==='forming' ? 'now' : ''],
     ['Retest', s.retest ? `${s.retest.manual ? 'marked by you' : 'price in the zone' + (s.retest.price!=null ? ' · '+lvl(s.retest.price) : '') + (s.retest.auto ? ' · '+esc(s.retest.tf)+' candle' : '') + ' · ' + hhmm(s.retest.at)}${suZone(s) ? ' · zone '+suZoneTxt(s) : ''}` : s.bos ? (suZone(s) ? `waiting · zone ${suZoneTxt(s)}` : 'waiting for price back at the break line…') : '—', s.retest ? 'ok' : s.stage==='formed' ? 'now' : ''],
   ];
+  const pl = s.bos ? suPlan(s) : null;
+  if(pl) st.push(['Trade plan', `Entry ${lvl(pl.entry)} · SL ${lvl(pl.sl)} · TP ${lvl(pl.tp)} (2R)`, s.stage==='retest' ? 'now' : 'ok']);
   return `<article class="su-card ${s.dir.toLowerCase()} st-${s.stage}" data-su="${s.key}">
     <header class="su-h"><b class="su-pair">${base(s.pair)}<em>${quote(s.pair)}</em></b><span class="su-dir">${s.dir==='Long' ? '▲ Long' : '▼ Short'}</span><span class="tfl">${esc(s.tf)}</span>
       <span class="su-age" title="${new Date(s.startAt).toLocaleString()}">${ago(s.startAt)}</span></header>
@@ -3562,7 +3569,7 @@ function renderSetups(){
       <div><div class="pairtitle">Setups <span class="beta">beta</span></div><div class="muted mt-1" style="font-weight:600">Your model, step by step — only setups in the direction of the weekly fundamental bias.</div></div>
       <div class="flex items-center gap-2 ml-auto"><button class="btn" id="suRefresh">↻ Refresh</button><button class="btn" id="suSimBtn" aria-pressed="${S.su.sim}">🧪 Simulate alert</button></div>
     </div>
-    <div class="su-flow">${[['1','Fundamental bias','bullish → longs only · bearish → shorts only'],['2','Liquidity taken','old low/high swept, candle closes back with a wick'],['3','Fractal break','body close beyond the opposite fractal — a wick doesn\'t count'],["4","Retest","price comes back into the zone: break line → wick of the sweep candle"],['⚡','Execute','take the trade from the card']]
+    <div class="su-flow">${[['1','Fundamental bias','bullish → longs only · bearish → shorts only'],['2','Liquidity taken','old low/high swept, candle closes back with a wick'],['3','Fractal break','fractal below the swept high (sells) / above the swept low (buys), body close — a wick doesn\'t count'],["4","Retest","a heartbeat candle comes back to the break line"],['⚡','Auto entry','entry at the line · SL at the sweep wick · TP 2R']]
       .map(([n,t,d]) => `<div class="su-fs"><span class="su-fn">${n}</span><div><b>${t}</b><span>${d}</span></div></div>`).join('<span class="su-arrow">→</span>')}</div>
     ${hbBar()}
     ${S.su.sim ? simPanel() : ''}
@@ -3601,12 +3608,12 @@ function renderSetups(){
 }
 /* heartbeat status + where fractal breaks come from */
 function hbBar(){
-  const mode = suBreakMode(), st = tf => { const last = hbLast(tf); if(!last) return `<span class="hb-s off" title="No ${tf} candles yet">${tf} · off</span>`;
+  const st = tf => { const last = hbLast(tf); if(!last) return `<span class="hb-s off" title="No ${tf} candles yet">${tf} · off</span>`;
     const late = Date.now() - last > 2*TF_MS[tf] + 10*60e3; return `<span class="hb-s ${late ? 'late' : 'on'}" title="Last ${tf} candle closed ${new Date(last).toLocaleString()}">${tf} · ${late ? 'last' : '✓'} ${hhmm(last)}</span>`; };
   return `<div class="hb-bar"><span class="lbl" style="margin:0">Heartbeat</span>${S.candlesMissing ? '<span class="hb-s off" title="Run migration-candles.sql in Supabase">table missing</span>' : st('1H') + st('4H')}
-    <span class="hb-sep"></span><span class="lbl" style="margin:0">Fractal break from</span>
-    <div class="seg" role="group" aria-label="Fractal break source"><button data-subrk="alerts" aria-pressed="${mode==='alerts'}" title="Your fractal indicator's alerts — the heartbeat candle checks it was a body close, not a wick">Fractal alerts + candle check</button><button data-subrk="candles" aria-pressed="${mode==='candles'}" title="Ignore the fractal alerts: the first heartbeat candle that closes its body beyond the last fractal (2 candles each side) is the break">Candles only</button></div>
-    <span class="muted hb-note">${hbOn('1H') || hbOn('4H') ? 'wick-only breaks are ignored · line = the fractal broken · retest spotted from candles' : 'add the DO Heartbeat indicator to check body closes — until then the fractal alerts count as they come'}</span></div>`;
+    <span class="hb-sep"></span>
+    <label class="hb-auto" title="When a heartbeat candle comes back to the retest line, the trade is created by itself: entry at the line, SL at the wick of the sweep candle, TP at 2R"><input type="checkbox" id="suAuto" ${suAuto() ? 'checked' : ''}> Auto-take at retest <span class="muted">(entry line · SL sweep wick · TP 2R)</span></label>
+    <span class="muted hb-note">${hbOn('1H') || hbOn('4H') ? 'Fractal alert → valid only if the fractal is beyond the liquidity (below the swept high for sells, above the swept low for buys) and the candle closed with its body · wicks ignored · retest line = the broken fractal' : 'add the DO Heartbeat indicator to check body closes and spot the retest — until then fractal alerts are checked only against the liquidity'}</span></div>`;
 }
 function simPanel(){
   const ps = allPairs(), cur = ls.get('do_su_simp', S.pair), tf = ls.get('do_su_simtf', '1H'), r = curWeekRec(cur);
@@ -3628,9 +3635,39 @@ function simPanel(){
       <button class="btn" data-simc="body|down">Body close below</button><button class="btn" data-simc="wick|down">Wick below only</button>
       <button class="btn" data-simc="touch|">Back at the line</button></div></section>`;
 }
+/* create the trade for a setup — by hand (Take) or automatically when the heartbeat sees the retest */
+async function takeSetup(s, auto = false){
+  const pl = suPlan(s), lineLvl = s.line ?? null;
+  const at = auto && s.retest?.at ? new Date(s.retest.at) : new Date(), ds = iso(at);
+  const notes = `${auto ? '[Auto] ' : ''}Setup ${s.tf}: ${s.side==='sell' ? 'sell-side' : 'buy-side'} liquidity${s.liq.level!=null ? ' '+lvl(s.liq.level) : ''} (${hhmm(s.liq.at)}) → ${s.dir==='Long' ? 'bullish' : 'bearish'} fractal break${lineLvl!=null ? ' '+lvl(lineLvl) : ''}${s.bos ? ' ('+hhmm(s.bos.at)+')' : ''}${s.retest ? ` → retest${s.retest.at ? ' '+hhmm(s.retest.at) : ''}${s.retest.auto ? ' ('+s.retest.tf+' candle)' : ''}` : ''}${pl ? `. Plan: entry ${lvl(pl.entry)} · SL ${lvl(pl.sl)} · TP ${lvl(pl.tp)} (2R)` : suZone(s) ? '. Entry zone '+suZoneTxt(s) : ''}. Bias ${s.bias || '–'}${s.conviction ? ' '+s.conviction : ''}.`;
+  const extra = { setup_tf: ['1H','4H'].includes(s.tf) ? s.tf : null, entry_price: pl?.entry ?? lineLvl, notes };
+  if(pl){ extra.sl = pl.sl; extra.tp = pl.tp; }
+  if(auto) extra.entry_time = `${String(at.getHours()).padStart(2,'0')}:${String(at.getMinutes()).padStart(2,'0')}`;
+  const t = await addTrade(s.pair, ds, s.dir, extra);
+  if(!t) return null;
+  await markSetup(s.key, 'taken', { trade_id:t.id, reason: auto ? 'auto' : null });
+  if(missingOf(tradeFull(t)).length) await setPending([...pendingList().filter(k => k!==t.id), t.id]);
+  return t;
+}
+/* runs after every refresh: setups whose retest the heartbeat saw in the last 48h become trades */
+S.autoTaking = false;
+async function autoTakeSetups(){
+  if(S.autoTaking || !CONFIGURED || S.signalsMissing || S.legacyTrades || !suAuto()) return 0;
+  S.autoTaking = true; let n = 0;
+  try{
+    const cut = Date.now() - 48*36e5;
+    for(const s of deriveSetups()){
+      if(s.stage!=='retest' || !s.retest?.auto || tms(s.retest.at) < cut || S.setupMarks.has(s.key) || !suPlan(s)) continue;
+      const t = await takeSetup(s, true);
+      if(t){ n++; toast(`⚡ Auto-taken: ${s.dir==='Long' ? '▲' : '▼'} ${s.pair} ${s.tf} · entry ${lvl(t.entry_price)} · SL ${lvl(t.sl)} · TP ${lvl(t.tp)}`); }
+    }
+  }catch(e){ console.warn('auto-take failed', e); }
+  finally{ S.autoTaking = false; }
+  return n;
+}
 function bindSetups(m, all){
   const byKey = new Map(all.map(s => [s.key, s]));
-  m.querySelector('#suRefresh').onclick = async () => { await loadSignals(); renderMain(); toast('Signals refreshed'); };
+  m.querySelector('#suRefresh').onclick = async () => { await loadSignals(); const n = await autoTakeSetups(); renderMain(); if(!n) toast('Signals refreshed'); };
   m.querySelector('#suSimBtn').onclick = () => { S.su.sim = !S.su.sim; renderMain(); };
   m.querySelectorAll('[data-suh]').forEach(b => b.onclick = () => { S.su.hist = b.dataset.suh; ls.set('do_su_hist', S.su.hist); renderMain(); });
   m.querySelectorAll('[data-suht]').forEach(b => b.onclick = () => { S.su.htf = b.dataset.suht; renderMain(); });
@@ -3642,13 +3679,7 @@ function bindSetups(m, all){
     card.querySelectorAll('[data-sr]').forEach(x => x.onclick = async () => { if(await markSetup(b.dataset.suskip, 'skipped', { reason:x.dataset.sr })){ toast('Setup skipped'); renderMain(); } }); });
   m.querySelectorAll('[data-sutake]').forEach(b => b.onclick = async () => {
     const s = byKey.get(b.dataset.sutake); if(!s) return;
-    const at = new Date(), ds = iso(at), lineLvl = s.line ?? null;
-    const notes = `Setup ${s.tf}: ${s.side==='sell' ? 'sell-side' : 'buy-side'} liquidity${s.liq.level!=null ? ' '+lvl(s.liq.level) : ''} (${hhmm(s.liq.at)}) → ${s.dir==='Long' ? 'bullish' : 'bearish'} fractal break${lineLvl!=null ? ' '+lvl(lineLvl) : ''}${s.bos ? ' ('+hhmm(s.bos.at)+')' : ''}${s.retest ? ' → retest' : ''}${suZone(s) ? '. Entry zone '+suZoneTxt(s) : ''}. Bias ${s.bias || '–'}${s.conviction ? ' '+s.conviction : ''}.`;
-    const t = await addTrade(s.pair, ds, s.dir, { setup_tf: ['1H','4H'].includes(s.tf) ? s.tf : null, entry_price: lineLvl, notes });
-    if(!t) return;
-    await markSetup(s.key, 'taken', { trade_id:t.id });
-    if(missingOf(tradeFull(t)).length) await setPending([...pendingList().filter(k => k!==t.id), t.id]);
-    toast(`${s.dir==='Long' ? '▲' : '▼'} ${s.pair} trade created from the setup`); completeTrade(t.id);
+    const t = await takeSetup(s); if(t){ toast(`${s.dir==='Long' ? '▲' : '▼'} ${s.pair} trade created from the setup`); completeTrade(t.id); }
   });
   /* simulator */
   const sp = m.querySelector('#simPair'), stf = m.querySelector('#simTf');
@@ -3663,7 +3694,7 @@ function bindSetups(m, all){
     if(error) return toast('Not saved: ' + error.message);
     S.signals.push(data); renderMain(); toast(`Test signal: ${kind}${side ? ' · '+side : ''} on ${row.pair} ${row.tf}`);
   });
-  m.querySelectorAll('[data-subrk]').forEach(b => b.onclick = async () => { ls.set('do_su_brk', b.dataset.subrk); await saveSettingKey('su_break', b.dataset.subrk); renderMain(); });
+  m.querySelector('#suAuto')?.addEventListener('change', async e => { ls.set('do_su_auto', e.target.checked); await saveSettingKey('su_auto', e.target.checked); if(e.target.checked) await autoTakeSetups(); renderMain(); });
   m.querySelectorAll('[data-simc]').forEach(b => b.onclick = async () => {
     const [how, way] = b.dataset.simc.split('|'), F = parseNum(m.querySelector('#simLvl').value), tf = stf.value, len = TF_MS[tf];
     if(F==null) return toast('Type the fractal price first');
@@ -3674,7 +3705,7 @@ function bindSetups(m, all){
     const { error } = await sb.from('do_candles').upsert(row, { onConflict:'pair,tf,t' }); if(error) return toast('Not saved: ' + error.message);
     const k = tms(row.t), cc = { pair:row.pair, tf, t:k, ...c }; S.candles.set(`${row.pair}|${tf}|${k}`, cc); S.candleMax = Math.max(S.candleMax, k);
     S.candleIdx = new Map(); for(const x of S.candles.values()){ const kk = x.pair+'|'+x.tf; if(!S.candleIdx.has(kk)) S.candleIdx.set(kk, []); S.candleIdx.get(kk).push(x); } S.candleIdx.forEach(a => a.sort((x, y) => x.t - y.t));
-    renderMain(); toast(`Test candle: ${how}${way ? ' '+way : ''} on ${row.pair} ${tf}`);
+    const n = await autoTakeSetups(); renderMain(); if(!n) toast(`Test candle: ${how}${way ? ' '+way : ''} on ${row.pair} ${tf}`);
   });
   m.querySelector('#simClear')?.addEventListener('click', async () => {
     const test = S.signals.filter(g => g.source==='test'); if(!test.length) return toast('No test signals');
@@ -3686,7 +3717,13 @@ function bindSetups(m, all){
   });
 }
 /* keep the board fresh while it's open */
-setInterval(async () => { if(S.view==='setups' && !document.querySelector('dialog[open]') && !document.querySelector('.su-skip') && document.visibilityState==='visible'){ await loadSignals(); renderMain(); } }, 60000);
+setInterval(async () => {
+  if(!CONFIGURED || document.visibilityState!=='visible') return;
+  await loadSignals();
+  const n = await autoTakeSetups(), busy = document.querySelector('dialog[open]') || document.querySelector('.su-skip') || S.drawerOpen;
+  if(!busy && (S.view==='setups' || n)) renderMain();
+  if(n) refreshDock?.();
+}, 60000);
 
 /* ---------- quick add trade + "to complete" reminders ---------- */
 /* pending = quick-added trades still missing details; list of "PAIR|YYYY-MM-DD" synced via do_settings */
@@ -4740,6 +4777,7 @@ document.getElementById('csvFile').onchange = async ev => {
     try{ await loadAll(); }catch(e){ console.error(e); toast('Could not load data: ' + e.message); }
   }
   render();
+  if(CONFIGURED && await autoTakeSetups()){ render(); refreshDock?.(); }
 })();
 </script>
 </body>
