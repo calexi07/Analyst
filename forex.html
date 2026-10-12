@@ -958,7 +958,7 @@
     .sx-board[data-stage="forming"] .sx-col:not(.c-forming), .sx-board[data-stage="formed"] .sx-col:not(.c-formed), .sx-board[data-stage="trade"] .sx-col:not(.c-trade){ display:none; }
     .sx-col{ padding:0; border:0; background:none; }
     .sx-switches{ margin-left:0; }
-    .sx-top-r{ margin-left:0; width:100%; flex-wrap:nowrap; } .sx-top-r .btn{ margin-left:auto; flex:none; }
+    .sx-top-r{ margin-left:0; width:100%; flex-wrap:wrap; } .sx-top-r .sx-status{ width:100%; justify-content:space-between; } .sx-top-r .sx-live-at{ margin-right:auto; }
     .sx-stat.s-month{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; } .sx-stat.s-month .sx-stat-n{ font-size:20px; }
     .sx-hr-why{ flex-basis:100%; order:9; white-space:normal; }
     .sx-hr-trail{ margin-left:0; order:8; flex-basis:100%; }
@@ -977,6 +977,7 @@
   .sx-seen{ border:0; border-radius:999px; padding:5px 12px; font-size:12.5px; font-weight:800; background:var(--accent); color:var(--on-accent); }
   .sx-seen:focus-visible, .sx-allseen:focus-visible{ outline:2px solid var(--focus); outline-offset:2px; }
   .sx-stat-new{ font-family:'Manrope',sans-serif; font-style:normal; font-size:11px; font-weight:800; margin-left:8px; padding:2px 8px; border-radius:999px; background:var(--accent); color:var(--on-accent); vertical-align:middle; letter-spacing:0; }
+  .sx-live-at{ font-size:12px; font-weight:700; color:var(--muted); white-space:nowrap; }
   .sx-allseen{ border-color:color-mix(in srgb,var(--accent) 55%,var(--line)); }
   @media (prefers-reduced-motion: reduce){ .sx-new span i{ animation:none; } }
   .sx-head{ display:flex; align-items:flex-start; gap:10px; }
@@ -3791,7 +3792,7 @@ function renderSetups(){
     <header class="sx-top">
       <div><h1 class="pairtitle">Setups <span class="beta">beta</span></h1>
         <p class="sx-sub">Bias, liquidity, break, retest, trade. Only setups in the direction of your weekly bias.</p></div>
-      <div class="sx-top-r">${sxStatus()}${fresh.length ? `<button class="btn sx-allseen" id="suAllSeen" title="Mark every new card as seen">✓ ${fresh.length} new, mark seen</button>` : ''}<button class="btn" id="suRefresh" title="Load the latest signals">↻ Refresh</button></div>
+      <div class="sx-top-r">${sxStatus()}${fresh.length ? `<button class="btn sx-allseen" id="suAllSeen" title="Mark every new card as seen">✓ ${fresh.length} new, mark seen</button>` : ''}<span class="sx-live-at" id="suLive" title="The page refreshes itself every 30 seconds">${liveAgo()}</span><button class="btn" id="suRefresh" title="Load the latest signals now">↻</button></div>
     </header>
     <div class="sx-stats" role="tablist" aria-label="Stages">
       ${SX_COLS.map(([k, t]) => `<button class="sx-stat s-${k}" role="tab" data-sustage="${k}" aria-selected="${stage===k}">
@@ -3994,7 +3995,7 @@ function tradeOutcome(t){
 async function autoRun(){ if(engineOn()) return 0; const a = await autoTakeSetups(), b = await autoCloseTrades(); return a + b; }
 function bindSetups(m, all){
   const byKey = new Map(all.map(s => [s.key, s]));
-  m.querySelector('#suRefresh').onclick = async () => { await loadSignals(); const n = await autoRun(); renderMain(); if(!n) toast('Signals refreshed'); };
+  m.querySelector('#suRefresh').onclick = async () => { await liveRefresh(); renderMain(); };
   m.querySelectorAll('[data-suseen]').forEach(b => b.onclick = async () => { const s = byKey.get(b.dataset.suseen); if(!s) return;
     const card = b.closest('.sx'); card.classList.remove('is-new'); card.querySelector('.sx-new')?.remove(); await sxMarkSeen([s]); renderMain(); });
   m.querySelector('#suAllSeen')?.addEventListener('click', async () => { await sxMarkSeen(all.filter(sxIsNew)); renderMain(); });
@@ -4061,13 +4062,26 @@ function bindSetups(m, all){
   });
 }
 /* keep the board fresh while it's open */
-setInterval(async () => {
-  if(!CONFIGURED || document.visibilityState!=='visible') return;
-  await loadSignals();
-  const n = await autoRun(), busy = document.querySelector('dialog[open]') || document.querySelector('.su-skip') || S.drawerOpen;
-  if(!busy && (S.view==='setups' || n)) renderMain();
-  if(n) refreshDock?.();
-}, 60000);
+/* live refresh: every 30 s while the page is visible, and right away when you come back to it */
+S.liveAt = Date.now();
+async function liveRefresh(){
+  if(!CONFIGURED || document.visibilityState!=='visible' || S.liveBusy) return;
+  S.liveBusy = true;
+  try{
+    await loadSignals();
+    /* trades opened / closed by the server engine */
+    if(!S.legacyTrades){ try{ const tr = await fetchAll('do_trades'); const sig = m => [...m.values()].map(t => t.id + (t.updated_at || '') + (t.result || '')).sort().join();
+      const fresh = new Map(tr.map(t => [t.id, t])); if(sig(fresh)!==sig(S.trades)){ S.trades = fresh; S.liveTrades = true; } }catch(e){ /* keep what we have */ } }
+    const n = await autoRun(), busy = document.querySelector('dialog[open]') || document.querySelector('.su-skip') || S.drawerOpen || document.activeElement?.matches?.('input,textarea,select');
+    S.liveAt = Date.now();
+    if(!busy && (S.view==='setups' || ((n || S.liveTrades) && ['trades','today'].includes(S.view)))){ S.liveTrades = false; renderMain(); }
+    if(n) refreshDock?.();
+  } finally { S.liveBusy = false; }
+}
+setInterval(liveRefresh, 30000);
+document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && Date.now() - S.liveAt > 15000) liveRefresh(); });
+setInterval(() => { const el = document.getElementById('suLive'); if(el) el.textContent = liveAgo(); }, 5000);
+function liveAgo(){ const sec = Math.round((Date.now() - (S.liveAt || Date.now()))/1000); return sec < 10 ? 'Updated just now' : sec < 60 ? `Updated ${sec}s ago` : `Updated ${Math.round(sec/60)}m ago`; }
 
 /* ---------- quick add trade + "to complete" reminders ---------- */
 /* pending = quick-added trades still missing details; list of "PAIR|YYYY-MM-DD" synced via do_settings */
