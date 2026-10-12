@@ -3370,6 +3370,12 @@ const suWin = () => ({ ...SU_DEF, ...(S.settings?.setup_windows || ls.get('do_su
 const tms = v => new Date(v).getTime();
 function biasAt(pair, at){ const k = isoWeek(new Date(at)); return S.weekly.get(wk(pair, k.year, k.week)) || null; }
 function liqSide(g){ return g.side || (g.level!=null && g.price!=null ? (Number(g.price) > Number(g.level) ? 'sell' : 'buy') : null); }
+/* entry zone: from the fractal-break line to the extreme (wick) of the candle that took the liquidity */
+function suZone(s){
+  const line = s.line, ext = s.liq?.extreme ?? s.liq?.level; if(line==null || ext==null) return null;
+  return { line:Number(line), ext:Number(ext), top:Math.max(Number(line), Number(ext)), bot:Math.min(Number(line), Number(ext)) };
+}
+const suZoneTxt = s => { const z = suZone(s); return z ? `${lvl(z.line)} → ${lvl(z.ext)}` : ''; };
 function deriveSetups(){
   const win = suWin(), H = 3600e3, now = Date.now(), all = [], open = new Map();
   const close = (s, t) => {   /* expire if a stage waited too long */
@@ -3394,7 +3400,7 @@ function deriveSetups(){
       /* confirmation = the break closes beyond the swept level, opposite to the sweep:
          Long (sell-side taken at X) → break price above X · Short (buy-side taken at X) → break price below X */
       const bp = g.price ?? g.level;
-      live.filter(x => x.stage==='forming').forEach(x => {
+      live.filter(x => x.stage==='forming' && (!g.tf || g.tf==='?' || x.tf===g.tf)).forEach(x => {
         const L = x.liq.level ?? x.liq.extreme; let ok;
         if(bp!=null && L!=null) ok = x.dir==='Long' ? Number(bp) > Number(L) : Number(bp) < Number(L);
         else if(g.side) ok = (g.side==='bull') === (x.dir==='Long');
@@ -3408,7 +3414,9 @@ function deriveSetups(){
           && (g.level==null || x.liq.level==null || Math.abs(Number(x.liq.level) - Number(g.level)) <= Math.abs(Number(g.level))*0.0005))
         .forEach(x => { x.stage = 'invalid'; x.why = `Body closed ${x.dir==='Long' ? 'below' : 'above'} the swept level${g.price!=null ? ' ('+lvl(g.price)+')' : ''}`; x.endAt = g.at; });
     } else if(g.kind==='retest'){
-      live.filter(x => x.stage==='formed').forEach(x => { x.retest = g; x.stage = 'retest'; });
+      live.filter(x => x.stage==='formed' && (!g.tf || g.tf==='?' || x.tf===g.tf)).forEach(x => {
+        const z = suZone(x), p = g.price;
+        if(p==null || !z || (x.dir==='Long' ? Number(p) <= z.top : Number(p) >= z.bot)){ x.retest = g; x.stage = 'retest'; } });
     }
   }
   open.forEach(list => list.forEach(s => close(s, now)));
@@ -3437,7 +3445,7 @@ function suCard(s){
     ['Bias', s.bias ? `${BIAS_LBL[s.bias] || s.bias}${s.conviction ? ' · '+s.conviction : ''}${s.div!=null ? ' · div '+s.div : ''}` : 'not set', 'ok'],
     ['Liquidity', `${s.side==='sell' ? 'Sell-side (low)' : 'Buy-side (high)'}${s.liq.level!=null ? ' '+lvl(s.liq.level) : ''} · ${hhmm(s.liq.at)}${s.liqs.length > 1 ? ` · ${s.liqs.length} sweeps` : ''}`, 'ok'],
     ['Fractal break', s.bos ? `${(s.bos.price ?? s.bos.level)!=null ? lvl(s.bos.price ?? s.bos.level) + ((s.liq.level ?? s.liq.extreme)!=null ? ` ${s.dir==='Long' ? '>' : '<'} ${lvl(s.liq.level ?? s.liq.extreme)} ✓` : '') : (s.dir==='Long' ? 'Bullish' : 'Bearish') + ' break'} · ${hhmm(s.bos.at)}${s.bos.tf && s.bos.tf!==s.tf ? ' · '+esc(s.bos.tf) : ''}` : `waiting · confirms on a close ${s.dir==='Long' ? 'above' : 'below'} the swept ${s.dir==='Long' ? 'low' : 'high'}${(s.liq.level ?? s.liq.extreme)!=null ? ' ('+lvl(s.liq.level ?? s.liq.extreme)+')' : ''}`, s.bos ? 'ok' : s.stage==='forming' ? 'now' : ''],
-    ['Retest', s.retest ? (s.retest.manual ? 'marked by you' : `back at the line · ${hhmm(s.retest.at)}`) : s.bos ? `waiting for price back at ${s.line!=null ? lvl(s.line) : 'the break line'}…` : '—', s.retest ? 'ok' : s.stage==='formed' ? 'now' : ''],
+    ['Retest', s.retest ? `${s.retest.manual ? 'marked by you' : 'price in the zone' + (s.retest.price!=null ? ' · '+lvl(s.retest.price) : '') + ' · ' + hhmm(s.retest.at)}${suZone(s) ? ' · zone '+suZoneTxt(s) : ''}` : s.bos ? (suZone(s) ? `waiting · zone ${suZoneTxt(s)}` : 'waiting for price back at the break line…') : '—', s.retest ? 'ok' : s.stage==='formed' ? 'now' : ''],
   ];
   return `<article class="su-card ${s.dir.toLowerCase()} st-${s.stage}" data-su="${s.key}">
     <header class="su-h"><b class="su-pair">${base(s.pair)}<em>${quote(s.pair)}</em></b><span class="su-dir">${s.dir==='Long' ? '▲ Long' : '▼ Short'}</span><span class="tfl">${esc(s.tf)}</span>
@@ -3445,7 +3453,7 @@ function suCard(s){
     <ol class="su-steps">${st.map(([l,v,c]) => `<li class="${c}"><i></i><b>${l}</b><span>${esc(v)}</span></li>`).join('')}</ol>
     <div class="su-foot"><span class="muted">${suExpiry(s)}</span>
       <div class="su-act"><a class="bt" href="${tvUrl(s.pair, s.tf)}" target="_blank" rel="noopener">Chart ↗</a>
-        ${s.stage==='formed' ? `<button class="bt" data-suret="${s.key}">At the line</button>` : ''}
+        ${s.stage==='formed' ? `<button class="bt" data-suret="${s.key}">In the zone</button>` : ''}
         <button class="bt" data-suskip="${s.key}">Skip</button><button class="btn btn-primary" data-sutake="${s.key}">Take</button></div></div>
   </article>`;
 }
@@ -3464,7 +3472,7 @@ function renderSetups(){
       <div><div class="pairtitle">Setups <span class="beta">beta</span></div><div class="muted mt-1" style="font-weight:600">Your model, step by step — only setups in the direction of the weekly fundamental bias.</div></div>
       <div class="flex items-center gap-2 ml-auto"><button class="btn" id="suRefresh">↻ Refresh</button><button class="btn" id="suSimBtn" aria-pressed="${S.su.sim}">🧪 Simulate alert</button></div>
     </div>
-    <div class="su-flow">${[['1','Fundamental bias','bullish → longs only · bearish → shorts only'],['2','Liquidity taken','old low/high swept, candle closes back with a wick'],['3','Fractal break','body close beyond the swept price — above for longs, below for shorts'],['4','Retest','price returns to the break line (your supply/demand)'],['⚡','Execute','take the trade from the card']]
+    <div class="su-flow">${[['1','Fundamental bias','bullish → longs only · bearish → shorts only'],['2','Liquidity taken','old low/high swept, candle closes back with a wick'],['3','Fractal break','body close beyond the swept price — above for longs, below for shorts'],["4","Retest","price comes back into the zone: break line → wick of the sweep candle"],['⚡','Execute','take the trade from the card']]
       .map(([n,t,d]) => `<div class="su-fs"><span class="su-fn">${n}</span><div><b>${t}</b><span>${d}</span></div></div>`).join('<span class="su-arrow">→</span>')}</div>
     ${S.su.sim ? simPanel() : ''}
     ${suTfs(all).map(tf => { const act = all.filter(x => x.tf===tf && ['forming','formed','retest'].includes(x.stage));
@@ -3530,7 +3538,7 @@ function bindSetups(m, all){
   m.querySelectorAll('[data-sutake]').forEach(b => b.onclick = async () => {
     const s = byKey.get(b.dataset.sutake); if(!s) return;
     const at = new Date(), ds = iso(at), lineLvl = s.line ?? null;
-    const notes = `Setup ${s.tf}: ${s.side==='sell' ? 'sell-side' : 'buy-side'} liquidity${s.liq.level!=null ? ' '+lvl(s.liq.level) : ''} (${hhmm(s.liq.at)}) → ${s.dir==='Long' ? 'bullish' : 'bearish'} fractal break${lineLvl!=null ? ' '+lvl(lineLvl) : ''}${s.bos ? ' ('+hhmm(s.bos.at)+')' : ''}${s.retest ? ' → retest' : ''}. Bias ${s.bias || '–'}${s.conviction ? ' '+s.conviction : ''}.`;
+    const notes = `Setup ${s.tf}: ${s.side==='sell' ? 'sell-side' : 'buy-side'} liquidity${s.liq.level!=null ? ' '+lvl(s.liq.level) : ''} (${hhmm(s.liq.at)}) → ${s.dir==='Long' ? 'bullish' : 'bearish'} fractal break${lineLvl!=null ? ' '+lvl(lineLvl) : ''}${s.bos ? ' ('+hhmm(s.bos.at)+')' : ''}${s.retest ? ' → retest' : ''}${suZone(s) ? '. Entry zone '+suZoneTxt(s) : ''}. Bias ${s.bias || '–'}${s.conviction ? ' '+s.conviction : ''}.`;
     const t = await addTrade(s.pair, ds, s.dir, { setup_tf: ['1H','4H'].includes(s.tf) ? s.tf : null, entry_price: lineLvl, notes });
     if(!t) return;
     await markSetup(s.key, 'taken', { trade_id:t.id });
