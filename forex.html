@@ -998,6 +998,8 @@
 
   .sx-next{ --t:var(--amber); margin:0; padding:9px 12px; border-radius:12px; font-size:13.5px; font-weight:800; line-height:1.35; background:color-mix(in srgb,var(--t) 11%,transparent); color:var(--ink); border:1px solid color-mix(in srgb,var(--t) 26%,transparent); }
   .sx-next.t-order{ --t:var(--info); } .sx-next.t-go{ --t:var(--pos); } .sx-next.t-trade{ --t:var(--accent); }
+  .sx-sync{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; padding:9px 12px; border-radius:12px; font-size:12.5px; font-weight:600; background:color-mix(in srgb,var(--amber) 12%,transparent); border:1px solid color-mix(in srgb,var(--amber) 30%,transparent); }
+  .sx-sync span{ flex:1; min-width:200px; } .sx-sync b{ font-weight:800; }
   .sx-warn{ margin:-4px 0 0; font-size:12px; font-weight:600; color:var(--amber); }
 
   .sx-plan{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
@@ -3821,6 +3823,7 @@ function suCard(s){
     <ol class="sx-track" aria-label="Setup progress: step ${step} of 5">${SX_STEPS.map((t, i) => `<li class="${i+1 < step ? 'done' : i+1===step ? 'now' : ''}"><i></i><span>${t}</span></li>`).join('')}</ol>
     <p class="sx-next t-${nx.tone}">${nx.text}</p>
     ${warn ? `<p class="sx-warn">${esc(warn)}</p>` : ''}
+    ${tr && pl && (Math.abs(Number(tr.sl) - pl.sl) > 1e-9 || Math.abs(Number(tr.tp) - pl.tp) > 1e-9) ? `<div class="sx-sync"><span>The setup now has <b>SL ${lvl(pl.sl)}</b> and <b>TP ${lvl(pl.tp)}</b> (2R). The trade still has SL ${sxPx(tr.sl)} and TP ${sxPx(tr.tp)}.</span><button class="bt" data-susync="${s.key}">Update the trade</button></div>` : ''}
     ${tr ? `<div class="sx-live ${lv ? (lv.R >= 0 ? 'up' : 'dn') : ''}">
         <div><b class="sx-r">${lv ? `${lv.R >= 0 ? '+' : ''}${fmt(lv.R, 2)}R` : '…'}</b><span>${lv ? `${lv.pips >= 0 ? '+' : ''}${fmt(lv.pips, 1)} pips` : 'waiting for the next candle'}</span></div>
         ${lv ? `<dl><div><dt>Price · ${esc(lv.tf)} ${hhmm(lv.at).slice(-5)}</dt><dd>${lvl(lv.price)}</dd></div><div><dt>Worst</dt><dd>${fmt(lv.dd, 2)}R</dd></div><div><dt>Best</dt><dd>+${fmt(lv.best, 2)}R</dd></div></dl>` : ''}
@@ -4064,6 +4067,12 @@ async function autoRun(){ if(engineOn()) return 0; const a = await autoTakeSetup
 function bindSetups(m, all){
   const byKey = new Map(all.map(s => [s.key, s]));
   m.querySelector('#suRefresh').onclick = async () => { await liveRefresh(); renderMain(); };
+  m.querySelectorAll('[data-susync]').forEach(b => b.onclick = async () => {
+    const s = byKey.get(b.dataset.susync), t = s && suOpenTrade(s), pl = s && suPlan(s); if(!t || !pl) return;
+    const { data, error } = await sb.from('do_trades').update({ sl:pl.sl, tp:pl.tp }).eq('id', t.id).select().single();
+    if(error) return toast('Not saved: ' + error.message);
+    S.trades.set(t.id, data); renderMain(); toast(`${t.pair}: SL ${lvl(pl.sl)} · TP ${lvl(pl.tp)} saved`);
+  });
   m.querySelectorAll('[data-suundo]').forEach(b => b.onclick = () => undoSetup(byKey.get(b.dataset.suundo)));
   m.querySelectorAll('[data-suseen]').forEach(b => b.onclick = async () => { const s = byKey.get(b.dataset.suseen); if(!s) return;
     const card = b.closest('.sx'); card.classList.remove('is-new'); card.querySelector('.sx-new')?.remove(); await sxMarkSeen([s]); renderMain(); });
