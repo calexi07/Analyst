@@ -3557,6 +3557,24 @@ async function loadCandles(){
       if(data.length < size) break;
     }
     S.candlesMissing = false;
+    /* 1m candles only for the pairs of open setup trades (live P/L to the minute), from the entry, last 24h at most */
+    const openIds = new Set([...S.setupMarks.values()].filter(m => m.status==='taken' && m.trade_id).map(m => m.trade_id));
+    const open = [...S.trades.values()].filter(t => openIds.has(t.id) && !t.result);
+    if(open.length){
+      const p1 = [...new Set(open.map(t => t.pair))];
+      const start = Math.min(...open.map(t => new Date(`${t.day}T${t.entry_time || '00:00'}`).getTime()).filter(x => !isNaN(x)), Date.now());
+      const since1 = new Date(Math.max(Date.now() - 864e5, S.oneMax && S.onePairs===p1.join() ? S.oneMax - 3*60e3 : start - 60*60e3)).toISOString();
+      S.onePairs = p1.join();
+      for(let from = 0; ; from += size){
+        const { data, error } = await sb.from('do_candles').select('*').in('pair', p1).eq('tf', '1m').gte('t', since1).order('t').range(from, from + size - 1);
+        if(error) break;
+        for(const r of data){ const c = { pair:r.pair, tf:'1m', t:tms(r.t), o:numOr(r.o), h:numOr(r.h), l:numOr(r.l), c:numOr(r.c) };
+          S.candles.set(`${c.pair}|1m|${c.t}`, c); if(c.t > (S.oneMax || 0)) S.oneMax = c.t; }
+        if(data.length < size) break;
+      }
+    }
+    /* drop 1m candles older than a day from memory */
+    const old = Date.now() - 864e5; for(const [k, c] of S.candles) if(c.tf==='1m' && c.t < old) S.candles.delete(k);
   }catch(e){ console.warn('candles not available', e); S.candlesMissing = true; }
   S.candleIdx = new Map();
   for(const c of S.candles.values()){ const k = c.pair+'|'+c.tf; if(!S.candleIdx.has(k)) S.candleIdx.set(k, []); S.candleIdx.get(k).push(c); }
@@ -3758,7 +3776,7 @@ function suCard(s){
     ${warn ? `<p class="sx-warn">${esc(warn)}</p>` : ''}
     ${tr ? `<div class="sx-live ${lv ? (lv.R >= 0 ? 'up' : 'dn') : ''}">
         <div><b class="sx-r">${lv ? `${lv.R >= 0 ? '+' : ''}${fmt(lv.R, 2)}R` : '…'}</b><span>${lv ? `${lv.pips >= 0 ? '+' : ''}${fmt(lv.pips, 1)} pips` : 'waiting for the next candle'}</span></div>
-        ${lv ? `<dl><div><dt>Price</dt><dd>${lvl(lv.price)}</dd></div><div><dt>Worst</dt><dd>${fmt(lv.dd, 2)}R</dd></div><div><dt>Best</dt><dd>+${fmt(lv.best, 2)}R</dd></div></dl>` : ''}
+        ${lv ? `<dl><div><dt>Price · ${esc(lv.tf)} ${hhmm(lv.at).slice(-5)}</dt><dd>${lvl(lv.price)}</dd></div><div><dt>Worst</dt><dd>${fmt(lv.dd, 2)}R</dd></div><div><dt>Best</dt><dd>+${fmt(lv.best, 2)}R</dd></div></dl>` : ''}
       </div>${sxRail(tr, lv)}`
     : levels ? `<div class="sx-plan"><div><span>Entry</span><b>${sxPx(levels.e)}</b></div><div class="sl"><span>Stop</span><b>${sxPx(levels.sl)}</b></div><div class="tp"><span>Target 2R</span><b>${sxPx(levels.tp)}</b></div></div>` : ''}
     <dl class="sx-rows">${rows.map(([k, v, t]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd><dd class="t">${esc(t)}</dd></div>`).join('')}
@@ -3965,12 +3983,14 @@ function suOpenTrade(s){ if(s.stage!=='taken' || !s.trade_id) return null; const
 function livePL(t){
   const E = numOr(t.entry_price), SL = numOr(t.sl), long = t.direction==='Long'; if(E==null || !t.day) return null;
   const start = new Date(`${t.day}T${t.entry_time || '00:00'}`).getTime(); if(isNaN(start)) return null;
-  const tf = ['15m','1H','4H'].find(f => (S.candleIdx.get(t.pair+'|'+f) || []).some(c => c.t + TF_MS[f] > start)); if(!tf) return null;
-  const a = (S.candleIdx.get(t.pair+'|'+tf) || []).filter(c => c.t + TF_MS[tf] > start); if(!a.length) return null;
-  const ps = pipSize(t.pair), riskP = SL!=null ? Math.abs(E - SL)/ps : null, dirm = long ? 1 : -1, last = a[a.length-1];
+  /* every heartbeat timeframe after the entry: the price comes from the candle that closed last (1m when it runs), worst / best from all of them */
+  const a = ['1m','15m','1H','4H'].flatMap(f => (S.candleIdx.get(t.pair+'|'+f) || []).filter(c => c.t >= start - (f==='1m' ? 6e4 : 0) && c.c!=null).map(c => ({ ...c, end:c.t + TF_MS[f], tf:f })));
+  if(!a.length) return null;
+  const last = a.reduce((x, y) => y.end > x.end || (y.end===x.end && TF_MS[y.tf] < TF_MS[x.tf]) ? y : x);
+  const ps = pipSize(t.pair), riskP = SL!=null ? Math.abs(E - SL)/ps : null, dirm = long ? 1 : -1;
   const worst = long ? Math.min(...a.map(c => c.l)) : Math.max(...a.map(c => c.h)), bestP = long ? Math.max(...a.map(c => c.h)) : Math.min(...a.map(c => c.l));
   const pips = (last.c - E)/ps*dirm, R = v => riskP ? v/riskP : 0;
-  return { pips, R:R(pips), price:last.c, at:new Date(last.t + TF_MS[tf]).toISOString(), tf, dd:Math.min(0, R((worst - E)/ps*dirm)), best:Math.max(0, R((bestP - E)/ps*dirm)) };
+  return { pips, R:R(pips), price:last.c, at:new Date(last.end).toISOString(), tf:last.tf, dd:Math.min(0, R((worst - E)/ps*dirm)), best:Math.max(0, R((bestP - E)/ps*dirm)) };
 }
 function tradeOutcome(t){
   const E = numOr(t.entry_price), SL = numOr(t.sl), TP = numOr(t.tp), long = t.direction==='Long';
