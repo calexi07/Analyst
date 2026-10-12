@@ -3652,6 +3652,13 @@ function deriveSetups(){
           const r = bodyBreak(x, cnd);
           x.pend = null;
           if(r.ok){ x.bos = { ...g, price:cnd.c, level:r.line, candle:cnd, checked:true }; x.stage = 'formed'; x.line = r.line; }
+          else if(r.reason==='wick'){
+            /* wick only → the NEXT candle decides: body close beyond the same fractal = valid, otherwise the setup is invalid */
+            const len = TF_MS[x.tf], nx = (S.candleIdx.get(x.pair+'|'+x.tf) || []).find(c => c.t >= cnd.t + len), f = r.line;
+            if(!nx){ x.pend = { ...g, wick:true, line:f, next:cnd.t + 2*len }; return; }
+            if(x.dir==='Long' ? nx.c > f : nx.c < f){ x.bos = { ...g, at:new Date(nx.t + len).toISOString(), price:nx.c, level:f, candle:nx, checked:true, second:true }; x.stage = 'formed'; x.line = f; }
+            else { x.stage = 'invalid'; x.endAt = new Date(nx.t + len).toISOString(); x.why = `Wick break at ${hhmm(new Date(cnd.t + len)).slice(-5)}, the next candle didn't close beyond ${lvl(f)}`; }
+          }
           else if(r.reason!=='none') (x.wicks = x.wicks || []).push({ at:g.at, why:r.why });
           return;
         }
@@ -3731,6 +3738,7 @@ function sxNext(s, tr, pl){
   if(tr) return { tone:'trade', text:`In trade since ${esc(tr.entry_time || fmtDayShort(tr.day))}` };
   if(s.stage==='retest') return { tone:'go', text: pl ? `Price is at the line. Take the ${L ? 'buy' : 'sell'} at ${lvl(pl.entry)}` : 'Price is back at the line' };
   if(s.stage==='formed') return { tone:'order', text: pl ? `Place a limit ${L ? 'buy' : 'sell'} at ${lvl(pl.entry)}` : 'Wait for price to come back to the break line' };
+  if(s.pend?.wick) return { tone:'wait', text:`Wick break at ${hhmm(s.pend.at).slice(-5)}. The ${hhmm(new Date(s.pend.next)).slice(-5)} candle has to close ${L ? 'above' : 'below'} ${lvl(s.pend.line)}, otherwise the setup is invalid` };
   if(s.pend) return { tone:'wait', text:`Break alert at ${hhmm(s.pend.at).slice(-5)}, checking the candle close` };
   return { tone:'wait', text:`Waiting for a ${L ? 'bullish' : 'bearish'} body close ${L ? 'above the last fractal high' : 'below the last fractal low'}` };
 }
@@ -3758,7 +3766,7 @@ function suCard(s){
   const lv = tr ? livePL(tr) : null;
   const rows = [
     ['Liquidity', `${s.side==='sell' ? 'Sell-side' : 'Buy-side'} ${sxPx(s.liq.level)}`, hhmm(s.liq.at)],
-    s.bos ? ['Break', s.bos.checked ? `Close ${lvl(s.bos.price)} ${L ? 'above' : 'below'} ${lvl(s.bos.level)}` : `Line ${sxPx(s.line)}`, hhmm(s.bos.at)] : null,
+    s.bos ? ['Break', s.bos.checked ? `Close ${lvl(s.bos.price)} ${L ? 'above' : 'below'} ${lvl(s.bos.level)}${s.bos.second ? ' (2nd candle)' : ''}` : `Line ${sxPx(s.line)}`, hhmm(s.bos.at)] : null,
     s.retest ? ['Retest', s.retest.manual ? 'Marked by you' : `Touched ${sxPx(s.retest.price)}`, s.retest.auto ? `${s.retest.tf} ${hhmm(s.retest.at).slice(-5)}` : hhmm(s.retest.at)] : null,
   ].filter(Boolean);
   const warn = !s.bos && s.wicks?.length ? s.wicks[s.wicks.length-1].why : '';
