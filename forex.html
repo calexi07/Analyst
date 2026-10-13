@@ -1095,6 +1095,21 @@
   .trc-p{ font-weight:800; font-size:12.5px; }
   .trc-del{ width:28px; height:28px; border-radius:8px; border:1px solid var(--line); background:var(--surface); color:var(--muted); font-size:16px; line-height:1; display:grid; place-items:center; }
   .trc-del:hover{ color:var(--neg); border-color:var(--neg); }
+  /* trade popup */
+  .trm-head p{ margin:4px 0 0; font-size:13px; font-weight:600; color:var(--muted); }
+  .trm-head h2 .pos, .trm-head h2 .neg{ margin-right:4px; }
+  .trm-body .trcard{ margin-top:4px; } .trm-body .trcard > summary{ pointer-events:none; } .trm-body .trc-del{ display:none; }
+  .trm-tv{ display:grid; gap:8px; margin-top:14px; }
+  .trm-foot .trm-del{ margin-right:auto; color:var(--neg); border-color:color-mix(in srgb,var(--neg) 40%,var(--line)); }
+  /* trade charts vs day charts */
+  .tr-shots-wrap{ padding:12px; border-radius:14px; border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line)); background:color-mix(in srgb,var(--accent) 6%,var(--surface)); }
+  .tr-shots-wrap .tl-top h4{ margin:0; }
+  .tl-shot.day span{ background:rgba(10,10,30,.78); color:#fff; border:1px solid rgba(255,255,255,.18); }
+  .tl-shot.trs{ border:2px solid var(--accent); }
+  .tl-shot.trs span{ background:var(--accent); color:var(--on-accent); }
+  .tj-cam{ font-size:11.5px; font-weight:800; padding:1px 7px; border-radius:99px; background:color-mix(in srgb,var(--accent) 16%,transparent); color:var(--ink); }
+  .sx-hr.has-trade{ cursor:pointer; } .sx-hr.has-trade:hover{ background:color-mix(in srgb,var(--accent) 7%,var(--surface-2)); }
+  .sx-del{ color:var(--neg); }
   .trcard[open] > summary{ border-bottom:1px solid var(--line); }
   .trc-body{ display:grid; gap:12px; padding:12px 12px 14px 16px; }
   .tk-notes{ white-space:pre-line; font-size:13px; margin:10px 0 0; color:var(--ink); }
@@ -1269,6 +1284,7 @@
 <script type="application/json" id="promptData">[{"id": "phase1", "group": "weekly", "step": 1, "title": "Phase 1 — Weekly research", "when": "Saturday / Sunday · attach last week's report", "desc": "The AI rebuilds last week from its own research (scheduled + unscheduled news), re-scores every currency and writes the full report for the coming week, including the Section 12 import block.", "text": "WEEKLY FUNDAMENTAL UPDATE — PHASE 1 (research only)\n\nAttached: your report from last week.\n\nUpdate the full analysis for the coming week using only your own research.\nDo NOT ask for or use price action yet — I will send it after you finish.\n\n1. Rebuild last week (search, do not rely on memory). For USD, EUR, GBP, JPY, CHF, CAD,\n   AUD, NZD and XAU, find everything that happened Mon–Fri plus the weekend:\n   - scheduled data and central-bank decisions/speakers\n   - UNSCHEDULED events: political and fiscal crises (governments, budgets, bond spreads —\n     including big euro-area states like France, Italy, Germany), geopolitics, trade policy,\n     commodity shocks, interventions, haven flows, credit stress\n   Cite a source for every event you use.\n2. Re-score every currency from the evidence. Do not anchor on last week's numbers; every\n   change must be justified.\n3. Produce the complete report in the usual structure, valid for the coming week, including\n   Section 12 \"Daily Observer Import\" with \"valid_week\" set to the NEXT ISO week.\n   Bias rule: if the weekly label is Neutral/Two-sided but the horizon or main driver clearly\n   leans one way, set \"bias\" to that direction with conviction \"low\" and keep the original\n   wording in \"summary\".\n4. State the data cut-off (Friday close plus any weekend news) at the top.\n\nWhen you are done, write: \"PHASE 1 COMPLETE — send the price action.\"\n\n----- Section 12 specification -----\nAt the very end of the report, after the Trader Handoff section, add one more section:\n\"12. Daily Observer Import\".\n\nIt must contain:\n- a short line: \"Copy this block and paste it into Daily Observer → Import / export.\"\n- a \"Copy\" button that copies the block below to the clipboard (navigator.clipboard.writeText)\n- a <pre id=\"dobs-import\"> block containing ONE valid JSON object and nothing else\n\nThe JSON must be strictly valid: double quotes only, no comments, no trailing commas, escape inner quotes.\nIt must only restate what is already in the report — do not add new analysis.\n\nSchema:\n{\n  \"format\": \"daily-observer-fundamentals\",\n  \"version\": 1,\n  \"report_date\": \"YYYY-MM-DD\",\n  \"report_title\": \"Forex Fundamental Bias Engine — Week NN\",\n  \"valid_week\": { \"year\": 2026, \"week\": NN },          // ISO week the analysis is FOR (the trading week that starts the Monday after the report)\n  \"currencies\": {\n    \"USD\": { \"score\": 4, \"state\": \"Strong\", \"note\": \"one-line thesis state\" }\n    // same for EUR, GBP, JPY, CHF, CAD, AUD, NZD, XAU\n  },\n  \"pairs\": [                                            // ALL pairs in the 28-pair matrix + XAUUSD\n    {\n      \"pair\": \"EURUSD\",                                 // 6 letters, no slash\n      \"bias\": \"bearish\",                                // bullish | bearish | two-sided | neutral\n      \"conviction\": \"medium\",                           // low | medium | high\n      \"summary\": \"Bearish (EUR -1 vs USD +4)\",          // same wording as the weekly bias history\n      \"base_state\": \"Weak\",                             // Strong | Improving | Neutral | Weakening | Weak\n      \"base_score\": -1,                                 // number from the scorecard\n      \"quote_state\": \"Strong\",\n      \"quote_score\": 4,\n      \"main_driver\": \"one or two sentences\",\n      \"drivers\": [\"secondary driver 1\", \"secondary driver 2\"],      // [] if none\n      \"catalysts\": [ { \"date\": \"28 Oct\", \"event\": \"FOMC decision\", \"imp\": \"CRITICAL\" } ],  // imp: LOW | MEDIUM | HIGH | CRITICAL\n      \"priced\": \"what is already priced in\",\n      \"invalidation\": \"what would invalidate the thesis\",\n      \"horizon\": \"Swing: mild bearish\",\n      \"alignment\": \"Aligned\",                           // Aligned | Partial conflict | Conflicting | Neutral\n      \"alignment_note\": \"short explanation\",\n      \"changed\": \"what changed vs last week for this pair (both currencies)\"\n    }\n  ],\n  \"news\": [                                             // every dated event from the Catalyst Calendar\n    { \"date\": \"2026-10-28\", \"currency\": \"USD\", \"event\": \"FOMC decision\", \"importance\": \"CRITICAL\" }\n    // ISO dates only; one entry per currency (an event for \"USD, XAU\" becomes one USD entry); skip \"Ongoing\"/undated items\n  ]\n}"}, {"id": "export", "group": "weekly", "step": 2, "title": "Export price action", "when": "after the AI says “PHASE 1 COMPLETE”", "action": "export", "desc": "Copy the daily-close export for the week that just ended. Nothing to paste here — use the button."}, {"id": "phase2", "group": "weekly", "step": 3, "title": "Phase 2 — Price-action confirmation", "when": "send together with the price-action export", "desc": "The AI checks its analysis against what price actually did and re-checks only real anomalies. Price can never flip a bias on its own — only a news item it missed or misweighted can change the analysis.", "text": "WEEKLY FUNDAMENTAL UPDATE — PHASE 2 (price-action confirmation)\n\nAttached: my price-action export for last week (\"daily-observer-price-action\" JSON:\ndaily close % per pair). Use it only to CONFIRM your Phase 1 analysis, not to rebuild it.\nFundamentals describe direction over several weeks — a single week of price against the\nbias is normal and is NOT, by itself, evidence that the analysis is wrong.\n\n1. Treat my logged closes as ground truth; fetch real daily closes for every pair in\n   \"pairs_not_logged\". If closes are not available, use ECB reference rates (state the\n   fixing time) and derive the crosses from them; say clearly which days are missing.\n   Build the realized currency-strength ranking (use the crosses, not only the USD pairs,\n   to isolate each currency).\n2. Flag ANOMALIES only:\n   - a pair whose weekly move against the bias you gave it is larger than ~1.5x its normal\n     weekly range (roughly: >0.8% for EURGBP/EURCHF, >1.2% for majors, >1.8% for GBPJPY/XAU)\n   - a currency whose realized rank differs from its score rank by 3 or more places\n   - a currency that moved against its score consistently on the crosses for 2+ sessions\n3. For each anomaly, run a TARGETED re-check for a concrete fundamental cause, with a source\n   (the country's politics, fiscal news, central-bank speakers, interventions, flows,\n   commodities). Then classify:\n   MISSED NEWS · MISWEIGHTED KNOWN NEWS · ALREADY PRICED · FLOWS/POSITIONING ·\n   TECHNICAL RETRACEMENT · NOISE\n   - Only MISSED NEWS or MISWEIGHTED KNOWN NEWS may change a score or a bias.\n   - ALREADY PRICED, FLOWS/POSITIONING, TECHNICAL RETRACEMENT and NOISE never change the bias.\n   - A single week against the bias with no fundamental cause changes nothing.\n     After 2–3 consecutive weeks against the bias with no cause, lower conviction by ONE\n     level only.\n   - Price alone never flips a bias. Never invent a cause to fit the chart.\n   - For each anomaly, state whether it looks like a retracement inside an intact\n     fundamental trend or an early sign the market is pricing something new — and what\n     would confirm it next week.\n4. Output:\n   - \"0a. Price-Action Check\": hit-rate table (last week's bias vs realized move, every pair)\n     and the realized currency ranking vs scores\n   - \"0b. Self-Correction Log\": each anomaly, what you re-checked, the cause and\n     classification, and what changed (or why nothing changed)\n   - the final report, where only MISSED NEWS / MISWEIGHTED KNOWN NEWS corrections are\n     applied; in every affected pair's \"changed\" field, note that the change came from the\n     Phase 2 check\n   - a NEW Section 12 \"Daily Observer Import\" block reflecting the corrections (same format,\n     same \"valid_week\")\n5. Section 12 quality rules (apply even if nothing was corrected):\n   - Rewrite \"alignment\" and \"alignment_note\" for EVERY pair from the realized price data —\n     never leave Phase 1 \"provisional\" wording in the final block.\n   - \"priced\" must be pair-specific text in every pair — no placeholders and no references\n     to other sections of the report.\n   - Any currency score change of 3 points or more versus last week (from Phase 1 or\n     Phase 2) must be listed in 0b with its source.\nIf nothing needed correcting, say so — but still output Section 12 with the rules above applied."}, {"id": "import", "group": "weekly", "step": 4, "title": "Import into Daily Observer", "when": "copy Section 12 from the Phase 2 answer", "action": "import", "desc": "Paste the Section 12 block, choose the next week, the pairs and the sections."}]</script>
 <dialog id="bankDlg" class="panel" aria-label="Bank entry" style="width:min(560px,96vw)"></dialog>
 <dialog id="qaDlg" class="panel" aria-label="Quick add trade" style="width:min(520px,94vw)"></dialog>
+<dialog id="trDlg" class="panel" aria-label="Trade" style="width:min(760px,96vw)"></dialog>
 <dialog id="pendDlg" class="panel" aria-label="Trades to complete" style="width:min(620px,94vw)"></dialog>
 <dialog id="pairDlg" class="panel" aria-label="Switch pair" style="width:min(680px,94vw)"></dialog>
 <dialog id="moreDlg" class="panel" aria-label="More" style="width:min(420px,94vw)"></dialog>
@@ -2127,6 +2143,7 @@ function tradeCard(t, ds, open){
         ${numIn('pips','Pips')}${numIn('r_multiple','R')}${numIn('risk','Risk %')}${numIn('profit','Profit $')}
       </div>
       <p class="hint rrHint" style="margin:0"></p>
+      ${hasTvCol() ? `<div><label class="lbl">TradingView charts of the trade</label><textarea class="inp" data-tf="tv_trade" rows="1" placeholder="Snapshot links (tradingview.com/x/…), one per line" aria-label="TradingView charts of the trade">${v('tv_trade')}</textarea></div>` : ''}
       ${S.legacyTrades ? '' : `<textarea class="inp" data-tf="notes" rows="2" placeholder="Trade notes — why you took it, management, lessons… (optional)" aria-label="Trade notes">${v('notes')}</textarea>`}
     </div></details>`;
 }
@@ -2135,13 +2152,14 @@ function collectTrade(card){
   TR_TEXT_F.forEach(f => { const el = card.querySelector(`[data-tf="${f}"]`); if(el) t[f] = el.value.trim() || null; });
   TR_NUM_F.forEach(f => { const el = card.querySelector(`[data-tf="${f}"]`); if(el) t[f] = parseNum(el.value); });
   const nt = card.querySelector('[data-tf="notes"]'); if(nt) t.notes = nt.value.trim() || null;
+  const tv = card.querySelector('[data-tf="tv_trade"]'); if(tv) t.tv_trade = tv.value.trim() || null;
   if(card.querySelector('.acctBox')){ t.trade_accounts = readAcctRows(card); t.account_id = t.trade_accounts[0]?.id || null;
     if(t.trade_accounts.some(x => x.profit!=null)) t.profit = +t.trade_accounts.reduce((s,x) => s + (x.profit||0), 0).toFixed(2); }
   if(!t.direction) delete t.direction;   /* a trade always keeps a direction */
   return t;
 }
-function bindTradeCard(card, ds, save){
-  const p = S.pair, q = sel => card.querySelector(sel);
+function bindTradeCard(card, ds, save, opts = {}){
+  const p = opts.pair || S.pair, q = sel => card.querySelector(sel);
   card.querySelectorAll('[data-tf]').forEach(el => el.addEventListener('input', save));
   card.querySelectorAll('textarea').forEach(t => { autosize(t); t.addEventListener('input', () => autosize(t)); });
   const meta = () => { const g = f => q(`[data-tf="${f}"]`)?.value || '', r = g('result');
@@ -2184,7 +2202,7 @@ function bindTradeCard(card, ds, save){
     if(m==null) return; dur.value = fmtDur(m); dur.dataset.auto = '1'; save();
   }));
   dur.addEventListener('input', () => delete dur.dataset.auto);
-  q('[data-deltr]').addEventListener('click', ev => { ev.preventDefault(); ev.stopPropagation(); deleteTrade(card.dataset.trade); });
+  q('[data-deltr]').addEventListener('click', ev => { ev.preventDefault(); ev.stopPropagation(); (opts.onDelete || deleteTrade)(card.dataset.trade); });
 }
 async function addTrade(p, ds, dir, extra = {}){
   if(S.legacyTrades){ noTradesTable(); return null; }
@@ -3761,6 +3779,7 @@ function deriveSetups(){
   all.forEach(s => { const m = S.setupMarks.get(s.key); if(!m) return;
     if(m.status==='taken'){ s.stage = 'taken'; s.trade_id = m.trade_id; }
     else if(m.status==='skipped'){ s.stage = 'skipped'; s.why = m.reason || 'Skipped'; }
+    else if(m.status==='deleted'){ s.stage = 'deleted'; }
     else if(m.status==='retest' && s.stage==='formed'){ s.stage = 'retest'; s.retest = { at:m.updated_at, manual:true }; } });
   return all.sort((a,b) => tms(b.startAt) - tms(a.startAt));
 }
@@ -3823,6 +3842,82 @@ async function undoSetup(s){
     }
   }
   refreshDock?.(); renderMain(); toast(`${s.pair} ${s.tf} is back on the board`);
+}
+/* delete for good: the trade (if any) leaves the journal and the setup leaves the board and the history */
+async function deleteSetup(s){
+  if(!s) return;
+  const t = s.trade_id ? S.trades.get(s.trade_id) : null;
+  if(!confirm(`Delete ${s.pair} ${s.tf} for good?${t ? `\n\nThe ${t.direction} trade it logged${t.result ? ` (result ${t.result})` : ''} is deleted from the journal too.` : ''}\n\nThis can't be undone.`)) return;
+  if(t && !(await dropTrade(t))) return;
+  if(!(await markSetup(s.key, 'deleted'))) return;
+  refreshDock?.(); renderMain(); toast(`${s.pair} ${s.tf} deleted`);
+}
+/* remove a trade from the journal (and from the "to complete" list / the day's "In trade" status) */
+async function dropTrade(t){
+  if(S.legacyTrades){ noTradesTable(); return false; }
+  const { error } = await sb.from('do_trades').delete().eq('id', t.id);
+  if(error){ toast('Not deleted: ' + error.message); return false; }
+  S.trades.delete(t.id);
+  if(pendingRaw().includes(t.id)) await setPending(pendingList().filter(k => k!==t.id));
+  const day = S.daily.get(dk(t.pair, t.day));
+  if(day?.trade_status==='In trade' && !dayTrades(t.pair, t.day).length){
+    const { data:dd } = await sb.from('do_daily').upsert({ pair:t.pair, day:t.day, trade_status:null }, { onConflict:'pair,day' }).select().single();
+    if(dd) S.daily.set(dk(t.pair, t.day), dayRow(dd));
+  }
+  return true;
+}
+/* ---- TradingView charts attached to a trade (column tv_trade: snapshot links, one per line) ---- */
+const hasTvCol = () => { for(const t of S.trades.values()) return 'tv_trade' in t; return false; };
+const tvImg = u => tvSnap(u) || (/^https?:\/\/\S+\.(png|jpe?g|webp|gif)(\?\S*)?$/i.test(u) ? u : null);
+const tradeShots = t => String(t?.tv_trade || '').split(/\s+/).map(x => x.trim()).filter(x => /^https?:\/\//.test(x)).map(u => ({ u, img:tvImg(u) })).filter(x => x.img);
+function tradeShotsHtml(t){
+  const sh = tradeShots(t); if(!sh.length) return '';
+  return `<div class="tl-wrap tr-shots-wrap"><div class="tl-top"><h4>📸 Trade charts</h4><span class="muted">your screenshots of this trade · ${sh.length}</span></div>
+    <div class="tl-shots">${sh.map((x, i) => `<a class="tl-shot trs" href="${esc(x.u)}" target="_blank" rel="noopener"><img src="${esc(x.img)}" alt="Trade chart ${i+1} · ${esc(t.pair)}" loading="lazy" onerror="this.closest('.tl-shot').remove()"><span>Trade${sh.length > 1 ? ' '+(i+1) : ''}</span></a>`).join('')}</div></div>`;
+}
+/* ---- trade popup: fill in / edit a trade without leaving the page ---- */
+const trDlg = document.getElementById('trDlg');
+function openTradeModal(id){
+  const t = S.trades.get(id); if(!t) return toast('Trade not found');
+  const mk = [...S.setupMarks.values()].find(m => m.trade_id===id), L = t.direction==='Long';
+  trDlg.innerHTML = `<div class="dlg-head trm-head"><h2><span class="${L ? 'pos' : 'neg'}">${L ? '▲' : '▼'}</span>${base(t.pair)}<span class="muted">${quote(t.pair)}</span></h2>
+      <p>${fmtDayShort(t.day)}${t.entry_time ? ' · '+esc(t.entry_time) : ''}${t.setup_tf ? ' · '+esc(t.setup_tf)+' setup' : ''}${mk ? ' · from Setups' : ''}${t.result ? ' · '+({W:'Win',L:'Loss',BE:'Break-even'}[t.result] || esc(t.result)) : ' · open'}</p></div>
+    <div class="dlg-body trm-body">
+      ${tradeCard(t, t.day, true)}
+      <section class="trm-tv">
+        ${hasTvCol() ? `<div class="tl-wrap" id="trmShots"></div>` : `<p class="hint" style="margin:0">To attach TradingView charts to trades, run <b>migration-trade-charts.sql</b> in Supabase once, then reload.</p>`}
+      </section>
+    </div>
+    <div class="dlg-foot trm-foot"><button class="btn trm-del" data-trdel>Delete trade</button><button class="btn" data-trx>Cancel</button><button class="btn btn-primary" data-trsave>Save</button></div>`;
+  const card = trDlg.querySelector('[data-trade]');
+  let dirty = false;
+  bindTradeCard(card, t.day, () => { dirty = true; }, { pair:t.pair, onDelete: () => trDlg.querySelector('[data-trdel]').click() });
+  const tv = card.querySelector('[data-tf="tv_trade"]'), shots = trDlg.querySelector('#trmShots');
+  const prev = () => { if(shots) shots.innerHTML = tradeShotsHtml({ ...t, tv_trade: tv?.value || '' }) || ''; };
+  tv?.addEventListener('input', prev); prev();
+  const save = async () => {
+    const upd = collectTrade(card), changed = Object.keys(upd).filter(k => JSON.stringify(upd[k] ?? null) !== JSON.stringify(t[k] ?? null));
+    if(!changed.length){ trDlg.close(); return; }
+    const row = Object.fromEntries(changed.map(k => [k, upd[k]]));
+    const btn = trDlg.querySelector('[data-trsave]'); btn.disabled = true;
+    const { data, error } = await sb.from('do_trades').update(row).eq('id', id).select().single();
+    btn.disabled = false;
+    if(error) return toast('Not saved: ' + error.message);
+    S.trades.set(id, data); dirty = false; trDlg.close();
+    await checkPending(); renderMain(); toast(`${t.pair} trade saved`);
+  };
+  trDlg.querySelector('[data-trsave]').onclick = save;
+  trDlg.querySelectorAll('[data-trx]').forEach(b => b.onclick = () => trDlg.close());
+  trDlg.querySelector('[data-trdel]').onclick = async () => {
+    const s = mk ? deriveSetups().find(x => x.key===mk.setup_key) : null;
+    if(s){ trDlg.close(); return deleteSetup(s); }
+    if(!confirm(`Delete this ${t.direction} trade on ${t.pair}? Observations of the day are kept.`)) return;
+    if(await dropTrade(t)){ trDlg.close(); refreshDock?.(); renderMain(); toast('Trade deleted'); }
+  };
+  trDlg.onkeydown = ev => { if(ev.key==='Enter' && (ev.ctrlKey || ev.metaKey)) save(); };
+  void dirty;
+  if(!trDlg.open) trDlg.showModal();
+  card.querySelectorAll('textarea').forEach(autosize);
 }
 async function markSetup(key, status, extra = {}){
   const row = { setup_key:key, status, reason:extra.reason ?? null, trade_id:extra.trade_id ?? null, updated_at:new Date().toISOString() };
@@ -3988,20 +4083,21 @@ function sxStatus(){
 function sxHistory(all){
   const H = S.su.hist, HT = S.su.htf || 'all';
   const hist = all.filter(s => ['taken','skipped','expired','invalid','ignored'].includes(s.stage) && (H==='all' ? s.stage!=='ignored' : s.stage===H) && (HT==='all' || s.tf===HT));
-  const d30 = Date.now() - 30*864e5, rec = all.filter(s => tms(s.startAt) >= d30 && s.stage!=='ignored');
+  const d30 = Date.now() - 30*864e5, rec = all.filter(s => tms(s.startAt) >= d30 && !['ignored','deleted'].includes(s.stage));
   const formedN = rec.filter(s => s.bos).length, takenN = rec.filter(s => s.stage==='taken').length;
   const res = s => { const t = s.trade_id && S.trades.get(s.trade_id); return t?.result ? `<span class="sx-res ${t.result==='W' ? 'w' : t.result==='L' ? 'l' : ''}">${t.result==='W' ? 'Win' : t.result==='L' ? 'Loss' : esc(t.result)}${t.r_multiple!=null ? ` ${Number(t.r_multiple) > 0 ? '+' : ''}${fmt(Number(t.r_multiple), 1)}R` : ''}</span>` : t ? '<span class="sx-res">Open</span>' : ''; };
   return `<p class="sx-tool-sum">Last 30 days: ${rec.length} sweep${rec.length===1 ? '' : 's'} in the bias direction, ${formedN} formed (${rec.length ? Math.round(formedN/rec.length*100) : 0}%), ${takenN} taken.</p>
     <div class="sx-filters"><div class="chips">${[['all','All'],['taken','Taken'],['skipped','Skipped'],['invalid','Invalid'],['ignored','Against bias']].map(([k,l]) => `<button class="ch" data-suh="${k}" aria-pressed="${H===k}">${l}</button>`).join('')}</div>
       <div class="chips">${['all', ...suTfs(all)].map(t => `<button class="ch" data-suht="${t}" aria-pressed="${HT===t}">${t==='all' ? 'All TF' : esc(t)}</button>`).join('')}</div></div>
-    ${hist.length ? `<div class="sx-hist">${hist.slice(0, 80).map(s => `<div class="sx-hr">
+    ${hist.length ? `<div class="sx-hist">${hist.slice(0, 80).map(s => `<div class="sx-hr ${s.trade_id && S.trades.get(s.trade_id) ? 'has-trade' : ''}" ${s.trade_id && S.trades.get(s.trade_id) ? `data-suopen="${s.trade_id}" title="Open the trade"` : ''}>
         <span class="sx-hr-dir ${s.dir==='Long' ? 'pos' : s.dir==='Short' ? 'neg' : 'muted'}">${s.dir==='Long' ? '▲' : s.dir==='Short' ? '▼' : '•'}</span>
         <b class="sx-hr-p">${base(s.pair)}<em>${quote(s.pair)}</em></b><span class="tfl">${esc(s.tf)}</span>
         <span class="sx-hr-w">${hhmm(s.startAt)}</span>${s.why ? `<small class="sx-hr-why">${esc(s.why)}</small>` : ''}
         <span class="sx-hr-trail">${[s.liq ? 'Sweep' : '', s.bos ? 'Break' : '', s.retest ? 'Retest' : ''].filter(Boolean).join(' › ')}</span>
         ${res(s)}<span class="su-tag t-${s.stage}">${{taken:'Taken',skipped:'Skipped',expired:'Expired',invalid:'Invalid',ignored:'Against bias'}[s.stage]}</span>
         ${s.trade_id && S.trades.get(s.trade_id) ? `<button class="bt" data-sutrade="${s.trade_id}">Trade</button>` : ''}
-        ${['taken','skipped'].includes(s.stage) ? `<button class="bt sx-undo" data-suundo="${s.key}" title="${s.stage==='taken' ? 'Taken by mistake? Put the setup back and delete the trade it logged' : 'Put the setup back on the board'}">Undo</button>` : ''}</div>`).join('')}</div>`
+        ${['taken','skipped'].includes(s.stage) ? `<button class="bt sx-undo" data-suundo="${s.key}" title="${s.stage==='taken' ? 'Taken by mistake? Put the setup back on the board and delete the trade it logged' : 'Put the setup back on the board'}">Undo</button>` : ''}
+        ${s.stage!=='ignored' ? `<button class="bt sx-del" data-sudel="${s.key}" title="Delete for good: the setup leaves the history${s.trade_id ? ' and its trade is deleted from the journal' : ''}">Delete</button>` : ''}</div>`).join('')}</div>`
       : '<p class="sx-empty">Nothing here yet. Finished, skipped and invalidated setups are listed here.</p>'}`;
 }
 function sxGuide(){
@@ -4162,7 +4258,9 @@ function bindSetups(m, all){
     if(error) return toast('Not saved: ' + error.message);
     S.trades.set(t.id, data); renderMain(); toast(`${t.pair}: SL ${lvl(pl.sl)} · TP ${lvl(pl.tp)} saved`);
   });
-  m.querySelectorAll('[data-suundo]').forEach(b => b.onclick = () => undoSetup(byKey.get(b.dataset.suundo)));
+  m.querySelectorAll('[data-suundo]').forEach(b => b.onclick = ev => { ev.stopPropagation(); undoSetup(byKey.get(b.dataset.suundo)); });
+  m.querySelectorAll('[data-sudel]').forEach(b => b.onclick = ev => { ev.stopPropagation(); deleteSetup(byKey.get(b.dataset.sudel)); });
+  m.querySelectorAll('[data-suopen]').forEach(r => r.onclick = ev => { if(ev.target.closest('button,a')) return; openTradeModal(r.dataset.suopen); });
   /* Validate: tick the proposed levels, or correct them first */
   m.querySelectorAll('.sx-val').forEach(p => {
     const btn = p.querySelector('[data-suval]'), ins = [...p.querySelectorAll('input')];
@@ -4191,7 +4289,7 @@ function bindSetups(m, all){
   m.querySelectorAll('[data-sutool]').forEach(b => b.onclick = () => { S.su.tool = b.dataset.sutool; renderMain(); });
   m.querySelectorAll('[data-suh]').forEach(b => b.onclick = () => { S.su.hist = b.dataset.suh; ls.set('do_su_hist', S.su.hist); renderMain(); });
   m.querySelectorAll('[data-suht]').forEach(b => b.onclick = () => { S.su.htf = b.dataset.suht; renderMain(); });
-  m.querySelectorAll('[data-sutrade]').forEach(b => b.onclick = () => completeTrade(b.dataset.sutrade));
+  m.querySelectorAll('[data-sutrade]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openTradeModal(b.dataset.sutrade); });
   m.querySelectorAll('[data-suret]').forEach(b => b.onclick = async () => { if(await markSetup(b.dataset.suret, 'retest')) renderMain(); });
   m.querySelectorAll('[data-suskip]').forEach(b => b.onclick = () => {
     const card = b.closest('.sx'); if(card.querySelector('.su-skip')) return;
@@ -4300,6 +4398,7 @@ async function completeTrade(id){
   const t = S.trades.get(id); if(!t) return; const p = t.pair, day = t.day; S.openTrade = id;
   document.querySelectorAll('dialog[open]').forEach(d => d.close());
   if(['journal','desk','today'].includes(S.view)) return openPairDay(p, day, 'edit');
+  return openTradeModal(id);   /* Setups, Trades…: edit the trade in a popup, without leaving the page */
   await flushSave();
   S.pair = p; ls.set('do_pair', p); S.view = 'journal'; ls.set('do_view', 'journal'); S.mode = 'edit'; ls.set('do_mode', 'edit');
   S.sel = { type:'day', day }; S.month = firstOfMonth(parseISO(day)); S.drawerOpen = true; render();
@@ -4913,8 +5012,9 @@ function renderTrades(){
   document.getElementById('tjReset')?.addEventListener('click', () => { Object.assign(S.tj, { dir:'all', res:'all', pair:'all', acct:'all', tf:'all', sess:'all', tag:'all', q:'' }); renderMain(); });
   document.querySelectorAll('[data-tjpair]').forEach(b => b.onclick = () => set('pair', b.dataset.tjpair));
   document.querySelectorAll('[data-tjgo]').forEach(b => b.onclick = ev => { ev.stopPropagation(); const [p, d] = b.dataset.tjgo.split('|'); goTo(p, { type:'day', day:d }); });
+  document.querySelectorAll('[data-tjedit]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openTradeModal(b.dataset.tjedit); });
   document.querySelectorAll('[data-tjshare]').forEach(b => b.onclick = ev => { ev.stopPropagation(); const t = tjAll().find(x => x.id===b.dataset.tjshare); if(t) openTradeShare(t); });
-  document.querySelectorAll('[data-tjrow]').forEach(r => r.onclick = ev => { if(ev.target.closest('a,[data-tjgo],[data-tjshare]')) return; S.tj.open = S.tj.open===r.dataset.tjrow ? null : r.dataset.tjrow; renderMain(); });
+  document.querySelectorAll('[data-tjrow]').forEach(r => r.onclick = ev => { if(ev.target.closest('a,button,[data-tjgo],[data-tjshare]')) return; S.tj.open = S.tj.open===r.dataset.tjrow ? null : r.dataset.tjrow; renderMain(); });
   if(st.curve.length > 1){
     const ink = cssv('--accent'), last = st.curve.at(-1).v;
     mkChart('tjEq', 'line', st.curve.map(c => c.d.slice(5)), [{ data:st.curve.map(c => c.v), borderColor: last>=0 ? cssv('--pos') : cssv('--neg'), backgroundColor:ink, borderWidth:2.5, tension:.25,
@@ -4942,7 +5042,7 @@ function tjTimeline(e){
           ${r?.trade_status ? stBadge(r.trade_status) : ''}</div>
         ${(() => { const others = [...S.trades.values()].filter(t => t.id!==e.id && t.pair===e.pair && t.day <= ds && (t.exit_date || (!t.result ? iso(new Date()) : t.day)) >= ds);
           return others.length ? `<p class="tl-also">Also running: ${others.map(t => `<span class="${t.direction==='Long' ? 'pos' : 'neg'}">${t.direction==='Long' ? '▲' : '▼'} ${t.direction}${t.setup_tf ? ' '+esc(t.setup_tf) : ''}</span>${t.day===ds && t.entry_time ? ' from '+esc(t.entry_time) : ''}`).join(', ')}</p>` : ''; })()}
-        ${shots.length ? `<div class="tl-shots">${shots.map(([l, u, sn]) => `<a class="tl-shot" href="${esc(u)}" target="_blank" rel="noopener"><img src="${sn}" alt="${l} chart ${fmtDayShort(ds)}" loading="lazy" onerror="this.closest('.tl-shot').remove()"><span>${l}</span></a>`).join('')}</div>` : ''}
+        ${shots.length ? `<div class="tl-shots">${shots.map(([l, u, sn]) => `<a class="tl-shot day" href="${esc(u)}" target="_blank" rel="noopener"><img src="${sn}" alt="${l} chart ${fmtDayShort(ds)}" loading="lazy" onerror="this.closest('.tl-shot').remove()"><span>Day · ${l}</span></a>`).join('')}</div>` : ''}
         ${tfs.some(([,o]) => r[o]) ? `<div class="tl-notes">${tfs.filter(([,o]) => r[o]).map(([l,o]) => `<p><span class="tfl">${l}</span> ${esc(r[o])}</p>`).join('')}</div>` : ''}
         ${r?.action ? `<p class="muted" style="font-size:12.5px;margin-top:4px">→ ${esc(r.action)}</p>` : ''}
         ${!r ? '<p class="muted" style="font-size:12.5px">Nothing logged this day.</p>' : ''}
@@ -4956,7 +5056,7 @@ function tjRow(e){
     <div class="tj-main">
       <div class="tj-date"><b>${fmtDayShort(e.day)}</b><span class="muted">${e.exit_date && e.exit_date!==e.day ? '→ '+fmtDayShort(e.exit_date) : e.entry_time ? e.entry_time+(e.exit_time ? '–'+e.exit_time : '') : ''}</span></div>
       <div class="tj-pair"><span class="tj-dir ${e.direction.toLowerCase()}">${e.direction==='Long' ? '▲' : '▼'}</span><b>${e.pair.slice(0,3)}<em>${e.pair.slice(3)}</em></b></div>
-      <div class="tj-meta">${e.setup_tf ? `<span class="tfl">${esc(e.setup_tf)}</span>` : ''}${e.session ? `<span class="muted">${esc(e.session)}</span>` : ''}${(e.tags||[]).slice(0,2).map(t => `<span class="tagp">#${esc(t)}</span>`).join('')}</div>
+      <div class="tj-meta">${tradeShots(e).length ? `<span class="tj-cam" title="TradingView charts of this trade">📸 ${tradeShots(e).length}</span>` : ''}${e.setup_tf ? `<span class="tfl">${esc(e.setup_tf)}</span>` : ''}${e.session ? `<span class="muted">${esc(e.session)}</span>` : ''}${(e.tags||[]).slice(0,2).map(t => `<span class="tagp">#${esc(t)}</span>`).join('')}</div>
       <div class="tj-num"><span class="kick">Pips</span><b class="${sgn(e.pips)}">${e.pips!=null ? (e.pips>0?'+':'')+fmt(e.pips,1) : '–'}</b></div>
       <div class="tj-num"><span class="kick">R</span><b class="${sgn(e.r_multiple)}">${e.r_multiple!=null ? fmt(e.r_multiple)+'R' : '–'}</b></div>
       <div class="tj-num"><span class="kick">Profit</span><b class="${sgn(e.profit)}">${e.profit!=null ? (e.profit>0?'+':'')+money(Number(e.profit)) : '–'}</b></div>
@@ -4969,8 +5069,9 @@ function tjRow(e){
       ${e._inferred ? '<p class="hint" style="margin:0">⚠️ Result not set in the journal — counted as <b>' + ({W:'Win',L:'Loss',BE:'Break-even'}[e.result]) + '</b> from its P/L. Open the entry day and pick W/L to make it official.</p>' : ''}
       ${(e.tags||[]).length ? tagPills(e.tags) : ''}
       ${e.notes ? `<div class="tj-tnotes"><span class="kick">Trade notes</span><p>${esc(e.notes)}</p></div>` : ''}
+      ${tradeShotsHtml(e)}
       ${tjTimeline(e)}
-      <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn" data-tjshare="${e.id}">📣 Share to Discord</button><button class="btn btn-primary" data-tjgo="${e.pair}|${e.day}" data-tjid="${e.id}">Open in journal ›</button></div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap"><button class="btn" data-tjshare="${e.id}">📣 Share to Discord</button><button class="btn" data-tjedit="${e.id}">✎ Edit trade</button><button class="btn btn-primary" data-tjgo="${e.pair}|${e.day}" data-tjid="${e.id}">Open in journal ›</button></div>
     </div>` : ''}
   </article>`;
 }
