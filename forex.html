@@ -3747,7 +3747,6 @@ function deriveSetups(){
       live.filter(x => x.stage==='formed' && (TF_RANK[c.tf] ?? 0) <= (TF_RANK[x.tf] ?? 0) && !isRoll(c.t, c.tf)).forEach(x => {   /* no entry inside the rollover hour */
         const bc = x.bos.candle ? x.bos.candle.t + (TF_MS[x.bos.candle.tf] || 0) : tms(x.bos.at) - 120e3, z = suZone(x);
         if(!z || c.t < bc - 60e3) return;
-        if(x.val?.at && tms(g.at) < tms(x.val.at)) return;   /* only price action after you validated counts as the retest */
         if(x.dir==='Long' ? c.l <= z.top : c.h >= z.bot){ x.retest = { kind:'retest', at:new Date(c.t).toISOString(), closeAt:g.at, price:x.dir==='Long' ? c.l : c.h, tf:c.tf, auto:true }; x.stage = 'retest'; }
       });
     } else if(g.kind==='retest'){
@@ -3878,7 +3877,7 @@ const SX_NEW_LBL = { forming:'New sweep', validate:'Break, validate', formed:'Ju
 function sxValPanel(s){
   const editing = s.stage!=='validate', liq = s.val?.liq ?? s.liq.level0 ?? s.liq.level, line = s.val?.line ?? s.prop?.line ?? s.line;
   return `<div class="sx-val" data-valfor="${s.key}">
-    <p>${editing ? 'Correct the levels this setup uses. The stop stays at the sweep wick and the target at 2R.' : 'Right levels? Tick. Wrong? Correct them, then validate.'}</p>
+    <p>${editing ? 'Correct the levels this setup uses. The stop stays at the sweep wick and the target at 2R. Whatever price already did is replayed against the new levels.' : 'Right levels? Tick. Wrong? Correct them, then validate.'}</p>
     <div class="sx-val-f"><label>Liquidity<input class="inp" inputmode="decimal" autocomplete="off" data-vliq data-orig="${lvl(liq)}" value="${lvl(liq)}" placeholder="price"></label>
       <label>Fractal line<input class="inp" inputmode="decimal" autocomplete="off" data-vline data-orig="${line!=null ? lvl(line) : ''}" value="${line!=null ? lvl(line) : ''}" placeholder="price"></label></div>
     <p class="sx-val-msg"></p>
@@ -4079,7 +4078,7 @@ async function autoTakeSetups(){
   try{
     const cut = Date.now() - 48*36e5;
     for(const s of deriveSetups()){
-      if(s.stage!=='retest' || !s.retest?.auto || tms(s.retest.at) < cut || S.setupMarks.has(s.key) || !suPlan(s)) continue;
+      if(s.stage!=='retest' || !s.retest?.auto || (!s.val && tms(s.retest.at) < cut) || S.setupMarks.has(s.key) || !suPlan(s)) continue;
       const t = await takeSetup(s, true);
       if(t){ n++; toast(`⚡ Auto-taken: ${s.dir==='Long' ? '▲' : '▼'} ${s.pair} ${s.tf} · entry ${lvl(t.entry_price)} · SL ${lvl(t.sl)} · TP ${lvl(t.tp)}`); }
     }
