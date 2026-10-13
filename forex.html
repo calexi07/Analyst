@@ -1062,6 +1062,45 @@
   .sx-hr-why{ flex:1; min-width:0; font-size:12px; font-weight:600; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .sx-hr-trail{ margin-left:auto; }
   .sx-hr-trail{ font-size:12px; font-weight:700; color:var(--muted); }
+  /* taken setups: trade tickets */
+  .sxt-sum{ display:flex; flex-wrap:wrap; gap:8px; }
+  .sxt-sum span{ font-size:12.5px; font-weight:700; color:var(--muted); padding:5px 11px; border-radius:999px; background:var(--surface-2); border:1px solid var(--line); }
+  .sxt-sum b{ color:var(--ink); font-weight:800; } .sxt-sum b.pos{ color:var(--pos); } .sxt-sum b.neg{ color:var(--neg); }
+  .sxt-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,520px),1fr)); gap:12px; }
+  .sxt-grid > .sx-hr{ grid-column:1/-1; }
+  .sxt{ --c:var(--muted); position:relative; display:grid; gap:12px; padding:14px 16px 12px 18px; border-radius:18px; background:var(--surface-2); border:1px solid var(--line); cursor:pointer; overflow:hidden; transition:border-color .15s, transform .15s; }
+  .sxt::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--c); }
+  .sxt:hover{ border-color:color-mix(in srgb,var(--c) 55%,var(--line)); }
+  .sxt.x-W{ --c:var(--pos); } .sxt.x-L{ --c:var(--neg); } .sxt.x-BE{ --c:var(--info); } .sxt.x-open{ --c:var(--accent); }
+  .sxt-h{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; }
+  .sxt-p{ font-family:'Bricolage Grotesque',sans-serif; font-size:19px; font-weight:800; letter-spacing:-.01em; } .sxt-p em{ font-style:normal; opacity:.45; }
+  .sxt-d{ font-size:12.5px; font-weight:800; } .sxt-d.long{ color:var(--pos); } .sxt-d.short{ color:var(--neg); }
+  .sxt-day{ font-size:12px; font-weight:700; color:var(--muted); }
+  .sxt-out{ margin-left:auto; text-align:right; line-height:1.1; }
+  .sxt-out b{ display:block; font-family:'Bricolage Grotesque',sans-serif; font-size:20px; font-weight:800; color:var(--c); font-variant-numeric:tabular-nums; }
+  .sxt-out span{ font-size:11.5px; font-weight:700; color:var(--muted); }
+  .sxt-flow{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:0; list-style:none; margin:0; padding:0; }
+  .sxt-flow li{ position:relative; padding:16px 8px 0 0; min-width:0; }
+  .sxt-flow li::before{ content:''; position:absolute; left:0; right:0; top:5px; height:2px; background:color-mix(in srgb,var(--muted) 30%,transparent); }
+  .sxt-flow li:last-child::before{ right:auto; width:12px; }
+  .sxt-flow li::after{ content:''; position:absolute; left:0; top:0; width:12px; height:12px; border-radius:50%; background:var(--surface-2); border:2px solid var(--dot, var(--muted)); box-sizing:border-box; }
+  .sxt-flow li.liq{ --dot:var(--amber); } .sxt-flow li.brk{ --dot:var(--info); } .sxt-flow li.ent{ --dot:var(--accent); }
+  .sxt-flow li.ext.W{ --dot:var(--pos); } .sxt-flow li.ext.L{ --dot:var(--neg); } .sxt-flow li.ext.open{ --dot:var(--muted); }
+  .sxt-flow li.ext.W::after, .sxt-flow li.ext.L::after{ background:var(--dot); }
+  .sxt-k{ display:block; font-size:10.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
+  .sxt-v{ display:block; font-family:'JetBrains Mono',ui-monospace,monospace; font-size:14px; font-weight:700; color:var(--ink); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sxt-t{ display:block; font-size:12px; font-weight:700; color:var(--muted); margin-top:1px; }
+  .sxt-flow li.ext.W .sxt-v{ color:var(--pos); } .sxt-flow li.ext.L .sxt-v{ color:var(--neg); }
+  .sxt-f{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; padding-top:10px; border-top:1px dashed var(--line); }
+  .sxt-lv{ font-size:12px; font-weight:700; color:var(--muted); } .sxt-lv b{ font-family:'JetBrains Mono',ui-monospace,monospace; color:var(--ink); font-weight:700; }
+  .sxt-lv.sl b{ color:var(--neg); } .sxt-lv.tp b{ color:var(--pos); }
+  .sxt-a{ margin-left:auto; display:flex; gap:6px; }
+  .sxt-a .bt{ padding:4px 10px; font-size:12px; }
+  @media (max-width:600px){
+    .sxt-flow{ grid-template-columns:1fr 1fr; row-gap:14px; }
+    .sxt-flow li:nth-child(2)::before, .sxt-flow li:last-child::before{ right:auto; width:12px; }
+    .sxt-a{ margin-left:0; width:100%; justify-content:flex-end; }
+  }
   .sx-res{ font-size:12px; font-weight:800; padding:2px 8px; border-radius:999px; background:var(--surface); color:var(--muted); }
   .sx-res.w{ color:var(--pos); background:color-mix(in srgb,var(--pos) 12%,transparent); } .sx-res.l{ color:var(--neg); background:color-mix(in srgb,var(--neg) 12%,transparent); }
   .sx-guide{ list-style:none; counter-reset:g; margin:0; padding:0; display:grid; gap:10px; }
@@ -3987,7 +4026,7 @@ function suCard(s){
   const rows = [
     ['Liquidity', `${s.side==='sell' ? 'Sell-side' : 'Buy-side'} ${sxPx(s.liq.level)}${s.liqs.length > 1 ? ` (${s.liqs.length} sweeps)` : ''}`, hhmm(s.liq.at)],
     (s.liqs.length > 1 || s.liq.extMovedAt) ? ['Stop', `Moved to the ${s.dir==='Short' ? 'highest' : 'lowest'} wick ${sxPx(s.liq.extreme)}`, s.liq.extMovedAt ? hhmm(new Date(s.liq.extMovedAt)) : hhmm(s.liq.at)] : null,
-    s.bos ? ['Break', `${s.bos.checked ? `Close ${lvl(s.bos.price)} ${L ? 'above' : 'below'} ${lvl(s.bos.level)}${s.bos.second ? ' (2nd candle)' : ''}` : `Line ${sxPx(s.line)}`}${s.val ? ' · validated' : ''}`, hhmm(s.bos.at)]
+    s.bos ? ['Break', `${s.bos.checked ? `${esc(s.bos.candle?.tf || s.tf)} candle closed at ${lvl(s.bos.price)}, ${L ? 'above' : 'below'} ${s.val ? 'your line' : 'the line'} ${lvl(s.bos.level)}${s.bos.second ? ' (2nd candle, the 1st was only a wick)' : ''}` : `Line ${sxPx(s.line)}`}${s.val ? ' ✓' : ''}`, hhmm(s.bos.at)]
       : s.stage==='validate' ? ['Break', `Alert · proposed line ${sxPx(s.line)}`, hhmm(s.prop.at)]
       : s.val ? ['Break', `Validated line ${sxPx(s.val.line)}`, hhmm(s.val.at)] : null,
     s.retest ? ['Retest', s.retest.manual ? 'Marked by you' : `Touched ${sxPx(s.retest.price)}`, s.retest.auto ? `${s.retest.tf} ${hhmm(s.retest.at).slice(-5)}` : hhmm(s.retest.at)] : null,
@@ -4080,6 +4119,37 @@ function sxStatus(){
   return `<div class="sx-status ${eng ? 'on' : ''}" title="${eng ? `Server engine ran ${ago(S.settings.engine.at)}. Trades are logged and closed and phone alerts go out even with this page closed.` : 'Server engine not seen yet. This page does the auto-take and auto-close while it is open.'}">
     <span class="sx-eng"><i></i>${eng ? `Live · alerts on ${ch}` : 'Browser only'}</span>${S.candlesMissing ? '<span class="sx-hb off"><i></i>no candles table</span>' : [...(hbLast('1m') ? ['1m'] : []), '15m','1H','4H'].map(dot).join('')}</div>`;
 }
+/* local "Mon 21:15" from a trade's day + hour */
+const dayHM = (day, hm) => { if(!day) return ''; const d = parseISO(day); return `${WD_SHORT[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)}${hm ? ' · '+hm : ''}`; };
+const atHM = at => { if(!at) return ''; const d = new Date(at); return `${WD_SHORT[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)} · ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+/* a taken setup as a ticket: liquidity → fractal break → entry → TP / SL */
+function sxTicket(s){
+  const t = s.trade_id ? S.trades.get(s.trade_id) : null, L = s.dir==='Long';
+  const r = t?.result || 'open', lv = t && !t.result ? livePL(t) : null;
+  const R = t?.r_multiple!=null ? Number(t.r_multiple) : lv ? lv.R : null, pips = t?.pips!=null ? Number(t.pips) : lv ? lv.pips : null;
+  const sg = (v, d) => v==null ? '–' : `${v > 0 ? '+' : v < 0 ? '−' : ''}${fmt(Math.abs(v), d)}`;
+  const exitPx = t?.result==='W' ? t.tp : t?.result==='L' ? t.sl : null;
+  const exitLbl = { W:'Take profit', L:'Stop loss', BE:'Break-even' }[t?.result] || 'Exit';
+  const step = (cls, k, v, when) => `<li class="${cls}"><span class="sxt-k">${k}</span><span class="sxt-v">${v}</span><span class="sxt-t">${when || '—'}</span></li>`;
+  return `<article class="sxt x-${r}" ${t ? `data-suopen="${t.id}" title="Open the trade"` : ''}>
+    <header class="sxt-h">
+      <b class="sxt-p">${base(s.pair)}<em>${quote(s.pair)}</em></b>
+      <span class="sxt-d ${L ? 'long' : 'short'}">${L ? '▲ Long' : '▼ Short'}</span><span class="tfl">${esc(s.tf)} setup</span>
+      <span class="sxt-day">${t ? dayHM(t.day) : hhmm(s.startAt)}</span>
+      <div class="sxt-out"><b>${R!=null ? sg(R, R % 1 ? 2 : 0)+'R' : r==='open' ? 'Open' : esc(r)}</b><span>${r==='open' ? (lv ? 'running · ' : 'running') : { W:'Win', L:'Loss', BE:'Break-even' }[r] + ' · '}${pips!=null ? sg(pips, 1)+' pips' : ''}</span></div>
+    </header>
+    <ol class="sxt-flow">
+      ${step('liq', 'Liquidity', sxPx(s.liq?.level), atHM(s.liq?.at))}
+      ${step('brk', 'Fractal break', sxPx(s.line ?? s.bos?.level), atHM(s.bos?.at))}
+      ${step('ent', 'Entry', sxPx(t?.entry_price ?? null), t ? dayHM(t.day, t.entry_time) : '')}
+      ${step(`ext ${r}`, r==='open' ? 'Exit' : exitLbl, r==='open' ? 'open' : sxPx(exitPx), t?.result ? dayHM(t.exit_date || t.day, t.exit_time) + (t.duration ? ` · ${esc(t.duration)}` : '') : lv ? `now ${lvl(lv.price)}` : '')}
+    </ol>
+    <footer class="sxt-f">
+      <span class="sxt-lv sl">SL <b>${sxPx(t?.sl)}</b></span><span class="sxt-lv tp">TP <b>${sxPx(t?.tp)}</b></span>${tradeShots(t).length ? `<span class="sxt-lv">📸 ${tradeShots(t).length}</span>` : ''}
+      <span class="sxt-a">${t ? `<button class="bt" data-sutrade="${t.id}">Open</button>` : ''}<button class="bt sx-undo" data-suundo="${s.key}" title="Taken by mistake? Put the setup back on the board and delete the trade it logged">Undo</button><button class="bt sx-del" data-sudel="${s.key}" title="Delete for good: the setup leaves the history and its trade is deleted from the journal">Delete</button></span>
+    </footer>
+  </article>`;
+}
 function sxHistory(all){
   const H = S.su.hist, HT = S.su.htf || 'all';
   const hist = all.filter(s => ['taken','skipped','expired','invalid','ignored'].includes(s.stage) && (H==='all' ? s.stage!=='ignored' : s.stage===H) && (HT==='all' || s.tf===HT));
@@ -4089,7 +4159,9 @@ function sxHistory(all){
   return `<p class="sx-tool-sum">Last 30 days: ${rec.length} sweep${rec.length===1 ? '' : 's'} in the bias direction, ${formedN} formed (${rec.length ? Math.round(formedN/rec.length*100) : 0}%), ${takenN} taken.</p>
     <div class="sx-filters"><div class="chips">${[['all','All'],['taken','Taken'],['skipped','Skipped'],['invalid','Invalid'],['ignored','Against bias']].map(([k,l]) => `<button class="ch" data-suh="${k}" aria-pressed="${H===k}">${l}</button>`).join('')}</div>
       <div class="chips">${['all', ...suTfs(all)].map(t => `<button class="ch" data-suht="${t}" aria-pressed="${HT===t}">${t==='all' ? 'All TF' : esc(t)}</button>`).join('')}</div></div>
-    ${hist.length ? `<div class="sx-hist">${hist.slice(0, 80).map(s => `<div class="sx-hr ${s.trade_id && S.trades.get(s.trade_id) ? 'has-trade' : ''}" ${s.trade_id && S.trades.get(s.trade_id) ? `data-suopen="${s.trade_id}" title="Open the trade"` : ''}>
+    ${H==='taken' && hist.length ? (() => { const tr = hist.map(x => S.trades.get(x.trade_id)).filter(Boolean), cl = tr.filter(x => x.result), w = cl.filter(x => x.result==='W').length, l = cl.filter(x => x.result==='L').length, nr = cl.reduce((a, x) => a + (Number(x.r_multiple) || 0), 0);
+      return `<div class="sxt-sum"><span>Trades <b>${tr.length}</b></span><span>Wins <b class="pos">${w}</b></span><span>Losses <b class="neg">${l}</b></span><span>Open <b>${tr.length - cl.length}</b></span><span>Win rate <b>${w + l ? Math.round(w/(w+l)*100) : 0}%</b></span><span>Net <b class="${nr > 0 ? 'pos' : nr < 0 ? 'neg' : ''}">${nr > 0 ? '+' : ''}${fmt(nr, 1)}R</b></span></div>`; })() : ''}
+    ${hist.length ? `<div class="sx-hist sxt-grid">${hist.slice(0, 80).map(s => s.stage==='taken' ? sxTicket(s) : `<div class="sx-hr ${s.trade_id && S.trades.get(s.trade_id) ? 'has-trade' : ''}" ${s.trade_id && S.trades.get(s.trade_id) ? `data-suopen="${s.trade_id}" title="Open the trade"` : ''}>
         <span class="sx-hr-dir ${s.dir==='Long' ? 'pos' : s.dir==='Short' ? 'neg' : 'muted'}">${s.dir==='Long' ? '▲' : s.dir==='Short' ? '▼' : '•'}</span>
         <b class="sx-hr-p">${base(s.pair)}<em>${quote(s.pair)}</em></b><span class="tfl">${esc(s.tf)}</span>
         <span class="sx-hr-w">${hhmm(s.startAt)}</span>${s.why ? `<small class="sx-hr-why">${esc(s.why)}</small>` : ''}
