@@ -923,10 +923,10 @@
   .sx-hb{ padding:4px 7px; color:var(--muted); } .sx-hb.on i{ background:var(--pos); } .sx-hb.late i{ background:var(--amber); } .sx-hb.off i{ background:transparent; border:1.5px solid var(--muted); }
   @keyframes sxPing{ 0%{ box-shadow:0 0 0 0 color-mix(in srgb,var(--pos) 55%,transparent); } 70%,100%{ box-shadow:0 0 0 7px transparent; } }
 
-  .sx-stats{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+  .sx-stats{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
   .sx-stat{ --c:var(--muted); position:relative; display:grid; gap:2px; text-align:left; padding:12px 14px 12px 16px; border-radius:16px; border:1px solid var(--line); background:var(--surface); color:var(--ink); overflow:hidden; }
   .sx-stat::before{ content:''; position:absolute; left:0; top:12px; bottom:12px; width:3px; border-radius:0 3px 3px 0; background:var(--c); }
-  .sx-stat.s-forming{ --c:var(--amber); } .sx-stat.s-formed{ --c:var(--info); } .sx-stat.s-trade{ --c:var(--accent); } .sx-stat.s-month{ --c:var(--violet); }
+  .sx-stat.s-forming{ --c:var(--neu); } .sx-stat.s-validate{ --c:var(--amber); } .sx-stat.s-formed{ --c:var(--info); } .sx-stat.s-trade{ --c:var(--accent); } .sx-stat.s-month{ --c:var(--violet); }
   button.sx-stat:hover{ border-color:color-mix(in srgb,var(--c) 45%,var(--line)); }
   .sx-stat[aria-selected="true"]{ border-color:color-mix(in srgb,var(--c) 60%,var(--line)); background:linear-gradient(135deg, color-mix(in srgb,var(--c) 10%,var(--surface)), var(--surface) 70%); }
   .sx-stat-n{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:28px; line-height:1.05; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
@@ -943,19 +943,21 @@
   .sx-sw input:checked + i::after{ transform:translateX(14px); background:var(--accent); }
   .sx-sw input:focus-visible + i{ outline:2px solid var(--focus); outline-offset:2px; }
 
-  .sx-board{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; align-items:start; margin-bottom:18px; }
+  .sx-board{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; align-items:start; margin-bottom:18px; }
   .sx-col{ display:grid; gap:12px; padding:12px; border-radius:20px; border:1px solid var(--line); background:color-mix(in srgb,var(--surface) 55%,transparent); scroll-margin-top:16px; }
   .sx-col > header{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; padding:2px 4px 0; }
   .sx-col > header b{ font-family:'Bricolage Grotesque',sans-serif; font-size:17px; }
   .sx-col > header p{ width:100%; margin:0; font-size:12px; font-weight:600; color:var(--muted); }
-  .sx-col.c-forming > header b::before, .sx-col.c-formed > header b::before, .sx-col.c-trade > header b::before{ content:''; display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:8px; vertical-align:middle; }
-  .sx-col.c-forming > header b::before{ background:var(--amber); } .sx-col.c-formed > header b::before{ background:var(--info); } .sx-col.c-trade > header b::before{ background:var(--accent); }
+  .sx-col.c-forming > header b::before, .sx-col.c-validate > header b::before, .sx-col.c-formed > header b::before, .sx-col.c-trade > header b::before{ content:''; display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:8px; vertical-align:middle; }
+  .sx-col.c-forming > header b::before{ background:var(--neu); } .sx-col.c-validate > header b::before{ background:var(--amber); }
+  .sx-col.c-validate{ border-color:color-mix(in srgb,var(--amber) 30%,var(--line)); }
+  @media (max-width:1250px) and (min-width:901px){ .sx-board{ grid-template-columns:repeat(2,minmax(0,1fr)); } .sx-stats{ grid-template-columns:repeat(4,minmax(0,1fr)); } .sx-stat.s-month{ grid-column:1/-1; } } .sx-col.c-formed > header b::before{ background:var(--info); } .sx-col.c-trade > header b::before{ background:var(--accent); }
   .sx-empty{ margin:0; padding:16px 14px; border:1px dashed var(--line); border-radius:14px; color:var(--muted); font-size:12.5px; font-weight:600; line-height:1.45; }
   @media (max-width:900px){
-    .sx-stats{ grid-template-columns:repeat(3,minmax(0,1fr)); } .sx-stat.s-month{ grid-column:1/-1; }
-    .sx-stat{ padding:10px 10px 10px 13px; } .sx-stat-n{ font-size:24px; } .sx-stat-x{ display:none; } .sx-stat.s-month .sx-stat-x{ display:block; }
+    .sx-stats{ grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; } .sx-stat.s-month{ grid-column:1/-1; }
+    .sx-stat{ padding:9px 8px 9px 11px; } .sx-stat-n{ font-size:22px; } .sx-stat-t{ font-size:12px; } .sx-stat-new{ display:block; } .sx-stat-x{ display:none; } .sx-stat.s-month .sx-stat-x{ display:block; }
     .sx-board{ grid-template-columns:1fr; }
-    .sx-board[data-stage="forming"] .sx-col:not(.c-forming), .sx-board[data-stage="formed"] .sx-col:not(.c-formed), .sx-board[data-stage="trade"] .sx-col:not(.c-trade){ display:none; }
+    .sx-board[data-stage="forming"] .sx-col:not(.c-forming), .sx-board[data-stage="validate"] .sx-col:not(.c-validate), .sx-board[data-stage="formed"] .sx-col:not(.c-formed), .sx-board[data-stage="trade"] .sx-col:not(.c-trade){ display:none; }
     .sx-col{ padding:0; border:0; background:none; }
     .sx-switches{ margin-left:0; }
     .sx-top-r{ margin-left:0; width:100%; flex-wrap:wrap; } .sx-top-r .sx-status{ width:100%; justify-content:space-between; } .sx-top-r .sx-live-at{ margin-right:auto; }
@@ -3865,7 +3867,7 @@ function sxRail(tr, lv){
     <div class="sx-rail-lbl"><span>SL ${lvl(SL)}</span><span style="left:${pe}%">Entry ${lvl(E)}</span><span>TP ${lvl(TP)}</span></div></div>`;
 }
 /* "new" cards: a setup is new until you mark it seen; it becomes new again when it moves to the next stage */
-const sxCol = s => suOpenTrade(s) || s.stage==='retest' ? 'trade' : s.stage;
+const sxCol = s => suOpenTrade(s) || s.stage==='retest' ? 'trade' : s.stage==='forming' && s.val ? 'validate' : s.stage;
 function sxSeen(){ const v = S.settings?.su_seen; return v && typeof v==='object' ? v : (ls.get('do_su_seen', null) || null); }
 const sxIsNew = s => { const m = sxSeen(); return !!m && m[s.key]!==sxCol(s); };
 async function sxMarkSeen(list){
@@ -3924,13 +3926,13 @@ function suCard(s){
 }
 const TF_RANK = { '1M':9, '1W':8, '1D':7, 'D1':7, '8H':6, '4H':5, '2H':4, '1H':3, '30m':2, '15m':1, '5m':0, '3m':-1, '1m':-2 };
 function suTfs(all){ return [...new Set(['4H', '1H', ...all.map(x => x.tf)])].sort((a,b) => (TF_RANK[b] ?? -1) - (TF_RANK[a] ?? -1)); }
-const SX_COLS = [['forming','Forming','Liquidity taken, waiting for the break and your validation'],['formed','Formed','Structure broke, set the limit order'],['trade','Entry and trades','At the line or in a trade, live from the heartbeat']];
+const SX_COLS = [['forming','Forming','Liquidity taken, waiting for the fractal break'],['validate','Validation','Break alert in. Check the liquidity and the fractal line'],['formed','Formed','Validated, waiting for price to come to the line'],['trade','Trades','Price hit the line, trade running live']];
 function renderSetups(){
   const m = document.getElementById('main');
   if(S.signalsMissing){ m.innerHTML = `<div class="pairtitle">Setups <span class="beta">beta</span></div><div class="card" style="margin-top:16px"><p>Run <b>migration-signals.sql</b> in Supabase, then reload. The signals table doesn't exist yet.</p></div>`; return; }
   const all = deriveSetups(), tf = S.su.tf || 'all';
   const inTf = x => tf==='all' || x.tf===tf;
-  const colOf = x => suOpenTrade(x) ? 'trade' : x.stage==='retest' ? 'trade' : x.stage==='validate' ? 'forming' : ['forming','formed'].includes(x.stage) ? x.stage : null;
+  const colOf = x => suOpenTrade(x) ? 'trade' : x.stage==='retest' ? 'trade' : x.stage==='validate' || (x.stage==='forming' && x.val) ? 'validate' : ['forming','formed'].includes(x.stage) ? x.stage : null;
   const act = all.filter(x => colOf(x) && inTf(x));
   const by = k => act.filter(x => colOf(x)===k).sort((a, b) => (b.stage==='validate') - (a.stage==='validate') || tms(b.bos?.at || b.prop?.at || b.startAt) - tms(a.bos?.at || a.prop?.at || a.startAt));
   const toVal = act.filter(x => x.stage==='validate').length;
@@ -3941,7 +3943,7 @@ function renderSetups(){
   /* last 30 days, trades that came from setups */
   const d30 = Date.now() - 30*864e5, done = all.filter(s => s.stage==='taken' && tms(s.startAt) >= d30).map(s => S.trades.get(s.trade_id)).filter(t => t?.result);
   const wins = done.filter(t => t.result==='W').length, netR = done.reduce((a, t) => a + (Number(t.r_multiple) || 0), 0);
-  const stage = S.su.stage || (toVal ? 'forming' : cols.trade.length ? 'trade' : cols.formed.length ? 'formed' : 'forming');
+  const stage = S.su.stage || (toVal ? 'validate' : cols.trade.length ? 'trade' : cols.formed.length ? 'formed' : 'forming');
   const tool = S.su.tool || 'history';
   m.innerHTML = `
     <header class="sx-top">
@@ -3952,7 +3954,7 @@ function renderSetups(){
     <div class="sx-stats" role="tablist" aria-label="Stages">
       ${SX_COLS.map(([k, t]) => `<button class="sx-stat s-${k}" role="tab" data-sustage="${k}" aria-selected="${stage===k}">
         <span class="sx-stat-n">${cols[k].length}${newIn(k) ? `<em class="sx-stat-new">${newIn(k)} new</em>` : ''}</span><span class="sx-stat-t">${t}</span>
-        <span class="sx-stat-x">${k==='trade' ? (live.length ? `${liveR >= 0 ? '+' : ''}${fmt(liveR, 2)}R open` : 'nothing open') : k==='formed' ? (cols.formed.length ? 'orders to place' : 'none waiting') : toVal ? `${toVal} to validate` : (cols.forming.length ? 'watching' : 'no sweeps')}</span></button>`).join('')}
+        <span class="sx-stat-x">${k==='trade' ? (live.length ? `${liveR >= 0 ? '+' : ''}${fmt(liveR, 2)}R open` : 'nothing open') : k==='formed' ? (cols.formed.length ? 'waiting for price' : 'none waiting') : k==='validate' ? (toVal ? `${toVal} to check` : 'nothing to check') : (cols.forming.length ? 'watching' : 'no sweeps')}</span></button>`).join('')}
       <div class="sx-stat s-month"><span class="sx-stat-n">${done.length ? `${netR >= 0 ? '+' : ''}${fmt(netR, 1)}R` : '0'}</span><span class="sx-stat-t">Last 30 days</span>
         <span class="sx-stat-x">${done.length ? `${wins} of ${done.length} trades won` : 'no closed setup trades yet'}</span></div>
     </div>
@@ -3966,7 +3968,7 @@ function renderSetups(){
     <div class="sx-board" data-stage="${stage}">
       ${SX_COLS.map(([k, t, sub]) => `<section class="sx-col c-${k}" aria-label="${t}">
         <header><b>${t}</b><span class="bn">${cols[k].length}</span><p>${sub}</p></header>
-        ${cols[k].length ? [...cols[k].filter(sxIsNew), ...cols[k].filter(x => !sxIsNew(x))].map(suCard).join('') : `<div class="sx-empty">${k==='forming' ? 'No sweep in the bias direction right now. New ones show up here as soon as the liquidity alert fires.' : k==='formed' ? 'When a forming setup gets its body-close break, it moves here with the order to place.' : 'Trades appear here once price comes back to the line.'}</div>`}
+        ${cols[k].length ? [...cols[k].filter(sxIsNew), ...cols[k].filter(x => !sxIsNew(x))].map(suCard).join('') : `<div class="sx-empty">${k==='forming' ? 'No sweep in the bias direction right now. New ones show up here as soon as the liquidity alert fires.' : k==='validate' ? 'When your fractal alert fires, the setup comes here so you can confirm or correct the liquidity and the fractal line.' : k==='formed' ? 'After you validate, the setup waits here for price to come back to the line.' : 'Trades appear here once price comes back to the line.'}</div>`}
       </section>`).join('')}
     </div>
     <section class="sx-tools card">
