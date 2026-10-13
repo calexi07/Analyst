@@ -4919,7 +4919,6 @@ function renderToday(){
         <p class="muted" style="font-weight:600;margin-top:6px">${weekend ? 'Weekend — time to review the week and prepare the next one.' : open.length ? `You have ${open.length} open trade${open.length>1?'s':''} to manage.` : 'Flat. Wait for your setup.'}</p></div>
       <div class="td-actions">${weekend ? `<button class="btn btn-primary" data-act="prompts">Weekly review ${ico('spark',14)}</button>` : `<button class="btn btn-primary" data-act="gap">Fill next gap →</button>`}<button class="btn" data-act="journal">Open journal</button></div>
     </div>
-    ${pendingList().length ? `<section class="td-pend"><div class="td-h"><h3>⏳ Trades to complete</h3><span class="muted" style="font-size:12px;font-weight:700">quick-added — add entry, SL${S.accounts.size ? ', account' : ''} and top-down</span></div><div class="pd-list">${pendItems()}</div></section>` : ''}
     <div class="pl" id="tdBoard"></div>
     <div class="tj-kpis">
       ${kpi('Open trades', open.length, open.length ? 'pos' : '')}
