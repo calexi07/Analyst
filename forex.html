@@ -1243,6 +1243,12 @@
   .tjc .tl-top{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; } .tjc .tl-top h4{ margin-right:auto; }
   .tjc .seg button{ padding:5px 10px; font-size:12px; }
   .tjc-cv{ min-height:360px; height:380px; margin-top:8px; }
+  .cl-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+  .cl-b{ padding:5px 10px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--ink); font-size:12px; font-weight:800; cursor:pointer; }
+  .cl-b.lq{ border-color:color-mix(in srgb,var(--amber) 45%,var(--line)); } .cl-b.fr{ border-color:color-mix(in srgb,var(--info) 45%,var(--line)); }
+  .cl-b[aria-pressed="true"]{ background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+  .cl-hint{ font-size:12px; font-weight:700; color:var(--amber); }
+  .trm-cv.cl-on{ outline:2px dashed var(--accent); outline-offset:-2px; cursor:crosshair; }
   .tjc-hint{ margin:6px 0 0; font-size:11.5px; font-weight:600; color:var(--muted); }
   .trm-cv{ position:relative; flex:1; min-height:440px; height:min(62vh,600px); border-radius:14px; border:1px solid var(--line); overflow:hidden;
            background:radial-gradient(120% 90% at 50% 0%, color-mix(in srgb,var(--accent) 5%,var(--surface-2)), var(--surface-2) 60%), var(--surface-2); box-shadow:inset 0 1px 0 rgba(255,255,255,.04); }
@@ -4077,6 +4083,30 @@ const loadLWC = () => LWC_P ||= new Promise((res, rej) => {
   const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js';
   sc.onload = () => res(window.LightweightCharts); sc.onerror = () => { LWC_P = null; rej(new Error('The chart library could not be loaded')); }; document.head.appendChild(sc); });
 const dropChart = el => { if(el?.__ch){ el.__ch.remove(); TCH.delete(el.__ch); el.__ch = null; } };
+/* where you set the liquidity / fractal lines to start, per trade (setting chart_lines: { tradeId: { liq:ms, frac:ms } }) */
+const chartLines = id => { const m = S.settings?.chart_lines; return (m && typeof m==='object' && m[id]) || {}; };
+async function saveChartLine(id, mode, ms){
+  const m = { ...(S.settings?.chart_lines || {}) };
+  if(mode==='reset') delete m[id]; else m[id] = { ...(m[id] || {}), [mode]:ms };
+  await saveSettingKey('chart_lines', m);
+}
+function lineEditBar(t){
+  const CL = chartLines(t.id);
+  return `<div class="cl-bar"><button class="cl-b lq" data-clm="liq" title="Then click the candle where the liquidity line starts">✎ Liquidity start</button>
+    <button class="cl-b fr" data-clm="frac" title="Then click the pivot candle of the fractal">✎ Fractal start</button>
+    ${CL.liq!=null || CL.frac!=null ? '<button class="cl-b" data-clm="reset" title="Back to the automatic start points">↺ Auto</button>' : ''}<span class="cl-hint"></span></div>`;
+}
+function bindLineEdit(bar, cv, redraw){
+  if(!bar) return;
+  const hint = bar.querySelector('.cl-hint');
+  const set = mode => { cv.__edit = mode; cv.classList.toggle('cl-on', !!mode);
+    bar.querySelectorAll('[data-clm]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.clm===mode)));
+    hint.textContent = mode==='liq' ? 'Click the candle that made the liquidity' : mode==='frac' ? 'Click the fractal pivot candle' : ''; };
+  cv.__onEdit = set; cv.__redraw = redraw;
+  bar.querySelectorAll('[data-clm]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const md = b.dataset.clm;
+    if(md==='reset'){ await saveChartLine(redraw.id, 'reset'); set(null); redraw(); return; }
+    set(cv.__edit===md ? null : md); });
+}
 /* the setup a trade came from (for the liquidity and the fractal line) */
 function setupOfTrade(id){ const mk = [...S.setupMarks.values()].find(m => m.trade_id===id); return mk ? deriveSetups().find(x => x.key===mk.setup_key) || null : null; }
 const rgba = (c, a) => { const m = /^#?([0-9a-f]{6})$/i.exec(String(c).trim()); if(!m) return c; const n = parseInt(m[1], 16); return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`; };
@@ -4140,16 +4170,24 @@ async function tradeChart(el, t, su, tf, onTf = null, tried = []){
     }
     /* liquidity: from the high / low that made it to the candle that swept it; fractal: from the pivot to the break */
     const tol = pipSize(t.pair) * 2;
-    const seg = (price, endIdx, pick, color, style) => {
-      if(price==null || endIdx < 0) return; const P = Number(price); let st = -1;
-      for(let j = endIdx - 1; j >= Math.max(0, endIdx - 200); j--){ const v = pick(rows[j]); if(Math.abs(v - P) <= tol){ st = j; break; } if(L ? (pick===lowOf ? v < P - tol : v > P + tol) : (pick===highOf ? v > P + tol : v < P - tol)) break; }
+    const CL = chartLines(t.id);
+    const seg = (price, endIdx, pick, color, style, saved) => {
+      if(price==null || endIdx < 0) return; const P = Number(price); let st = saved!=null ? idxAt(saved) : -1;
+      if(st >= 0 && st > endIdx){ const x = st; st = endIdx; endIdx = x; }   /* clicked after the end → draw between the two */
+      if(st < 0) for(let j = endIdx - 1; j >= Math.max(0, endIdx - 200); j--){ const v = pick(rows[j]); if(Math.abs(v - P) <= tol){ st = j; break; } if(L ? (pick===lowOf ? v < P - tol : v > P + tol) : (pick===highOf ? v > P + tol : v < P - tol)) break; }
       if(st < 0) st = Math.max(0, endIdx - 12);
+      if(st===endIdx && endIdx > 0) st = endIdx - 1;
       const ls = ch.addLineSeries({ color, lineWidth:2, lineStyle:style, priceLineVisible:false, lastValueVisible:false, crosshairMarkerVisible:false, priceFormat:pf });
       ls.setData([{ time:sh(rows[st].t), value:P }, { time:sh(rows[Math.max(endIdx, st + 1 < rows.length ? st + 1 : st)].t), value:P }].filter((x, k, a) => !k || x.time > a[0].time));
     };
     const lowOf = r => r.l, highOf = r => r.h;
-    if(su?.liq?.level!=null) seg(su.liq.level, idxAt(liqMs), L ? lowOf : highOf, css('--amber'), 0);
-    const fr = su?.line ?? su?.bos?.level; if(fr!=null) seg(fr, idxAt(brkMs), L ? highOf : lowOf, css('--info'), 2);
+    if(su?.liq?.level!=null) seg(su.liq.level, idxAt(liqMs), L ? lowOf : highOf, css('--amber'), 0, CL.liq);
+    const fr = su?.line ?? su?.bos?.level; if(fr!=null) seg(fr, idxAt(brkMs), L ? highOf : lowOf, css('--info'), 2, CL.frac);
+    /* "Edit lines": click the candle where the line should start */
+    ch.subscribeClick(pm => { const mode = el.__edit; if(!mode || pm.time==null) return;
+      const r = rows.find(c => sh(c.t)===pm.time); if(!r) return;
+      el.__edit = null; el.classList.remove('cl-on'); el.__onEdit?.(null);
+      saveChartLine(t.id, mode, r.t).then(() => el.__redraw ? el.__redraw() : tradeChart(el, t, su, tf)); });
     const mk = [], m = (time, position, color, shape, text) => time && mk.push({ time, position, color, shape, text, size:0.55 });
     m(barAt(liqMs), L ? 'belowBar' : 'aboveBar', css('--amber'), 'circle', 'Liq');
     m(barAt(brkMs), L ? 'aboveBar' : 'belowBar', css('--info'), L ? 'arrowUp' : 'arrowDown', 'Break');
@@ -4166,7 +4204,8 @@ function tradeChartBlock(e){
   return `<div class="tl-wrap tr-shots-wrap tjc" data-tjc="${t.id}">
     <div class="tl-top"><h4>📈 Trade chart</h4>
       <div class="seg tjc-mode" role="group">${sh.length ? `<button data-tjcm="tv" aria-pressed="${mode==='tv'}">TradingView · ${sh.length}</button>` : ''}<button data-tjcm="auto" aria-pressed="${mode==='auto'}">Auto chart</button></div>
-      ${mode==='auto' ? `<div class="seg tjc-tf" role="group">${['1m','15m','1H','4H'].map(f => `<button data-tjctf="${f}" aria-pressed="${f===tf0}">${f}</button>`).join('')}</div>` : ''}</div>
+      ${mode==='auto' ? `<div class="seg tjc-tf" role="group">${['1m','15m','1H','4H'].map(f => `<button data-tjctf="${f}" aria-pressed="${f===tf0}">${f}</button>`).join('')}</div>` : ''}
+      ${mode==='auto' && setupOfTrade(t.id) ? lineEditBar(t) : ''}</div>
     ${mode==='tv' ? `<div class="tl-shots">${sh.map((x, i) => `<a class="tl-shot trs" href="${esc(x.u)}" target="_blank" rel="noopener"><img src="${esc(x.img)}" alt="Trade chart ${i+1} · ${esc(t.pair)}" loading="lazy" onerror="this.closest('.tl-shot').remove()"><span>TradingView${sh.length > 1 ? ' '+(i+1) : ''}</span></a>`).join('')}</div>`
       : `<div class="trm-cv tjc-cv" data-tf="${tf0}"><p class="trm-cmsg">Loading the chart…</p></div>
          <p class="tjc-hint">Automatic chart from the heartbeat candles. Prefer your own? Add a TradingView snapshot link in <b>Edit trade</b> and it shows here instead.</p>`}
@@ -4180,6 +4219,9 @@ function bindTradeCharts(root){
     const su = setupOfTrade(id), mark = f => box.querySelectorAll('[data-tjctf]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.tjctf===f)));
     const draw = (f, fb) => { mark(f); tradeChart(cv, t, su, f, fb ? mark : null); };
     box.querySelectorAll('[data-tjctf]').forEach(b => b.onclick = ev => { ev.stopPropagation(); draw(b.dataset.tjctf, false); });
+    const cur = () => box.querySelector('[data-tjctf][aria-pressed="true"]')?.dataset.tjctf || cv.dataset.tf;
+    const redraw = () => { const bar = box.querySelector('.cl-bar'); if(bar) bar.outerHTML = lineEditBar(t); bindLineEdit(box.querySelector('.cl-bar'), cv, redraw); tradeChart(cv, t, su, cur()); };
+    redraw.id = id; bindLineEdit(box.querySelector('.cl-bar'), cv, redraw);
     box.onclick = ev => ev.stopPropagation();
     draw(cv.dataset.tf, true);
   });
@@ -4206,6 +4248,7 @@ function openTradeModal(id){
     <div class="trm-tabs" role="tablist"><button role="tab" data-trtab="details" aria-selected="true">Details</button><button role="tab" data-trtab="chart" aria-selected="false">📈 Chart</button></div>
     <div class="trm-chart" hidden>
       <div class="trm-ctb"><div class="seg" role="group" aria-label="Chart timeframe">${['1m','15m','1H','4H'].map(f => `<button data-trtf="${f}">${f}</button>`).join('')}</div>
+        ${su ? lineEditBar(t) : ''}
         <div class="trm-leg"><span class="lq">Liquidity</span><span class="fr">Fractal</span><span class="sl">Risk</span><span class="tp">Reward</span></div></div>
       <div class="trm-cv" id="trmCv"><p class="trm-cmsg">Loading the chart…</p></div>
     </div>
@@ -4283,6 +4326,9 @@ function openTradeModal(id){
   let auto = true;
   trDlg.querySelectorAll('[data-trtab]').forEach(b => b.onclick = () => showTab(b.dataset.trtab));
   trDlg.querySelectorAll('[data-trtf]').forEach(b => b.onclick = () => drawTf(b.dataset.trtf));
+  const redrawM = () => { const bar = trDlg.querySelector('.cl-bar'); if(bar) bar.outerHTML = lineEditBar(t); bindLineEdit(trDlg.querySelector('.cl-bar'), trDlg.querySelector('#trmCv'), redrawM); tradeChart(trDlg.querySelector('#trmCv'), t, su, ctf); };
+  redrawM.id = id;
+  bindLineEdit(trDlg.querySelector('.cl-bar'), trDlg.querySelector('#trmCv'), redrawM);
   trDlg.addEventListener('close', () => dropChart(trDlg.querySelector('#trmCv')), { once:true });
   if(!trDlg.open) trDlg.showModal();
   trDlg.querySelector('.trm-grid').scrollTop = 0;
