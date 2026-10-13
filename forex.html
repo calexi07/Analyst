@@ -1048,6 +1048,61 @@
   .sx .su-skip{ display:grid; gap:6px; padding-top:10px; border-top:1px dashed var(--line); }
 
   .sx-tools{ padding:0; overflow:hidden; margin-bottom:16px; }
+  /* live board: compact rows */
+  .lv-tabs{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 14px; }
+  .lv-tabs button{ display:inline-flex; align-items:center; gap:7px; padding:7px 12px; border-radius:12px; border:1px solid var(--line); background:var(--surface); color:var(--muted); font-weight:800; font-size:13px; cursor:pointer; }
+  .lv-tabs button:hover{ color:var(--ink); }
+  .lv-tabs button[aria-selected="true"]{ color:var(--ink); border-color:var(--ink); background:var(--surface-2); }
+  .lv-tabs button i{ width:8px; height:8px; border-radius:50%; background:var(--c, var(--muted)); }
+  .lv-tabs .t-validate{ --c:var(--amber); } .lv-tabs .t-trade{ --c:var(--accent); } .lv-tabs .t-formed{ --c:var(--info); } .lv-tabs .t-forming{ --c:var(--neu); }
+  .lv-tabs em{ font-style:normal; font-size:11.5px; padding:0 7px; border-radius:99px; background:color-mix(in srgb,currentColor 14%,transparent); }
+  .lv-tabs b{ font-size:10.5px; font-weight:800; padding:1px 7px; border-radius:99px; background:var(--accent); color:var(--on-accent); }
+  .lv-tabs span{ font-size:12px; font-weight:800; } .lv-tabs span.pos{ color:var(--pos); } .lv-tabs span.neg{ color:var(--neg); }
+  .lv{ display:grid; gap:16px; margin-bottom:18px; }
+  .lv-sec > header{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; margin:0 0 8px 2px; }
+  .lv-sec > header b{ font-family:'Bricolage Grotesque',sans-serif; font-size:17px; }
+  .lv-sec > header b::before{ content:''; display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:8px; vertical-align:middle; background:var(--c); }
+  .lv-sec > header p{ margin:0; font-size:12px; font-weight:600; color:var(--muted); }
+  .lv-sec.s-validate{ --c:var(--amber); } .lv-sec.s-trade{ --c:var(--accent); } .lv-sec.s-formed{ --c:var(--info); } .lv-sec.s-forming{ --c:var(--neu); }
+  .lv-list{ display:grid; gap:6px; }
+  .lvr{ --c:var(--neu); position:relative; display:grid; grid-template-columns:minmax(150px,190px) minmax(0,1fr) auto; align-items:center; gap:8px 16px; padding:10px 12px 10px 16px; border-radius:14px; background:var(--surface-2); border:1px solid var(--line); }
+  .lvr::before{ content:''; position:absolute; left:0; top:8px; bottom:8px; width:3px; border-radius:3px; background:var(--c); }
+  .lvr.c-validate{ --c:var(--amber); border-color:color-mix(in srgb,var(--amber) 40%,var(--line)); background:color-mix(in srgb,var(--amber) 6%,var(--surface-2)); }
+  .lvr.c-formed{ --c:var(--info); } .lvr.c-trade{ --c:var(--accent); }
+  .lvr.is-new{ box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent); }
+  .lvr-id{ display:flex; align-items:center; gap:7px; min-width:0; flex-wrap:wrap; }
+  .lvr-p{ font-family:'Bricolage Grotesque',sans-serif; font-size:16px; font-weight:800; } .lvr-p em{ font-style:normal; opacity:.45; }
+  .lvr-d{ font-weight:900; font-size:13px; }
+  .lvr-new{ border:0; padding:2px 7px; border-radius:99px; font-size:10px; font-weight:900; letter-spacing:.04em; background:var(--accent); color:var(--on-accent); cursor:pointer; }
+  .lvr-mid{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 18px; min-width:0; }
+  .lvr-kv{ display:grid; line-height:1.15; min-width:0; }
+  .lvr-kv span{ font-size:10.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
+  .lvr-kv b{ font-family:'JetBrains Mono',ui-monospace,monospace; font-size:14px; font-weight:700; }
+  .lvr-kv small{ font-size:11.5px; font-weight:700; color:var(--muted); }
+  .lvr-kv.sl b{ color:var(--neg); } .lvr-kv.tp b{ color:var(--pos); } .lvr-kv.e b{ color:var(--ink); }
+  .lvr-note{ margin:0; flex:1 1 200px; font-size:12.5px; font-weight:600; color:var(--muted); }
+  .lvr-note .warn{ color:var(--amber); } .lvr-note.go{ color:var(--pos); font-weight:800; }
+  .lvr-act{ display:flex; align-items:center; gap:6px; justify-content:flex-end; flex-wrap:wrap; }
+  .lvr-act .bt, .lvr-act .btn{ padding:5px 11px; font-size:12.5px; }
+  .lvr-ic{ font-weight:900; }
+  .lvr-live{ display:grid; line-height:1.1; } .lvr-live b{ font-family:'Bricolage Grotesque',sans-serif; font-size:20px; font-weight:800; } .lvr-live small{ font-size:11.5px; font-weight:700; color:var(--muted); }
+  .lvr-live.up b{ color:var(--pos); } .lvr-live.dn b{ color:var(--neg); }
+  .lvr-rail{ flex:1 1 220px; min-width:180px; } .lvr-rail .sx-rail{ margin:0; }
+  .lvr-val{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px 10px; padding:0; border:0; background:none; }
+  .lvr-val label{ display:grid; gap:3px; font-size:10.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
+  .lvr-val input{ width:130px; padding:6px 9px; font-family:'JetBrains Mono',ui-monospace,monospace; font-size:14px; font-weight:700; text-transform:none; letter-spacing:0; color:var(--ink); }
+  .lvr-val input.changed{ border-color:var(--amber); }
+  .lvr-val .btn{ padding:7px 14px; }
+  .lvr-val .sx-val-msg{ flex-basis:100%; margin:0; font-size:12px; color:var(--neg); font-weight:700; } .lvr-val .sx-val-msg:empty{ display:none; }
+  .lvr-when{ align-self:center; font-size:12px; font-weight:800; color:var(--amber); padding:4px 9px; border-radius:99px; background:color-mix(in srgb,var(--amber) 14%,transparent); }
+  .lvr-x{ grid-column:1/-1; } .lvr .su-skip{ grid-column:1/-1; display:grid; gap:6px; padding-top:8px; border-top:1px dashed var(--line); }
+  @media (max-width:900px){
+    .lvr{ grid-template-columns:1fr; gap:8px; padding:10px 12px 10px 15px; }
+    .lvr-act{ justify-content:flex-start; }
+    .lvr-mid{ gap:6px 14px; }
+    .lvr-val input{ width:118px; }
+    .lv-tabs{ flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; }
+  }
   /* page switch: live board ↔ history ↔ tools */
   .sx-nav{ position:sticky; top:8px; z-index:20; display:flex; align-items:center; gap:4px; padding:5px; margin:0 0 16px; border-radius:16px; border:1px solid var(--line);
            background:color-mix(in srgb,var(--surface) 88%,transparent); backdrop-filter:blur(10px); overflow-x:auto; scrollbar-width:none; box-shadow:0 6px 24px rgba(0,0,0,.18); }
@@ -3668,7 +3723,7 @@ function renderTdBoard(){
 }
 /* ---------- Setups (beta): liquidity sweep → opposite fractal break → retest, filtered by the weekly bias ---------- */
 S.signals = []; S.setupMarks = new Map(); S.signalsMissing = false;
-S.su = { hist: ls.get('do_su_hist', 'taken'), page: ls.get('do_su_page', 'live'), sim: false };
+S.su = { hist: ls.get('do_su_hist', 'taken'), page: ls.get('do_su_page', 'live'), lvt: ls.get('do_su_lvt', 'all'), sim: false };
 async function loadSignals(){
   try{ const [sg, mk] = await Promise.all([fetchAll('do_signals'), fetchAll('do_setup_marks')]);
     S.signals = sg; S.setupMarks = new Map(mk.map(m => [m.setup_key, m])); S.signalsMissing = false; }
@@ -4171,6 +4226,63 @@ function suCard(s){
         : `<button class="bt" data-suskip="${s.key}">Skip</button>${(s.val || s.bos) && S.su.edit!==s.key ? `<button class="bt" data-suedit="${s.key}" title="Correct the liquidity or the fractal line">Edit levels</button>` : ''}${s.stage==='formed' ? `<button class="bt" data-suret="${s.key}" title="Mark that price came back to the line">At the line</button>` : ''}${s.stage==='validate' ? '' : `<button class="btn ${s.stage==='forming' ? '' : 'btn-primary'}" data-sutake="${s.key}">Take</button>`}`}</footer>
   </article>`;
 }
+/* ---- live board: compact rows, one per setup ---- */
+const LV_ORDER = ['validate','trade','formed','forming'];
+const LV_LBL = {
+  validate:['Validation','Your fractal alert fired. Check the liquidity and the fractal line','Nothing to validate. When your fractal alert fires, the setup comes here.'],
+  trade:['Trades','Price hit the line, trade running live','No open trade. Trades appear here once price comes back to the line.'],
+  formed:['Formed','Validated, waiting for price to come back to the line','Nothing waiting. Validated setups wait here for price.'],
+  forming:['Forming','Liquidity taken, waiting for the fractal break','No sweep in the bias direction right now.'] };
+function lvRow(s){
+  const tr = suOpenTrade(s), L = s.dir==='Long', isNew = sxIsNew(s), pl = s.bos ? suPlan(s) : null, col = sxCol(s), nx = sxNext(s, tr, pl);
+  const id = `<div class="lvr-id">${isNew ? `<button class="lvr-new" data-suseen="${s.key}" title="New · click to mark seen">NEW ✓</button>` : ''}
+      <b class="lvr-p">${base(s.pair)}<em>${quote(s.pair)}</em></b><span class="lvr-d ${L ? 'pos' : 'neg'}">${L ? '▲' : '▼'}</span><span class="tfl">${esc(s.tf)}</span></div>`;
+  const kv = (k, v, t, cls = '') => `<div class="lvr-kv ${cls}"><span>${k}</span><b>${v}</b>${t ? `<small>${t}</small>` : ''}</div>`;
+  const hm = at => at ? hhmm(at).slice(-5) : '';
+  const chart = `<a class="bt lvr-ic" href="${tvUrl(s.pair, s.tf)}" target="_blank" rel="noopener" title="Open the chart on TradingView">↗</a>`;
+  const skip = `<button class="bt" data-suskip="${s.key}">Skip</button>`;
+  let mid = '', act = '', extra = '';
+  if(col==='forming'){
+    mid = kv('Liquidity', sxPx(s.liq.level), `${hm(s.liq.at)}${s.liqs.length > 1 ? ` · ${s.liqs.length} sweeps` : ''}`)
+      + kv('Stop', sxPx(s.liq.extreme ?? s.liq.level), s.liq.extMovedAt ? 'moved to wick' : 'sweep wick', 'sl')
+      + `<p class="lvr-note">${s.pend ? nx.text : `Waiting ${ago(s.startAt).replace(' ago','')} for a ${L ? 'bullish' : 'bearish'} break`}${!s.bos && s.wicks?.length ? ` · <span class="warn">${esc(s.wicks[s.wicks.length-1].why)}</span>` : ''}</p>`;
+    act = `${chart}${skip}<button class="bt" data-sutake="${s.key}">Take</button>`;
+  } else if(col==='validate'){
+    if(s.stage==='validate'){
+      const liq = s.liq.level0 ?? s.liq.level, line = s.prop?.line ?? s.line;
+      mid = `<div class="sx-val lvr-val" data-valfor="${s.key}">
+          <span class="lvr-when">Break ${hm(s.prop.at)}</span>
+          <label><span>Liquidity</span><input class="inp" inputmode="decimal" autocomplete="off" data-vliq data-orig="${lvl(liq)}" value="${lvl(liq)}"></label>
+          <label><span>Fractal line</span><input class="inp" inputmode="decimal" autocomplete="off" data-vline data-orig="${line!=null ? lvl(line) : ''}" value="${line!=null ? lvl(line) : ''}" placeholder="price"></label>
+          <button class="btn btn-primary" data-suval="${s.key}">✓ Validate</button>
+          <p class="sx-val-msg"></p></div>`;
+      act = `${chart}${skip}`;
+    } else {
+      mid = kv('Liquidity', sxPx(s.liq.level), 'validated') + kv('Fractal line', sxPx(s.val?.line), 'validated') + `<p class="lvr-note">${nx.text}</p>`;
+      act = `${chart}<button class="bt" data-suedit="${s.key}">Edit levels</button>${skip}`;
+    }
+  } else if(col==='formed'){
+    mid = kv('Liquidity', sxPx(s.liq.level), hm(s.liq.at)) + kv('Fractal', sxPx(s.line), `break ${hm(s.bos?.at)}`)
+      + (pl ? kv(`Limit ${L ? 'buy' : 'sell'}`, sxPx(pl.entry), '', 'e') + kv('SL', sxPx(pl.sl), '', 'sl') + kv('TP 2R', sxPx(pl.tp), '', 'tp') : `<p class="lvr-note">${nx.text}</p>`);
+    act = `${chart}<button class="bt" data-suedit="${s.key}">Edit levels</button><button class="bt" data-suret="${s.key}" title="Mark that price came back to the line">At the line</button>${skip}<button class="btn btn-primary" data-sutake="${s.key}">Take</button>`;
+  } else {
+    if(tr){
+      const lv = livePL(tr);
+      mid = kv('Entry', sxPx(tr.entry_price), tr.entry_time || '', 'e') + kv('SL', sxPx(tr.sl), '', 'sl') + kv('TP', sxPx(tr.tp), '', 'tp')
+        + `<div class="lvr-live ${lv ? (lv.R >= 0 ? 'up' : 'dn') : ''}"><b>${lv ? `${lv.R >= 0 ? '+' : ''}${fmt(lv.R, 2)}R` : '…'}</b><small>${lv ? `${lv.pips >= 0 ? '+' : ''}${fmt(lv.pips, 1)} pips · ${lvl(lv.price)}` : 'waiting for a candle'}</small></div>`
+        + `<div class="lvr-rail">${sxRail(tr, lv)}</div>`;
+      act = `${chart}<button class="bt" data-suundo="${s.key}" title="Taken by mistake? Put the setup back and delete the trade it logged">Undo</button><button class="btn btn-primary" data-sutrade="${tr.id}">Open</button>`;
+      if(pl && (Math.abs(Number(tr.sl) - pl.sl) > 1e-9 || Math.abs(Number(tr.tp) - pl.tp) > 1e-9))
+        extra = `<div class="sx-sync lvr-x"><span>The setup now has <b>SL ${lvl(pl.sl)}</b> and <b>TP ${lvl(pl.tp)}</b>. The trade still has SL ${sxPx(tr.sl)} and TP ${sxPx(tr.tp)}.</span><button class="bt" data-susync="${s.key}">Update the trade</button></div>`;
+    } else {
+      mid = (pl ? kv(`Entry`, sxPx(pl.entry), '', 'e') + kv('SL', sxPx(pl.sl), '', 'sl') + kv('TP', sxPx(pl.tp), '', 'tp') : '') + `<p class="lvr-note go">${nx.text}</p>`;
+      act = `${chart}${skip}<button class="btn btn-primary" data-sutake="${s.key}">Take</button>`;
+    }
+  }
+  if(S.su.edit===s.key && !tr) extra += `<div class="lvr-x">${sxValPanel(s)}</div>`;
+  return `<article class="lvr c-${col} ${L ? 'long' : 'short'}${isNew ? ' is-new' : ''}" data-su="${s.key}">
+    ${id}<div class="lvr-mid">${mid}</div><div class="lvr-act">${act}</div>${extra}</article>`;
+}
 const TF_RANK = { '1M':9, '1W':8, '1D':7, 'D1':7, '8H':6, '4H':5, '2H':4, '1H':3, '30m':2, '15m':1, '5m':0, '3m':-1, '1m':-2 };
 function suTfs(all){ return [...new Set(['4H', '1H', ...all.map(x => x.tf)])].sort((a,b) => (TF_RANK[b] ?? -1) - (TF_RANK[a] ?? -1)); }
 const SX_COLS = [['forming','Forming','Liquidity taken, waiting for the fractal break'],['validate','Validation','Break alert in. Check the liquidity and the fractal line'],['formed','Formed','Validated, waiting for price to come to the line'],['trade','Trades','Price hit the line, trade running live']];
@@ -4191,7 +4303,8 @@ function renderSetups(){
   const d30 = Date.now() - 30*864e5, done = all.filter(s => s.stage==='taken' && tms(s.startAt) >= d30).map(s => S.trades.get(s.trade_id)).filter(t => t?.result);
   const wins = done.filter(t => t.result==='W').length, netR = done.reduce((a, t) => a + (Number(t.r_multiple) || 0), 0);
   const stage = S.su.stage || (toVal ? 'validate' : cols.trade.length ? 'trade' : cols.formed.length ? 'formed' : 'forming');
-  const page = S.su.page || 'live', takenN = all.filter(x => x.stage==='taken').length, openN = all.filter(x => suOpenTrade(x)).length;
+  const lvt = S.su.lvt || 'all';
+  const page = S.su.page || 'live', takenN = all.filter(x => x.stage==='taken' && !suOpenTrade(x)).length;
   const tool = page==='live' ? null : page;
   m.innerHTML = `
     <header class="sx-top">
@@ -4201,18 +4314,11 @@ function renderSetups(){
     </header>
     <nav class="sx-nav" role="tablist" aria-label="Setups pages">
       <button role="tab" data-supage="live" aria-selected="${page==='live'}"><i class="sx-nav-dot ${toVal ? 'warn' : act.length ? 'on' : ''}"></i>Live board<em>${act.length}</em>${toVal ? `<b class="sx-nav-v">${toVal} to validate</b>` : ''}</button>
-      <button role="tab" data-supage="history" aria-selected="${page==='history'}">History<em>${takenN}</em>${openN ? `<b class="sx-nav-o">${openN} open</b>` : ''}</button>
+      <button role="tab" data-supage="history" aria-selected="${page==='history'}">History<em>${takenN}</em></button>
       <span class="sx-nav-sp"></span>
       ${[['plan','Alert plan'],['sim','Simulator'],['guide','How it works']].map(([k, l]) => `<button role="tab" class="sx-nav-s" data-supage="${k}" aria-selected="${page===k}">${l}</button>`).join('')}
     </nav>
     ${page==='live' ? `
-    <div class="sx-stats" role="tablist" aria-label="Stages">
-      ${SX_COLS.map(([k, t]) => `<button class="sx-stat s-${k}" role="tab" data-sustage="${k}" aria-selected="${stage===k}">
-        <span class="sx-stat-n">${cols[k].length}${newIn(k) ? `<em class="sx-stat-new">${newIn(k)} new</em>` : ''}</span><span class="sx-stat-t">${t}</span>
-        <span class="sx-stat-x">${k==='trade' ? (live.length ? `${liveR >= 0 ? '+' : ''}${fmt(liveR, 2)}R open` : 'nothing open') : k==='formed' ? (cols.formed.length ? 'waiting for price' : 'none waiting') : k==='validate' ? (toVal ? `${toVal} to check` : 'nothing to check') : (cols.forming.length ? 'watching' : 'no sweeps')}</span></button>`).join('')}
-      <div class="sx-stat s-month"><span class="sx-stat-n">${done.length ? `${netR >= 0 ? '+' : ''}${fmt(netR, 1)}R` : '0'}</span><span class="sx-stat-t">Last 30 days</span>
-        <span class="sx-stat-x">${done.length ? `${wins} of ${done.length} trades won` : 'no closed setup trades yet'}</span></div>
-    </div>
     <div class="sx-bar">
       <div class="seg" role="group" aria-label="Timeframe">${['all', ...suTfs(all)].map(t => `<button data-sutf="${t}" aria-pressed="${tf===t}">${t==='all' ? 'All timeframes' : esc(t)}</button>`).join('')}</div>
       <div class="sx-switches">
@@ -4220,12 +4326,16 @@ function renderSetups(){
         <label class="sx-sw" title="Setup trades close by themselves at the target (+2R) or the stop (−1R)"><input type="checkbox" id="suAutoClose" ${suAutoClose() ? 'checked' : ''}><i></i>Auto-close at TP / SL</label>
       </div>
     </div>
-    <div class="sx-board" data-stage="${stage}">
-      ${SX_COLS.map(([k, t, sub]) => `<section class="sx-col c-${k}" aria-label="${t}">
-        <header><b>${t}</b><span class="bn">${cols[k].length}</span><p>${sub}</p></header>
-        ${cols[k].length ? [...cols[k].filter(sxIsNew), ...cols[k].filter(x => !sxIsNew(x))].map(suCard).join('') : `<div class="sx-empty">${k==='forming' ? 'No sweep in the bias direction right now. New ones show up here as soon as the liquidity alert fires.' : k==='validate' ? 'When your fractal alert fires, the setup comes here so you can confirm or correct the liquidity and the fractal line.' : k==='formed' ? 'After you validate, the setup waits here for price to come back to the line.' : 'Trades appear here once price comes back to the line.'}</div>`}
-      </section>`).join('')}
-    </div>` : `
+    <div class="lv-tabs" role="tablist" aria-label="Stages">
+      <button role="tab" data-lvt="all" aria-selected="${lvt==='all'}">All<em>${act.length}</em></button>
+      ${LV_ORDER.map(k => `<button role="tab" class="t-${k}" data-lvt="${k}" aria-selected="${lvt===k}"><i></i>${LV_LBL[k][0]}<em>${cols[k].length}</em>${newIn(k) ? `<b>${newIn(k)} new</b>` : ''}${k==='trade' && live.length ? `<span class="${liveR >= 0 ? 'pos' : 'neg'}">${liveR >= 0 ? '+' : ''}${fmt(liveR, 2)}R</span>` : ''}</button>`).join('')}
+    </div>
+    <div class="lv">
+      ${LV_ORDER.filter(k => lvt==='all' ? cols[k].length : lvt===k).map(k => `<section class="lv-sec s-${k}">
+        <header><b>${LV_LBL[k][0]}</b><span class="bn">${cols[k].length}</span><p>${LV_LBL[k][1]}</p></header>
+        ${cols[k].length ? `<div class="lv-list">${[...cols[k].filter(sxIsNew), ...cols[k].filter(x => !sxIsNew(x))].map(lvRow).join('')}</div>` : `<div class="sx-empty">${LV_LBL[k][2]}</div>`}
+      </section>`).join('') || `<div class="sx-empty">Nothing live right now. Sweeps in the bias direction show up here as soon as the liquidity alert fires.</div>`}
+    </div>    </div>` : `
     <section class="sx-tools card">
       <div class="sx-tool">${tool==='history' ? sxHistory(all) : tool==='plan' ? alertPlan() : tool==='sim' ? simPanel() : sxGuide()}</div>
     </section>`}`;
@@ -4280,7 +4390,7 @@ function sxTicket(s){
 }
 function sxHistory(all){
   const H = S.su.hist, HT = S.su.htf || 'all';
-  const hist = all.filter(s => ['taken','skipped','expired','invalid','ignored'].includes(s.stage) && (H==='all' ? s.stage!=='ignored' : s.stage===H) && (HT==='all' || s.tf===HT));
+  const hist = all.filter(s => ['taken','skipped','expired','invalid','ignored'].includes(s.stage) && !suOpenTrade(s) && (H==='all' ? s.stage!=='ignored' : s.stage===H) && (HT==='all' || s.tf===HT));
   const d30 = Date.now() - 30*864e5, rec = all.filter(s => tms(s.startAt) >= d30 && !['ignored','deleted'].includes(s.stage));
   const formedN = rec.filter(s => s.bos).length, takenN = rec.filter(s => s.stage==='taken').length;
   const res = s => { const t = s.trade_id && S.trades.get(s.trade_id); return t?.result ? `<span class="sx-res ${t.result==='W' ? 'w' : t.result==='L' ? 'l' : ''}">${t.result==='W' ? 'Win' : t.result==='L' ? 'Loss' : esc(t.result)}${t.r_multiple!=null ? ` ${Number(t.r_multiple) > 0 ? '+' : ''}${fmt(Number(t.r_multiple), 1)}R` : ''}</span>` : t ? '<span class="sx-res">Open</span>' : ''; };
@@ -4288,7 +4398,7 @@ function sxHistory(all){
     <div class="sx-filters"><div class="chips">${[['all','All'],['taken','Taken'],['skipped','Skipped'],['invalid','Invalid'],['ignored','Against bias']].map(([k,l]) => `<button class="ch" data-suh="${k}" aria-pressed="${H===k}">${l}</button>`).join('')}</div>
       <div class="chips">${['all', ...suTfs(all)].map(t => `<button class="ch" data-suht="${t}" aria-pressed="${HT===t}">${t==='all' ? 'All TF' : esc(t)}</button>`).join('')}</div></div>
     ${H==='taken' && hist.length ? (() => { const tr = hist.map(x => S.trades.get(x.trade_id)).filter(Boolean), cl = tr.filter(x => x.result), w = cl.filter(x => x.result==='W').length, l = cl.filter(x => x.result==='L').length, nr = cl.reduce((a, x) => a + (Number(x.r_multiple) || 0), 0);
-      return `<div class="sxt-sum"><span>Trades <b>${tr.length}</b></span><span>Wins <b class="pos">${w}</b></span><span>Losses <b class="neg">${l}</b></span><span>Open <b>${tr.length - cl.length}</b></span><span>Win rate <b>${w + l ? Math.round(w/(w+l)*100) : 0}%</b></span><span>Net <b class="${nr > 0 ? 'pos' : nr < 0 ? 'neg' : ''}">${nr > 0 ? '+' : ''}${fmt(nr, 1)}R</b></span></div>`; })() : ''}
+      return `<div class="sxt-sum"><span>Trades <b>${tr.length}</b></span><span>Wins <b class="pos">${w}</b></span><span>Losses <b class="neg">${l}</b></span>${tr.length - cl.length ? `<span>No result yet <b>${tr.length - cl.length}</b></span>` : ''}<span>Win rate <b>${w + l ? Math.round(w/(w+l)*100) : 0}%</b></span><span>Net <b class="${nr > 0 ? 'pos' : nr < 0 ? 'neg' : ''}">${nr > 0 ? '+' : ''}${fmt(nr, 1)}R</b></span></div>`; })() : ''}
     ${hist.length ? `<div class="sx-hist sxt-grid">${hist.slice(0, 80).map(s => s.stage==='taken' ? sxTicket(s) : `<div class="sx-hr ${s.trade_id && S.trades.get(s.trade_id) ? 'has-trade' : ''}" ${s.trade_id && S.trades.get(s.trade_id) ? `data-suopen="${s.trade_id}" title="Open the trade"` : ''}>
         <span class="sx-hr-dir ${s.dir==='Long' ? 'pos' : s.dir==='Short' ? 'neg' : 'muted'}">${s.dir==='Long' ? '▲' : s.dir==='Short' ? '▼' : '•'}</span>
         <b class="sx-hr-p">${base(s.pair)}<em>${quote(s.pair)}</em></b><span class="tfl">${esc(s.tf)}</span>
@@ -4478,21 +4588,22 @@ function bindSetups(m, all){
     b.disabled = true; await saveSettingKey('su_valid', map); S.su.edit = null;
     renderMain(); toast(`${s.pair} ${s.tf} validated · liquidity ${lvl(liq)} · line ${lvl(line)}`);
   });
-  m.querySelectorAll('[data-suedit]').forEach(b => b.onclick = () => { S.su.edit = b.dataset.suedit; renderMain(); m.querySelector(`[data-valfor="${b.dataset.suedit}"] [data-vline]`)?.focus(); });
   m.querySelectorAll('[data-suvalx]').forEach(b => b.onclick = () => { S.su.edit = null; renderMain(); });
   m.querySelectorAll('[data-suseen]').forEach(b => b.onclick = async () => { const s = byKey.get(b.dataset.suseen); if(!s) return;
-    const card = b.closest('.sx'); card.classList.remove('is-new'); card.querySelector('.sx-new')?.remove(); await sxMarkSeen([s]); renderMain(); });
+    await sxMarkSeen([s]); renderMain(); });
   m.querySelector('#suAllSeen')?.addEventListener('click', async () => { await sxMarkSeen(all.filter(sxIsNew)); renderMain(); });
   m.querySelectorAll('[data-sutf]').forEach(b => b.onclick = () => { S.su.tf = b.dataset.sutf; renderMain(); });
   m.querySelectorAll('[data-sustage]').forEach(b => b.onclick = () => { S.su.stage = b.dataset.sustage; m.querySelector('.sx-board').dataset.stage = S.su.stage;
     m.querySelectorAll('[data-sustage]').forEach(x => x.setAttribute('aria-selected', x===b)); if(innerWidth > 900) m.querySelector('.sx-col.c-'+S.su.stage)?.scrollIntoView({ behavior:'smooth', block:'nearest' }); });
+  m.querySelectorAll('[data-lvt]').forEach(b => b.onclick = () => { S.su.lvt = b.dataset.lvt; ls.set('do_su_lvt', S.su.lvt); renderMain(); });
+  m.querySelectorAll('[data-suedit]').forEach(b => b.onclick = () => { S.su.edit = S.su.edit===b.dataset.suedit ? null : b.dataset.suedit; renderMain(); m.querySelector(`[data-valfor="${b.dataset.suedit}"] [data-vline]`)?.focus(); });
   m.querySelectorAll('[data-supage]').forEach(b => b.onclick = () => { S.su.page = b.dataset.supage; ls.set('do_su_page', S.su.page); renderMain(); window.scrollTo({ top:0 }); });
   m.querySelectorAll('[data-suh]').forEach(b => b.onclick = () => { S.su.hist = b.dataset.suh; ls.set('do_su_hist', S.su.hist); renderMain(); });
   m.querySelectorAll('[data-suht]').forEach(b => b.onclick = () => { S.su.htf = b.dataset.suht; renderMain(); });
   m.querySelectorAll('[data-sutrade]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openTradeModal(b.dataset.sutrade); });
   m.querySelectorAll('[data-suret]').forEach(b => b.onclick = async () => { if(await markSetup(b.dataset.suret, 'retest')) renderMain(); });
   m.querySelectorAll('[data-suskip]').forEach(b => b.onclick = () => {
-    const card = b.closest('.sx'); if(card.querySelector('.su-skip')) return;
+    const card = b.closest('.sx, .lvr'); if(card.querySelector('.su-skip')) return;
     card.insertAdjacentHTML('beforeend', `<div class="su-skip"><span class="lbl">Why skip?</span><div class="chips">${['No confirmation','News risk','Late / missed it','Not at the desk','Against my read','Other'].map(r => `<button class="ch" data-sr="${r}">${r}</button>`).join('')}</div></div>`);
     card.querySelectorAll('[data-sr]').forEach(x => x.onclick = async () => { if(await markSetup(b.dataset.suskip, 'skipped', { reason:x.dataset.sr })){ toast('Setup skipped'); renderMain(); } }); });
   m.querySelectorAll('[data-sutake]').forEach(b => b.onclick = async () => {
