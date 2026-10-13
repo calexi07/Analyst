@@ -1238,8 +1238,14 @@
   .trm-leg{ display:flex; flex-wrap:wrap; gap:6px 14px; margin-left:auto; font-size:12px; font-weight:700; color:var(--muted); }
   .trm-leg span::before{ content:''; display:inline-block; width:14px; height:0; border-top:2px solid var(--c); margin-right:6px; vertical-align:middle; }
   .trm-leg .lq{ --c:var(--amber); } .trm-leg .lq::before, .trm-leg .fr::before{ border-top-style:dashed; } .trm-leg .fr{ --c:var(--info); }
-  .trm-leg .en{ --c:var(--accent); } .trm-leg .sl{ --c:var(--neg); } .trm-leg .tp{ --c:var(--pos); }
-  .trm-cv{ position:relative; flex:1; min-height:440px; height:min(62vh,600px); border-radius:12px; border:1px solid var(--line); overflow:hidden; background:var(--surface-2); }
+  .trm-leg .sl{ --c:var(--neg); } .trm-leg .tp{ --c:var(--pos); }
+  .trm-leg .sl::before, .trm-leg .tp::before{ height:9px; border:1px solid var(--c); background:color-mix(in srgb,var(--c) 22%,transparent); border-radius:2px; }
+  .tjc .tl-top{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; } .tjc .tl-top h4{ margin-right:auto; }
+  .tjc .seg button{ padding:5px 10px; font-size:12px; }
+  .tjc-cv{ min-height:360px; height:380px; margin-top:8px; }
+  .tjc-hint{ margin:6px 0 0; font-size:11.5px; font-weight:600; color:var(--muted); }
+  .trm-cv{ position:relative; flex:1; min-height:440px; height:min(62vh,600px); border-radius:14px; border:1px solid var(--line); overflow:hidden;
+           background:radial-gradient(120% 90% at 50% 0%, color-mix(in srgb,var(--accent) 5%,var(--surface-2)), var(--surface-2) 60%), var(--surface-2); box-shadow:inset 0 1px 0 rgba(255,255,255,.04); }
   .trm-cmsg{ position:absolute; inset:0; display:grid; place-items:center; margin:0; padding:20px; text-align:center; font-size:13px; font-weight:600; color:var(--muted); }
   .trm-grid{ display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:0; min-height:0; overflow:auto; flex:1; }
   .trm-col{ display:flex; flex-direction:column; gap:0; min-width:0; }
@@ -4065,13 +4071,18 @@ function tradeShotsHtml(t){
     <div class="tl-shots">${sh.map((x, i) => `<a class="tl-shot trs" href="${esc(x.u)}" target="_blank" rel="noopener"><img src="${esc(x.img)}" alt="Trade chart ${i+1} · ${esc(t.pair)}" loading="lazy" onerror="this.closest('.tl-shot').remove()"><span>Trade${sh.length > 1 ? ' '+(i+1) : ''}</span></a>`).join('')}</div></div>`;
 }
 /* ---- trade chart (TradingView Lightweight Charts, loaded only when the Chart tab opens) ---- */
-let LWC_P = null; const TCH = { chart:null, seq:0 };
+let LWC_P = null; const TCH = new Set();   /* live charts, removed once their element leaves the page */
 const loadLWC = () => LWC_P ||= new Promise((res, rej) => {
   if(window.LightweightCharts) return res(window.LightweightCharts);
   const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js';
   sc.onload = () => res(window.LightweightCharts); sc.onerror = () => { LWC_P = null; rej(new Error('The chart library could not be loaded')); }; document.head.appendChild(sc); });
-async function tradeChart(el, t, su, tf){
-  const my = ++TCH.seq; TCH.chart?.remove(); TCH.chart = null;
+const dropChart = el => { if(el?.__ch){ el.__ch.remove(); TCH.delete(el.__ch); el.__ch = null; } };
+/* the setup a trade came from (for the liquidity and the fractal line) */
+function setupOfTrade(id){ const mk = [...S.setupMarks.values()].find(m => m.trade_id===id); return mk ? deriveSetups().find(x => x.key===mk.setup_key) || null : null; }
+const rgba = (c, a) => { const m = /^#?([0-9a-f]{6})$/i.exec(String(c).trim()); if(!m) return c; const n = parseInt(m[1], 16); return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`; };
+async function tradeChart(el, t, su, tf, onTf = null, tried = []){
+  TCH.forEach(ch => { if(!ch.__el?.isConnected){ ch.remove(); TCH.delete(ch); } });
+  const my = el.__seq = (el.__seq || 0) + 1; dropChart(el);
   el.innerHTML = '<p class="trm-cmsg">Loading the chart…</p>';
   const L = t.direction==='Long', len = TF_MS[tf] || 36e5;
   const entryMs = t.entry_time ? new Date(`${t.day}T${t.entry_time}`).getTime() : null;
@@ -4080,7 +4091,7 @@ async function tradeChart(el, t, su, tf){
   const brkMs = su?.bos ? (su.bos.candle ? su.bos.candle.t : candleOpen(su.bos.at, su.tf)) : null;
   const first = Math.min(...[liqMs, brkMs, entryMs, new Date(`${t.day}T00:00`).getTime()].filter(x => x!=null));
   const last = exitMs ?? Date.now();
-  const from = first - 30*len, to = last + 15*len;
+  const from = first - 40*len, to = last + 14*len;
   let rows = [];
   try{
     const LW = await loadLWC();
@@ -4088,46 +4099,90 @@ async function tradeChart(el, t, su, tf){
       const { data, error } = await sb.from('do_candles').select('pair,tf,t,o,h,l,c').eq('pair', t.pair).eq('tf', tf).gte('t', new Date(from).toISOString()).order('t').range(i*1000, i*1000 + 999);
       if(error) throw error; rows.push(...(data || [])); if(!data || data.length < 1000) break;
     }
-    if(my!==TCH.seq) return;
+    if(my!==el.__seq) return;
     rows = rows.filter(c => c.pair===t.pair && c.tf===tf).map(c => ({ t:tms(c.t), o:Number(c.o), h:Number(c.h), l:Number(c.l), c:Number(c.c) }))
       .filter(c => c.t >= from && c.t <= to && [c.o, c.h, c.l, c.c].every(isFinite)).sort((a, b) => a.t - b.t);
     rows = rows.filter((c, i) => !i || c.t!==rows[i-1].t);
+    if(rows.length < 3 && onTf){   /* nothing on this timeframe → the next one that has candles */
+      const next = ['1H','15m','4H','1m'].find(f => f!==tf && !tried.includes(f));
+      if(next){ onTf(next); return tradeChart(el, t, su, next, onTf, [...tried, tf]); }
+    }
     if(rows.length < 3){ el.innerHTML = `<p class="trm-cmsg">No ${tf} candles for this trade's dates.${['1m','15m'].includes(tf) ? ` The heartbeat keeps ${tf} candles for 24 hours only — try 1H or 4H.` : ''}</p>`; return; }
     el.innerHTML = '';
     const sh = ms => Math.floor((ms - new Date(ms).getTimezoneOffset()*6e4) / 1000);   /* the chart shows Romania time */
-    const barAt = ms => { if(ms==null) return null; let b = null; for(const c of rows){ if(c.t <= ms) b = c; else break; } return b ? sh(b.t) : null; };
-    const css = n => cssv(n) || '#888';
-    const ch = LW.createChart(el, { autoSize:true, layout:{ background:{ type:'solid', color:'transparent' }, textColor:css('--muted'), fontFamily:'inherit' },
-      grid:{ vertLines:{ color:'rgba(128,128,160,.08)' }, horzLines:{ color:'rgba(128,128,160,.08)' } },
-      rightPriceScale:{ borderVisible:false }, timeScale:{ borderVisible:false, timeVisible:true, secondsVisible:false }, crosshair:{ mode:0 },
-      localization:{ locale:'en-GB', dateFormat:'dd MMM \'yy' } });
-    TCH.chart = ch;
-    const dg = t.pair.includes('JPY') ? 3 : t.pair.startsWith('XAU') ? 2 : 5;
-    const cs = ch.addCandlestickSeries({ upColor:css('--pos'), downColor:css('--neg'), borderVisible:false, wickUpColor:css('--pos'), wickDownColor:css('--neg'),
-      priceFormat:{ type:'price', precision:dg, minMove:1/10**dg } });
+    const idxAt = ms => { if(ms==null) return -1; let b = -1; for(let i = 0; i < rows.length; i++){ if(rows[i].t <= ms) b = i; else break; } return b; };
+    const barAt = ms => { const i = idxAt(ms); return i < 0 ? null : sh(rows[i].t); };
+    const css = n => cssv(n) || '#888', POS = css('--pos'), NEG = css('--neg'), MUT = css('--muted');
+    const dg = t.pair.includes('JPY') ? 3 : t.pair.startsWith('XAU') ? 2 : 5, pf = { type:'price', precision:dg, minMove:1/10**dg };
+    const ch = LW.createChart(el, { autoSize:true,
+      layout:{ background:{ type:'solid', color:'transparent' }, textColor:MUT, fontFamily:'Inter, system-ui, sans-serif', fontSize:11 },
+      grid:{ vertLines:{ visible:false }, horzLines:{ color:'rgba(140,140,190,.07)' } },
+      rightPriceScale:{ borderVisible:false, scaleMargins:{ top:.12, bottom:.1 } },
+      timeScale:{ borderVisible:false, timeVisible:true, secondsVisible:false, rightOffset:4, barSpacing:9 },
+      crosshair:{ mode:0, vertLine:{ color:'rgba(160,160,210,.35)', width:1, style:3, labelBackgroundColor:'#2a2b55' }, horzLine:{ color:'rgba(160,160,210,.35)', width:1, style:3, labelBackgroundColor:'#2a2b55' } },
+      watermark:{ visible:true, text:`${t.pair} · ${tf}`, fontSize:42, fontStyle:'800', color:'rgba(150,150,200,.06)', horzAlign:'center', vertAlign:'center' },
+      localization:{ locale:'en-GB', dateFormat:"dd MMM 'yy" } });
+    ch.__el = el; el.__ch = ch; TCH.add(ch);
+    const cs = ch.addCandlestickSeries({ upColor:rgba(POS, .9), downColor:rgba(NEG, .9), borderVisible:false, wickUpColor:rgba(POS, .55), wickDownColor:rgba(NEG, .55),
+      priceLineVisible:false, lastValueVisible:false, priceFormat:pf });
     cs.setData(rows.map(c => ({ time:sh(c.t), open:c.o, high:c.h, low:c.l, close:c.c })));
     const E = numOr(t.entry_price), SL = numOr(t.sl), TP = numOr(t.tp);
-    /* position boxes: entry → TP (green) and entry → SL (red), from the entry candle to the exit candle */
+    /* long / short position tool: entry → TP (green) and entry → SL (red), from the entry candle to the exit candle */
     const eb = barAt(entryMs), xb = barAt(exitMs ?? rows[rows.length-1].t);
     if(E!=null && eb!=null && xb!=null){
-      const span = rows.filter(c => sh(c.t) >= eb && sh(c.t) <= Math.max(eb, xb)).map(c => sh(c.t));
-      const box = (v, col) => { if(v==null) return; const bs = ch.addBaselineSeries({ baseValue:{ type:'price', price:E }, topLineColor:'transparent', bottomLineColor:'transparent', lineWidth:1,
-          topFillColor1:col, topFillColor2:col, bottomFillColor1:col, bottomFillColor2:col, priceLineVisible:false, lastValueVisible:false, crosshairMarkerVisible:false, priceFormat:{ type:'price', precision:dg, minMove:1/10**dg } });
-        bs.setData(span.map(x => ({ time:x, value:v }))); };
-      box(TP, 'rgba(61,242,176,.16)'); box(SL, 'rgba(255,92,138,.16)');
+      const span = rows.map(c => sh(c.t)).filter(x => x >= eb && x <= Math.max(eb, xb));
+      if(span.length===1) span.push(span[0]);   /* entry and exit in the same candle */
+      const box = (v, col) => { if(v==null) return; const bs = ch.addBaselineSeries({ baseValue:{ type:'price', price:E }, lineWidth:1,
+          topLineColor:rgba(col, .75), bottomLineColor:rgba(col, .75), topFillColor1:rgba(col, .2), topFillColor2:rgba(col, .2), bottomFillColor1:rgba(col, .2), bottomFillColor2:rgba(col, .2),
+          priceLineVisible:false, lastValueVisible:false, crosshairMarkerVisible:false, priceFormat:pf });
+        bs.setData([...new Set(span)].map(x => ({ time:x, value:v }))); };
+      box(TP, POS); box(SL, NEG);
     }
-    const line = (price, color, title, style) => price!=null && cs.createPriceLine({ price:Number(price), color, lineWidth:1, lineStyle:style, axisLabelVisible:true, title });
-    line(E, css('--accent'), 'Entry', 0); line(SL, css('--neg'), 'SL', 0); line(TP, css('--pos'), 'TP', 0);
-    if(su?.liq?.level!=null) line(su.liq.level, css('--amber'), 'Liquidity', 2);
-    const fr = su?.line ?? su?.bos?.level; if(fr!=null && Number(fr)!==E) line(fr, css('--info'), 'Fractal', 2);
-    const mk = [];
-    if(barAt(liqMs)) mk.push({ time:barAt(liqMs), position:L ? 'belowBar' : 'aboveBar', color:css('--amber'), shape:'circle', text:'Liquidity' });
-    if(barAt(brkMs)) mk.push({ time:barAt(brkMs), position:L ? 'aboveBar' : 'belowBar', color:css('--info'), shape:L ? 'arrowUp' : 'arrowDown', text:'Break' });
-    if(eb) mk.push({ time:eb, position:L ? 'belowBar' : 'aboveBar', color:css('--accent'), shape:L ? 'arrowUp' : 'arrowDown', text:'Entry' });
-    if(exitMs && barAt(exitMs)) mk.push({ time:barAt(exitMs), position:t.result==='W' ? (L ? 'aboveBar' : 'belowBar') : (L ? 'belowBar' : 'aboveBar'), color:t.result==='W' ? css('--pos') : css('--neg'), shape:'square', text:t.result==='W' ? `TP ${t.r_multiple!=null ? '+'+t.r_multiple+'R' : ''}` : t.result==='L' ? 'SL −1R' : 'Exit' });
+    /* liquidity: from the high / low that made it to the candle that swept it; fractal: from the pivot to the break */
+    const tol = pipSize(t.pair) * 2;
+    const seg = (price, endIdx, pick, color, style) => {
+      if(price==null || endIdx < 0) return; const P = Number(price); let st = -1;
+      for(let j = endIdx - 1; j >= Math.max(0, endIdx - 200); j--){ const v = pick(rows[j]); if(Math.abs(v - P) <= tol){ st = j; break; } if(L ? (pick===lowOf ? v < P - tol : v > P + tol) : (pick===highOf ? v > P + tol : v < P - tol)) break; }
+      if(st < 0) st = Math.max(0, endIdx - 12);
+      const ls = ch.addLineSeries({ color, lineWidth:2, lineStyle:style, priceLineVisible:false, lastValueVisible:false, crosshairMarkerVisible:false, priceFormat:pf });
+      ls.setData([{ time:sh(rows[st].t), value:P }, { time:sh(rows[Math.max(endIdx, st + 1 < rows.length ? st + 1 : st)].t), value:P }].filter((x, k, a) => !k || x.time > a[0].time));
+    };
+    const lowOf = r => r.l, highOf = r => r.h;
+    if(su?.liq?.level!=null) seg(su.liq.level, idxAt(liqMs), L ? lowOf : highOf, css('--amber'), 0);
+    const fr = su?.line ?? su?.bos?.level; if(fr!=null) seg(fr, idxAt(brkMs), L ? highOf : lowOf, css('--info'), 2);
+    const mk = [], m = (time, position, color, shape, text) => time && mk.push({ time, position, color, shape, text, size:0.55 });
+    m(barAt(liqMs), L ? 'belowBar' : 'aboveBar', css('--amber'), 'circle', 'Liq');
+    m(barAt(brkMs), L ? 'aboveBar' : 'belowBar', css('--info'), L ? 'arrowUp' : 'arrowDown', 'Break');
+    m(eb, L ? 'belowBar' : 'aboveBar', css('--ink'), L ? 'arrowUp' : 'arrowDown', 'Entry');
+    if(exitMs) m(barAt(exitMs), t.result==='W' ? (L ? 'aboveBar' : 'belowBar') : (L ? 'belowBar' : 'aboveBar'), t.result==='W' ? POS : NEG, 'circle', t.result==='W' ? `TP${t.r_multiple!=null ? ' +'+t.r_multiple+'R' : ''}` : t.result==='L' ? 'SL −1R' : 'Exit');
     cs.setMarkers(mk.sort((a, b) => a.time - b.time));
     ch.timeScale().fitContent();
-  }catch(e){ if(my===TCH.seq) el.innerHTML = `<p class="trm-cmsg">${esc(e.message || String(e))}</p>`; }
+  }catch(e){ if(my===el.__seq) el.innerHTML = `<p class="trm-cmsg">${esc(e.message || String(e))}</p>`; }
+}
+/* chart block for the Trades page: the automatic chart, or your TradingView screenshots when you added some */
+function tradeChartBlock(e){
+  const t = S.trades.get(e.id) || e, sh = tradeShots(t), tf0 = ['1H','4H'].includes(t.setup_tf) ? t.setup_tf : '1H';
+  const mode = (S.tjChart || {})[t.id] || (sh.length ? 'tv' : 'auto');
+  return `<div class="tl-wrap tr-shots-wrap tjc" data-tjc="${t.id}">
+    <div class="tl-top"><h4>📈 Trade chart</h4>
+      <div class="seg tjc-mode" role="group">${sh.length ? `<button data-tjcm="tv" aria-pressed="${mode==='tv'}">TradingView · ${sh.length}</button>` : ''}<button data-tjcm="auto" aria-pressed="${mode==='auto'}">Auto chart</button></div>
+      ${mode==='auto' ? `<div class="seg tjc-tf" role="group">${['1m','15m','1H','4H'].map(f => `<button data-tjctf="${f}" aria-pressed="${f===tf0}">${f}</button>`).join('')}</div>` : ''}</div>
+    ${mode==='tv' ? `<div class="tl-shots">${sh.map((x, i) => `<a class="tl-shot trs" href="${esc(x.u)}" target="_blank" rel="noopener"><img src="${esc(x.img)}" alt="Trade chart ${i+1} · ${esc(t.pair)}" loading="lazy" onerror="this.closest('.tl-shot').remove()"><span>TradingView${sh.length > 1 ? ' '+(i+1) : ''}</span></a>`).join('')}</div>`
+      : `<div class="trm-cv tjc-cv" data-tf="${tf0}"><p class="trm-cmsg">Loading the chart…</p></div>
+         <p class="tjc-hint">Automatic chart from the heartbeat candles. Prefer your own? Add a TradingView snapshot link in <b>Edit trade</b> and it shows here instead.</p>`}
+  </div>`;
+}
+function bindTradeCharts(root){
+  root.querySelectorAll('[data-tjc]').forEach(box => {
+    const id = box.dataset.tjc, t = S.trades.get(id); if(!t) return;
+    box.querySelectorAll('[data-tjcm]').forEach(b => b.onclick = ev => { ev.stopPropagation(); S.tjChart = { ...(S.tjChart || {}), [id]:b.dataset.tjcm }; renderMain(); });
+    const cv = box.querySelector('.tjc-cv'); if(!cv) return;
+    const su = setupOfTrade(id), mark = f => box.querySelectorAll('[data-tjctf]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.tjctf===f)));
+    const draw = (f, fb) => { mark(f); tradeChart(cv, t, su, f, fb ? mark : null); };
+    box.querySelectorAll('[data-tjctf]').forEach(b => b.onclick = ev => { ev.stopPropagation(); draw(b.dataset.tjctf, false); });
+    box.onclick = ev => ev.stopPropagation();
+    draw(cv.dataset.tf, true);
+  });
 }
 /* ---- trade popup: fill in / edit a trade without leaving the page ---- */
 const trDlg = document.getElementById('trDlg');
@@ -4148,10 +4203,10 @@ function openTradeModal(id){
       <button class="trm-x" data-trx aria-label="Close">×</button>
     </header>
     ${su ? `<div class="trm-flow">${sxFlow(su, t)}</div>` : ''}
-    <div class="trm-tabs" role="tablist"><button role="tab" data-trtab="details" aria-selected="true">Details</button><button role="tab" data-trtab="chart" aria-selected="false">📈 Chart <span class="beta">test</span></button></div>
+    <div class="trm-tabs" role="tablist"><button role="tab" data-trtab="details" aria-selected="true">Details</button><button role="tab" data-trtab="chart" aria-selected="false">📈 Chart</button></div>
     <div class="trm-chart" hidden>
       <div class="trm-ctb"><div class="seg" role="group" aria-label="Chart timeframe">${['1m','15m','1H','4H'].map(f => `<button data-trtf="${f}">${f}</button>`).join('')}</div>
-        <div class="trm-leg"><span class="lq">Liquidity</span><span class="fr">Fractal</span><span class="en">Entry</span><span class="sl">SL</span><span class="tp">TP</span></div></div>
+        <div class="trm-leg"><span class="lq">Liquidity</span><span class="fr">Fractal</span><span class="sl">Risk</span><span class="tp">Reward</span></div></div>
       <div class="trm-cv" id="trmCv"><p class="trm-cmsg">Loading the chart…</p></div>
     </div>
     <div class="trm-grid">
@@ -4223,10 +4278,12 @@ function openTradeModal(id){
     trDlg.querySelector('.trm-grid').hidden = k!=='details'; trDlg.querySelector('.trm-chart').hidden = k!=='chart';
     if(k==='chart') drawTf(ctf); };
   const drawTf = f => { ctf = f; trDlg.querySelectorAll('[data-trtf]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.trtf===f)));
-    tradeChart(trDlg.querySelector('#trmCv'), t, su, f); };
+    tradeChart(trDlg.querySelector('#trmCv'), t, su, f, auto ? mark : null); auto = false; };
+  const mark = f => { ctf = f; trDlg.querySelectorAll('[data-trtf]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.trtf===f))); };
+  let auto = true;
   trDlg.querySelectorAll('[data-trtab]').forEach(b => b.onclick = () => showTab(b.dataset.trtab));
   trDlg.querySelectorAll('[data-trtf]').forEach(b => b.onclick = () => drawTf(b.dataset.trtf));
-  trDlg.addEventListener('close', () => { TCH.chart?.remove(); TCH.chart = null; }, { once:true });
+  trDlg.addEventListener('close', () => dropChart(trDlg.querySelector('#trmCv')), { once:true });
   if(!trDlg.open) trDlg.showModal();
   trDlg.querySelector('.trm-grid').scrollTop = 0;
 }
@@ -5450,6 +5507,7 @@ function renderTrades(){
   document.getElementById('tjReset')?.addEventListener('click', () => { Object.assign(S.tj, { dir:'all', res:'all', pair:'all', acct:'all', tf:'all', sess:'all', tag:'all', q:'' }); renderMain(); });
   document.querySelectorAll('[data-tjpair]').forEach(b => b.onclick = () => set('pair', b.dataset.tjpair));
   document.querySelectorAll('[data-tjgo]').forEach(b => b.onclick = ev => { ev.stopPropagation(); const [p, d] = b.dataset.tjgo.split('|'); goTo(p, { type:'day', day:d }); });
+  bindTradeCharts(document.getElementById('main'));
   document.querySelectorAll('[data-tjedit]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openTradeModal(b.dataset.tjedit); });
   document.querySelectorAll('[data-tjshare]').forEach(b => b.onclick = ev => { ev.stopPropagation(); const t = tjAll().find(x => x.id===b.dataset.tjshare); if(t) openTradeShare(t); });
   document.querySelectorAll('[data-tjrow]').forEach(r => r.onclick = ev => { if(ev.target.closest('a,button,[data-tjgo],[data-tjshare]')) return; S.tj.open = S.tj.open===r.dataset.tjrow ? null : r.dataset.tjrow; renderMain(); });
@@ -5507,7 +5565,7 @@ function tjRow(e){
       ${e._inferred ? '<p class="hint" style="margin:0">⚠️ Result not set in the journal — counted as <b>' + ({W:'Win',L:'Loss',BE:'Break-even'}[e.result]) + '</b> from its P/L. Open the entry day and pick W/L to make it official.</p>' : ''}
       ${(e.tags||[]).length ? tagPills(e.tags) : ''}
       ${e.notes ? `<div class="tj-tnotes"><span class="kick">Trade notes</span><p>${esc(e.notes)}</p></div>` : ''}
-      ${tradeShotsHtml(e)}
+      ${tradeChartBlock(e)}
       ${tjTimeline(e)}
       <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap"><button class="btn" data-tjshare="${e.id}">📣 Share to Discord</button><button class="btn" data-tjedit="${e.id}">✎ Edit trade</button><button class="btn btn-primary" data-tjgo="${e.pair}|${e.day}" data-tjid="${e.id}">Open in journal ›</button></div>
     </div>` : ''}
