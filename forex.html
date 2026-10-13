@@ -3924,6 +3924,13 @@ function deriveSetups(){
         .forEach(x => { x.stage = 'invalid'; x.why = `Body closed ${x.dir==='Long' ? 'below' : 'above'} the swept level${g.price!=null ? ' ('+lvl(g.price)+')' : ''}`; x.endAt = g.at; });
     } else if(g.kind==='candle'){
       const c = g.cnd, len = TF_MS[c.tf];
+      /* a candle of the setup's timeframe closes its WHOLE body beyond the swept level → the liquidity is gone, the setup is invalid */
+      live.filter(x => ['forming','validate','formed','retest'].includes(x.stage) && x.tf===c.tf && c.t >= tms(x.liq.at) - 60e3 && c.o!=null && c.c!=null && !isRoll(c.t, c.tf)).forEach(x => {
+        const Lv = x.liq.level; if(Lv==null) return;
+        if(x.dir==='Long' ? Math.max(c.o, c.c) < Number(Lv) : Math.min(c.o, c.c) > Number(Lv)){
+          x.stage = 'invalid'; x.endAt = g.at; x.why = `The ${c.tf} candle at ${hhmm(new Date(c.t)).slice(-5)} closed its whole body ${x.dir==='Long' ? 'below' : 'above'} the liquidity ${lvl(Lv)}`;
+        }
+      });
       /* while waiting for the break: if price runs further past the sweep (wick only, no body close beyond the level), that extreme becomes the stop */
       live.filter(x => x.stage==='forming' && x.tf===c.tf && c.t >= tms(x.startAt) - 60e3 && c.h!=null && c.l!=null && !isRoll(c.t, c.tf)).forEach(x => {
         const ext = x.liq.extreme ?? x.liq.level; if(ext==null) return;
