@@ -1229,6 +1229,18 @@
   .trm-x{ grid-area:x; width:38px; height:38px; border-radius:12px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-size:22px; line-height:1; cursor:pointer; }
   .trm-x:hover{ border-color:var(--neg); color:var(--neg); }
   .trm-flow{ padding:14px 22px 12px; border-bottom:1px solid var(--line); background:var(--surface); }
+  .trm-tabs{ display:flex; gap:4px; padding:8px 18px 0; border-bottom:1px solid var(--line); background:var(--surface); }
+  .trm-tabs button{ padding:8px 14px; border:0; border-bottom:2px solid transparent; background:none; color:var(--muted); font-weight:800; font-size:13.5px; cursor:pointer; margin-bottom:-1px; }
+  .trm-tabs button[aria-selected="true"]{ color:var(--ink); border-bottom-color:var(--accent); }
+  .trm-chart{ display:flex; flex-direction:column; flex:1; min-height:0; padding:10px 14px 12px; gap:8px; }
+  .trm-chart[hidden]{ display:none; } .trm-grid[hidden]{ display:none; }
+  .trm-ctb{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; }
+  .trm-leg{ display:flex; flex-wrap:wrap; gap:6px 14px; margin-left:auto; font-size:12px; font-weight:700; color:var(--muted); }
+  .trm-leg span::before{ content:''; display:inline-block; width:14px; height:0; border-top:2px solid var(--c); margin-right:6px; vertical-align:middle; }
+  .trm-leg .lq{ --c:var(--amber); } .trm-leg .lq::before, .trm-leg .fr::before{ border-top-style:dashed; } .trm-leg .fr{ --c:var(--info); }
+  .trm-leg .en{ --c:var(--accent); } .trm-leg .sl{ --c:var(--neg); } .trm-leg .tp{ --c:var(--pos); }
+  .trm-cv{ position:relative; flex:1; min-height:440px; height:min(62vh,600px); border-radius:12px; border:1px solid var(--line); overflow:hidden; background:var(--surface-2); }
+  .trm-cmsg{ position:absolute; inset:0; display:grid; place-items:center; margin:0; padding:20px; text-align:center; font-size:13px; font-weight:600; color:var(--muted); }
   .trm-grid{ display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:0; min-height:0; overflow:auto; flex:1; }
   .trm-col{ display:flex; flex-direction:column; gap:0; min-width:0; }
   .trm-col + .trm-col{ border-left:1px solid var(--line); background:color-mix(in srgb,var(--surface-2) 50%,var(--surface)); }
@@ -4052,6 +4064,71 @@ function tradeShotsHtml(t){
   return `<div class="tl-wrap tr-shots-wrap"><div class="tl-top"><h4>📸 Trade charts</h4><span class="muted">your screenshots of this trade · ${sh.length}</span></div>
     <div class="tl-shots">${sh.map((x, i) => `<a class="tl-shot trs" href="${esc(x.u)}" target="_blank" rel="noopener"><img src="${esc(x.img)}" alt="Trade chart ${i+1} · ${esc(t.pair)}" loading="lazy" onerror="this.closest('.tl-shot').remove()"><span>Trade${sh.length > 1 ? ' '+(i+1) : ''}</span></a>`).join('')}</div></div>`;
 }
+/* ---- trade chart (TradingView Lightweight Charts, loaded only when the Chart tab opens) ---- */
+let LWC_P = null; const TCH = { chart:null, seq:0 };
+const loadLWC = () => LWC_P ||= new Promise((res, rej) => {
+  if(window.LightweightCharts) return res(window.LightweightCharts);
+  const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js';
+  sc.onload = () => res(window.LightweightCharts); sc.onerror = () => { LWC_P = null; rej(new Error('The chart library could not be loaded')); }; document.head.appendChild(sc); });
+async function tradeChart(el, t, su, tf){
+  const my = ++TCH.seq; TCH.chart?.remove(); TCH.chart = null;
+  el.innerHTML = '<p class="trm-cmsg">Loading the chart…</p>';
+  const L = t.direction==='Long', len = TF_MS[tf] || 36e5;
+  const entryMs = t.entry_time ? new Date(`${t.day}T${t.entry_time}`).getTime() : null;
+  const exitMs = t.result && t.exit_date ? new Date(`${t.exit_date}T${t.exit_time || '23:59'}`).getTime() : null;
+  const liqMs = su?.liq?.at ? candleOpen(su.liq.at, su.liq.tf || su.tf) : null;
+  const brkMs = su?.bos ? (su.bos.candle ? su.bos.candle.t : candleOpen(su.bos.at, su.tf)) : null;
+  const first = Math.min(...[liqMs, brkMs, entryMs, new Date(`${t.day}T00:00`).getTime()].filter(x => x!=null));
+  const last = exitMs ?? Date.now();
+  const from = first - 30*len, to = last + 15*len;
+  let rows = [];
+  try{
+    const LW = await loadLWC();
+    for(let i = 0; i < 20; i++){
+      const { data, error } = await sb.from('do_candles').select('pair,tf,t,o,h,l,c').eq('pair', t.pair).eq('tf', tf).gte('t', new Date(from).toISOString()).order('t').range(i*1000, i*1000 + 999);
+      if(error) throw error; rows.push(...(data || [])); if(!data || data.length < 1000) break;
+    }
+    if(my!==TCH.seq) return;
+    rows = rows.filter(c => c.pair===t.pair && c.tf===tf).map(c => ({ t:tms(c.t), o:Number(c.o), h:Number(c.h), l:Number(c.l), c:Number(c.c) }))
+      .filter(c => c.t >= from && c.t <= to && [c.o, c.h, c.l, c.c].every(isFinite)).sort((a, b) => a.t - b.t);
+    rows = rows.filter((c, i) => !i || c.t!==rows[i-1].t);
+    if(rows.length < 3){ el.innerHTML = `<p class="trm-cmsg">No ${tf} candles for this trade's dates.${['1m','15m'].includes(tf) ? ` The heartbeat keeps ${tf} candles for 24 hours only — try 1H or 4H.` : ''}</p>`; return; }
+    el.innerHTML = '';
+    const sh = ms => Math.floor((ms - new Date(ms).getTimezoneOffset()*6e4) / 1000);   /* the chart shows Romania time */
+    const barAt = ms => { if(ms==null) return null; let b = null; for(const c of rows){ if(c.t <= ms) b = c; else break; } return b ? sh(b.t) : null; };
+    const css = n => cssv(n) || '#888';
+    const ch = LW.createChart(el, { autoSize:true, layout:{ background:{ type:'solid', color:'transparent' }, textColor:css('--muted'), fontFamily:'inherit' },
+      grid:{ vertLines:{ color:'rgba(128,128,160,.08)' }, horzLines:{ color:'rgba(128,128,160,.08)' } },
+      rightPriceScale:{ borderVisible:false }, timeScale:{ borderVisible:false, timeVisible:true, secondsVisible:false }, crosshair:{ mode:0 },
+      localization:{ locale:'en-GB', dateFormat:'dd MMM \'yy' } });
+    TCH.chart = ch;
+    const dg = t.pair.includes('JPY') ? 3 : t.pair.startsWith('XAU') ? 2 : 5;
+    const cs = ch.addCandlestickSeries({ upColor:css('--pos'), downColor:css('--neg'), borderVisible:false, wickUpColor:css('--pos'), wickDownColor:css('--neg'),
+      priceFormat:{ type:'price', precision:dg, minMove:1/10**dg } });
+    cs.setData(rows.map(c => ({ time:sh(c.t), open:c.o, high:c.h, low:c.l, close:c.c })));
+    const E = numOr(t.entry_price), SL = numOr(t.sl), TP = numOr(t.tp);
+    /* position boxes: entry → TP (green) and entry → SL (red), from the entry candle to the exit candle */
+    const eb = barAt(entryMs), xb = barAt(exitMs ?? rows[rows.length-1].t);
+    if(E!=null && eb!=null && xb!=null){
+      const span = rows.filter(c => sh(c.t) >= eb && sh(c.t) <= Math.max(eb, xb)).map(c => sh(c.t));
+      const box = (v, col) => { if(v==null) return; const bs = ch.addBaselineSeries({ baseValue:{ type:'price', price:E }, topLineColor:'transparent', bottomLineColor:'transparent', lineWidth:1,
+          topFillColor1:col, topFillColor2:col, bottomFillColor1:col, bottomFillColor2:col, priceLineVisible:false, lastValueVisible:false, crosshairMarkerVisible:false, priceFormat:{ type:'price', precision:dg, minMove:1/10**dg } });
+        bs.setData(span.map(x => ({ time:x, value:v }))); };
+      box(TP, 'rgba(61,242,176,.16)'); box(SL, 'rgba(255,92,138,.16)');
+    }
+    const line = (price, color, title, style) => price!=null && cs.createPriceLine({ price:Number(price), color, lineWidth:1, lineStyle:style, axisLabelVisible:true, title });
+    line(E, css('--accent'), 'Entry', 0); line(SL, css('--neg'), 'SL', 0); line(TP, css('--pos'), 'TP', 0);
+    if(su?.liq?.level!=null) line(su.liq.level, css('--amber'), 'Liquidity', 2);
+    const fr = su?.line ?? su?.bos?.level; if(fr!=null && Number(fr)!==E) line(fr, css('--info'), 'Fractal', 2);
+    const mk = [];
+    if(barAt(liqMs)) mk.push({ time:barAt(liqMs), position:L ? 'belowBar' : 'aboveBar', color:css('--amber'), shape:'circle', text:'Liquidity' });
+    if(barAt(brkMs)) mk.push({ time:barAt(brkMs), position:L ? 'aboveBar' : 'belowBar', color:css('--info'), shape:L ? 'arrowUp' : 'arrowDown', text:'Break' });
+    if(eb) mk.push({ time:eb, position:L ? 'belowBar' : 'aboveBar', color:css('--accent'), shape:L ? 'arrowUp' : 'arrowDown', text:'Entry' });
+    if(exitMs && barAt(exitMs)) mk.push({ time:barAt(exitMs), position:t.result==='W' ? (L ? 'aboveBar' : 'belowBar') : (L ? 'belowBar' : 'aboveBar'), color:t.result==='W' ? css('--pos') : css('--neg'), shape:'square', text:t.result==='W' ? `TP ${t.r_multiple!=null ? '+'+t.r_multiple+'R' : ''}` : t.result==='L' ? 'SL −1R' : 'Exit' });
+    cs.setMarkers(mk.sort((a, b) => a.time - b.time));
+    ch.timeScale().fitContent();
+  }catch(e){ if(my===TCH.seq) el.innerHTML = `<p class="trm-cmsg">${esc(e.message || String(e))}</p>`; }
+}
 /* ---- trade popup: fill in / edit a trade without leaving the page ---- */
 const trDlg = document.getElementById('trDlg');
 function openTradeModal(id){
@@ -4071,6 +4148,12 @@ function openTradeModal(id){
       <button class="trm-x" data-trx aria-label="Close">×</button>
     </header>
     ${su ? `<div class="trm-flow">${sxFlow(su, t)}</div>` : ''}
+    <div class="trm-tabs" role="tablist"><button role="tab" data-trtab="details" aria-selected="true">Details</button><button role="tab" data-trtab="chart" aria-selected="false">📈 Chart <span class="beta">test</span></button></div>
+    <div class="trm-chart" hidden>
+      <div class="trm-ctb"><div class="seg" role="group" aria-label="Chart timeframe">${['1m','15m','1H','4H'].map(f => `<button data-trtf="${f}">${f}</button>`).join('')}</div>
+        <div class="trm-leg"><span class="lq">Liquidity</span><span class="fr">Fractal</span><span class="en">Entry</span><span class="sl">SL</span><span class="tp">TP</span></div></div>
+      <div class="trm-cv" id="trmCv"><p class="trm-cmsg">Loading the chart…</p></div>
+    </div>
     <div class="trm-grid">
       <div class="trm-col">
         <section class="trm-sec"><h4>Trade</h4>
@@ -4134,6 +4217,16 @@ function openTradeModal(id){
   trDlg.querySelector('[data-trsave]').onclick = save;
   trDlg.querySelectorAll('[data-trx]').forEach(b => b.onclick = () => trDlg.close());
   trDlg.onkeydown = ev => { if(ev.key==='Enter' && (ev.ctrlKey || ev.metaKey)) save(); };
+  /* chart tab: the trade drawn on the heartbeat candles */
+  let ctf = ['1H','4H'].includes(t.setup_tf) ? t.setup_tf : su?.tf && TF_MS[su.tf] ? su.tf : '1H';
+  const showTab = k => { trDlg.querySelectorAll('[data-trtab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.trtab===k)));
+    trDlg.querySelector('.trm-grid').hidden = k!=='details'; trDlg.querySelector('.trm-chart').hidden = k!=='chart';
+    if(k==='chart') drawTf(ctf); };
+  const drawTf = f => { ctf = f; trDlg.querySelectorAll('[data-trtf]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.trtf===f)));
+    tradeChart(trDlg.querySelector('#trmCv'), t, su, f); };
+  trDlg.querySelectorAll('[data-trtab]').forEach(b => b.onclick = () => showTab(b.dataset.trtab));
+  trDlg.querySelectorAll('[data-trtf]').forEach(b => b.onclick = () => drawTf(b.dataset.trtf));
+  trDlg.addEventListener('close', () => { TCH.chart?.remove(); TCH.chart = null; }, { once:true });
   if(!trDlg.open) trDlg.showModal();
   trDlg.querySelector('.trm-grid').scrollTop = 0;
 }
