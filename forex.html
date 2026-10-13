@@ -1161,6 +1161,10 @@
   .sxt-k{ display:block; font-size:10.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
   .sxt-v{ display:block; font-family:'JetBrains Mono',ui-monospace,monospace; font-size:14px; font-weight:700; color:var(--ink); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .sxt-t{ display:block; font-size:12px; font-weight:700; color:var(--muted); margin-top:1px; }
+  .sx-ses{ display:inline-block; margin-left:6px; font-style:normal; font-size:10.5px; font-weight:800; padding:0 6px; border-radius:99px; background:color-mix(in srgb,var(--info) 16%,transparent); color:var(--ink); }
+  .sx-sess{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; padding:10px 12px; border-radius:14px; background:var(--surface-2); border:1px solid var(--line); }
+  .sx-sess-l{ font-size:12.5px; font-weight:800; color:var(--muted); }
+  .sx-sess-h{ margin-left:auto; font-size:11.5px; font-weight:600; color:var(--muted); }
   .sxt-flow li.ext.W .sxt-v{ color:var(--pos); } .sxt-flow li.ext.L .sxt-v{ color:var(--neg); }
   .sxt-f{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; padding-top:10px; border-top:1px dashed var(--line); }
   .sxt-lv{ font-size:12px; font-weight:700; color:var(--muted); } .sxt-lv b{ font-family:'JetBrains Mono',ui-monospace,monospace; color:var(--ink); font-weight:700; }
@@ -3723,7 +3727,7 @@ function renderTdBoard(){
 }
 /* ---------- Setups (beta): liquidity sweep → opposite fractal break → retest, filtered by the weekly bias ---------- */
 S.signals = []; S.setupMarks = new Map(); S.signalsMissing = false;
-S.su = { hist: ls.get('do_su_hist', 'taken'), page: ls.get('do_su_page', 'live'), lvt: ls.get('do_su_lvt', 'all'), sim: false };
+S.su = { hist: ls.get('do_su_hist', 'taken'), page: ls.get('do_su_page', 'live'), lvt: ls.get('do_su_lvt', 'all'), sess: ls.get('do_su_sess', 'all'), sessBy: ls.get('do_su_sessby', 'entry'), sim: false };
 async function loadSignals(){
   try{ const [sg, mk] = await Promise.all([fetchAll('do_signals'), fetchAll('do_setup_marks')]);
     S.signals = sg; S.setupMarks = new Map(mk.map(m => [m.setup_key, m])); S.signalsMissing = false; }
@@ -4359,6 +4363,7 @@ function sxStatus(){
 /* local "Mon 21:15" from a trade's day + hour */
 const dayHM = (day, hm) => { if(!day) return ''; const d = parseISO(day); return `${WD_SHORT[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)}${hm ? ' · '+hm : ''}`; };
 const atHM = at => { if(!at) return ''; const d = new Date(at); return `${WD_SHORT[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)} · ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+const sx3 = (s, by) => { const k = sessOf(sxMinutes(s, by)); return k.length ? `<em class="sx-ses">${k.map(x => SESS[x][0]).join(' + ')}</em>` : ''; };
 /* liquidity → fractal break → entry → exit, each with its price and time */
 function sxFlow(s, t){
   const r = t?.result || 'open', lv = t && !t.result ? livePL(t) : null;
@@ -4366,9 +4371,9 @@ function sxFlow(s, t){
   const exitLbl = { W:'Take profit', L:'Stop loss', BE:'Break-even' }[t?.result] || 'Exit';
   const step = (cls, k, v, when) => `<li class="${cls}"><span class="sxt-k">${k}</span><span class="sxt-v">${v}</span><span class="sxt-t">${when || '—'}</span></li>`;
   return `<ol class="sxt-flow">
-      ${step('liq', 'Liquidity', sxPx(s?.liq?.level), atHM(s?.liq?.at))}
-      ${step('brk', 'Fractal break', sxPx(s?.line ?? s?.bos?.level), atHM(s?.bos?.at))}
-      ${step('ent', 'Entry', sxPx(t?.entry_price ?? null), t ? dayHM(t.day, t.entry_time) : '')}
+      ${step('liq', 'Liquidity', sxPx(s?.liq?.level), s?.liq?.at ? `${atHM(candleOpen(s.liq.at, s.liq.tf || s.tf))} candle${sx3(s, 'liq')}` : '')}
+      ${step('brk', 'Fractal break', sxPx(s?.line ?? s?.bos?.level), s?.bos?.at ? `${atHM(s.bos.candle ? s.bos.candle.t : candleOpen(s.bos.at, s.tf))} candle${sx3(s, 'brk')}` : '')}
+      ${step('ent', 'Entry', sxPx(t?.entry_price ?? null), t ? dayHM(t.day, t.entry_time) + (s ? sx3(s, 'entry') : '') : '')}
       ${step(`ext ${r}`, r==='open' ? 'Exit' : exitLbl, r==='open' ? 'open' : sxPx(exitPx), t?.result ? dayHM(t.exit_date || t.day, t.exit_time) + (t.duration ? ` · ${esc(t.duration)}` : '') : lv ? `now ${lvl(lv.price)}` : '')}
     </ol>`;
 }
@@ -4395,15 +4400,36 @@ function sxTicket(s){
     </footer>
   </article>`;
 }
+/* trading sessions, Romania time (minutes from midnight) — London and New York overlap 16:30–18:00 */
+const SESS = { asia:['Asia', 0, 540], london:['London', 540, 1080], ny:['New York', 990, 1410] };
+const SESS_BY = { entry:'Entry', liq:'Liquidity', brk:'Fractal break' };
+const minOf = ms => { const d = new Date(ms); return d.getHours()*60 + d.getMinutes(); };
+const candleOpen = (at, tf) => Math.round((tms(at) - (TF_MS[tf] || 0)) / 6e4) * 6e4;   /* an indicator alert comes at the candle's close */
+const sessOf = m => m==null ? [] : Object.keys(SESS).filter(k => m >= SESS[k][1] && m < SESS[k][2]);
+/* minutes (RO) of the entry / the candle that took the liquidity / the candle that broke the fractal */
+function sxMinutes(s, by){
+  const t = s.trade_id ? S.trades.get(s.trade_id) : null;
+  if(by==='entry'){ const m = /^(\d{1,2}):(\d{2})/.exec(t?.entry_time || ''); return m ? +m[1]*60 + +m[2] : null; }
+  if(by==='liq') return s.liq?.at ? minOf(candleOpen(s.liq.at, s.liq.tf || s.tf)) : null;
+  if(by==='brk') return s.bos?.candle ? minOf(s.bos.candle.t) : s.bos?.at ? minOf(candleOpen(s.bos.at, s.tf)) : null;
+  return null;
+}
+const sessTxt = (s, by) => sessOf(sxMinutes(s, by)).map(k => SESS[k][0]).join(' + ') || 'Off-session';
 function sxHistory(all){
-  const H = S.su.hist, HT = S.su.htf || 'all';
-  const hist = all.filter(s => ['taken','skipped','expired','invalid','ignored'].includes(s.stage) && !suOpenTrade(s) && (H==='all' ? s.stage!=='ignored' : s.stage===H) && (HT==='all' || s.tf===HT));
+  const H = S.su.hist, HT = S.su.htf || 'all', SS = S.su.sess || 'all', SB = S.su.sessBy || 'entry';
+  const hist = all.filter(s => ['taken','skipped','expired','invalid','ignored'].includes(s.stage) && !suOpenTrade(s) && (H==='all' ? s.stage!=='ignored' : s.stage===H) && (HT==='all' || s.tf===HT)
+    && (H!=='taken' || SS==='all' || sessOf(sxMinutes(s, SB)).includes(SS)));
   const d30 = Date.now() - 30*864e5, rec = all.filter(s => tms(s.startAt) >= d30 && !['ignored','deleted'].includes(s.stage));
   const formedN = rec.filter(s => s.bos).length, takenN = rec.filter(s => s.stage==='taken').length;
   const res = s => { const t = s.trade_id && S.trades.get(s.trade_id); return t?.result ? `<span class="sx-res ${t.result==='W' ? 'w' : t.result==='L' ? 'l' : ''}">${t.result==='W' ? 'Win' : t.result==='L' ? 'Loss' : esc(t.result)}${t.r_multiple!=null ? ` ${Number(t.r_multiple) > 0 ? '+' : ''}${fmt(Number(t.r_multiple), 1)}R` : ''}</span>` : t ? '<span class="sx-res">Open</span>' : ''; };
   return `<p class="sx-tool-sum">Last 30 days: ${rec.length} sweep${rec.length===1 ? '' : 's'} in the bias direction, ${formedN} formed (${rec.length ? Math.round(formedN/rec.length*100) : 0}%), ${takenN} taken.</p>
     <div class="sx-filters"><div class="chips">${[['all','All'],['taken','Taken'],['skipped','Skipped'],['invalid','Invalid'],['ignored','Against bias']].map(([k,l]) => `<button class="ch" data-suh="${k}" aria-pressed="${H===k}">${l}</button>`).join('')}</div>
       <div class="chips">${['all', ...suTfs(all)].map(t => `<button class="ch" data-suht="${t}" aria-pressed="${HT===t}">${t==='all' ? 'All TF' : esc(t)}</button>`).join('')}</div></div>
+    ${H==='taken' ? `<div class="sx-sess"><span class="sx-sess-l">Session</span>
+      <div class="chips">${[['all','All'], ...Object.entries(SESS).map(([k, v]) => [k, v[0]])].map(([k, l]) => `<button class="ch" data-susess="${k}" aria-pressed="${SS===k}">${l}</button>`).join('')}</div>
+      <span class="sx-sess-l">of the</span>
+      <div class="seg" role="group">${Object.entries(SESS_BY).map(([k, l]) => `<button data-susby="${k}" aria-pressed="${SB===k}">${l}</button>`).join('')}</div>
+      <span class="sx-sess-h">Asia 00:00–09:00 · London 09:00–18:00 · New York 16:30–23:30</span></div>` : ''}
     ${H==='taken' && hist.length ? (() => { const tr = hist.map(x => S.trades.get(x.trade_id)).filter(Boolean), cl = tr.filter(x => x.result), w = cl.filter(x => x.result==='W').length, l = cl.filter(x => x.result==='L').length, nr = cl.reduce((a, x) => a + (Number(x.r_multiple) || 0), 0);
       return `<div class="sxt-sum"><span>Trades <b>${tr.length}</b></span><span>Wins <b class="pos">${w}</b></span><span>Losses <b class="neg">${l}</b></span>${tr.length - cl.length ? `<span>No result yet <b>${tr.length - cl.length}</b></span>` : ''}<span>Win rate <b>${w + l ? Math.round(w/(w+l)*100) : 0}%</b></span><span>Net <b class="${nr > 0 ? 'pos' : nr < 0 ? 'neg' : ''}">${nr > 0 ? '+' : ''}${fmt(nr, 1)}R</b></span></div>`; })() : ''}
     ${hist.length ? `<div class="sx-hist sxt-grid">${hist.slice(0, 80).map(s => s.stage==='taken' ? sxTicket(s) : `<div class="sx-hr ${s.trade_id && S.trades.get(s.trade_id) ? 'has-trade' : ''}" ${s.trade_id && S.trades.get(s.trade_id) ? `data-suopen="${s.trade_id}" title="Open the trade"` : ''}>
@@ -4606,6 +4632,8 @@ function bindSetups(m, all){
   m.querySelectorAll('[data-suedit]').forEach(b => b.onclick = () => { S.su.edit = S.su.edit===b.dataset.suedit ? null : b.dataset.suedit; renderMain(); m.querySelector(`[data-valfor="${b.dataset.suedit}"] [data-vline]`)?.focus(); });
   m.querySelectorAll('[data-supage]').forEach(b => b.onclick = () => { S.su.page = b.dataset.supage; ls.set('do_su_page', S.su.page); renderMain(); window.scrollTo({ top:0 }); });
   m.querySelectorAll('[data-suh]').forEach(b => b.onclick = () => { S.su.hist = b.dataset.suh; ls.set('do_su_hist', S.su.hist); renderMain(); });
+  m.querySelectorAll('[data-susess]').forEach(b => b.onclick = () => { S.su.sess = b.dataset.susess; ls.set('do_su_sess', S.su.sess); renderMain(); });
+  m.querySelectorAll('[data-susby]').forEach(b => b.onclick = () => { S.su.sessBy = b.dataset.susby; ls.set('do_su_sessby', S.su.sessBy); renderMain(); });
   m.querySelectorAll('[data-suht]').forEach(b => b.onclick = () => { S.su.htf = b.dataset.suht; renderMain(); });
   m.querySelectorAll('[data-sutrade]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openTradeModal(b.dataset.sutrade); });
   m.querySelectorAll('[data-suret]').forEach(b => b.onclick = async () => { if(await markSetup(b.dataset.suret, 'retest')) renderMain(); });
