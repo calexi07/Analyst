@@ -1048,6 +1048,22 @@
   .sx .su-skip{ display:grid; gap:6px; padding-top:10px; border-top:1px dashed var(--line); }
 
   .sx-tools{ padding:0; overflow:hidden; margin-bottom:16px; }
+  /* page switch: live board ↔ history ↔ tools */
+  .sx-nav{ position:sticky; top:8px; z-index:20; display:flex; align-items:center; gap:4px; padding:5px; margin:0 0 16px; border-radius:16px; border:1px solid var(--line);
+           background:color-mix(in srgb,var(--surface) 88%,transparent); backdrop-filter:blur(10px); overflow-x:auto; scrollbar-width:none; box-shadow:0 6px 24px rgba(0,0,0,.18); }
+  .sx-nav::-webkit-scrollbar{ display:none; }
+  .sx-nav button{ display:inline-flex; align-items:center; gap:8px; padding:9px 14px; border:0; border-radius:12px; background:none; color:var(--muted); font-weight:800; font-size:14px; white-space:nowrap; cursor:pointer; }
+  .sx-nav button:hover{ color:var(--ink); background:var(--surface-2); }
+  .sx-nav button[aria-selected="true"]{ background:var(--accent); color:var(--on-accent); }
+  .sx-nav button em{ font-style:normal; font-size:11.5px; font-weight:800; padding:1px 7px; border-radius:99px; background:color-mix(in srgb,currentColor 14%,transparent); }
+  .sx-nav .sx-nav-v{ font-size:11px; font-weight:800; padding:2px 8px; border-radius:99px; background:var(--amber); color:#1a1200; }
+  .sx-nav .sx-nav-o{ font-size:11px; font-weight:800; padding:2px 8px; border-radius:99px; background:color-mix(in srgb,var(--pos) 20%,transparent); color:var(--pos); }
+  .sx-nav button[aria-selected="true"] .sx-nav-o{ background:rgba(0,0,0,.18); color:inherit; }
+  .sx-nav-dot{ width:8px; height:8px; border-radius:50%; background:var(--muted); } .sx-nav-dot.on{ background:var(--pos); } .sx-nav-dot.warn{ background:var(--amber); box-shadow:0 0 0 0 var(--amber); animation:sxPulse 1.6s infinite; }
+  @keyframes sxPulse{ 0%{ box-shadow:0 0 0 0 color-mix(in srgb,var(--amber) 70%,transparent); } 100%{ box-shadow:0 0 0 8px transparent; } }
+  .sx-nav-sp{ flex:1; min-width:8px; }
+  .sx-nav .sx-nav-s{ font-size:13px; font-weight:700; padding:8px 11px; }
+  @media (max-width:900px){ .sx-nav{ top:4px; } .sx-nav button{ padding:8px 11px; font-size:13px; } .sx-nav .sx-nav-v{ display:none; } }
   .sx-tabs{ display:flex; gap:2px; padding:6px 10px 0; border-bottom:1px solid var(--line); overflow-x:auto; scrollbar-width:none; }
   .sx-tabs button{ padding:10px 12px; border:0; border-bottom:2px solid transparent; background:none; color:var(--muted); font-weight:800; font-size:13.5px; white-space:nowrap; margin-bottom:-1px; }
   .sx-tabs button[aria-selected="true"]{ color:var(--ink); border-bottom-color:var(--accent); }
@@ -1135,11 +1151,67 @@
   .trc-del{ width:28px; height:28px; border-radius:8px; border:1px solid var(--line); background:var(--surface); color:var(--muted); font-size:16px; line-height:1; display:grid; place-items:center; }
   .trc-del:hover{ color:var(--neg); border-color:var(--neg); }
   /* trade popup */
-  .trm-head p{ margin:4px 0 0; font-size:13px; font-weight:600; color:var(--muted); }
-  .trm-head h2 .pos, .trm-head h2 .neg{ margin-right:4px; }
-  .trm-body .trcard{ margin-top:4px; } .trm-body .trcard > summary{ pointer-events:none; } .trm-body .trc-del{ display:none; }
-  .trm-tv{ display:grid; gap:8px; margin-top:14px; }
-  .trm-foot .trm-del{ margin-right:auto; color:var(--neg); border-color:color-mix(in srgb,var(--neg) 40%,var(--line)); }
+  #trDlg{ width:min(1120px,96vw); max-height:94vh; overflow:hidden; }
+  #trDlg[open]{ display:flex; flex-direction:column; }
+  #trDlg > .dlg-x{ display:none; }
+  .trm{ --c:var(--accent); display:flex; flex-direction:column; min-height:0; max-height:94vh; }
+  .trm.x-W{ --c:var(--pos); } .trm.x-L{ --c:var(--neg); } .trm.x-BE{ --c:var(--info); }
+  .trm-hd{ display:grid; grid-template-columns:1fr auto auto; grid-template-areas:"id res x" "sub res x"; align-items:center; gap:2px 18px; padding:16px 18px 14px 22px; border-bottom:1px solid var(--line);
+           background:linear-gradient(120deg, color-mix(in srgb,var(--c) 12%,var(--surface)), var(--surface) 60%); position:relative; }
+  .trm-hd::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--c); }
+  .trm-id{ grid-area:id; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .trm-pair{ font-family:'Bricolage Grotesque',sans-serif; font-size:26px; font-weight:800; letter-spacing:-.02em; } .trm-pair em{ font-style:normal; opacity:.45; }
+  .trm-dir{ font-size:13px; font-weight:800; padding:3px 10px; border-radius:99px; }
+  .trm.long .trm-dir{ color:var(--pos); background:color-mix(in srgb,var(--pos) 14%,transparent); } .trm.short .trm-dir{ color:var(--neg); background:color-mix(in srgb,var(--neg) 14%,transparent); }
+  .trm-sub{ grid-area:sub; margin:0; font-size:13px; font-weight:600; color:var(--muted); }
+  .trm-res{ grid-area:res; text-align:right; line-height:1.1; }
+  .trm-res b{ display:block; font-family:'Bricolage Grotesque',sans-serif; font-size:30px; font-weight:800; color:var(--c); font-variant-numeric:tabular-nums; }
+  .trm-res span{ font-size:12px; font-weight:700; color:var(--muted); }
+  .trm-x{ grid-area:x; width:38px; height:38px; border-radius:12px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-size:22px; line-height:1; cursor:pointer; }
+  .trm-x:hover{ border-color:var(--neg); color:var(--neg); }
+  .trm-flow{ padding:14px 22px 12px; border-bottom:1px solid var(--line); background:var(--surface); }
+  .trm-grid{ display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,1fr); gap:0; min-height:0; overflow:auto; flex:1; }
+  .trm-col{ display:flex; flex-direction:column; gap:0; min-width:0; }
+  .trm-col + .trm-col{ border-left:1px solid var(--line); background:color-mix(in srgb,var(--surface-2) 50%,var(--surface)); }
+  .trm-sec{ padding:12px 20px; display:grid; gap:8px; }
+  .trm-sec + .trm-sec{ border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent); }
+  .trm-sec h4{ margin:0; font-size:11px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+  .trm-l{ display:block; font-size:11.5px; font-weight:700; color:var(--muted); margin-bottom:4px; }
+  .trm-chips{ display:grid; grid-template-columns:auto auto 1fr; gap:10px 22px; align-items:start; }
+  .trm-chips .chips{ flex-wrap:nowrap; }
+  .trm .chips{ gap:6px; } .trm .ch{ padding:5px 12px; font-size:13px; }
+  .trm-f{ display:grid; gap:4px; min-width:0; } .trm-f span{ font-size:11.5px; font-weight:700; color:var(--muted); }
+  .trm-f .inp{ width:100%; min-width:0; padding:7px 10px; }
+  .trm-lv{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+  .trm-lv .trm-f{ padding:8px 10px; border-radius:12px; background:var(--surface-2); border:1px solid var(--line); }
+  .trm-lv .trm-f .inp{ border:0; background:none; padding:2px 0 0; font-family:'JetBrains Mono',ui-monospace,monospace; font-size:17px; font-weight:700; }
+  .trm-lv .sl{ border-color:color-mix(in srgb,var(--neg) 35%,var(--line)); } .trm-lv .sl .inp{ color:var(--neg); }
+  .trm-lv .tp{ border-color:color-mix(in srgb,var(--pos) 35%,var(--line)); } .trm-lv .tp .inp{ color:var(--pos); }
+  .trm-4{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+  .trm-sec:nth-child(3) .trm-4{ grid-template-columns:1fr 1.4fr 1fr .9fr; }
+  .trm-4 .inp{ font-size:13px; padding:6px 8px; } .trm-4 input[type="time"], .trm-4 input[type="date"]{ font-family:inherit; font-weight:700; }
+  .trm-4 input[type="time"]::-webkit-calendar-picker-indicator, .trm-4 input[type="date"]::-webkit-calendar-picker-indicator{ margin-left:2px; padding:0; opacity:.55; }
+  .trm-hint{ margin:0; font-size:12px; font-weight:600; color:var(--muted); }
+  .trm-hint:empty{ display:none; }
+  .trm-charts .tl-shots{ grid-template-columns:repeat(2,minmax(0,1fr)); margin:0; } .trm-charts .tl-shots:has(> :only-child){ grid-template-columns:1fr; }
+  .trm-empty{ display:grid; place-items:center; gap:4px; text-align:center; padding:22px 12px; border:1px dashed var(--line); border-radius:12px; color:var(--muted); font-size:12.5px; aspect-ratio:16/6; }
+  .trm-empty b{ color:var(--ink); font-size:13.5px; }
+  .trm-links{ font-family:'JetBrains Mono',ui-monospace,monospace; font-size:12px; resize:vertical; min-height:56px; }
+  .trm-notes{ flex:1; grid-template-rows:auto 1fr; }
+  .trm-notes textarea{ min-height:140px; height:100% !important; resize:vertical; font-size:13.5px; line-height:1.5; }
+  .trm-ft{ display:flex; align-items:center; gap:8px; padding:12px 18px; border-top:1px solid var(--line); background:var(--surface); }
+  .trm-del{ margin-right:auto; color:var(--neg); border-color:color-mix(in srgb,var(--neg) 40%,var(--line)); }
+  .trm-kbd{ font-size:11.5px; font-weight:700; color:var(--muted); margin-right:6px; }
+  @media (max-width:820px){
+    #trDlg{ width:100vw; max-width:100vw; max-height:100dvh; height:100dvh; border-radius:0; margin:0; }
+    .trm{ max-height:100dvh; height:100%; }
+    .trm-hd{ padding:12px 14px 12px 18px; gap:2px 10px; } .trm-pair{ font-size:22px; } .trm-res b{ font-size:22px; }
+    .trm-flow{ padding:12px 16px; }
+    .trm-grid{ grid-template-columns:1fr; } .trm-col + .trm-col{ border-left:0; border-top:1px solid var(--line); }
+    .trm-sec{ padding:12px 16px; } .trm-4{ grid-template-columns:1fr 1fr; } .trm-kbd{ display:none; }
+    .trm-chips{ grid-template-columns:auto auto; } .trm-chips > div:nth-child(3){ grid-column:1/-1; }
+    .trm-lv .trm-f .inp{ font-size:15px; }
+  }
   /* trade charts vs day charts */
   .tr-shots-wrap{ padding:12px; border-radius:14px; border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line)); background:color-mix(in srgb,var(--accent) 6%,var(--surface)); }
   .tr-shots-wrap .tl-top h4{ margin:0; }
@@ -3596,7 +3668,7 @@ function renderTdBoard(){
 }
 /* ---------- Setups (beta): liquidity sweep → opposite fractal break → retest, filtered by the weekly bias ---------- */
 S.signals = []; S.setupMarks = new Map(); S.signalsMissing = false;
-S.su = { hist: ls.get('do_su_hist', 'all'), sim: false };
+S.su = { hist: ls.get('do_su_hist', 'taken'), page: ls.get('do_su_page', 'live'), sim: false };
 async function loadSignals(){
   try{ const [sg, mk] = await Promise.all([fetchAll('do_signals'), fetchAll('do_setup_marks')]);
     S.signals = sg; S.setupMarks = new Map(mk.map(m => [m.setup_key, m])); S.signalsMissing = false; }
@@ -3918,21 +3990,69 @@ function tradeShotsHtml(t){
 const trDlg = document.getElementById('trDlg');
 function openTradeModal(id){
   const t = S.trades.get(id); if(!t) return toast('Trade not found');
-  const mk = [...S.setupMarks.values()].find(m => m.trade_id===id), L = t.direction==='Long';
-  trDlg.innerHTML = `<div class="dlg-head trm-head"><h2><span class="${L ? 'pos' : 'neg'}">${L ? '▲' : '▼'}</span>${base(t.pair)}<span class="muted">${quote(t.pair)}</span></h2>
-      <p>${fmtDayShort(t.day)}${t.entry_time ? ' · '+esc(t.entry_time) : ''}${t.setup_tf ? ' · '+esc(t.setup_tf)+' setup' : ''}${mk ? ' · from Setups' : ''}${t.result ? ' · '+({W:'Win',L:'Loss',BE:'Break-even'}[t.result] || esc(t.result)) : ' · open'}</p></div>
-    <div class="dlg-body trm-body">
-      ${tradeCard(t, t.day, true)}
-      <section class="trm-tv">
-        ${hasTvCol() ? `<div class="tl-wrap" id="trmShots"></div>` : `<p class="hint" style="margin:0">To attach TradingView charts to trades, run <b>migration-trade-charts.sql</b> in Supabase once, then reload.</p>`}
-      </section>
+  const mk = [...S.setupMarks.values()].find(m => m.trade_id===id), su = mk ? deriveSetups().find(x => x.key===mk.setup_key) : null;
+  const L = t.direction==='Long', v = f => esc(t[f] ?? ''), r = t.result || 'open', lv = !t.result ? livePL(t) : null;
+  const R = t.r_multiple!=null ? Number(t.r_multiple) : lv ? lv.R : null, pips = t.pips!=null ? Number(t.pips) : lv ? lv.pips : null;
+  const sg = (x, d) => x==null ? '' : `${x > 0 ? '+' : x < 0 ? '−' : ''}${fmt(Math.abs(x), d)}`;
+  const num = (f, l, cls = '') => `<label class="trm-f ${cls}"><span>${l}</span><input class="inp num" data-tf="${f}" inputmode="decimal" value="${v(f)}" autocomplete="off"></label>`;
+  const time = (f, l) => `<label class="trm-f"><span>${l}</span><input class="inp num" data-tf="${f}" type="time" value="${v(f)}"></label>`;
+  const cur = tradeAccts(t), ids = cur.map(x => x.id), accs = [...S.accounts.values()].filter(a => (a.status||'active')==='active' || ids.includes(a.id));
+  trDlg.innerHTML = `<div class="trm ${L ? 'long' : 'short'} x-${r}" data-trade="${id}">
+    <header class="trm-hd">
+      <div class="trm-id"><span class="trm-dir trc-dir">${L ? '▲ Long' : '▼ Short'}</span><b class="trm-pair">${base(t.pair)}<em>${quote(t.pair)}</em></b>${t.setup_tf ? `<span class="tfl">${esc(t.setup_tf)} setup</span>` : ''}</div>
+      <p class="trm-sub">${dayHM(t.day, t.entry_time)}${mk ? ' · from Setups' : ''}<span class="trc-meta" hidden></span></p>
+      <div class="trm-res"><b>${R!=null ? sg(R, R % 1 ? 2 : 0)+'R' : r==='open' ? 'Open' : esc(r)}</b><span>${r==='open' ? 'running' : { W:'Win', L:'Loss', BE:'Break-even' }[r] || ''}${pips!=null ? ' · '+sg(pips, 1)+' pips' : ''}</span></div>
+      <button class="trm-x" data-trx aria-label="Close">×</button>
+    </header>
+    ${su ? `<div class="trm-flow">${sxFlow(su, t)}</div>` : ''}
+    <div class="trm-grid">
+      <div class="trm-col">
+        <section class="trm-sec"><h4>Trade</h4>
+          <div class="trm-chips">
+            <div><span class="trm-l">Direction</span>${tChips('direction', ['Long','Short'], t.direction)}</div>
+            <div><span class="trm-l">Setup</span>${tChips('setup_tf', ['1H','4H'], t.setup_tf)}</div>
+            <div><span class="trm-l">Result</span>${tChips('result', ['W','L','BE'], t.result)}</div>
+          </div>
+          <div><span class="trm-l">Session</span>${tChips('session', SESSIONS, t.session)}</div>
+        </section>
+        <section class="trm-sec"><h4>Levels</h4>
+          <div class="trm-lv">${num('entry_price','Entry','e')}${num('sl','Stop loss','sl')}${num('tp','Take profit','tp')}</div>
+          <p class="rrHint trm-hint"></p>
+        </section>
+        <section class="trm-sec"><h4>Timing</h4>
+          <div class="trm-4">${time('entry_time','Entry hour')}<label class="trm-f"><span>Exit date</span><input class="inp num" data-tf="exit_date" type="date" min="${t.day}" value="${v('exit_date')}"></label>${time('exit_time','Exit hour')}<label class="trm-f"><span>Duration</span><input class="inp" data-tf="duration" value="${v('duration')}" placeholder="auto"></label></div>
+        </section>
+        <section class="trm-sec"><h4>Outcome</h4>
+          <div class="trm-4">${num('pips','Pips')}${num('r_multiple','R')}${num('risk','Risk %')}${num('profit','Profit $')}</div>
+        </section>
+        <section class="trm-sec"><h4>Accounts</h4>
+          ${accs.length ? `<div class="chips acctBox">${accs.map(a => `<button type="button" class="ch" data-a="${a.id}" aria-pressed="${ids.includes(a.id)}">${esc(a.name)}</button>`).join('')}</div><div class="accrows acctRows">${acctRowsHtml(cur)}</div>` : '<p class="trm-hint">Add an account in the Accounts tab to link this trade to a challenge.</p>'}
+        </section>
+      </div>
+      <div class="trm-col">
+        <section class="trm-sec trm-charts"><h4>📸 Trade charts</h4>
+          ${hasTvCol() ? `<div class="tl-wrap trm-shots" id="trmShots"></div>
+            <textarea class="inp trm-links" data-tf="tv_trade" rows="2" placeholder="Paste TradingView snapshot links (tradingview.com/x/…), one per line">${v('tv_trade')}</textarea>`
+            : `<p class="trm-hint">Run <b>migration-trade-charts.sql</b> in Supabase once, then reload, to attach TradingView charts to trades.</p>`}
+        </section>
+        <section class="trm-sec trm-notes"><h4>Notes</h4>
+          ${S.legacyTrades ? '' : `<textarea class="inp" data-tf="notes" placeholder="Why you took it, management, lessons…">${v('notes')}</textarea>`}
+        </section>
+      </div>
     </div>
-    <div class="dlg-foot trm-foot"><button class="btn trm-del" data-trdel>Delete trade</button><button class="btn" data-trx>Cancel</button><button class="btn btn-primary" data-trsave>Save</button></div>`;
+    <footer class="trm-ft"><button class="btn trm-del" data-deltr>Delete</button><span class="trm-kbd">Ctrl + Enter saves</span><button class="btn" data-trx>Cancel</button><button class="btn btn-primary" data-trsave>Save changes</button></footer>
+  </div>`;
   const card = trDlg.querySelector('[data-trade]');
-  let dirty = false;
-  bindTradeCard(card, t.day, () => { dirty = true; }, { pair:t.pair, onDelete: () => trDlg.querySelector('[data-trdel]').click() });
+  const del = async () => {
+    if(su){ trDlg.close(); return deleteSetup(su); }
+    if(!confirm(`Delete this ${t.direction} trade on ${t.pair}? Observations of the day are kept.`)) return;
+    if(await dropTrade(t)){ trDlg.close(); refreshDock?.(); renderMain(); toast('Trade deleted'); }
+  };
+  bindTradeCard(card, t.day, () => {}, { pair:t.pair, onDelete:del });
   const tv = card.querySelector('[data-tf="tv_trade"]'), shots = trDlg.querySelector('#trmShots');
-  const prev = () => { if(shots) shots.innerHTML = tradeShotsHtml({ ...t, tv_trade: tv?.value || '' }) || ''; };
+  const prev = () => { if(!shots) return; const sh = tradeShots({ tv_trade: tv?.value || '' });
+    shots.innerHTML = sh.length ? `<div class="tl-shots">${sh.map((x, i) => `<a class="tl-shot trs" href="${esc(x.u)}" target="_blank" rel="noopener"><img src="${esc(x.img)}" alt="Trade chart ${i+1} · ${esc(t.pair)}" loading="lazy" onerror="this.closest('.tl-shot').remove()"><span>Trade${sh.length > 1 ? ' '+(i+1) : ''}</span></a>`).join('')}</div>`
+      : `<div class="trm-empty"><b>No chart yet</b><span>In TradingView: camera icon → Copy link, then paste it below.</span></div>`; };
   tv?.addEventListener('input', prev); prev();
   const save = async () => {
     const upd = collectTrade(card), changed = Object.keys(upd).filter(k => JSON.stringify(upd[k] ?? null) !== JSON.stringify(t[k] ?? null));
@@ -3942,21 +4062,14 @@ function openTradeModal(id){
     const { data, error } = await sb.from('do_trades').update(row).eq('id', id).select().single();
     btn.disabled = false;
     if(error) return toast('Not saved: ' + error.message);
-    S.trades.set(id, data); dirty = false; trDlg.close();
+    S.trades.set(id, data); trDlg.close();
     await checkPending(); renderMain(); toast(`${t.pair} trade saved`);
   };
   trDlg.querySelector('[data-trsave]').onclick = save;
   trDlg.querySelectorAll('[data-trx]').forEach(b => b.onclick = () => trDlg.close());
-  trDlg.querySelector('[data-trdel]').onclick = async () => {
-    const s = mk ? deriveSetups().find(x => x.key===mk.setup_key) : null;
-    if(s){ trDlg.close(); return deleteSetup(s); }
-    if(!confirm(`Delete this ${t.direction} trade on ${t.pair}? Observations of the day are kept.`)) return;
-    if(await dropTrade(t)){ trDlg.close(); refreshDock?.(); renderMain(); toast('Trade deleted'); }
-  };
   trDlg.onkeydown = ev => { if(ev.key==='Enter' && (ev.ctrlKey || ev.metaKey)) save(); };
-  void dirty;
   if(!trDlg.open) trDlg.showModal();
-  card.querySelectorAll('textarea').forEach(autosize);
+  trDlg.querySelector('.trm-grid').scrollTop = 0;
 }
 async function markSetup(key, status, extra = {}){
   const row = { setup_key:key, status, reason:extra.reason ?? null, trade_id:extra.trade_id ?? null, updated_at:new Date().toISOString() };
@@ -4078,13 +4191,21 @@ function renderSetups(){
   const d30 = Date.now() - 30*864e5, done = all.filter(s => s.stage==='taken' && tms(s.startAt) >= d30).map(s => S.trades.get(s.trade_id)).filter(t => t?.result);
   const wins = done.filter(t => t.result==='W').length, netR = done.reduce((a, t) => a + (Number(t.r_multiple) || 0), 0);
   const stage = S.su.stage || (toVal ? 'validate' : cols.trade.length ? 'trade' : cols.formed.length ? 'formed' : 'forming');
-  const tool = S.su.tool || 'history';
+  const page = S.su.page || 'live', takenN = all.filter(x => x.stage==='taken').length, openN = all.filter(x => suOpenTrade(x)).length;
+  const tool = page==='live' ? null : page;
   m.innerHTML = `
     <header class="sx-top">
       <div><h1 class="pairtitle">Setups <span class="beta">beta</span></h1>
         <p class="sx-sub">Bias, liquidity, break, retest, trade. Only setups in the direction of your weekly bias.</p></div>
       <div class="sx-top-r">${sxStatus()}${fresh.length ? `<button class="btn sx-allseen" id="suAllSeen" title="Mark every new card as seen">✓ ${fresh.length} new, mark seen</button>` : ''}<span class="sx-live-at" id="suLive" title="The page refreshes itself every 30 seconds">${liveAgo()}</span><button class="btn" id="suRefresh" title="Load the latest signals now">↻</button></div>
     </header>
+    <nav class="sx-nav" role="tablist" aria-label="Setups pages">
+      <button role="tab" data-supage="live" aria-selected="${page==='live'}"><i class="sx-nav-dot ${toVal ? 'warn' : act.length ? 'on' : ''}"></i>Live board<em>${act.length}</em>${toVal ? `<b class="sx-nav-v">${toVal} to validate</b>` : ''}</button>
+      <button role="tab" data-supage="history" aria-selected="${page==='history'}">History<em>${takenN}</em>${openN ? `<b class="sx-nav-o">${openN} open</b>` : ''}</button>
+      <span class="sx-nav-sp"></span>
+      ${[['plan','Alert plan'],['sim','Simulator'],['guide','How it works']].map(([k, l]) => `<button role="tab" class="sx-nav-s" data-supage="${k}" aria-selected="${page===k}">${l}</button>`).join('')}
+    </nav>
+    ${page==='live' ? `
     <div class="sx-stats" role="tablist" aria-label="Stages">
       ${SX_COLS.map(([k, t]) => `<button class="sx-stat s-${k}" role="tab" data-sustage="${k}" aria-selected="${stage===k}">
         <span class="sx-stat-n">${cols[k].length}${newIn(k) ? `<em class="sx-stat-new">${newIn(k)} new</em>` : ''}</span><span class="sx-stat-t">${t}</span>
@@ -4104,11 +4225,10 @@ function renderSetups(){
         <header><b>${t}</b><span class="bn">${cols[k].length}</span><p>${sub}</p></header>
         ${cols[k].length ? [...cols[k].filter(sxIsNew), ...cols[k].filter(x => !sxIsNew(x))].map(suCard).join('') : `<div class="sx-empty">${k==='forming' ? 'No sweep in the bias direction right now. New ones show up here as soon as the liquidity alert fires.' : k==='validate' ? 'When your fractal alert fires, the setup comes here so you can confirm or correct the liquidity and the fractal line.' : k==='formed' ? 'After you validate, the setup waits here for price to come back to the line.' : 'Trades appear here once price comes back to the line.'}</div>`}
       </section>`).join('')}
-    </div>
+    </div>` : `
     <section class="sx-tools card">
-      <div class="sx-tabs" role="tablist">${[['history','History'],['plan','Alert plan'],['sim','Simulator'],['guide','How it works']].map(([k, l]) => `<button role="tab" data-sutool="${k}" aria-selected="${tool===k}">${l}</button>`).join('')}</div>
       <div class="sx-tool">${tool==='history' ? sxHistory(all) : tool==='plan' ? alertPlan() : tool==='sim' ? simPanel() : sxGuide()}</div>
-    </section>`;
+    </section>`}`;
   bindSetups(m, all);
 }
 /* compact live status: engine + heartbeat per timeframe */
@@ -4122,6 +4242,19 @@ function sxStatus(){
 /* local "Mon 21:15" from a trade's day + hour */
 const dayHM = (day, hm) => { if(!day) return ''; const d = parseISO(day); return `${WD_SHORT[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)}${hm ? ' · '+hm : ''}`; };
 const atHM = at => { if(!at) return ''; const d = new Date(at); return `${WD_SHORT[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)} · ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+/* liquidity → fractal break → entry → exit, each with its price and time */
+function sxFlow(s, t){
+  const r = t?.result || 'open', lv = t && !t.result ? livePL(t) : null;
+  const exitPx = t?.result==='W' ? t.tp : t?.result==='L' ? t.sl : null;
+  const exitLbl = { W:'Take profit', L:'Stop loss', BE:'Break-even' }[t?.result] || 'Exit';
+  const step = (cls, k, v, when) => `<li class="${cls}"><span class="sxt-k">${k}</span><span class="sxt-v">${v}</span><span class="sxt-t">${when || '—'}</span></li>`;
+  return `<ol class="sxt-flow">
+      ${step('liq', 'Liquidity', sxPx(s?.liq?.level), atHM(s?.liq?.at))}
+      ${step('brk', 'Fractal break', sxPx(s?.line ?? s?.bos?.level), atHM(s?.bos?.at))}
+      ${step('ent', 'Entry', sxPx(t?.entry_price ?? null), t ? dayHM(t.day, t.entry_time) : '')}
+      ${step(`ext ${r}`, r==='open' ? 'Exit' : exitLbl, r==='open' ? 'open' : sxPx(exitPx), t?.result ? dayHM(t.exit_date || t.day, t.exit_time) + (t.duration ? ` · ${esc(t.duration)}` : '') : lv ? `now ${lvl(lv.price)}` : '')}
+    </ol>`;
+}
 /* a taken setup as a ticket: liquidity → fractal break → entry → TP / SL */
 function sxTicket(s){
   const t = s.trade_id ? S.trades.get(s.trade_id) : null, L = s.dir==='Long';
@@ -4138,12 +4271,7 @@ function sxTicket(s){
       <span class="sxt-day">${t ? dayHM(t.day) : hhmm(s.startAt)}</span>
       <div class="sxt-out"><b>${R!=null ? sg(R, R % 1 ? 2 : 0)+'R' : r==='open' ? 'Open' : esc(r)}</b><span>${r==='open' ? (lv ? 'running · ' : 'running') : { W:'Win', L:'Loss', BE:'Break-even' }[r] + ' · '}${pips!=null ? sg(pips, 1)+' pips' : ''}</span></div>
     </header>
-    <ol class="sxt-flow">
-      ${step('liq', 'Liquidity', sxPx(s.liq?.level), atHM(s.liq?.at))}
-      ${step('brk', 'Fractal break', sxPx(s.line ?? s.bos?.level), atHM(s.bos?.at))}
-      ${step('ent', 'Entry', sxPx(t?.entry_price ?? null), t ? dayHM(t.day, t.entry_time) : '')}
-      ${step(`ext ${r}`, r==='open' ? 'Exit' : exitLbl, r==='open' ? 'open' : sxPx(exitPx), t?.result ? dayHM(t.exit_date || t.day, t.exit_time) + (t.duration ? ` · ${esc(t.duration)}` : '') : lv ? `now ${lvl(lv.price)}` : '')}
-    </ol>
+    ${sxFlow(s, t)}
     <footer class="sxt-f">
       <span class="sxt-lv sl">SL <b>${sxPx(t?.sl)}</b></span><span class="sxt-lv tp">TP <b>${sxPx(t?.tp)}</b></span>${tradeShots(t).length ? `<span class="sxt-lv">📸 ${tradeShots(t).length}</span>` : ''}
       <span class="sxt-a">${t ? `<button class="bt" data-sutrade="${t.id}">Open</button>` : ''}<button class="bt sx-undo" data-suundo="${s.key}" title="Taken by mistake? Put the setup back on the board and delete the trade it logged">Undo</button><button class="bt sx-del" data-sudel="${s.key}" title="Delete for good: the setup leaves the history and its trade is deleted from the journal">Delete</button></span>
@@ -4358,7 +4486,7 @@ function bindSetups(m, all){
   m.querySelectorAll('[data-sutf]').forEach(b => b.onclick = () => { S.su.tf = b.dataset.sutf; renderMain(); });
   m.querySelectorAll('[data-sustage]').forEach(b => b.onclick = () => { S.su.stage = b.dataset.sustage; m.querySelector('.sx-board').dataset.stage = S.su.stage;
     m.querySelectorAll('[data-sustage]').forEach(x => x.setAttribute('aria-selected', x===b)); if(innerWidth > 900) m.querySelector('.sx-col.c-'+S.su.stage)?.scrollIntoView({ behavior:'smooth', block:'nearest' }); });
-  m.querySelectorAll('[data-sutool]').forEach(b => b.onclick = () => { S.su.tool = b.dataset.sutool; renderMain(); });
+  m.querySelectorAll('[data-supage]').forEach(b => b.onclick = () => { S.su.page = b.dataset.supage; ls.set('do_su_page', S.su.page); renderMain(); window.scrollTo({ top:0 }); });
   m.querySelectorAll('[data-suh]').forEach(b => b.onclick = () => { S.su.hist = b.dataset.suh; ls.set('do_su_hist', S.su.hist); renderMain(); });
   m.querySelectorAll('[data-suht]').forEach(b => b.onclick = () => { S.su.htf = b.dataset.suht; renderMain(); });
   m.querySelectorAll('[data-sutrade]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openTradeModal(b.dataset.sutrade); });
