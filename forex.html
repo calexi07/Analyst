@@ -4851,16 +4851,25 @@ function tradeExcursion(t){
     if(!a.length || a[0].t > st + TF_MS[tf]) continue;
     let best = -Infinity, worst = Infinity;
     a.forEach(c => { const f = long ? (c.h - E) : (E - c.l), b = long ? (c.l - E) : (E - c.h); best = Math.max(best, f/risk); worst = Math.min(worst, b/risk); });
-    return { mfe_R:r2(best), mae_R:r2(worst), from_tf:tf };
+    return { mfe_R:r2(Math.max(0, best)), mae_R:r2(Math.min(0, worst)), from_tf:tf };   /* MFE ≥ 0 and MAE ≤ 0 by definition */
   }
   return null;
 }
 function suExportData(range = 'all'){
   const all = deriveSetups(), cut = range==='all' ? 0 : Date.now() - Number(range)*864e5, VAL = suValid();
   const ps = pipSize, rows = [];
+  const seen = new Set();
   for(const s of all){
     if(tms(s.startAt) < cut) continue;
+    if(s.stage==='ignored'){ const k = [s.pair, s.tf, s.dir, s.liq?.level, s.liq?.at ? candleOpen(s.liq.at, s.tf) : ''].join('|'); if(seen.has(k)) continue; seen.add(k); }   /* the same alert sent twice */
     const L = s.dir==='Long', t = s.trade_id ? S.trades.get(s.trade_id) : null, v = VAL[s.key] || {}, m = S.setupMarks.get(s.key);
+    /* R missing on a closed trade (result set by hand without the exit) → from the plan: win = (TP−entry)/(entry−SL), loss = −1 */
+    let rEst = false, rMul = t?.r_multiple!=null ? Number(t.r_multiple) : null;
+    if(t?.result && rMul==null){ const E = numOr(t.entry_price), SLv = numOr(t.sl), TPv = numOr(t.tp);
+      rMul = t.result==='L' ? -1 : t.result==='BE' ? 0 : (E!=null && SLv!=null && TPv!=null && E!==SLv ? Math.abs(TPv - E)/Math.abs(E - SLv) : 2); rEst = true; }
+    const issues = [];
+    if(t?.result && !t.exit_date) issues.push('result set without an exit time');
+    if(rEst) issues.push('r_multiple estimated from the plan');
     const liqMs = s.liq?.at ? candleOpen(s.liq.at, s.liq.tf || s.tf) : null;
     const brkMs = s.bos ? (s.bos.candle ? s.bos.candle.t : candleOpen(s.bos.at, s.tf)) : (s.prop?.at ? candleOpen(s.prop.at, s.tf) : null);
     const entMs = t?.day ? new Date(`${t.day}T${t.entry_time || '00:00'}`).getTime() : (s.retest?.at ? tms(s.retest.at) : null);
@@ -4883,12 +4892,13 @@ function suExportData(range = 'all'){
       minutes_break_to_entry: brkMs && entMs ? Math.round((entMs - brkMs)/6e4) : null,
       entry_time:xIso(entMs), entry_weekday: entMs ? WD_SHORT[new Date(entMs).getDay()] : null, entry_hour: entMs ? new Date(entMs).getHours() : null, entry_session:xSess(entMs),
       entry_candle_tf:s.retest?.tf || null, taken: m?.status==='taken' ? (m.reason==='auto' ? 'auto' : m.reason==='manual' ? 'manual add' : 'by hand') : null,
-      entry_price:r2(t?.entry_price, 5), exit_time:xIso(exMs), exit_session:xSess(exMs), r_multiple:r2(t?.r_multiple), pips:r2(t?.pips, 1), profit:r2(t?.profit),
+      entry_time_engine: s.retest?.at ? xIso(tms(s.retest.at)) : null,
+      entry_price:r2(t?.entry_price, 5), exit_time:xIso(exMs), exit_session:xSess(exMs), r_multiple:r2(rMul), r_estimated:rEst, pips:r2(t?.pips, 1), profit:r2(t?.profit),
       duration_minutes: t ? tradeMinutes(t) : null, mfe_R:ex?.mfe_R ?? null, mae_R:ex?.mae_R ?? null, excursion_from:ex?.from_tf ?? null,
       invalid_reason: s.stage==='invalid' ? (s.why || s.invWhy || null) : null, skip_reason: s.stage==='skipped' ? (s.why || m?.reason || null) : null,
       watchlist:!!v.watch, watchlist_touches:s.touches?.length || 0,
       trade_session_field:t?.session || null, tags:t?.tags || [], accounts:t ? tradeAccts(t).map(x => ({ account:S.accounts.get(x.id)?.name || x.id, profit:x.profit })) : [],
-      notes:t?.notes || null, tradingview_charts:t ? tradeShots(t).map(x => x.u) : [],
+      notes:t?.notes || null, tradingview_charts:t ? tradeShots(t).map(x => x.u) : [], data_issues:issues,
     });
   }
   /* summary of the closed setup trades, cut every way the coach will want */
@@ -4901,11 +4911,16 @@ function suExportData(range = 'all'){
       method:{ steps:'1 liquidity swept in the weekly-bias direction → 2 fractal change (your fractal alert; you confirm Wick or Body, the line, the liquidity and the stop) → 3 setup formed, waiting for price to return to the fractal line → 4 trade (limit at the fractal line) → 5 finished at TP or SL',
         entry:'limit at the fractal line', stop:'the sweep wick (or the one you set)', target:'2R', wick_rule:'a wick break needs the next candle to close beyond the line, otherwise the setup is invalid',
         invalidation:'a candle of the setup timeframe closes beyond the liquidity before the entry', rollover:'the 17:00 New York candle (1H or lower) is ignored',
-        sessions_local_time:'Asia 00:00–09:00, London 09:00–18:00, New York 16:30–23:30 (Romania time)' } },
+        sessions_local_time:'Asia 00:00–09:00, London 09:00–18:00, New York 16:30–23:30 (Romania time); 16:30–18:00 is its own bucket "London+New York"' },
+      field_notes:{ times:'All times are Romania time. liquidity_candle and break_candle are the OPEN time of the candle (how it reads on the chart). Times written inside "notes" are the alert time = the CLOSE of that candle (+1h on 1H, +4h on 4H) — same event, not an error.',
+        entry_time:'entry_time is the trade\'s entry time in the journal (it can have been edited by hand); entry_time_engine is when the heartbeat saw price touch the line.',
+        levels:'stop_loss / take_profit / entry_price are the trade\'s CURRENT values (they can have been updated after the entry with "Update the trade" when a new sweep moved the stop); the plan written in "notes" is the one at the moment of entry.',
+        r_estimated:'true when the result was set without an exit, so r_multiple was filled from the plan — check data_issues.',
+        excursion:'mfe_R / mae_R come from the heartbeat candles between entry_time and the exit; empty when those candles are no longer stored (1m/15m kept 24h, 1H/4H ~35 days).' } },
     summary:{ setups:rows.length, by_status:rows.reduce((a, r) => (a[r.status] = (a[r.status] || 0) + 1, a), {}),
       closed_trades:closed.length, wins:W, losses:Lo, winrate_pct: W + Lo ? Math.round(W/(W + Lo)*100) : null, net_R:r2(closed.reduce((a, r) => a + (r.r_multiple || 0), 0)),
-      by_pair:agg(r => r.pair), by_timeframe:agg(r => r.timeframe), by_direction:agg(r => r.direction), by_entry_session:agg(r => (r.entry_session || 'n/a').split('+')),
-      by_liquidity_session:agg(r => (r.liquidity_session || 'n/a').split('+')), by_break_type:agg(r => r.break_type), by_entry_weekday:agg(r => r.entry_weekday),
+      by_pair:agg(r => r.pair), by_timeframe:agg(r => r.timeframe), by_direction:agg(r => r.direction), by_entry_session:agg(r => r.entry_session || 'n/a'),
+      by_liquidity_session:agg(r => r.liquidity_session || 'n/a'), by_break_session:agg(r => r.break_session || 'n/a'), by_break_type:agg(r => r.break_type), by_entry_weekday:agg(r => r.entry_weekday),
       by_bias_conviction:agg(r => r.bias_conviction), by_with_bias:agg(r => r.with_bias ? 'with bias' : 'against bias'), by_added_by:agg(r => r.added_by) },
     setups:rows };
 }
