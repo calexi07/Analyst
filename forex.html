@@ -1102,6 +1102,9 @@
   .lvr-type span{ font-size:10.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); padding:0 6px; }
   .lvr-type button{ padding:5px 12px; border:0; border-radius:8px; background:none; color:var(--muted); font-weight:800; font-size:13px; cursor:pointer; }
   .lvr-type button[aria-pressed="true"]{ background:var(--amber); color:#1a1200; }
+  .lv-tabs .t-watch{ --c:var(--violet); } .lv-sec.s-watch{ --c:var(--violet); }
+  .lvr.c-watch{ --c:var(--violet); border-style:dashed; }
+  .lvr-w{ border-color:color-mix(in srgb,var(--violet) 50%,var(--line)); }
   .lvr-note.warn-n{ color:var(--amber); font-weight:700; }
   .lvr-when{ align-self:center; font-size:12px; font-weight:800; color:var(--amber); padding:4px 9px; border-radius:99px; background:color-mix(in srgb,var(--amber) 14%,transparent); }
   .lvr-x{ grid-column:1/-1; } .lvr .su-skip{ grid-column:1/-1; display:grid; gap:6px; padding-top:8px; border-top:1px dashed var(--line); }
@@ -3881,7 +3884,7 @@ function deriveSetups(){
   for(const g of sigs){
     const k = g.pair, t = tms(g.at), list = (open.get(k) || []);   /* per pair: the break may come on a lower timeframe than the sweep */
     list.forEach(s => close(s, t));
-    const live = list.filter(s => ['forming','validate','wickwait','formed','retest'].includes(s.stage)); open.set(k, live);
+    const live = list.filter(s => ['forming','validate','wickwait','formed','retest','watch'].includes(s.stage)); open.set(k, live);
     if(g.kind==='liq'){
       const side = liqSide(g), dir = side==='sell' ? 'Long' : side==='buy' ? 'Short' : null, wr = biasAt(g.pair, g.at), bias = wr?.bias || null;
       if(TF_MS[g.tf] && isRoll(sigStart(g), g.tf)){ all.push({ key:g.id, pair:g.pair, tf:g.tf, dir, side, bias, liq:g, liqs:[g], startAt:g.at, stage:'ignored', why:'Rollover candle (00:00 RO)' }); continue; }
@@ -3989,6 +3992,12 @@ function deriveSetups(){
         const ext = x.liq.extreme ?? x.liq.level; if(ext==null) return;
         if(x.dir==='Short' ? c.h > Number(ext) : c.l < Number(ext)) x.liq = { ...x.liq, extreme: x.dir==='Short' ? c.h : c.l, extMovedAt: c.t };
       });
+      /* watchlist: no trade — every touch of the zone after you added it is recorded */
+      live.filter(x => x.stage==='formed' && VAL[x.key]?.watch).forEach(x => { x.stage = 'watch'; });
+      live.filter(x => x.stage==='watch' && (TF_RANK[c.tf] ?? 0) <= (TF_RANK[x.tf] ?? 0) && !isRoll(c.t, c.tf) && tms(g.at) >= VAL[x.key].watch).forEach(x => {
+        const z = suZone(x); if(!z) return;
+        if(x.dir==='Long' ? c.l <= z.top : c.h >= z.bot) (x.touches = x.touches || []).push({ at:c.t, closeAt:tms(g.at), tf:c.tf, price:x.dir==='Long' ? c.l : c.h });
+      });
       /* retest: a candle (same or lower timeframe) after the break reaches the zone */
       live.filter(x => x.stage==='formed' && (TF_RANK[c.tf] ?? 0) <= (TF_RANK[x.tf] ?? 0) && !isRoll(c.t, c.tf)).forEach(x => {   /* no entry inside the rollover hour */
         const bc = x.bos.candle ? x.bos.candle.t + (TF_MS[x.bos.candle.tf] || 0) : tms(x.bos.at) - 120e3, z = suZone(x);
@@ -4003,6 +4012,7 @@ function deriveSetups(){
     }
   }
   open.forEach(list => list.forEach(s => close(s, now)));
+  all.forEach(s => { if(s.stage==='formed' && VAL[s.key]?.watch) s.stage = 'watch'; });
   all.forEach(s => { const m = S.setupMarks.get(s.key); if(!m) return;
     if(m.status==='taken'){ s.stage = 'taken'; s.trade_id = m.trade_id; }
     else if(m.status==='skipped'){ s.stage = 'skipped'; s.why = m.reason || 'Skipped'; }
@@ -4379,7 +4389,7 @@ async function stepBack(s){
     refreshDock?.(); renderMain(); return toast(`${s.pair} ${s.tf} back to Step 3`);
   }
   if(col==='formed' || (col==='validate' && s.val)){
-    if(s.val){ await suValSet(s.key, r => { const { liq, line, type, at, ...rest } = r; return { ...rest, last:{ liq, line, type } }; }); renderMain(); return toast(`${s.pair} ${s.tf} back to Step 2`); }
+    if(s.val){ await suValSet(s.key, r => { const { liq, line, type, at, watch, ...rest } = r; return { ...rest, last:{ liq, line, type } }; }); renderMain(); return toast(`${s.pair} ${s.tf} back to Step 2`); }
     const id = s.bos?.id; if(!id) return;   /* formed before Step 2 existed → its break alert is ignored */
     await suValSet(s.key, r => ({ ...r, dismiss:[...(r.dismiss || []), id] })); renderMain(); return toast(`${s.pair} ${s.tf} back to Step 1`);
   }
@@ -4437,7 +4447,7 @@ function sxRail(tr, lv){
     <div class="sx-rail-lbl"><span>SL ${lvl(SL)}</span><span style="left:${pe}%">Entry ${lvl(E)}</span><span>TP ${lvl(TP)}</span></div></div>`;
 }
 /* "new" cards: a setup is new until you mark it seen; it becomes new again when it moves to the next stage */
-const sxCol = s => suOpenTrade(s) || s.stage==='retest' ? 'trade' : s.stage==='forming' && s.val ? 'validate' : s.stage==='wickwait' ? 'formed' : s.stage;
+const sxCol = s => s.stage==='watch' ? 'watch' : suOpenTrade(s) || s.stage==='retest' ? 'trade' : s.stage==='forming' && s.val ? 'validate' : s.stage==='wickwait' ? 'formed' : s.stage;
 function sxSeen(){ const v = S.settings?.su_seen; return v && typeof v==='object' ? v : (ls.get('do_su_seen', null) || null); }
 const sxIsNew = s => { const m = sxSeen(); return !!m && m[s.key]!==sxCol(s); };
 async function sxMarkSeen(list){
@@ -4495,12 +4505,13 @@ function suCard(s){
   </article>`;
 }
 /* ---- live board: compact rows, one per setup ---- */
-const LV_ORDER = ['forming','validate','formed','trade'];
+const LV_ORDER = ['forming','validate','formed','trade','watch'];
 const LV_LBL = {
   forming:['Step 1 · Liquidity','Liquidity taken in the bias direction, waiting for your fractal alert','No sweep in the bias direction right now.','Liquidity'],
   validate:['Step 2 · Fractal change','Your fractal alert fired: pick Wick or Body and check the prices','Nothing to check. When your fractal alert fires, the setup comes here.','Fractal change'],
   formed:['Step 3 · Setup formed','Waiting for price to come back to your fractal line (1m heartbeat)','Nothing waiting. Validated setups wait here for price.','Setup formed'],
-  trade:['Step 4 · Trade','Price reached the line, trade running live','No open trade.','Trade'] };
+  trade:['Step 4 · Trade','Price reached the line, trade running live','No open trade.','Trade'],
+  watch:['Extra · Watchlist','Zones you keep for later: no trade is taken, you get a Telegram message when price comes back','Nothing on the watchlist. Add a zone from Step 3 with ☆ Watchlist.','Watchlist'] };
 function lvRow(s){
   const tr = suOpenTrade(s), L = s.dir==='Long', isNew = sxIsNew(s), pl = s.bos ? suPlan(s) : null, col = sxCol(s), nx = sxNext(s, tr, pl);
   const id = `<div class="lvr-id">${isNew ? `<button class="lvr-new" data-suseen="${s.key}" title="New · click to mark seen">NEW ✓</button>` : ''}
@@ -4540,7 +4551,13 @@ function lvRow(s){
       mid = kv('Liquidity', sxPx(s.liq.level), s.liq.at ? hm(candleOpen(s.liq.at, s.liq.tf || s.tf))+' candle' : '') + kv('Fractal', sxPx(s.line), `${how ? how+' · ' : ''}${s.bos ? hm(s.bos.candle ? s.bos.candle.t : candleOpen(s.bos.at, s.tf))+' candle' : ''}`)
         + (pl ? kv(`Limit ${L ? 'buy' : 'sell'}`, sxPx(pl.entry), '', 'e') + kv('SL', sxPx(pl.sl), '', 'sl') + kv('TP 2R', sxPx(pl.tp), '', 'tp') : `<p class="lvr-note">${nx.text}</p>`);
     }
-    act = `${chart}${back(3, 'Back to Step 2 to change Wick / Body or the prices')}${skip}`;
+    act = `${chart}${s.stage==='formed' ? `<button class="bt lvr-w" data-suwatch="${s.key}" title="Keep this zone for later: no trade, a Telegram message when price comes back">☆ Watchlist</button>` : ''}${back(3, 'Back to Step 2 to change Wick / Body or the prices')}${skip}`;
+  } else if(col==='watch'){
+    const tc = s.touches || [], lt = tc[tc.length-1], w = suValid()[s.key]?.watch;
+    mid = kv('Zone', `${sxPx(s.line)} → ${sxPx(s.liq?.extreme ?? s.liq?.level)}`, s.bos ? `break ${hm(s.bos.candle ? s.bos.candle.t : candleOpen(s.bos.at, s.tf))} candle` : '')
+      + kv('Added', w ? `${WD_SHORT[new Date(w).getDay()]} ${hm(w)}` : '—', w ? ago(new Date(w)) : '')
+      + `<p class="lvr-note ${lt ? 'go' : ''}">${lt ? `👀 Price came back: ${lvl(lt.price)} · ${lt.tf} candle ${hhmm(new Date(lt.at))}${tc.length > 1 ? ` · ${tc.length} touches` : ''}` : 'Not touched since you added it'}</p>`;
+    act = `${chart}<button class="bt" data-suunwatch="${s.key}" title="Back to Step 3: the setup waits for the line again and takes the trade">↩ Undo</button>${skip}`;
   } else {
     if(tr){
       const lv = livePL(tr);
@@ -4566,11 +4583,11 @@ function renderSetups(){
   if(S.signalsMissing){ m.innerHTML = `<div class="pairtitle">Setups <span class="beta">beta</span></div><div class="card" style="margin-top:16px"><p>Run <b>migration-signals.sql</b> in Supabase, then reload. The signals table doesn't exist yet.</p></div>`; return; }
   const all = deriveSetups(), tf = S.su.tf || 'all';
   const inTf = x => tf==='all' || x.tf===tf;
-  const colOf = x => suOpenTrade(x) ? 'trade' : x.stage==='retest' ? 'trade' : x.stage==='validate' || (x.stage==='forming' && x.val) ? 'validate' : x.stage==='wickwait' ? 'formed' : ['forming','formed'].includes(x.stage) ? x.stage : null;
+  const colOf = x => x.stage==='watch' ? 'watch' : suOpenTrade(x) ? 'trade' : x.stage==='retest' ? 'trade' : x.stage==='validate' || (x.stage==='forming' && x.val) ? 'validate' : x.stage==='wickwait' ? 'formed' : ['forming','formed'].includes(x.stage) ? x.stage : null;
   const act = all.filter(x => colOf(x) && inTf(x));
   const by = k => act.filter(x => colOf(x)===k).sort((a, b) => (b.stage==='validate') - (a.stage==='validate') || tms(b.bos?.at || b.prop?.at || b.startAt) - tms(a.bos?.at || a.prop?.at || a.startAt));
   const toVal = act.filter(x => x.stage==='validate').length;
-  const cols = Object.fromEntries(SX_COLS.map(([k]) => [k, by(k)]));
+  const cols = Object.fromEntries([...SX_COLS.map(([k]) => k), 'watch'].map(k => [k, by(k)]));
   if(!sxSeen()){ const init = {}; act.forEach(x => init[x.key] = sxCol(x)); ls.set('do_su_seen', init); S.settings.su_seen = init; saveSettingKey('su_seen', init); }
   const fresh = act.filter(sxIsNew), newIn = k => cols[k].filter(sxIsNew).length;
   const live = cols.trade.map(x => suOpenTrade(x)).filter(Boolean).map(livePL).filter(Boolean), liveR = live.reduce((a, l) => a + l.R, 0);
@@ -4603,7 +4620,7 @@ function renderSetups(){
     </div>
     <div class="lv-tabs" role="tablist" aria-label="Stages">
       <button role="tab" data-lvt="all" aria-selected="${lvt==='all'}">All<em>${act.length}</em></button>
-      ${LV_ORDER.map((k, n) => `<button role="tab" class="t-${k}" data-lvt="${k}" aria-selected="${lvt===k}"><i></i><span class="lv-n">${n+1}</span>${LV_LBL[k][3]}<em>${cols[k].length}</em>${newIn(k) ? `<b>${newIn(k)} new</b>` : ''}${k==='trade' && live.length ? `<span class="${liveR >= 0 ? 'pos' : 'neg'}">${liveR >= 0 ? '+' : ''}${fmt(liveR, 2)}R</span>` : ''}</button>`).join('')}
+      ${LV_ORDER.map((k, n) => `<button role="tab" class="t-${k}" data-lvt="${k}" aria-selected="${lvt===k}"><i></i><span class="lv-n">${k==='watch' ? '★' : n+1}</span>${LV_LBL[k][3]}<em>${cols[k].length}</em>${newIn(k) ? `<b>${newIn(k)} new</b>` : ''}${k==='trade' && live.length ? `<span class="${liveR >= 0 ? 'pos' : 'neg'}">${liveR >= 0 ? '+' : ''}${fmt(liveR, 2)}R</span>` : ''}</button>`).join('')}
     </div>
     <div class="lv">
       ${LV_ORDER.filter(k => lvt==='all' ? cols[k].length : lvt===k).map(k => `<section class="lv-sec s-${k}">
@@ -4890,6 +4907,10 @@ function bindSetups(m, all){
   });
   m.querySelectorAll('[data-vtype]').forEach(b => b.onclick = () => { const p = b.closest('.sx-val');
     p.querySelectorAll('[data-vtype]').forEach(x => x.setAttribute('aria-pressed', String(x===b))); p.querySelector('.sx-val-msg').textContent = ''; p.classList.add('dirty'); });
+  m.querySelectorAll('[data-suwatch]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const s = byKey.get(b.dataset.suwatch); if(!s) return;
+    await suValSet(s.key, r => ({ ...r, watch:Date.now() })); renderMain(); toast(`${s.pair} ${s.tf} → Watchlist · you'll get a Telegram message when price comes back`); });
+  m.querySelectorAll('[data-suunwatch]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const s = byKey.get(b.dataset.suunwatch); if(!s) return;
+    await suValSet(s.key, r => { const { watch, ...rest } = r; return { ...rest, hold:Date.now() }; }); renderMain(); toast(`${s.pair} ${s.tf} back to Step 3`); });
   m.querySelectorAll('[data-suback]').forEach(b => b.onclick = ev => { ev.stopPropagation(); stepBack(byKey.get(b.dataset.suback)); });
   m.querySelectorAll('[data-sutskip]').forEach(b => b.onclick = ev => { ev.stopPropagation(); skipTrade(byKey.get(b.dataset.sutskip)); });
   m.querySelectorAll('[data-s1more]').forEach(b => b.onclick = () => { S.su.s1open = !S.su.s1open; renderMain(); });
