@@ -1196,6 +1196,8 @@
   .sxt-v{ display:block; font-family:'JetBrains Mono',ui-monospace,monospace; font-size:14px; font-weight:700; color:var(--ink); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .sxt-t{ display:block; font-size:12px; font-weight:700; color:var(--muted); margin-top:1px; }
   .sx-ses{ display:inline-block; margin-left:6px; font-style:normal; font-size:10.5px; font-weight:800; padding:0 6px; border-radius:99px; background:color-mix(in srgb,var(--info) 16%,transparent); color:var(--ink); }
+  .sx-exp{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; padding:10px 12px; border-radius:14px; border:1px dashed color-mix(in srgb,var(--accent) 45%,var(--line)); }
+  .sx-exp span{ font-size:12.5px; font-weight:800; margin-right:auto; } .sx-exp select{ width:auto; padding:5px 8px; } .sx-exp .btn{ padding:6px 12px; font-size:12.5px; }
   .sx-sess{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; padding:10px 12px; border-radius:14px; background:var(--surface-2); border:1px solid var(--line); }
   .sx-sess-l{ font-size:12.5px; font-weight:800; color:var(--muted); }
   .sx-sess-h{ margin-left:auto; font-size:11.5px; font-weight:600; color:var(--muted); }
@@ -4835,6 +4837,86 @@ function sxMinutes(s, by){
   return null;
 }
 const sessTxt = (s, by) => sessOf(sxMinutes(s, by)).map(k => SESS[k][0]).join(' + ') || 'Off-session';
+/* ---- export: every setup with everything we know about it (for the AI Performance Coach / Excel) ---- */
+const xIso = ms => { if(ms==null || isNaN(ms)) return null; const d = new Date(ms); return `${iso(d)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+const xSess = ms => ms==null ? null : (sessOf(minOf(ms)).map(k => SESS[k][0]).join('+') || 'Off-session');
+const r2 = (v, d = 2) => v==null || !isFinite(v) ? null : +Number(v).toFixed(d);
+/* best and worst point (in R) while the trade was open, from the finest heartbeat candles that cover it */
+function tradeExcursion(t){
+  const E = numOr(t.entry_price), SL = numOr(t.sl); if(E==null || SL==null || E===SL || !t.day) return null;
+  const st = new Date(`${t.day}T${t.entry_time || '00:00'}`).getTime(), en = t.exit_date ? new Date(`${t.exit_date}T${t.exit_time || '23:59'}`).getTime() : Date.now();
+  const long = t.direction==='Long', risk = Math.abs(E - SL);
+  for(const tf of ['1m','15m','1H','4H']){
+    const a = (S.candleIdx.get(t.pair+'|'+tf) || []).filter(c => c.t + TF_MS[tf] > st && c.t <= en && !isRoll(c.t, tf));
+    if(!a.length || a[0].t > st + TF_MS[tf]) continue;
+    let best = -Infinity, worst = Infinity;
+    a.forEach(c => { const f = long ? (c.h - E) : (E - c.l), b = long ? (c.l - E) : (E - c.h); best = Math.max(best, f/risk); worst = Math.min(worst, b/risk); });
+    return { mfe_R:r2(best), mae_R:r2(worst), from_tf:tf };
+  }
+  return null;
+}
+function suExportData(range = 'all'){
+  const all = deriveSetups(), cut = range==='all' ? 0 : Date.now() - Number(range)*864e5, VAL = suValid();
+  const ps = pipSize, rows = [];
+  for(const s of all){
+    if(tms(s.startAt) < cut) continue;
+    const L = s.dir==='Long', t = s.trade_id ? S.trades.get(s.trade_id) : null, v = VAL[s.key] || {}, m = S.setupMarks.get(s.key);
+    const liqMs = s.liq?.at ? candleOpen(s.liq.at, s.liq.tf || s.tf) : null;
+    const brkMs = s.bos ? (s.bos.candle ? s.bos.candle.t : candleOpen(s.bos.at, s.tf)) : (s.prop?.at ? candleOpen(s.prop.at, s.tf) : null);
+    const entMs = t?.day ? new Date(`${t.day}T${t.entry_time || '00:00'}`).getTime() : (s.retest?.at ? tms(s.retest.at) : null);
+    const exMs = t?.exit_date ? new Date(`${t.exit_date}T${t.exit_time || '23:59'}`).getTime() : null;
+    const line = s.line ?? s.bos?.level ?? null, sl = s.liq?.extreme ?? s.liq?.level ?? null, pl = s.bos ? suPlan(s) : null;
+    const cur = biasAt(s.pair, new Date()), wr = biasAt(s.pair, s.startAt), ex = t ? tradeExcursion(t) : null;
+    const step = { forming:'1 Liquidity', validate:'2 Fractal change', formed:'3 Setup formed', watch:'3 Watchlist', trade:'4 Trade', done:'5 Finished' }[sxCol(s)] || null;
+    rows.push({
+      setup_id:s.key, pair:s.pair, base:base(s.pair), quote:quote(s.pair), timeframe:s.tf, direction:s.dir,
+      status:s.stage, live_step:step, outcome: t?.result ? ({ W:'win', L:'loss', BE:'breakeven' }[t.result] || t.result) : t ? 'open' : s.stage,
+      added_by: s.manual ? 'manual' : 'indicator',
+      bias_at_setup:s.bias || null, bias_conviction:s.conviction || null, bias_divergence:s.div ?? pairDiv(wr) ?? null, bias_now:cur?.bias || null, with_bias: (s.bias==='bullish' && L) || (s.bias==='bearish' && !L),
+      liquidity_side: s.side==='sell' ? 'sell-side' : s.side==='buy' ? 'buy-side' : null, liquidity_price:r2(s.liq?.level, 5), liquidity_price_indicator:r2(s.liq?.level0 ?? s.liq?.level, 5),
+      liquidity_candle:xIso(liqMs), liquidity_weekday: liqMs ? WD_SHORT[new Date(liqMs).getDay()] : null, liquidity_session:xSess(liqMs), sweeps_merged:s.liqs?.length || 1, stop_moved_to_new_wick:!!s.liq?.extMovedAt,
+      break_candle:xIso(brkMs), break_session:xSess(brkMs), break_type: v.type || (s.bos?.second ? 'wick+next candle' : s.bos?.checked ? 'body (auto)' : s.bos ? 'auto' : null),
+      fractal_line:r2(line, 5), fractal_line_proposed:r2(s.prop?.line, 5), validated_by_you:!!v.line, validated_at:v.at ? xIso(tms(v.at)) : null,
+      stop_loss:r2(t?.sl ?? pl?.sl ?? sl, 5), stop_set_by_you:v.sl!=null, take_profit:r2(t?.tp ?? pl?.tp, 5),
+      risk_pips: line!=null && sl!=null ? r2(Math.abs(line - sl)/ps(s.pair), 1) : null,
+      minutes_liquidity_to_break: liqMs && brkMs ? Math.round((brkMs - liqMs)/6e4) : null,
+      minutes_break_to_entry: brkMs && entMs ? Math.round((entMs - brkMs)/6e4) : null,
+      entry_time:xIso(entMs), entry_weekday: entMs ? WD_SHORT[new Date(entMs).getDay()] : null, entry_hour: entMs ? new Date(entMs).getHours() : null, entry_session:xSess(entMs),
+      entry_candle_tf:s.retest?.tf || null, taken: m?.status==='taken' ? (m.reason==='auto' ? 'auto' : m.reason==='manual' ? 'manual add' : 'by hand') : null,
+      entry_price:r2(t?.entry_price, 5), exit_time:xIso(exMs), exit_session:xSess(exMs), r_multiple:r2(t?.r_multiple), pips:r2(t?.pips, 1), profit:r2(t?.profit),
+      duration_minutes: t ? tradeMinutes(t) : null, mfe_R:ex?.mfe_R ?? null, mae_R:ex?.mae_R ?? null, excursion_from:ex?.from_tf ?? null,
+      invalid_reason: s.stage==='invalid' ? (s.why || s.invWhy || null) : null, skip_reason: s.stage==='skipped' ? (s.why || m?.reason || null) : null,
+      watchlist:!!v.watch, watchlist_touches:s.touches?.length || 0,
+      trade_session_field:t?.session || null, tags:t?.tags || [], accounts:t ? tradeAccts(t).map(x => ({ account:S.accounts.get(x.id)?.name || x.id, profit:x.profit })) : [],
+      notes:t?.notes || null, tradingview_charts:t ? tradeShots(t).map(x => x.u) : [],
+    });
+  }
+  /* summary of the closed setup trades, cut every way the coach will want */
+  const closed = rows.filter(r => ['win','loss','breakeven'].includes(r.outcome));
+  const agg = key => { const g = {}; closed.forEach(r => { const ks = Array.isArray(key(r)) ? key(r) : [key(r)]; ks.forEach(k => { k = k ?? 'n/a'; const x = g[k] ||= { trades:0, wins:0, losses:0, net_R:0 }; x.trades++; if(r.outcome==='win') x.wins++; if(r.outcome==='loss') x.losses++; x.net_R = r2(x.net_R + (r.r_multiple || 0)); }); });
+    Object.values(g).forEach(x => x.winrate_pct = x.wins + x.losses ? Math.round(x.wins/(x.wins + x.losses)*100) : null); return g; };
+  const W = closed.filter(r => r.outcome==='win').length, Lo = closed.filter(r => r.outcome==='loss').length;
+  return {
+    meta:{ app:'Daily Observer — Setups', exported_at:xIso(Date.now()), timezone:Intl.DateTimeFormat().resolvedOptions().timeZone, period: range==='all' ? 'everything' : `last ${range} days`,
+      method:{ steps:'1 liquidity swept in the weekly-bias direction → 2 fractal change (your fractal alert; you confirm Wick or Body, the line, the liquidity and the stop) → 3 setup formed, waiting for price to return to the fractal line → 4 trade (limit at the fractal line) → 5 finished at TP or SL',
+        entry:'limit at the fractal line', stop:'the sweep wick (or the one you set)', target:'2R', wick_rule:'a wick break needs the next candle to close beyond the line, otherwise the setup is invalid',
+        invalidation:'a candle of the setup timeframe closes beyond the liquidity before the entry', rollover:'the 17:00 New York candle (1H or lower) is ignored',
+        sessions_local_time:'Asia 00:00–09:00, London 09:00–18:00, New York 16:30–23:30 (Romania time)' } },
+    summary:{ setups:rows.length, by_status:rows.reduce((a, r) => (a[r.status] = (a[r.status] || 0) + 1, a), {}),
+      closed_trades:closed.length, wins:W, losses:Lo, winrate_pct: W + Lo ? Math.round(W/(W + Lo)*100) : null, net_R:r2(closed.reduce((a, r) => a + (r.r_multiple || 0), 0)),
+      by_pair:agg(r => r.pair), by_timeframe:agg(r => r.timeframe), by_direction:agg(r => r.direction), by_entry_session:agg(r => (r.entry_session || 'n/a').split('+')),
+      by_liquidity_session:agg(r => (r.liquidity_session || 'n/a').split('+')), by_break_type:agg(r => r.break_type), by_entry_weekday:agg(r => r.entry_weekday),
+      by_bias_conviction:agg(r => r.bias_conviction), by_with_bias:agg(r => r.with_bias ? 'with bias' : 'against bias'), by_added_by:agg(r => r.added_by) },
+    setups:rows };
+}
+function suDownload(name, text, type){ const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+function suExport(kind){
+  const range = S.su.expRange || 'all', d = suExportData(range), stamp = iso(new Date());
+  if(kind==='json') return suDownload(`setups-${stamp}.json`, JSON.stringify(d, null, 2), 'application/json');
+  const cols = Object.keys(d.setups[0] || { setup_id:'' });
+  const cell = v => { if(v==null) return ''; if(typeof v==='object') v = JSON.stringify(v); v = String(v); return /[",\n;]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
+  suDownload(`setups-${stamp}.csv`, '﻿' + [cols.join(','), ...d.setups.map(r => cols.map(c => cell(r[c])).join(','))].join('\n'), 'text/csv');
+}
 function sxHistory(all){
   const H = S.su.hist, HT = S.su.htf || 'all', SS = S.su.sess || 'all', SB = S.su.sessBy || 'entry';
   const hist = all.filter(s => ['taken','skipped','expired','invalid','ignored'].includes(s.stage) && !suOpenTrade(s) && !suFinished(s) && (H==='all' ? s.stage!=='ignored' : s.stage===H) && (HT==='all' || s.tf===HT)
@@ -4842,7 +4924,11 @@ function sxHistory(all){
   const d30 = Date.now() - 30*864e5, rec = all.filter(s => tms(s.startAt) >= d30 && !['ignored','deleted'].includes(s.stage));
   const formedN = rec.filter(s => s.bos).length, takenN = rec.filter(s => s.stage==='taken').length;
   const res = s => { const t = s.trade_id && S.trades.get(s.trade_id); return t?.result ? `<span class="sx-res ${t.result==='W' ? 'w' : t.result==='L' ? 'l' : ''}">${t.result==='W' ? 'Win' : t.result==='L' ? 'Loss' : esc(t.result)}${t.r_multiple!=null ? ` ${Number(t.r_multiple) > 0 ? '+' : ''}${fmt(Number(t.r_multiple), 1)}R` : ''}</span>` : t ? '<span class="sx-res">Open</span>' : ''; };
-  return `<p class="sx-tool-sum">Last 30 days: ${rec.length} sweep${rec.length===1 ? '' : 's'} in the bias direction, ${formedN} formed (${rec.length ? Math.round(formedN/rec.length*100) : 0}%), ${takenN} taken.</p>
+  return `<div class="sx-exp"><span>Export setups for analysis</span>
+      <select class="inp" id="suExpRange">${[['30','Last 30 days'],['90','Last 90 days'],['all','Everything']].map(([k, l]) => `<option value="${k}" ${(S.su.expRange || 'all')===k ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      <button class="btn btn-primary" data-suexp="json" title="Every setup with all its data + a summary — upload it to your AI Performance Coach">⬇ JSON for AI</button>
+      <button class="btn" data-suexp="csv" title="One row per setup, for Excel / Google Sheets">⬇ CSV</button></div>
+    <p class="sx-tool-sum">Last 30 days: ${rec.length} sweep${rec.length===1 ? '' : 's'} in the bias direction, ${formedN} formed (${rec.length ? Math.round(formedN/rec.length*100) : 0}%), ${takenN} taken.</p>
     <div class="sx-filters"><div class="chips">${[['all','All'],['taken','Taken'],['skipped','Skipped'],['invalid','Invalid'],['ignored','Against bias']].map(([k,l]) => `<button class="ch" data-suh="${k}" aria-pressed="${H===k}">${l}</button>`).join('')}</div>
       <div class="chips">${['all', ...suTfs(all)].map(t => `<button class="ch" data-suht="${t}" aria-pressed="${HT===t}">${t==='all' ? 'All TF' : esc(t)}</button>`).join('')}</div></div>
     ${H==='taken' ? `<div class="sx-sess"><span class="sx-sess-l">Session</span>
@@ -5054,6 +5140,8 @@ function bindSetups(m, all){
   m.querySelector('[data-sudoneall]')?.addEventListener('click', async () => { const list = all.filter(x => suFinished(x));
     if(!list.length) return; const map = { ...suValid() }, nw = Date.now(); list.forEach(x => map[x.key] = { ...(map[x.key] || {}), done:nw, ts:nw });
     await saveSettingKey('su_valid', map); renderMain(); toast(`${list.length} trades moved to History`); });
+  m.querySelector('#suExpRange')?.addEventListener('change', e => { S.su.expRange = e.target.value; });
+  m.querySelectorAll('[data-suexp]').forEach(b => b.onclick = () => { suExport(b.dataset.suexp); toast(`Setups exported (${b.dataset.suexp.toUpperCase()})`); });
   m.querySelectorAll('[data-suadd]').forEach(b => b.onclick = () => openAddSetup(b.dataset.suadd));
   m.querySelectorAll('[data-suwatch]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const s = byKey.get(b.dataset.suwatch); if(!s) return;
     await suValSet(s.key, r => ({ ...r, watch:Date.now() })); renderMain(); toast(`${s.pair} ${s.tf} → Watchlist · you'll get a Telegram message when price comes back`); });
