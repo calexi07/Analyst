@@ -1094,6 +1094,15 @@
   .lvr-val input.changed{ border-color:var(--amber); }
   .lvr-val .btn{ padding:7px 14px; }
   .lvr-val .sx-val-msg{ flex-basis:100%; margin:0; font-size:12px; color:var(--neg); font-weight:700; } .lvr-val .sx-val-msg:empty{ display:none; }
+  .lv-tabs .lv-n{ display:inline-grid; place-items:center; width:18px; height:18px; border-radius:6px; font-size:11px; font-weight:900; background:color-mix(in srgb,var(--c, var(--muted)) 22%,transparent); color:var(--ink); }
+  .lv-tabs i{ display:none; }
+  .lv-more{ margin-top:6px; width:100%; padding:7px; border-radius:12px; border:1px dashed var(--line); background:none; color:var(--muted); font-weight:800; font-size:12.5px; cursor:pointer; }
+  .lv-more:hover{ color:var(--ink); border-color:var(--ink); }
+  .lvr-type{ display:inline-flex; align-items:center; gap:4px; padding:3px; border-radius:11px; background:var(--surface); border:1px solid var(--line); align-self:flex-end; }
+  .lvr-type span{ font-size:10.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); padding:0 6px; }
+  .lvr-type button{ padding:5px 12px; border:0; border-radius:8px; background:none; color:var(--muted); font-weight:800; font-size:13px; cursor:pointer; }
+  .lvr-type button[aria-pressed="true"]{ background:var(--amber); color:#1a1200; }
+  .lvr-note.warn-n{ color:var(--amber); font-weight:700; }
   .lvr-when{ align-self:center; font-size:12px; font-weight:800; color:var(--amber); padding:4px 9px; border-radius:99px; background:color-mix(in srgb,var(--amber) 14%,transparent); }
   .lvr-x{ grid-column:1/-1; } .lvr .su-skip{ grid-column:1/-1; display:grid; gap:6px; padding-top:8px; border-top:1px dashed var(--line); }
   @media (max-width:900px){
@@ -3872,7 +3881,7 @@ function deriveSetups(){
   for(const g of sigs){
     const k = g.pair, t = tms(g.at), list = (open.get(k) || []);   /* per pair: the break may come on a lower timeframe than the sweep */
     list.forEach(s => close(s, t));
-    const live = list.filter(s => ['forming','validate','formed','retest'].includes(s.stage)); open.set(k, live);
+    const live = list.filter(s => ['forming','validate','wickwait','formed','retest'].includes(s.stage)); open.set(k, live);
     if(g.kind==='liq'){
       const side = liqSide(g), dir = side==='sell' ? 'Long' : side==='buy' ? 'Short' : null, wr = biasAt(g.pair, g.at), bias = wr?.bias || null;
       if(TF_MS[g.tf] && isRoll(sigStart(g), g.tf)){ all.push({ key:g.id, pair:g.pair, tf:g.tf, dir, side, bias, liq:g, liqs:[g], startAt:g.at, stage:'ignored', why:'Rollover candle (00:00 RO)' }); continue; }
@@ -3899,7 +3908,9 @@ function deriveSetups(){
         const gs = g.side || breakSide(g.raw?.text), sideOk = !gs || (gs==='bull') === (x.dir==='Long');   /* arrow in your fractal alert: ⤴️ bullish · ⬇️ bearish */
         if(!sideOk) return;
         /* break alert → "Validate": you confirm (or correct) the liquidity and the fractal line before the setup counts as formed */
-        const v = VAL[x.key], needV = t >= vFrom;
+        const rec = VAL[x.key] || {};
+        if(Array.isArray(rec.dismiss) && rec.dismiss.includes(g.id)) return;   /* you sent this break alert back to Step 1 */
+        const v = rec.line!=null ? rec : null, needV = t >= vFrom;
         if(needV && !v){
           let cnd = null, line = gl ?? g.price ?? null;
           if(hbOn(x.tf)){
@@ -3909,6 +3920,20 @@ function deriveSetups(){
             line = cnd ? cleanFractal(S.candleIdx, x.pair, x.tf, cnd, x.dir==='Long') : null;
           }
           x.pend = null; x.stage = 'validate'; x.prop = { ...g, line, candle:cnd }; x.line = line;
+          return;
+        }
+        if(v && (v.type==='body' || v.type==='wick')){
+          /* Step 2 done by you: body or wick, and where the line is */
+          applyValid(x, v);
+          const f = Number(v.line), len = TF_MS[x.tf] || 36e5, Lq = x.liq.level ?? x.liq.extreme;
+          if(Lq!=null && (x.dir==='Long' ? f <= Number(Lq) : f >= Number(Lq))){ x.stage = 'invalid'; x.endAt = g.at; x.why = `Your fractal line ${lvl(f)} is not ${x.dir==='Long' ? 'above' : 'below'} the liquidity ${lvl(Lq)}`; return; }
+          const cnd = candleAt(x.pair, x.tf, t - 90e3), bo = cnd ? cnd.t : Math.round((t - len)/6e4)*6e4;
+          x.pend = null;
+          if(v.type==='body'){ x.bos = { ...g, level:f, candle:cnd || undefined, validated:true, how:'body' }; x.stage = 'formed'; x.line = f; return; }
+          const nx = (S.candleIdx.get(x.pair+'|'+x.tf) || []).find(c => c.t >= bo + len - 60e3 && !isRoll(c.t, x.tf));
+          if(!nx){ let nt = bo + len; if(isRoll(nt, x.tf)) nt += len; x.stage = 'wickwait'; x.line = f; x.pend = { ...g, wick:true, line:f, next:nt }; return; }
+          if(x.dir==='Long' ? nx.c > f : nx.c < f){ x.bos = { ...g, at:new Date(nx.t + len).toISOString(), price:nx.c, level:f, candle:nx, checked:true, second:true, validated:true, how:'wick' }; x.stage = 'formed'; x.line = f; }
+          else { x.stage = 'invalid'; x.endAt = new Date(nx.t + len).toISOString(); x.why = `Wick break: the ${hhmm(new Date(nx.t)).slice(-5)} candle closed ${lvl(nx.c)}, not ${x.dir==='Long' ? 'above' : 'below'} your line ${lvl(f)}`; }
           return;
         }
         if(v) applyValid(x, v);
@@ -3947,13 +3972,13 @@ function deriveSetups(){
       if(TF_MS[g.tf] && isRoll(sigStart(g), g.tf)) continue;   /* a body close in the rollover candle doesn't invalidate */
       /* a candle closed its whole body beyond the swept level → that liquidity is no longer valid */
       const dir = g.side==='sell' ? 'Long' : g.side==='buy' ? 'Short' : null;
-      live.filter(x => ['forming','validate','formed','retest'].includes(x.stage) && (!dir || x.dir===dir) && x.tf===g.tf
+      live.filter(x => ['forming','validate','wickwait','formed','retest'].includes(x.stage) && (!dir || x.dir===dir) && x.tf===g.tf
           && (g.level==null || (x.liq.level0 ?? x.liq.level)==null || Math.abs(Number(x.liq.level0 ?? x.liq.level) - Number(g.level)) <= Math.abs(Number(g.level))*0.0005))   /* matched on the indicator's own level */
         .forEach(x => { x.stage = 'invalid'; x.why = `Body closed ${x.dir==='Long' ? 'below' : 'above'} the swept level${g.price!=null ? ' ('+lvl(g.price)+')' : ''}`; x.endAt = g.at; });
     } else if(g.kind==='candle'){
       const c = g.cnd, len = TF_MS[c.tf];
       /* a candle of the setup's timeframe CLOSES (body close) beyond the swept level → the liquidity is gone, the setup is invalid */
-      live.filter(x => ['forming','validate','formed','retest'].includes(x.stage) && x.tf===c.tf && c.t >= tms(x.liq.at) - (TF_MS[c.tf] || 36e5)/2 && c.c!=null && !isRoll(c.t, c.tf)).forEach(x => {
+      live.filter(x => ['forming','validate','wickwait','formed','retest'].includes(x.stage) && x.tf===c.tf && c.t >= tms(x.liq.at) - (TF_MS[c.tf] || 36e5)/2 && c.c!=null && !isRoll(c.t, c.tf)).forEach(x => {
         const Lv = x.liq.level; if(Lv==null) return;
         if(x.dir==='Long' ? Number(c.c) < Number(Lv) : Number(c.c) > Number(Lv)){
           x.stage = 'invalid'; x.endAt = g.at; x.why = `The ${c.tf} candle at ${hhmm(new Date(c.t)).slice(-5)} closed ${lvl(c.c)}, ${x.dir==='Long' ? 'below' : 'above'} the liquidity ${lvl(Lv)}`;
@@ -3968,6 +3993,7 @@ function deriveSetups(){
       live.filter(x => x.stage==='formed' && (TF_RANK[c.tf] ?? 0) <= (TF_RANK[x.tf] ?? 0) && !isRoll(c.t, c.tf)).forEach(x => {   /* no entry inside the rollover hour */
         const bc = x.bos.candle ? x.bos.candle.t + (TF_MS[x.bos.candle.tf] || 0) : tms(x.bos.at) - 120e3, z = suZone(x);
         if(!z || c.t < bc - 60e3) return;
+        const hold = VAL[x.key]?.hold; if(hold && tms(g.at) < hold) return;   /* you undid the trade: only a new touch of the line counts */
         if(x.dir==='Long' ? c.l <= z.top : c.h >= z.bot){ x.retest = { kind:'retest', at:new Date(c.t).toISOString(), closeAt:g.at, price:x.dir==='Long' ? c.l : c.h, tf:c.tf, auto:true }; x.stage = 'retest'; }
       });
     } else if(g.kind==='retest'){
@@ -4333,6 +4359,41 @@ function openTradeModal(id){
   if(!trDlg.open) trDlg.showModal();
   trDlg.querySelector('.trm-grid').scrollTop = 0;
 }
+/* your Step 2 data per setup (setting su_valid): { liq, line, type, at, last, dismiss:[break ids], hold:ms, ts } */
+async function suValSet(key, fn){
+  const cut = Date.now() - 45*864e5, now = Date.now();
+  const map = Object.fromEntries(Object.entries(suValid()).filter(([, v]) => v && ((v.ts ?? (v.at ? tms(v.at) : 0)) > cut)));
+  const r = fn({ ...(map[key] || {}) }); if(r) map[key] = { ...r, ts:now }; else delete map[key];
+  await saveSettingKey('su_valid', map);
+}
+/* Undo = one step back: Step 2 → Step 1 (this break alert is ignored), Step 3 → Step 2, Step 4 → Step 3 (the trade is deleted) */
+async function stepBack(s){
+  if(!s) return;
+  const col = sxCol(s);
+  if(col==='trade'){
+    const t = s.trade_id ? S.trades.get(s.trade_id) : null;
+    if(!confirm(`Back to Step 3 on ${s.pair} ${s.tf}?${t ? `\n\nThe trade it logged${t.entry_price!=null ? ' (entry '+lvl(t.entry_price)+')' : ''} is deleted from the journal.` : ''}\nThe setup waits for price to touch the line again.`)) return;
+    if(t && !(await dropTrade(t))) return;
+    await sb.from('do_setup_marks').delete().eq('setup_key', s.key); S.setupMarks.delete(s.key);
+    await suValSet(s.key, r => ({ ...r, hold:Date.now() }));
+    refreshDock?.(); renderMain(); return toast(`${s.pair} ${s.tf} back to Step 3`);
+  }
+  if(col==='formed' || (col==='validate' && s.val)){
+    if(s.val){ await suValSet(s.key, r => { const { liq, line, type, at, ...rest } = r; return { ...rest, last:{ liq, line, type } }; }); renderMain(); return toast(`${s.pair} ${s.tf} back to Step 2`); }
+    const id = s.bos?.id; if(!id) return;   /* formed before Step 2 existed → its break alert is ignored */
+    await suValSet(s.key, r => ({ ...r, dismiss:[...(r.dismiss || []), id] })); renderMain(); return toast(`${s.pair} ${s.tf} back to Step 1`);
+  }
+  if(col==='validate' && s.prop?.id){
+    await suValSet(s.key, r => ({ ...r, dismiss:[...(r.dismiss || []), s.prop.id] })); renderMain(); return toast(`${s.pair} ${s.tf} back to Step 1 · this fractal alert is ignored`);
+  }
+}
+/* Skip in Step 4: the trade is deleted and the setup goes to History as skipped */
+async function skipTrade(s){
+  if(!s) return; const t = s.trade_id ? S.trades.get(s.trade_id) : null;
+  if(!confirm(`Skip ${s.pair} ${s.tf}?${t ? '\n\nThe trade it logged is deleted from the journal.' : ''}`)) return;
+  if(t && !(await dropTrade(t))) return;
+  if(await markSetup(s.key, 'skipped', { reason:'Skipped in Step 4' })){ refreshDock?.(); renderMain(); toast('Setup skipped'); }
+}
 async function markSetup(key, status, extra = {}){
   const row = { setup_key:key, status, reason:extra.reason ?? null, trade_id:extra.trade_id ?? null, updated_at:new Date().toISOString() };
   const { data, error } = await sb.from('do_setup_marks').upsert(row, { onConflict:'setup_key' }).select().single();
@@ -4376,7 +4437,7 @@ function sxRail(tr, lv){
     <div class="sx-rail-lbl"><span>SL ${lvl(SL)}</span><span style="left:${pe}%">Entry ${lvl(E)}</span><span>TP ${lvl(TP)}</span></div></div>`;
 }
 /* "new" cards: a setup is new until you mark it seen; it becomes new again when it moves to the next stage */
-const sxCol = s => suOpenTrade(s) || s.stage==='retest' ? 'trade' : s.stage==='forming' && s.val ? 'validate' : s.stage;
+const sxCol = s => suOpenTrade(s) || s.stage==='retest' ? 'trade' : s.stage==='forming' && s.val ? 'validate' : s.stage==='wickwait' ? 'formed' : s.stage;
 function sxSeen(){ const v = S.settings?.su_seen; return v && typeof v==='object' ? v : (ls.get('do_su_seen', null) || null); }
 const sxIsNew = s => { const m = sxSeen(); return !!m && m[s.key]!==sxCol(s); };
 async function sxMarkSeen(list){
@@ -4434,12 +4495,12 @@ function suCard(s){
   </article>`;
 }
 /* ---- live board: compact rows, one per setup ---- */
-const LV_ORDER = ['validate','trade','formed','forming'];
+const LV_ORDER = ['forming','validate','formed','trade'];
 const LV_LBL = {
-  validate:['Validation','Your fractal alert fired. Check the liquidity and the fractal line','Nothing to validate. When your fractal alert fires, the setup comes here.'],
-  trade:['Trades','Price hit the line, trade running live','No open trade. Trades appear here once price comes back to the line.'],
-  formed:['Formed','Validated, waiting for price to come back to the line','Nothing waiting. Validated setups wait here for price.'],
-  forming:['Forming','Liquidity taken, waiting for the fractal break','No sweep in the bias direction right now.'] };
+  forming:['Step 1 · Liquidity','Liquidity taken in the bias direction, waiting for your fractal alert','No sweep in the bias direction right now.','Liquidity'],
+  validate:['Step 2 · Fractal change','Your fractal alert fired: pick Wick or Body and check the prices','Nothing to check. When your fractal alert fires, the setup comes here.','Fractal change'],
+  formed:['Step 3 · Setup formed','Waiting for price to come back to your fractal line (1m heartbeat)','Nothing waiting. Validated setups wait here for price.','Setup formed'],
+  trade:['Step 4 · Trade','Price reached the line, trade running live','No open trade.','Trade'] };
 function lvRow(s){
   const tr = suOpenTrade(s), L = s.dir==='Long', isNew = sxIsNew(s), pl = s.bos ? suPlan(s) : null, col = sxCol(s), nx = sxNext(s, tr, pl);
   const id = `<div class="lvr-id">${isNew ? `<button class="lvr-new" data-suseen="${s.key}" title="New · click to mark seen">NEW ✓</button>` : ''}
@@ -4448,45 +4509,52 @@ function lvRow(s){
   const hm = at => at ? hhmm(at).slice(-5) : '';
   const chart = `<a class="bt lvr-ic" href="${tvUrl(s.pair, s.tf)}" target="_blank" rel="noopener" title="Open the chart on TradingView">↗</a>`;
   const skip = `<button class="bt" data-suskip="${s.key}">Skip</button>`;
+  const back = (to, tip) => `<button class="bt" data-suback="${s.key}" title="${tip}">↩ Undo</button>`;
   let mid = '', act = '', extra = '';
   if(col==='forming'){
-    mid = kv('Liquidity', sxPx(s.liq.level), `${hm(s.liq.at)}${s.liqs.length > 1 ? ` · ${s.liqs.length} sweeps` : ''}`)
+    mid = kv('Liquidity', sxPx(s.liq.level), `${s.liq.at ? hm(candleOpen(s.liq.at, s.liq.tf || s.tf))+' candle' : ''}${s.liqs.length > 1 ? ` · ${s.liqs.length} sweeps` : ''}`)
       + kv('Stop', sxPx(s.liq.extreme ?? s.liq.level), s.liq.extMovedAt ? 'moved to wick' : 'sweep wick', 'sl')
-      + `<p class="lvr-note">${s.pend ? nx.text : `Waiting ${ago(s.startAt).replace(' ago','')} for a ${L ? 'bullish' : 'bearish'} break`}${!s.bos && s.wicks?.length ? ` · <span class="warn">${esc(s.wicks[s.wicks.length-1].why)}</span>` : ''}</p>`;
-    act = `${chart}${skip}<button class="bt" data-sutake="${s.key}">Take</button>`;
+      + `<p class="lvr-note">${s.pend ? nx.text : `Waiting ${ago(s.startAt).replace(' ago','')} for a ${L ? 'bullish' : 'bearish'} fractal change`}${!s.bos && s.wicks?.length ? ` · <span class="warn">${esc(s.wicks[s.wicks.length-1].why)}</span>` : ''}</p>`;
+    act = `${chart}${skip}`;
   } else if(col==='validate'){
     if(s.stage==='validate'){
-      const liq = s.liq.level0 ?? s.liq.level, line = s.prop?.line ?? s.line;
+      const last = suValid()[s.key]?.last || {}, liq = last.liq ?? s.liq.level0 ?? s.liq.level, line = last.line ?? s.prop?.line ?? s.line, ty = last.type || '';
       mid = `<div class="sx-val lvr-val" data-valfor="${s.key}">
-          <span class="lvr-when">Break ${hm(s.prop.at)}</span>
+          <span class="lvr-when">Alert ${s.prop?.at ? hm(candleOpen(s.prop.at, s.tf))+' candle' : ''}</span>
+          <div class="lvr-type" role="group" aria-label="How the break closed"><span>Break</span><button data-vtype="wick" aria-pressed="${ty==='wick'}">Wick</button><button data-vtype="body" aria-pressed="${ty==='body'}">Body</button></div>
           <label><span>Liquidity</span><input class="inp" inputmode="decimal" autocomplete="off" data-vliq data-orig="${lvl(liq)}" value="${lvl(liq)}"></label>
           <label><span>Fractal line</span><input class="inp" inputmode="decimal" autocomplete="off" data-vline data-orig="${line!=null ? lvl(line) : ''}" value="${line!=null ? lvl(line) : ''}" placeholder="price"></label>
           <button class="btn btn-primary" data-suval="${s.key}">✓ Validate</button>
           <p class="sx-val-msg"></p></div>`;
-      act = `${chart}${skip}`;
+      act = `${chart}${back(1, 'Wrong alert? Back to Step 1, this fractal alert is ignored')}${skip}`;
     } else {
-      mid = kv('Liquidity', sxPx(s.liq.level), 'validated') + kv('Fractal line', sxPx(s.val?.line), 'validated') + `<p class="lvr-note">${nx.text}</p>`;
-      act = `${chart}<button class="bt" data-suedit="${s.key}">Edit levels</button>${skip}`;
+      mid = kv('Liquidity', sxPx(s.liq.level), 'yours') + kv('Fractal line', sxPx(s.val?.line), 'yours') + `<p class="lvr-note">${nx.text}</p>`;
+      act = `${chart}${back(2, 'Back to Step 2 to change Wick / Body or the prices')}${skip}`;
     }
   } else if(col==='formed'){
-    mid = kv('Liquidity', sxPx(s.liq.level), hm(s.liq.at)) + kv('Fractal', sxPx(s.line), `break ${hm(s.bos?.at)}`)
-      + (pl ? kv(`Limit ${L ? 'buy' : 'sell'}`, sxPx(pl.entry), '', 'e') + kv('SL', sxPx(pl.sl), '', 'sl') + kv('TP 2R', sxPx(pl.tp), '', 'tp') : `<p class="lvr-note">${nx.text}</p>`);
-    act = `${chart}<button class="bt" data-suedit="${s.key}">Edit levels</button><button class="bt" data-suret="${s.key}" title="Mark that price came back to the line">At the line</button>${skip}<button class="btn btn-primary" data-sutake="${s.key}">Take</button>`;
+    const how = s.val?.type==='wick' ? 'Wick' : s.val?.type==='body' ? 'Body' : '';
+    if(s.stage==='wickwait'){
+      mid = kv('Liquidity', sxPx(s.liq.level), 'yours') + kv('Fractal line', sxPx(s.line), 'Wick break')
+        + `<p class="lvr-note warn-n">Waiting for the ${hm(s.pend?.next)} candle to close ${L ? 'above' : 'below'} ${lvl(s.line)}. If it doesn't, the setup is invalid.</p>`;
+    } else {
+      mid = kv('Liquidity', sxPx(s.liq.level), s.liq.at ? hm(candleOpen(s.liq.at, s.liq.tf || s.tf))+' candle' : '') + kv('Fractal', sxPx(s.line), `${how ? how+' · ' : ''}${s.bos ? hm(s.bos.candle ? s.bos.candle.t : candleOpen(s.bos.at, s.tf))+' candle' : ''}`)
+        + (pl ? kv(`Limit ${L ? 'buy' : 'sell'}`, sxPx(pl.entry), '', 'e') + kv('SL', sxPx(pl.sl), '', 'sl') + kv('TP 2R', sxPx(pl.tp), '', 'tp') : `<p class="lvr-note">${nx.text}</p>`);
+    }
+    act = `${chart}${back(3, 'Back to Step 2 to change Wick / Body or the prices')}${skip}`;
   } else {
     if(tr){
       const lv = livePL(tr);
       mid = kv('Entry', sxPx(tr.entry_price), tr.entry_time || '', 'e') + kv('SL', sxPx(tr.sl), '', 'sl') + kv('TP', sxPx(tr.tp), '', 'tp')
         + `<div class="lvr-live ${lv ? (lv.R >= 0 ? 'up' : 'dn') : ''}"><b>${lv ? `${lv.R >= 0 ? '+' : ''}${fmt(lv.R, 2)}R` : '…'}</b><small>${lv ? `${lv.pips >= 0 ? '+' : ''}${fmt(lv.pips, 1)} pips · ${lvl(lv.price)}` : 'waiting for a candle'}</small></div>`
         + `<div class="lvr-rail">${sxRail(tr, lv)}</div>`;
-      act = `${chart}<button class="bt" data-suundo="${s.key}" title="Taken by mistake? Put the setup back and delete the trade it logged">Undo</button><button class="btn btn-primary" data-sutrade="${tr.id}">Open</button>`;
+      act = `${chart}${back(4, 'Back to Step 3: the trade is deleted and the setup waits for a new touch of the line')}<button class="bt" data-sutskip="${s.key}">Skip</button><button class="btn btn-primary" data-sutrade="${tr.id}">Open</button>`;
       if(pl && (Math.abs(Number(tr.sl) - pl.sl) > 1e-9 || Math.abs(Number(tr.tp) - pl.tp) > 1e-9))
         extra = `<div class="sx-sync lvr-x"><span>The setup now has <b>SL ${lvl(pl.sl)}</b> and <b>TP ${lvl(pl.tp)}</b>. The trade still has SL ${sxPx(tr.sl)} and TP ${sxPx(tr.tp)}.</span><button class="bt" data-susync="${s.key}">Update the trade</button></div>`;
-    } else {
+    } else {   /* price at the line, auto-take is off */
       mid = (pl ? kv(`Entry`, sxPx(pl.entry), '', 'e') + kv('SL', sxPx(pl.sl), '', 'sl') + kv('TP', sxPx(pl.tp), '', 'tp') : '') + `<p class="lvr-note go">${nx.text}</p>`;
       act = `${chart}${skip}<button class="btn btn-primary" data-sutake="${s.key}">Take</button>`;
     }
   }
-  if(S.su.edit===s.key && !tr) extra += `<div class="lvr-x">${sxValPanel(s)}</div>`;
   return `<article class="lvr c-${col} ${L ? 'long' : 'short'}${isNew ? ' is-new' : ''}" data-su="${s.key}">
     ${id}<div class="lvr-mid">${mid}</div><div class="lvr-act">${act}</div>${extra}</article>`;
 }
@@ -4498,7 +4566,7 @@ function renderSetups(){
   if(S.signalsMissing){ m.innerHTML = `<div class="pairtitle">Setups <span class="beta">beta</span></div><div class="card" style="margin-top:16px"><p>Run <b>migration-signals.sql</b> in Supabase, then reload. The signals table doesn't exist yet.</p></div>`; return; }
   const all = deriveSetups(), tf = S.su.tf || 'all';
   const inTf = x => tf==='all' || x.tf===tf;
-  const colOf = x => suOpenTrade(x) ? 'trade' : x.stage==='retest' ? 'trade' : x.stage==='validate' || (x.stage==='forming' && x.val) ? 'validate' : ['forming','formed'].includes(x.stage) ? x.stage : null;
+  const colOf = x => suOpenTrade(x) ? 'trade' : x.stage==='retest' ? 'trade' : x.stage==='validate' || (x.stage==='forming' && x.val) ? 'validate' : x.stage==='wickwait' ? 'formed' : ['forming','formed'].includes(x.stage) ? x.stage : null;
   const act = all.filter(x => colOf(x) && inTf(x));
   const by = k => act.filter(x => colOf(x)===k).sort((a, b) => (b.stage==='validate') - (a.stage==='validate') || tms(b.bos?.at || b.prop?.at || b.startAt) - tms(a.bos?.at || a.prop?.at || a.startAt));
   const toVal = act.filter(x => x.stage==='validate').length;
@@ -4535,12 +4603,13 @@ function renderSetups(){
     </div>
     <div class="lv-tabs" role="tablist" aria-label="Stages">
       <button role="tab" data-lvt="all" aria-selected="${lvt==='all'}">All<em>${act.length}</em></button>
-      ${LV_ORDER.map(k => `<button role="tab" class="t-${k}" data-lvt="${k}" aria-selected="${lvt===k}"><i></i>${LV_LBL[k][0]}<em>${cols[k].length}</em>${newIn(k) ? `<b>${newIn(k)} new</b>` : ''}${k==='trade' && live.length ? `<span class="${liveR >= 0 ? 'pos' : 'neg'}">${liveR >= 0 ? '+' : ''}${fmt(liveR, 2)}R</span>` : ''}</button>`).join('')}
+      ${LV_ORDER.map((k, n) => `<button role="tab" class="t-${k}" data-lvt="${k}" aria-selected="${lvt===k}"><i></i><span class="lv-n">${n+1}</span>${LV_LBL[k][3]}<em>${cols[k].length}</em>${newIn(k) ? `<b>${newIn(k)} new</b>` : ''}${k==='trade' && live.length ? `<span class="${liveR >= 0 ? 'pos' : 'neg'}">${liveR >= 0 ? '+' : ''}${fmt(liveR, 2)}R</span>` : ''}</button>`).join('')}
     </div>
     <div class="lv">
       ${LV_ORDER.filter(k => lvt==='all' ? cols[k].length : lvt===k).map(k => `<section class="lv-sec s-${k}">
         <header><b>${LV_LBL[k][0]}</b><span class="bn">${cols[k].length}</span><p>${LV_LBL[k][1]}</p></header>
-        ${cols[k].length ? `<div class="lv-list">${[...cols[k].filter(sxIsNew), ...cols[k].filter(x => !sxIsNew(x))].map(lvRow).join('')}</div>` : `<div class="sx-empty">${LV_LBL[k][2]}</div>`}
+        ${cols[k].length ? (() => { const list = [...cols[k].filter(sxIsNew), ...cols[k].filter(x => !sxIsNew(x))], fold = k==='forming' && lvt==='all' && list.length > 4 && !S.su.s1open;
+          return `<div class="lv-list">${(fold ? list.slice(0, 3) : list).map(lvRow).join('')}</div>${k==='forming' && lvt==='all' && list.length > 4 ? `<button class="lv-more" data-s1more>${fold ? `Show all ${list.length} sweeps ▾` : 'Show less ▴'}</button>` : ''}`; })() : `<div class="sx-empty">${LV_LBL[k][2]}</div>`}
       </section>`).join('') || `<div class="sx-empty">Nothing live right now. Sweeps in the bias direction show up here as soon as the liquidity alert fires.</div>`}
     </div>    </div>` : `
     <section class="sx-tools card">
@@ -4812,11 +4881,18 @@ function bindSetups(m, all){
     const liq = parseNum(p.querySelector('[data-vliq]').value), line = parseNum(p.querySelector('[data-vline]').value), msg = p.querySelector('.sx-val-msg');
     if(!(liq > 0) || !(line > 0)) return msg.textContent = 'Enter both prices.';
     if(s.dir==='Long' ? line <= liq : line >= liq) return msg.textContent = `For a ${s.dir==='Long' ? 'long' : 'short'} the fractal line has to be ${s.dir==='Long' ? 'above' : 'below'} the liquidity.`;
-    const cut = Date.now() - 45*864e5, map = Object.fromEntries(Object.entries(suValid()).filter(([, v]) => v?.at && tms(v.at) > cut));
-    map[s.key] = { liq, line, at:new Date().toISOString() };
-    b.disabled = true; await saveSettingKey('su_valid', map); S.su.edit = null;
-    renderMain(); toast(`${s.pair} ${s.tf} validated · liquidity ${lvl(liq)} · line ${lvl(line)}`);
+    const tb = p.querySelector('[data-vtype][aria-pressed="true"]'), type = tb?.dataset.vtype || null;
+    if(p.querySelector('[data-vtype]') && !type) return msg.textContent = 'Pick how the break closed: Wick or Body.';
+    b.disabled = true;
+    await suValSet(s.key, r => ({ ...r, liq, line, type, at:new Date().toISOString(), last:{ liq, line, type } }));
+    S.su.edit = null; renderMain();
+    toast(`${s.pair} ${s.tf} → Step 3${type==='wick' ? ' (waiting for the confirmation candle)' : ''} · line ${lvl(line)}`);
   });
+  m.querySelectorAll('[data-vtype]').forEach(b => b.onclick = () => { const p = b.closest('.sx-val');
+    p.querySelectorAll('[data-vtype]').forEach(x => x.setAttribute('aria-pressed', String(x===b))); p.querySelector('.sx-val-msg').textContent = ''; p.classList.add('dirty'); });
+  m.querySelectorAll('[data-suback]').forEach(b => b.onclick = ev => { ev.stopPropagation(); stepBack(byKey.get(b.dataset.suback)); });
+  m.querySelectorAll('[data-sutskip]').forEach(b => b.onclick = ev => { ev.stopPropagation(); skipTrade(byKey.get(b.dataset.sutskip)); });
+  m.querySelectorAll('[data-s1more]').forEach(b => b.onclick = () => { S.su.s1open = !S.su.s1open; renderMain(); });
   m.querySelectorAll('[data-suvalx]').forEach(b => b.onclick = () => { S.su.edit = null; renderMain(); });
   m.querySelectorAll('[data-suseen]').forEach(b => b.onclick = async () => { const s = byKey.get(b.dataset.suseen); if(!s) return;
     await sxMarkSeen([s]); renderMain(); });
