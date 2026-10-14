@@ -1091,6 +1091,7 @@
   .lvr-val{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px 10px; padding:0; border:0; background:none; }
   .lvr-val label{ display:grid; gap:3px; font-size:10.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
   .lvr-val input{ width:130px; padding:6px 9px; font-family:'JetBrains Mono',ui-monospace,monospace; font-size:14px; font-weight:700; text-transform:none; letter-spacing:0; color:var(--ink); }
+  .lvr-val label.sl span{ color:var(--neg); }
   .lvr-val input.changed{ border-color:var(--amber); }
   .lvr-val .btn{ padding:7px 14px; }
   .lvr-val .sx-val-msg{ flex-basis:100%; margin:0; font-size:12px; color:var(--neg); font-weight:700; } .lvr-val .sx-val-msg:empty{ display:none; }
@@ -3873,6 +3874,7 @@ function applyValid(x, v){
     const q = Number(v.liq), ext = x.liq.extreme ?? x.liq.level;   /* the stop stays at the sweep wick, unless your liquidity price is further out */
     x.liq = { ...x.liq, level0: x.liq.level0 ?? x.liq.level, level:q, extreme: ext==null ? q : (x.dir==='Long' ? Math.min(Number(ext), q) : Math.max(Number(ext), q)) };
   }
+  if(v.sl!=null && isFinite(Number(v.sl)) && Number(v.sl) > 0) x.liq = { ...x.liq, extreme:Number(v.sl), slSet:true };   /* your stop loss */
 }
 function deriveSetups(){
   const win = suWin(), H = 3600e3, now = Date.now(), all = [], open = new Map(), VAL = suValid(), vFrom = suValidFrom();
@@ -4389,7 +4391,7 @@ async function stepBack(s){
     refreshDock?.(); renderMain(); return toast(`${s.pair} ${s.tf} back to Step 3`);
   }
   if(col==='formed' || (col==='validate' && s.val)){
-    if(s.val){ await suValSet(s.key, r => { const { liq, line, type, at, watch, ...rest } = r; return { ...rest, last:{ liq, line, type } }; }); renderMain(); return toast(`${s.pair} ${s.tf} back to Step 2`); }
+    if(s.val){ await suValSet(s.key, r => { const { liq, line, type, sl, at, watch, ...rest } = r; return { ...rest, last:{ liq, line, type, sl } }; }); renderMain(); return toast(`${s.pair} ${s.tf} back to Step 2`); }
     const id = s.bos?.id; if(!id) return;   /* formed before Step 2 existed → its break alert is ignored */
     await suValSet(s.key, r => ({ ...r, dismiss:[...(r.dismiss || []), id] })); renderMain(); return toast(`${s.pair} ${s.tf} back to Step 1`);
   }
@@ -4529,12 +4531,13 @@ function lvRow(s){
     act = `${chart}${skip}`;
   } else if(col==='validate'){
     if(s.stage==='validate'){
-      const last = suValid()[s.key]?.last || {}, liq = last.liq ?? s.liq.level0 ?? s.liq.level, line = last.line ?? s.prop?.line ?? s.line, ty = last.type || '';
+      const last = suValid()[s.key]?.last || {}, liq = last.liq ?? s.liq.level0 ?? s.liq.level, line = last.line ?? s.prop?.line ?? s.line, ty = last.type || '', slv = last.sl ?? s.liq.extreme ?? s.liq.level;
       mid = `<div class="sx-val lvr-val" data-valfor="${s.key}">
           <span class="lvr-when">Alert ${s.prop?.at ? hm(candleOpen(s.prop.at, s.tf))+' candle' : ''}</span>
           <div class="lvr-type" role="group" aria-label="How the break closed"><span>Break</span><button data-vtype="wick" aria-pressed="${ty==='wick'}">Wick</button><button data-vtype="body" aria-pressed="${ty==='body'}">Body</button></div>
           <label><span>Liquidity</span><input class="inp" inputmode="decimal" autocomplete="off" data-vliq data-orig="${lvl(liq)}" value="${lvl(liq)}"></label>
           <label><span>Fractal line</span><input class="inp" inputmode="decimal" autocomplete="off" data-vline data-orig="${line!=null ? lvl(line) : ''}" value="${line!=null ? lvl(line) : ''}" placeholder="price"></label>
+          <label class="sl"><span>Stop loss</span><input class="inp" inputmode="decimal" autocomplete="off" data-vsl data-orig="${lvl(slv)}" value="${lvl(slv)}" placeholder="price"></label>
           <button class="btn btn-primary" data-suval="${s.key}">✓ Validate</button>
           <p class="sx-val-msg"></p></div>`;
       act = `${chart}${back(1, 'Wrong alert? Back to Step 1, this fractal alert is ignored')}${skip}`;
@@ -4898,10 +4901,13 @@ function bindSetups(m, all){
     const liq = parseNum(p.querySelector('[data-vliq]').value), line = parseNum(p.querySelector('[data-vline]').value), msg = p.querySelector('.sx-val-msg');
     if(!(liq > 0) || !(line > 0)) return msg.textContent = 'Enter both prices.';
     if(s.dir==='Long' ? line <= liq : line >= liq) return msg.textContent = `For a ${s.dir==='Long' ? 'long' : 'short'} the fractal line has to be ${s.dir==='Long' ? 'above' : 'below'} the liquidity.`;
+    const slIn = p.querySelector('[data-vsl]'), sl = slIn ? parseNum(slIn.value) : null;
+    if(slIn && !(sl > 0)) return msg.textContent = 'Enter the stop loss.';
+    if(slIn && (s.dir==='Long' ? sl >= line : sl <= line)) return msg.textContent = `For a ${s.dir==='Long' ? 'long' : 'short'} the stop loss has to be ${s.dir==='Long' ? 'below' : 'above'} the fractal line.`;
     const tb = p.querySelector('[data-vtype][aria-pressed="true"]'), type = tb?.dataset.vtype || null;
     if(p.querySelector('[data-vtype]') && !type) return msg.textContent = 'Pick how the break closed: Wick or Body.';
     b.disabled = true;
-    await suValSet(s.key, r => ({ ...r, liq, line, type, at:new Date().toISOString(), last:{ liq, line, type } }));
+    await suValSet(s.key, r => ({ ...r, liq, line, type, ...(slIn ? { sl } : {}), at:new Date().toISOString(), last:{ liq, line, type, sl } }));
     S.su.edit = null; renderMain();
     toast(`${s.pair} ${s.tf} → Step 3${type==='wick' ? ' (waiting for the confirmation candle)' : ''} · line ${lvl(line)}`);
   });
