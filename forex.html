@@ -1106,6 +1106,23 @@
   .lv-tabs .t-watch{ --c:var(--violet); } .lv-sec.s-watch{ --c:var(--violet); }
   .lvr.c-watch{ --c:var(--violet); border-style:dashed; }
   .lvr-w{ border-color:color-mix(in srgb,var(--violet) 50%,var(--line)); }
+  .lv-add{ order:9; margin-left:auto; border-style:dashed !important; color:var(--ink) !important; }
+  .lv-sadd{ margin-left:4px; padding:2px 9px; border-radius:8px; border:1px dashed var(--line); background:none; color:var(--muted); font-size:11.5px; font-weight:800; cursor:pointer; }
+  .lv-sadd:hover{ color:var(--ink); border-color:var(--ink); }
+  .lvr-man{ font-size:10px; font-weight:800; padding:1px 6px; border-radius:6px; background:color-mix(in srgb,var(--info) 18%,transparent); color:var(--ink); }
+  .lvr-cb{ font-size:10px; font-weight:800; padding:1px 6px; border-radius:6px; background:color-mix(in srgb,var(--neg) 18%,transparent); color:var(--neg); }
+  .lvr.rev{ border-color:color-mix(in srgb,var(--amber) 70%,var(--line)); border-style:solid; background:color-mix(in srgb,var(--amber) 8%,var(--surface-2)); }
+  .lvr-rev{ padding:8px 10px; border-radius:10px; font-size:12.5px; font-weight:600; background:color-mix(in srgb,var(--amber) 16%,transparent); color:var(--ink); }
+  .lvr-rev b{ font-weight:800; }
+  .asd{ display:grid; gap:12px; }
+  .asd-steps{ display:flex; flex-wrap:wrap; gap:6px; }
+  .asd-g{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+  .asd label{ display:grid; gap:4px; font-size:11.5px; font-weight:800; color:var(--muted); }
+  .asd .inp{ width:100%; min-width:0; } .asd input[type="datetime-local"]{ font-size:12.5px; padding:6px 8px; }
+  .asd-sec{ display:grid; gap:10px; padding-top:10px; border-top:1px dashed var(--line); }
+  .asd-sec h4{ margin:0; font-size:11px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); }
+  .asd-bias{ margin:0; font-size:12.5px; font-weight:700; }
+  .asd-msg{ margin:0; font-size:12.5px; font-weight:700; color:var(--neg); } .asd-msg:empty{ display:none; }
   .lvr-note.warn-n{ color:var(--amber); font-weight:700; }
   .lvr-when{ align-self:center; font-size:12px; font-weight:800; color:var(--amber); padding:4px 9px; border-radius:99px; background:color-mix(in srgb,var(--amber) 14%,transparent); }
   .lvr-x{ grid-column:1/-1; } .lvr .su-skip{ grid-column:1/-1; display:grid; gap:6px; padding-top:8px; border-top:1px dashed var(--line); }
@@ -1492,6 +1509,7 @@
 <dialog id="bankDlg" class="panel" aria-label="Bank entry" style="width:min(560px,96vw)"></dialog>
 <dialog id="qaDlg" class="panel" aria-label="Quick add trade" style="width:min(520px,94vw)"></dialog>
 <dialog id="trDlg" class="panel" aria-label="Trade" style="width:min(760px,96vw)"></dialog>
+<dialog id="addSuDlg" class="panel" aria-label="Add a setup by hand" style="width:min(640px,96vw)"></dialog>
 <dialog id="pendDlg" class="panel" aria-label="Trades to complete" style="width:min(620px,94vw)"></dialog>
 <dialog id="pairDlg" class="panel" aria-label="Switch pair" style="width:min(680px,94vw)"></dialog>
 <dialog id="moreDlg" class="panel" aria-label="More" style="width:min(420px,94vw)"></dialog>
@@ -3889,16 +3907,17 @@ function deriveSetups(){
     const live = list.filter(s => ['forming','validate','wickwait','formed','retest','watch'].includes(s.stage)); open.set(k, live);
     if(g.kind==='liq'){
       const side = liqSide(g), dir = side==='sell' ? 'Long' : side==='buy' ? 'Short' : null, wr = biasAt(g.pair, g.at), bias = wr?.bias || null;
-      if(TF_MS[g.tf] && isRoll(sigStart(g), g.tf)){ all.push({ key:g.id, pair:g.pair, tf:g.tf, dir, side, bias, liq:g, liqs:[g], startAt:g.at, stage:'ignored', why:'Rollover candle (00:00 RO)' }); continue; }
+      const man = !!g.raw?.manual;   /* added by you: its own setup, kept even against the bias */
+      if(!man && TF_MS[g.tf] && isRoll(sigStart(g), g.tf)){ all.push({ key:g.id, pair:g.pair, tf:g.tf, dir, side, bias, liq:g, liqs:[g], startAt:g.at, stage:'ignored', why:'Rollover candle (00:00 RO)' }); continue; }
       /* a new sweep on the same side and timeframe while the setup still waits for its break → the LATEST sweep becomes the reference;
          the stop goes to the most extreme wick of all of them (if price went further, that wick is the new base) */
-      const same = live.find(s => s.stage==='forming' && s.dir===dir && s.tf===g.tf);
+      const same = man ? null : live.find(s => s.stage==='forming' && s.dir===dir && s.tf===g.tf && !s.liq?.raw?.manual);
       if(same){ same.liqs.push(g); same.liq = mergeLiq(same.liqs, dir); continue; }
-      const dup = live.find(s => s.dir===dir && s.tf===g.tf && s.liq.level!=null && g.level!=null && Math.abs(Number(s.liq.level) - Number(g.level)) <= Math.abs(Number(g.level))*0.00005);
+      const dup = man ? null : live.find(s => s.dir===dir && s.tf===g.tf && s.liq.level!=null && g.level!=null && Math.abs(Number(s.liq.level) - Number(g.level)) <= Math.abs(Number(g.level))*0.00005);
       if(dup){ dup.liqs.push(g); continue; }   /* the very same sweep sent twice */
       const aligned = (bias==='bullish' && dir==='Long') || (bias==='bearish' && dir==='Short');
       const su = { key:g.id, pair:g.pair, tf:g.tf, dir, side, bias, conviction:wr?.conviction || null, div:pairDiv(wr), liq:g, liqs:[g], bos:null, retest:null, startAt:g.at,
-        stage: dir && aligned ? 'forming' : 'ignored',
+        stage: dir && (aligned || man) ? 'forming' : 'ignored', manual:man,
         why: !dir ? 'Liquidity side unknown' : !bias || !['bullish','bearish'].includes(bias) ? 'No directional weekly bias' : dir && !aligned ? `Against the ${bias} bias` : '' };
       all.push(su); if(su.stage==='forming') live.push(su);
     } else if(g.kind==='bos'){
@@ -3909,6 +3928,7 @@ function deriveSetups(){
       const gl = lvOk ? g.level : null, bp = g.price ?? gl;
       live.filter(x => x.stage==='forming' && (!g.tf || g.tf==='?' || x.tf===g.tf)).forEach(x => {
         const L = x.liq.level ?? x.liq.extreme;
+        if(g.raw?.key && g.raw.key!==x.key) return;   /* a break you added by hand belongs to one setup */
         /* a bullish reversal only confirms longs, a bearish one only shorts */
         const gs = g.side || breakSide(g.raw?.text), sideOk = !gs || (gs==='bull') === (x.dir==='Long');   /* arrow in your fractal alert: ⤴️ bullish · ⬇️ bearish */
         if(!sideOk) return;
@@ -4406,6 +4426,83 @@ async function skipTrade(s){
   if(t && !(await dropTrade(t))) return;
   if(await markSetup(s.key, 'skipped', { reason:'Skipped in Step 4' })){ refreshDock?.(); renderMain(); toast('Setup skipped'); }
 }
+/* ---- add a setup by hand, at any step (when the indicator missed something) ---- */
+const addSuDlg = document.getElementById('addSuDlg');
+function openAddSetup(step0 = 'forming'){
+  const tfMs = tf => TF_MS[tf] || 36e5;
+  const dtl = ms => { const d = new Date(ms); return `${iso(d)}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+  const floorTf = (ms, tf) => { const d = new Date(ms); d.setMinutes(0, 0, 0); if(tf==='4H') d.setHours(d.getHours() - d.getHours() % 4); return d.getTime(); };
+  const now = Date.now(), A = { step: step0==='trade' ? 'trade' : step0, pair: S.su.addPair || S.pair || 'EURUSD', tf: '1H', dir: 'Long', type: '' };
+  const STEPS = [['forming','1 · Liquidity'],['validate','2 · Fractal change'],['formed','3 · Setup formed'],['trade','4 · Trade'],['watch','★ Watchlist']];
+  const draw = () => {
+    const n = { forming:1, validate:2, formed:3, trade:4, watch:3 }[A.step], wr = biasAt(A.pair, new Date()), b = wr?.bias, L = A.dir==='Long';
+    const against = b && !((b==='bullish' && L) || (b==='bearish' && !L));
+    const t0 = floorTf(now - tfMs(A.tf)*2, A.tf), t1 = floorTf(now - tfMs(A.tf), A.tf);
+    const keep = id => addSuDlg.querySelector('#'+id)?.value;
+    addSuDlg.innerHTML = `<div class="dlg-head"><h2>＋ Add a setup by hand</h2><p class="muted" style="font-size:13px;margin-top:4px">For what the indicators missed. It goes straight into the step you pick and works like any other setup.</p></div>
+      <div class="dlg-body asd">
+        <div><span class="lbl">Start at</span><div class="asd-steps chips">${STEPS.map(([k, l]) => `<button class="ch" data-ast="${k}" aria-pressed="${A.step===k}">${l}</button>`).join('')}</div></div>
+        <div class="asd-g">
+          <label>Pair<select class="inp" id="asPair">${PAIRS.map(p => `<option ${p===A.pair ? 'selected' : ''}>${p}</option>`).join('')}</select></label>
+          <label>Timeframe<div class="seg">${['1H','4H'].map(f => `<button data-astf="${f}" aria-pressed="${A.tf===f}">${f}</button>`).join('')}</div></label>
+          <label>Direction<div class="seg">${['Long','Short'].map(d => `<button data-asdir="${d}" aria-pressed="${A.dir===d}">${d==='Long' ? '▲ Long' : '▼ Short'}</button>`).join('')}</div></label>
+        </div>
+        <p class="asd-bias ${against ? 'neg' : 'pos'}">${b ? `Weekly bias ${BIAS_LBL[b] || b}${wr?.conviction ? ', '+esc(wr.conviction) : ''}${against ? ' — this one is against the bias (it is kept, marked counter-bias)' : ' — in the bias direction'}` : 'No weekly bias set for this pair yet.'}</p>
+        <div class="asd-sec"><h4>Step 1 · Liquidity</h4><div class="asd-g">
+          <label>Liquidity price<input class="inp num" id="asLiq" inputmode="decimal" value="${esc(keep('asLiq') || '')}" placeholder="the high / low taken"></label>
+          <label>Stop loss (sweep wick)<input class="inp num" id="asSl" inputmode="decimal" value="${esc(keep('asSl') || '')}" placeholder="empty = liquidity price"></label>
+          <label>Candle that took it<input class="inp" id="asLt" type="datetime-local" value="${keep('asLt') || dtl(t0)}"></label></div></div>
+        ${n >= 2 ? `<div class="asd-sec"><h4>Step 2 · Fractal change</h4><div class="asd-g">
+          <label>Break candle<input class="inp" id="asBt" type="datetime-local" value="${keep('asBt') || dtl(t1)}"></label>
+          ${n >= 3 ? `<label>Break closed with<div class="seg">${['wick','body'].map(k => `<button data-astype="${k}" aria-pressed="${A.type===k}">${k==='wick' ? 'Wick' : 'Body'}</button>`).join('')}</div></label>
+          <label>Fractal line<input class="inp num" id="asLine" inputmode="decimal" value="${esc(keep('asLine') || '')}" placeholder="entry price"></label>` : '<p class="muted" style="margin:0;font-size:12.5px">You pick Wick / Body and the prices on the Step 2 row.</p>'}</div></div>` : ''}
+        ${A.step==='trade' ? `<div class="asd-sec"><h4>Step 4 · Trade</h4><div class="asd-g"><label>Entry time<input class="inp" id="asEt" type="datetime-local" value="${keep('asEt') || dtl(now - now % 6e4)}"></label></div>
+          <p class="muted" style="margin:0;font-size:12.5px">Entry at the fractal line, SL as above, TP at 2R. TP / SL are then checked from the heartbeat.</p></div>` : ''}
+        ${A.step==='watch' ? '<p class="muted" style="margin:0;font-size:12.5px">Goes to the watchlist: no trade, a Telegram message when price comes back to the zone.</p>' : ''}
+        <p class="asd-msg"></p>
+      </div>
+      <div class="dlg-foot"><button class="btn" data-asx>Cancel</button><button class="btn btn-primary" data-asok>Add</button></div>`;
+    addSuDlg.querySelectorAll('[data-ast]').forEach(b => b.onclick = () => { A.step = b.dataset.ast; draw(); });
+    addSuDlg.querySelectorAll('[data-astf]').forEach(b => b.onclick = ev => { ev.preventDefault(); A.tf = b.dataset.astf; draw(); });
+    addSuDlg.querySelectorAll('[data-asdir]').forEach(b => b.onclick = ev => { ev.preventDefault(); A.dir = b.dataset.asdir; draw(); });
+    addSuDlg.querySelectorAll('[data-astype]').forEach(b => b.onclick = ev => { ev.preventDefault(); A.type = b.dataset.astype; draw(); });
+    addSuDlg.querySelector('#asPair').onchange = e => { A.pair = e.target.value; S.su.addPair = A.pair; draw(); };
+    addSuDlg.querySelector('[data-asx]').onclick = () => addSuDlg.close();
+    addSuDlg.querySelector('[data-asok]').onclick = save;
+  };
+  const save = async () => {
+    const msg = addSuDlg.querySelector('.asd-msg'), v = id => addSuDlg.querySelector('#'+id)?.value, n = { forming:1, validate:2, formed:3, trade:4, watch:3 }[A.step], L = A.dir==='Long', len = tfMs(A.tf);
+    const liq = parseNum(v('asLiq')), sl = parseNum(v('asSl')) ?? liq, lt = v('asLt') ? new Date(v('asLt')).getTime() : NaN;
+    if(!(liq > 0)) return msg.textContent = 'Enter the liquidity price.';
+    if(isNaN(lt)) return msg.textContent = 'Pick the candle that took the liquidity.';
+    if(L ? sl > liq : sl < liq) return msg.textContent = `For a ${L ? 'long' : 'short'} the stop loss sits ${L ? 'below' : 'above'} the liquidity (the sweep wick).`;
+    let bt = null, line = null;
+    if(n >= 2){ bt = v('asBt') ? new Date(v('asBt')).getTime() : NaN; if(isNaN(bt)) return msg.textContent = 'Pick the break candle.'; if(bt <= lt) return msg.textContent = 'The break candle has to come after the liquidity candle.'; }
+    if(n >= 3){
+      if(!A.type) return msg.textContent = 'Pick how the break closed: Wick or Body.';
+      line = parseNum(v('asLine')); if(!(line > 0)) return msg.textContent = 'Enter the fractal line.';
+      if(L ? line <= liq : line >= liq) return msg.textContent = `For a ${L ? 'long' : 'short'} the fractal line has to be ${L ? 'above' : 'below'} the liquidity.`;
+    }
+    let et = null;
+    if(A.step==='trade'){ et = v('asEt') ? new Date(v('asEt')).getTime() : NaN; if(isNaN(et) || et < bt) return msg.textContent = 'The entry has to come after the break candle.'; }
+    const btn = addSuDlg.querySelector('[data-asok]'); btn.disabled = true;
+    try{
+      const { data:lq, error } = await sb.from('do_signals').insert({ pair:A.pair, tf:A.tf, kind:'liq', side: L ? 'sell' : 'buy', level:liq, extreme:sl, at:new Date(lt + len).toISOString(), source:'manual', raw:{ manual:true } }).select().single();
+      if(error) throw error;
+      if(n >= 3) await suValSet(lq.id, r => ({ ...r, liq, line, type:A.type, sl, at:new Date().toISOString(), last:{ liq, line, type:A.type, sl }, ...(A.step==='watch' ? { watch:Date.now() } : {}) }));
+      if(n >= 2){ const { error:e2 } = await sb.from('do_signals').insert({ pair:A.pair, tf:A.tf, kind:'bos', side: L ? 'bull' : 'bear', at:new Date(bt + len + 5000).toISOString(), source:'manual', raw:{ manual:true, key:lq.id, text:'manual break' } }); if(e2) throw e2; }
+      if(A.step==='trade'){
+        const r = Math.abs(line - sl), tp = L ? line + 2*r : line - 2*r, dg = line >= 20 ? 3 : 5, ed = new Date(et);
+        const t = await addTrade(A.pair, iso(ed), A.dir, { setup_tf:A.tf, entry_price:line, sl, tp:+tp.toFixed(dg), entry_time:`${String(ed.getHours()).padStart(2,'0')}:${String(ed.getMinutes()).padStart(2,'0')}`,
+          notes:`[Manual] Setup ${A.tf}: liquidity ${lvl(liq)} → ${L ? 'bullish' : 'bearish'} fractal change (${A.type}) ${lvl(line)}. Plan: entry ${lvl(line)} · SL ${lvl(sl)} · TP ${lvl(tp)} (2R).` });
+        if(t) await markSetup(lq.id, 'taken', { trade_id:t.id, reason:'manual' });
+      }
+      await loadSignals(); addSuDlg.close(); renderMain();
+      toast(`${A.pair} ${A.tf} ${A.dir} added to ${STEPS.find(x => x[0]===A.step)[1]}`);
+    }catch(e){ msg.textContent = 'Not saved: ' + (e.message || e); btn.disabled = false; }
+  };
+  addSuDlg.innerHTML = ''; draw(); if(!addSuDlg.open) addSuDlg.showModal();
+}
 async function markSetup(key, status, extra = {}){
   const row = { setup_key:key, status, reason:extra.reason ?? null, trade_id:extra.trade_id ?? null, updated_at:new Date().toISOString() };
   const { data, error } = await sb.from('do_setup_marks').upsert(row, { onConflict:'setup_key' }).select().single();
@@ -4517,7 +4614,7 @@ const LV_LBL = {
 function lvRow(s){
   const tr = suOpenTrade(s), L = s.dir==='Long', isNew = sxIsNew(s), pl = s.bos ? suPlan(s) : null, col = sxCol(s), nx = sxNext(s, tr, pl);
   const id = `<div class="lvr-id">${isNew ? `<button class="lvr-new" data-suseen="${s.key}" title="New · click to mark seen">NEW ✓</button>` : ''}
-      <b class="lvr-p">${base(s.pair)}<em>${quote(s.pair)}</em></b><span class="lvr-d ${L ? 'pos' : 'neg'}">${L ? '▲' : '▼'}</span><span class="tfl">${esc(s.tf)}</span></div>`;
+      <b class="lvr-p">${base(s.pair)}<em>${quote(s.pair)}</em></b><span class="lvr-d ${L ? 'pos' : 'neg'}">${L ? '▲' : '▼'}</span><span class="tfl">${esc(s.tf)}</span>${s.manual ? `<span class="lvr-man" title="Added by you">manual</span>` : ''}${s.manual && !((s.bias==='bullish' && L) || (s.bias==='bearish' && !L)) ? `<span class="lvr-cb" title="Against the weekly bias">counter-bias</span>` : ''}</div>`;
   const kv = (k, v, t, cls = '') => `<div class="lvr-kv ${cls}"><span>${k}</span><b>${v}</b>${t ? `<small>${t}</small>` : ''}</div>`;
   const hm = at => at ? hhmm(at).slice(-5) : '';
   const chart = `<a class="bt lvr-ic" href="${tvUrl(s.pair, s.tf)}" target="_blank" rel="noopener" title="Open the chart on TradingView">↗</a>`;
@@ -4560,6 +4657,8 @@ function lvRow(s){
     mid = kv('Zone', `${sxPx(s.line)} → ${sxPx(s.liq?.extreme ?? s.liq?.level)}`, s.bos ? `break ${hm(s.bos.candle ? s.bos.candle.t : candleOpen(s.bos.at, s.tf))} candle` : '')
       + kv('Added', w ? `${WD_SHORT[new Date(w).getDay()]} ${hm(w)}` : '—', w ? ago(new Date(w)) : '')
       + `<p class="lvr-note ${lt ? 'go' : ''}">${lt ? `👀 Price came back: ${lvl(lt.price)} · ${lt.tf} candle ${hhmm(new Date(lt.at))}${tc.length > 1 ? ` · ${tc.length} touches` : ''}` : 'Not touched since you added it'}</p>`;
+    const cb = biasAt(s.pair, new Date())?.bias, rev = cb && cb!==s.bias;
+    if(rev) extra = `<div class="lvr-x lvr-rev">⚠️ <b>Review:</b> the weekly bias is now <b>${BIAS_LBL[cb] || esc(cb)}</b> (it was ${BIAS_LBL[s.bias] || s.bias || 'not set'} when the zone formed). A trade from this zone would be counter-trend on fundamentals.</div>`;
     act = `${chart}<button class="bt" data-suunwatch="${s.key}" title="Back to Step 3: the setup waits for the line again and takes the trade">↩ Undo</button>${skip}`;
   } else {
     if(tr){
@@ -4575,7 +4674,7 @@ function lvRow(s){
       act = `${chart}${skip}<button class="btn btn-primary" data-sutake="${s.key}">Take</button>`;
     }
   }
-  return `<article class="lvr c-${col} ${L ? 'long' : 'short'}${isNew ? ' is-new' : ''}" data-su="${s.key}">
+  return `<article class="lvr c-${col} ${L ? 'long' : 'short'}${isNew ? ' is-new' : ''}${extra.includes('lvr-rev') ? ' rev' : ''}" data-su="${s.key}">
     ${id}<div class="lvr-mid">${mid}</div><div class="lvr-act">${act}</div>${extra}</article>`;
 }
 const TF_RANK = { '1M':9, '1W':8, '1D':7, 'D1':7, '8H':6, '4H':5, '2H':4, '1H':3, '30m':2, '15m':1, '5m':0, '3m':-1, '1m':-2 };
@@ -4622,12 +4721,13 @@ function renderSetups(){
       </div>
     </div>
     <div class="lv-tabs" role="tablist" aria-label="Stages">
+      <button class="lv-add" data-suadd="${lvt==='all' ? 'forming' : lvt}" title="Add a pair by hand, at any step">＋ Add manually</button>
       <button role="tab" data-lvt="all" aria-selected="${lvt==='all'}">All<em>${act.length}</em></button>
       ${LV_ORDER.map((k, n) => `<button role="tab" class="t-${k}" data-lvt="${k}" aria-selected="${lvt===k}"><i></i><span class="lv-n">${k==='watch' ? '★' : n+1}</span>${LV_LBL[k][3]}<em>${cols[k].length}</em>${newIn(k) ? `<b>${newIn(k)} new</b>` : ''}${k==='trade' && live.length ? `<span class="${liveR >= 0 ? 'pos' : 'neg'}">${liveR >= 0 ? '+' : ''}${fmt(liveR, 2)}R</span>` : ''}</button>`).join('')}
     </div>
     <div class="lv">
       ${LV_ORDER.filter(k => lvt==='all' ? cols[k].length : lvt===k).map(k => `<section class="lv-sec s-${k}">
-        <header><b>${LV_LBL[k][0]}</b><span class="bn">${cols[k].length}</span><p>${LV_LBL[k][1]}</p></header>
+        <header><b>${LV_LBL[k][0]}</b><span class="bn">${cols[k].length}</span><button class="lv-sadd" data-suadd="${k}" title="Add a pair by hand to this step">＋ Add</button><p>${LV_LBL[k][1]}</p></header>
         ${cols[k].length ? (() => { const list = [...cols[k].filter(sxIsNew), ...cols[k].filter(x => !sxIsNew(x))], fold = k==='forming' && lvt==='all' && list.length > 4 && !S.su.s1open;
           return `<div class="lv-list">${(fold ? list.slice(0, 3) : list).map(lvRow).join('')}</div>${k==='forming' && lvt==='all' && list.length > 4 ? `<button class="lv-more" data-s1more>${fold ? `Show all ${list.length} sweeps ▾` : 'Show less ▴'}</button>` : ''}`; })() : `<div class="sx-empty">${LV_LBL[k][2]}</div>`}
       </section>`).join('') || `<div class="sx-empty">Nothing live right now. Sweeps in the bias direction show up here as soon as the liquidity alert fires.</div>`}
@@ -4913,6 +5013,7 @@ function bindSetups(m, all){
   });
   m.querySelectorAll('[data-vtype]').forEach(b => b.onclick = () => { const p = b.closest('.sx-val');
     p.querySelectorAll('[data-vtype]').forEach(x => x.setAttribute('aria-pressed', String(x===b))); p.querySelector('.sx-val-msg').textContent = ''; p.classList.add('dirty'); });
+  m.querySelectorAll('[data-suadd]').forEach(b => b.onclick = () => openAddSetup(b.dataset.suadd));
   m.querySelectorAll('[data-suwatch]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const s = byKey.get(b.dataset.suwatch); if(!s) return;
     await suValSet(s.key, r => ({ ...r, watch:Date.now() })); renderMain(); toast(`${s.pair} ${s.tf} → Watchlist · you'll get a Telegram message when price comes back`); });
   m.querySelectorAll('[data-suunwatch]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const s = byKey.get(b.dataset.suunwatch); if(!s) return;
