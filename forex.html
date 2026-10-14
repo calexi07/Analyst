@@ -4867,13 +4867,29 @@ function suExportData(range = 'all'){
     let rEst = false, rMul = t?.r_multiple!=null ? Number(t.r_multiple) : null;
     if(t?.result && rMul==null){ const E = numOr(t.entry_price), SLv = numOr(t.sl), TPv = numOr(t.tp);
       rMul = t.result==='L' ? -1 : t.result==='BE' ? 0 : (E!=null && SLv!=null && TPv!=null && E!==SLv ? Math.abs(TPv - E)/Math.abs(E - SLv) : 2); rEst = true; }
-    const issues = [];
+    const issues = [], nowMs = Date.now();
     if(t?.result && !t.exit_date) issues.push('result set without an exit time');
     if(rEst) issues.push('r_multiple estimated from the plan');
+    /* the plan at the moment of entry, as written in the notes ("Plan: entry X · SL Y · TP Z") */
+    const pm = /Plan:\s*entry\s*([\d.]+)\s*·\s*SL\s*([\d.]+)\s*·\s*TP\s*([\d.]+)/.exec(t?.notes || '');
+    const plan0 = pm ? { e:+pm[1], sl:+pm[2], tp:+pm[3] } : null;
+    const Ecur = numOr(t?.entry_price), SLcur = numOr(t?.sl), TPcur = numOr(t?.tp);
+    const slChanged = !!(plan0 && SLcur!=null && Math.abs(plan0.sl - SLcur) > pipSize(s.pair)*0.05);
+    const tpChanged = !!(plan0 && TPcur!=null && Math.abs(plan0.tp - TPcur) > pipSize(s.pair)*0.05);
+    /* R measured on the risk taken at entry (plan SL), not on a stop moved later */
+    let rInit = null;
+    if(t?.result && Ecur!=null){ const s0 = plan0?.sl ?? SLcur, risk0 = s0!=null ? Math.abs(Ecur - s0) : null, exitPx = t.result==='W' ? TPcur : t.result==='L' ? SLcur : Ecur;
+      if(risk0 && exitPx!=null) rInit = (L ? exitPx - Ecur : Ecur - exitPx) / risk0; }
+    if(slChanged) issues.push(`stop loss changed after the entry (plan ${plan0.sl} → now ${SLcur})`);
+    if(tpChanged) issues.push(`take profit changed after the entry (plan ${plan0.tp} → now ${TPcur})`);
     const liqMs = s.liq?.at ? candleOpen(s.liq.at, s.liq.tf || s.tf) : null;
     const brkMs = s.bos ? (s.bos.candle ? s.bos.candle.t : candleOpen(s.bos.at, s.tf)) : (s.prop?.at ? candleOpen(s.prop.at, s.tf) : null);
     const entMs = t?.day ? new Date(`${t.day}T${t.entry_time || '00:00'}`).getTime() : (s.retest?.at ? tms(s.retest.at) : null);
     const exMs = t?.exit_date ? new Date(`${t.exit_date}T${t.exit_time || '23:59'}`).getTime() : null;
+    const timeIssues = [];
+    if(exMs && exMs > Date.now() + 5*6e4) timeIssues.push('exit time is in the future — wrong date or hour in the journal');
+    if(t?.day && t.entry_time && new Date(`${t.day}T${t.entry_time}`).getTime() > Date.now() + 5*6e4) timeIssues.push('entry time is in the future');
+    if(exMs && t?.day && exMs < new Date(`${t.day}T${t.entry_time || '00:00'}`).getTime()) timeIssues.push('exit before entry');
     const line = s.line ?? s.bos?.level ?? null, sl = s.liq?.extreme ?? s.liq?.level ?? null, pl = s.bos ? suPlan(s) : null;
     const cur = biasAt(s.pair, new Date()), wr = biasAt(s.pair, s.startAt), ex = t ? tradeExcursion(t) : null;
     const step = { forming:'1 Liquidity', validate:'2 Fractal change', formed:'3 Setup formed', watch:'3 Watchlist', trade:'4 Trade', done:'5 Finished' }[sxCol(s)] || null;
@@ -4893,17 +4909,21 @@ function suExportData(range = 'all'){
       entry_time:xIso(entMs), entry_weekday: entMs ? WD_SHORT[new Date(entMs).getDay()] : null, entry_hour: entMs ? new Date(entMs).getHours() : null, entry_session:xSess(entMs),
       entry_candle_tf:s.retest?.tf || null, taken: m?.status==='taken' ? (m.reason==='auto' ? 'auto' : m.reason==='manual' ? 'manual add' : 'by hand') : null,
       entry_time_engine: s.retest?.at ? xIso(tms(s.retest.at)) : null,
-      entry_price:r2(t?.entry_price, 5), exit_time:xIso(exMs), exit_session:xSess(exMs), r_multiple:r2(rMul), r_estimated:rEst, pips:r2(t?.pips, 1), profit:r2(t?.profit),
+      plan_entry:plan0?.e ?? null, plan_stop_loss:plan0?.sl ?? null, plan_take_profit:plan0?.tp ?? null, sl_changed_after_entry:slChanged, tp_changed_after_entry:tpChanged,
+      risk_pips_at_entry: Ecur!=null && (plan0?.sl ?? SLcur)!=null ? r2(Math.abs(Ecur - (plan0?.sl ?? SLcur))/pipSize(s.pair), 1) : null,
+      risk_pips_current: Ecur!=null && SLcur!=null ? r2(Math.abs(Ecur - SLcur)/pipSize(s.pair), 1) : null,
+      entry_price:r2(t?.entry_price, 5), exit_time:xIso(exMs), exit_session:xSess(exMs),
+      r_multiple:r2(rMul), r_multiple_on_initial_risk:r2(rInit), r_estimated:rEst, pips:r2(t?.pips, 1), profit:r2(t?.profit),
       duration_minutes: t ? tradeMinutes(t) : null, mfe_R:ex?.mfe_R ?? null, mae_R:ex?.mae_R ?? null, excursion_from:ex?.from_tf ?? null,
       invalid_reason: s.stage==='invalid' ? (s.why || s.invWhy || null) : null, skip_reason: s.stage==='skipped' ? (s.why || m?.reason || null) : null,
       watchlist:!!v.watch, watchlist_touches:s.touches?.length || 0,
       trade_session_field:t?.session || null, tags:t?.tags || [], accounts:t ? tradeAccts(t).map(x => ({ account:S.accounts.get(x.id)?.name || x.id, profit:x.profit })) : [],
-      notes:t?.notes || null, tradingview_charts:t ? tradeShots(t).map(x => x.u) : [], data_issues:issues,
+      notes:t?.notes || null, tradingview_charts:t ? tradeShots(t).map(x => x.u) : [], data_issues:[...timeIssues, ...issues],
     });
   }
   /* summary of the closed setup trades, cut every way the coach will want */
   const closed = rows.filter(r => ['win','loss','breakeven'].includes(r.outcome));
-  const agg = key => { const g = {}; closed.forEach(r => { const ks = Array.isArray(key(r)) ? key(r) : [key(r)]; ks.forEach(k => { k = k ?? 'n/a'; const x = g[k] ||= { trades:0, wins:0, losses:0, net_R:0 }; x.trades++; if(r.outcome==='win') x.wins++; if(r.outcome==='loss') x.losses++; x.net_R = r2(x.net_R + (r.r_multiple || 0)); }); });
+  const agg = key => { const g = {}; closed.forEach(r => { const ks = Array.isArray(key(r)) ? key(r) : [key(r)]; ks.forEach(k => { k = k ?? 'n/a'; const x = g[k] ||= { trades:0, wins:0, losses:0, net_R:0 }; x.trades++; if(r.outcome==='win') x.wins++; if(r.outcome==='loss') x.losses++; x.net_R = r2(x.net_R + (r.r_multiple_on_initial_risk ?? r.r_multiple ?? 0)); }); });
     Object.values(g).forEach(x => x.winrate_pct = x.wins + x.losses ? Math.round(x.wins/(x.wins + x.losses)*100) : null); return g; };
   const W = closed.filter(r => r.outcome==='win').length, Lo = closed.filter(r => r.outcome==='loss').length;
   return {
@@ -4916,9 +4936,11 @@ function suExportData(range = 'all'){
         entry_time:'entry_time is the trade\'s entry time in the journal (it can have been edited by hand); entry_time_engine is when the heartbeat saw price touch the line.',
         levels:'stop_loss / take_profit / entry_price are the trade\'s CURRENT values (they can have been updated after the entry with "Update the trade" when a new sweep moved the stop); the plan written in "notes" is the one at the moment of entry.',
         r_estimated:'true when the result was set without an exit, so r_multiple was filled from the plan — check data_issues.',
+        r_multiple_on_initial_risk:'R measured on the risk at entry (plan stop from the notes). Use it for performance; r_multiple uses the current stop, which may have been moved after the entry (sl_changed_after_entry).',
+        stop_moved_to_new_wick:'only BEFORE the entry (a deeper sweep wick while waiting for the break). A stop changed after the entry is sl_changed_after_entry.',
         excursion:'mfe_R / mae_R come from the heartbeat candles between entry_time and the exit; empty when those candles are no longer stored (1m/15m kept 24h, 1H/4H ~35 days).' } },
     summary:{ setups:rows.length, by_status:rows.reduce((a, r) => (a[r.status] = (a[r.status] || 0) + 1, a), {}),
-      closed_trades:closed.length, wins:W, losses:Lo, winrate_pct: W + Lo ? Math.round(W/(W + Lo)*100) : null, net_R:r2(closed.reduce((a, r) => a + (r.r_multiple || 0), 0)),
+      closed_trades:closed.length, wins:W, losses:Lo, winrate_pct: W + Lo ? Math.round(W/(W + Lo)*100) : null, net_R:r2(closed.reduce((a, r) => a + (r.r_multiple_on_initial_risk ?? r.r_multiple ?? 0), 0)), net_R_basis:'r_multiple_on_initial_risk (r_multiple when missing)',
       by_pair:agg(r => r.pair), by_timeframe:agg(r => r.timeframe), by_direction:agg(r => r.direction), by_entry_session:agg(r => r.entry_session || 'n/a'),
       by_liquidity_session:agg(r => r.liquidity_session || 'n/a'), by_break_session:agg(r => r.break_session || 'n/a'), by_break_type:agg(r => r.break_type), by_entry_weekday:agg(r => r.entry_weekday),
       by_bias_conviction:agg(r => r.bias_conviction), by_with_bias:agg(r => r.with_bias ? 'with bias' : 'against bias'), by_added_by:agg(r => r.added_by) },
