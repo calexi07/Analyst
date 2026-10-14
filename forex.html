@@ -3790,7 +3790,14 @@ S.su = { hist: ls.get('do_su_hist', 'taken'), page: ls.get('do_su_page', 'live')
 async function loadSignals(){
   try{ const [sg, mk] = await Promise.all([fetchAll('do_signals'), fetchAll('do_setup_marks')]);
     S.signals = sg; S.setupMarks = new Map(mk.map(m => [m.setup_key, m])); S.signalsMissing = false; }
-  catch(e){ console.warn('signals not available', e); S.signals = []; S.setupMarks = new Map(); S.signalsMissing = true; }
+  catch(e){
+    console.warn('signals not loaded', e);
+    /* only a missing table means "run the migration"; a network hiccup (sleeping laptop, Wi-Fi, a slow Supabase reply) keeps what is already on screen */
+    const missing = e?.code==='42P01' || e?.code==='PGRST205' || /does not exist|could not find the table/i.test(e?.message || '');
+    if(missing){ S.signals = []; S.setupMarks = new Map(); S.signalsMissing = true; }
+    else if(!S.signals){ S.signals = []; S.setupMarks = S.setupMarks || new Map(); }
+    return;
+  }
   if(!S.signalsMissing) await loadCandles();
   try{ const { data } = await sb.from('do_settings').select('*').range(0, 999); (data || []).forEach(r => { if(['engine','hb_1m','hb_15m','hb_1H','hb_4H'].includes(r.key)) S.settings[r.key] = r.value; }); }catch(e){ /* keep what we have */ }
 }
@@ -3836,7 +3843,7 @@ async function loadCandles(){
     }
     /* drop 1m candles older than a day from memory */
     const old = Date.now() - 864e5; for(const [k, c] of S.candles) if(c.tf==='1m' && c.t < old) S.candles.delete(k);
-  }catch(e){ console.warn('candles not available', e); S.candlesMissing = true; }
+  }catch(e){ console.warn('candles not loaded', e); if(e?.code==='42P01' || e?.code==='PGRST205' || /does not exist|could not find the table/i.test(e?.message || '')) S.candlesMissing = true; }
   S.candleIdx = new Map();
   for(const c of S.candles.values()){ const k = c.pair+'|'+c.tf; if(!S.candleIdx.has(k)) S.candleIdx.set(k, []); S.candleIdx.get(k).push(c); }
   S.candleIdx.forEach(a => a.sort((x, y) => x.t - y.t));
