@@ -1103,6 +1103,10 @@
   .lvr-type span{ font-size:10.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); padding:0 6px; }
   .lvr-type button{ padding:5px 12px; border:0; border-radius:8px; background:none; color:var(--muted); font-weight:800; font-size:13px; cursor:pointer; }
   .lvr-type button[aria-pressed="true"]{ background:var(--amber); color:#1a1200; }
+  .lv-tabs .t-done{ --c:var(--pos); } .lv-sec.s-done{ --c:var(--pos); } .lvr.c-done{ --c:var(--pos); }
+  .lv-sub{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; margin:16px 0 8px 2px; padding-top:12px; border-top:1px dashed var(--line); }
+  .lv-sub b{ font-family:'Bricolage Grotesque',sans-serif; font-size:15px; color:var(--violet); }
+  .lv-sub p{ width:100%; margin:0; font-size:12px; font-weight:600; color:var(--muted); }
   .lv-tabs .t-watch{ --c:var(--violet); } .lv-sec.s-watch{ --c:var(--violet); }
   .lvr.c-watch{ --c:var(--violet); border-style:dashed; }
   .lvr-w{ border-color:color-mix(in srgb,var(--violet) 50%,var(--line)); }
@@ -4391,6 +4395,15 @@ function openTradeModal(id){
   if(!trDlg.open) trDlg.showModal();
   trDlg.querySelector('.trm-grid').scrollTop = 0;
 }
+/* Step 5: a setup trade that hit TP / SL and you haven't ticked "Seen" yet (trades closed before Step 5 existed go straight to History) */
+const suDoneFrom = () => S.settings?.su_done_from ? tms(S.settings.su_done_from) : Date.now();
+function suFinished(s){
+  if(s.stage!=='taken' || !s.trade_id) return null;
+  const t = S.trades.get(s.trade_id); if(!t?.result) return null;
+  if(suValid()[s.key]?.done) return null;
+  const ex = t.exit_date ? new Date(`${t.exit_date}T${t.exit_time || '23:59'}`).getTime() : tms(t.updated_at || t.created_at);
+  return ex >= suDoneFrom() ? t : null;
+}
 /* your Step 2 data per setup (setting su_valid): { liq, line, type, at, last, dismiss:[break ids], hold:ms, ts } */
 async function suValSet(key, fn){
   const cut = Date.now() - 45*864e5, now = Date.now();
@@ -4546,14 +4559,14 @@ function sxRail(tr, lv){
     <div class="sx-rail-lbl"><span>SL ${lvl(SL)}</span><span style="left:${pe}%">Entry ${lvl(E)}</span><span>TP ${lvl(TP)}</span></div></div>`;
 }
 /* "new" cards: a setup is new until you mark it seen; it becomes new again when it moves to the next stage */
-const sxCol = s => s.stage==='watch' ? 'watch' : suOpenTrade(s) || s.stage==='retest' ? 'trade' : s.stage==='forming' && s.val ? 'validate' : s.stage==='wickwait' ? 'formed' : s.stage;
+const sxCol = s => suFinished(s) ? 'done' : s.stage==='watch' ? 'watch' : suOpenTrade(s) || s.stage==='retest' ? 'trade' : s.stage==='forming' && s.val ? 'validate' : s.stage==='wickwait' ? 'formed' : s.stage;
 function sxSeen(){ const v = S.settings?.su_seen; return v && typeof v==='object' ? v : (ls.get('do_su_seen', null) || null); }
 const sxIsNew = s => { const m = sxSeen(); return !!m && m[s.key]!==sxCol(s); };
 async function sxMarkSeen(list){
   const m = { ...(sxSeen() || {}) }; list.forEach(s => m[s.key] = sxCol(s));
   ls.set('do_su_seen', m); await saveSettingKey('su_seen', m);
 }
-const SX_NEW_LBL = { forming:'New sweep', validate:'Break, validate', formed:'Just formed', trade:'Entry hit' };
+const SX_NEW_LBL = { done:'Finished', forming:'New sweep', validate:'Break, validate', formed:'Just formed', trade:'Entry hit' };
 /* "Validate" panel: the liquidity and fractal line the setup will use — tick if they're right, correct them if not */
 function sxValPanel(s){
   const editing = s.stage!=='validate', liq = s.val?.liq ?? s.liq.level0 ?? s.liq.level, line = s.val?.line ?? s.prop?.line ?? s.line;
@@ -4604,12 +4617,13 @@ function suCard(s){
   </article>`;
 }
 /* ---- live board: compact rows, one per setup ---- */
-const LV_ORDER = ['forming','validate','formed','trade','watch'];
+const LV_ORDER = ['forming','validate','formed','trade','done'];
 const LV_LBL = {
   forming:['Step 1 · Liquidity','Liquidity taken in the bias direction, waiting for your fractal alert','No sweep in the bias direction right now.','Liquidity'],
   validate:['Step 2 · Fractal change','Your fractal alert fired: pick Wick or Body and check the prices','Nothing to check. When your fractal alert fires, the setup comes here.','Fractal change'],
   formed:['Step 3 · Setup formed','Waiting for price to come back to your fractal line (1m heartbeat)','Nothing waiting. Validated setups wait here for price.','Setup formed'],
   trade:['Step 4 · Trade','Price reached the line, trade running live','No open trade.','Trade'],
+  done:['Step 5 · Finished','Closed at TP or SL — tick ✓ Seen and it moves to History','Nothing finished.','Finished'],
   watch:['Extra · Watchlist','Zones you keep for later: no trade is taken, you get a Telegram message when price comes back','Nothing on the watchlist. Add a zone from Step 3 with ☆ Watchlist.','Watchlist'] };
 function lvRow(s){
   const tr = suOpenTrade(s), L = s.dir==='Long', isNew = sxIsNew(s), pl = s.bos ? suPlan(s) : null, col = sxCol(s), nx = sxNext(s, tr, pl);
@@ -4652,6 +4666,12 @@ function lvRow(s){
         + (pl ? kv(`Limit ${L ? 'buy' : 'sell'}`, sxPx(pl.entry), '', 'e') + kv('SL', sxPx(pl.sl), '', 'sl') + kv('TP 2R', sxPx(pl.tp), '', 'tp') : `<p class="lvr-note">${nx.text}</p>`);
     }
     act = `${chart}${s.stage==='formed' ? `<button class="bt lvr-w" data-suwatch="${s.key}" title="Keep this zone for later: no trade, a Telegram message when price comes back">☆ Watchlist</button>` : ''}${back(3, 'Back to Step 2 to change Wick / Body or the prices')}${skip}`;
+  } else if(col==='done'){
+    const t = S.trades.get(s.trade_id), W = t.result==='W', R = t.r_multiple!=null ? Number(t.r_multiple) : null;
+    mid = `<div class="lvr-live ${W ? 'up' : t.result==='L' ? 'dn' : ''}"><b>${R!=null ? `${R > 0 ? '+' : ''}${fmt(R, R % 1 ? 2 : 0)}R` : esc(t.result)}</b><small>${{ W:'Take profit', L:'Stop loss', BE:'Break-even' }[t.result] || ''}${t.pips!=null ? ` · ${Number(t.pips) > 0 ? '+' : ''}${fmt(Number(t.pips), 1)} pips` : ''}</small></div>`
+      + kv('Entry', sxPx(t.entry_price), dayHM(t.day, t.entry_time), 'e') + kv(W ? 'TP' : 'SL', sxPx(W ? t.tp : t.sl), dayHM(t.exit_date || t.day, t.exit_time), W ? 'tp' : 'sl')
+      + (t.duration ? kv('Duration', esc(t.duration), '') : '');
+    act = `${chart}<button class="bt" data-sutrade="${t.id}">Open</button><button class="btn btn-primary" data-sudone="${s.key}" title="Move it to History">✓ Seen</button>`;
   } else if(col==='watch'){
     const tc = s.touches || [], lt = tc[tc.length-1], w = suValid()[s.key]?.watch;
     mid = kv('Zone', `${sxPx(s.line)} → ${sxPx(s.liq?.extreme ?? s.liq?.level)}`, s.bos ? `break ${hm(s.bos.candle ? s.bos.candle.t : candleOpen(s.bos.at, s.tf))} candle` : '')
@@ -4685,11 +4705,11 @@ function renderSetups(){
   if(S.signalsMissing){ m.innerHTML = `<div class="pairtitle">Setups <span class="beta">beta</span></div><div class="card" style="margin-top:16px"><p>Run <b>migration-signals.sql</b> in Supabase, then reload. The signals table doesn't exist yet.</p></div>`; return; }
   const all = deriveSetups(), tf = S.su.tf || 'all';
   const inTf = x => tf==='all' || x.tf===tf;
-  const colOf = x => x.stage==='watch' ? 'watch' : suOpenTrade(x) ? 'trade' : x.stage==='retest' ? 'trade' : x.stage==='validate' || (x.stage==='forming' && x.val) ? 'validate' : x.stage==='wickwait' ? 'formed' : ['forming','formed'].includes(x.stage) ? x.stage : null;
+  const colOf = x => suFinished(x) ? 'done' : x.stage==='watch' ? 'watch' : suOpenTrade(x) ? 'trade' : x.stage==='retest' ? 'trade' : x.stage==='validate' || (x.stage==='forming' && x.val) ? 'validate' : x.stage==='wickwait' ? 'formed' : ['forming','formed'].includes(x.stage) ? x.stage : null;
   const act = all.filter(x => colOf(x) && inTf(x));
   const by = k => act.filter(x => colOf(x)===k).sort((a, b) => (b.stage==='validate') - (a.stage==='validate') || tms(b.bos?.at || b.prop?.at || b.startAt) - tms(a.bos?.at || a.prop?.at || a.startAt));
   const toVal = act.filter(x => x.stage==='validate').length;
-  const cols = Object.fromEntries([...SX_COLS.map(([k]) => k), 'watch'].map(k => [k, by(k)]));
+  const cols = Object.fromEntries([...SX_COLS.map(([k]) => k), 'watch', 'done'].map(k => [k, by(k)]));
   if(!sxSeen()){ const init = {}; act.forEach(x => init[x.key] = sxCol(x)); ls.set('do_su_seen', init); S.settings.su_seen = init; saveSettingKey('su_seen', init); }
   const fresh = act.filter(sxIsNew), newIn = k => cols[k].filter(sxIsNew).length;
   const live = cols.trade.map(x => suOpenTrade(x)).filter(Boolean).map(livePL).filter(Boolean), liveR = live.reduce((a, l) => a + l.R, 0);
@@ -4697,8 +4717,8 @@ function renderSetups(){
   const d30 = Date.now() - 30*864e5, done = all.filter(s => s.stage==='taken' && tms(s.startAt) >= d30).map(s => S.trades.get(s.trade_id)).filter(t => t?.result);
   const wins = done.filter(t => t.result==='W').length, netR = done.reduce((a, t) => a + (Number(t.r_multiple) || 0), 0);
   const stage = S.su.stage || (toVal ? 'validate' : cols.trade.length ? 'trade' : cols.formed.length ? 'formed' : 'forming');
-  const lvt = S.su.lvt || 'all';
-  const page = S.su.page || 'live', takenN = all.filter(x => x.stage==='taken' && !suOpenTrade(x)).length;
+  const lvt = S.su.lvt==='watch' ? 'formed' : S.su.lvt || 'all';
+  const page = S.su.page || 'live', takenN = all.filter(x => x.stage==='taken' && !suOpenTrade(x) && !suFinished(x)).length;
   const tool = page==='live' ? null : page;
   m.innerHTML = `
     <header class="sx-top">
@@ -4718,24 +4738,32 @@ function renderSetups(){
       <div class="sx-switches">
         <label class="sx-sw" title="When the heartbeat sees price back at the line, the trade is logged: entry at the line, stop at the sweep wick, target 2R"><input type="checkbox" id="suAuto" ${suAuto() ? 'checked' : ''}><i></i>Auto-take at retest</label>
         <label class="sx-sw" title="Setup trades close by themselves at the target (+2R) or the stop (−1R)"><input type="checkbox" id="suAutoClose" ${suAutoClose() ? 'checked' : ''}><i></i>Auto-close at TP / SL</label>
+        <label class="sx-sw" title="A sound on this device when something changes: Step 2 to check, entry, TP, SL, watchlist touch, new liquidity"><input type="checkbox" id="suSound" ${sndOn() ? 'checked' : ''}><i></i>🔔 Sounds</label>
       </div>
     </div>
     <div class="lv-tabs" role="tablist" aria-label="Stages">
       <button class="lv-add" data-suadd="${lvt==='all' ? 'forming' : lvt}" title="Add a pair by hand, at any step">＋ Add manually</button>
       <button role="tab" data-lvt="all" aria-selected="${lvt==='all'}">All<em>${act.length}</em></button>
-      ${LV_ORDER.map((k, n) => `<button role="tab" class="t-${k}" data-lvt="${k}" aria-selected="${lvt===k}"><i></i><span class="lv-n">${k==='watch' ? '★' : n+1}</span>${LV_LBL[k][3]}<em>${cols[k].length}</em>${newIn(k) ? `<b>${newIn(k)} new</b>` : ''}${k==='trade' && live.length ? `<span class="${liveR >= 0 ? 'pos' : 'neg'}">${liveR >= 0 ? '+' : ''}${fmt(liveR, 2)}R</span>` : ''}</button>`).join('')}
+      ${LV_ORDER.map((k, n) => `<button role="tab" class="t-${k}" data-lvt="${k}" aria-selected="${lvt===k}"><i></i><span class="lv-n">${n+1}</span>${LV_LBL[k][3]}<em>${cols[k].length}</em>${k==='formed' && cols.watch.length ? `<em title="Watchlist">★ ${cols.watch.length}</em>` : ''}${newIn(k) + (k==='formed' ? newIn('watch') : 0) ? `<b>${newIn(k) + (k==='formed' ? newIn('watch') : 0)} new</b>` : ''}${k==='trade' && live.length ? `<span class="${liveR >= 0 ? 'pos' : 'neg'}">${liveR >= 0 ? '+' : ''}${fmt(liveR, 2)}R</span>` : ''}</button>`).join('')}
     </div>
     <div class="lv">
-      ${LV_ORDER.filter(k => lvt==='all' ? cols[k].length : lvt===k).map(k => `<section class="lv-sec s-${k}">
-        <header><b>${LV_LBL[k][0]}</b><span class="bn">${cols[k].length}</span><button class="lv-sadd" data-suadd="${k}" title="Add a pair by hand to this step">＋ Add</button><p>${LV_LBL[k][1]}</p></header>
-        ${cols[k].length ? (() => { const list = [...cols[k].filter(sxIsNew), ...cols[k].filter(x => !sxIsNew(x))], fold = k==='forming' && lvt==='all' && list.length > 4 && !S.su.s1open;
-          return `<div class="lv-list">${(fold ? list.slice(0, 3) : list).map(lvRow).join('')}</div>${k==='forming' && lvt==='all' && list.length > 4 ? `<button class="lv-more" data-s1more>${fold ? `Show all ${list.length} sweeps ▾` : 'Show less ▴'}</button>` : ''}`; })() : `<div class="sx-empty">${LV_LBL[k][2]}</div>`}
-      </section>`).join('') || `<div class="sx-empty">Nothing live right now. Sweeps in the bias direction show up here as soon as the liquidity alert fires.</div>`}
+      ${LV_ORDER.filter(k => lvt==='all' ? cols[k].length || (k==='formed' && cols.watch.length) : lvt===k).map(k => {
+        const rows = list => [...list.filter(sxIsNew), ...list.filter(x => !sxIsNew(x))];
+        const body = cols[k].length ? (() => { const list = rows(cols[k]), fold = k==='forming' && lvt==='all' && list.length > 4 && !S.su.s1open;
+          return `<div class="lv-list">${(fold ? list.slice(0, 3) : list).map(lvRow).join('')}</div>${k==='forming' && lvt==='all' && list.length > 4 ? `<button class="lv-more" data-s1more>${fold ? `Show all ${list.length} sweeps ▾` : 'Show less ▴'}</button>` : ''}`; })()
+          : (k==='formed' && cols.watch.length ? '' : `<div class="sx-empty">${LV_LBL[k][2]}</div>`);
+        const watch = k==='formed' ? `<div class="lv-sub"><b>★ Watchlist</b><span class="bn">${cols.watch.length}</span><button class="lv-sadd" data-suadd="watch" title="Add a zone by hand to the watchlist">＋ Add</button><p>${LV_LBL.watch[1]}</p></div>
+          ${cols.watch.length ? `<div class="lv-list">${rows(cols.watch).map(lvRow).join('')}</div>` : `<div class="sx-empty">${LV_LBL.watch[2]}</div>`}` : '';
+        return `<section class="lv-sec s-${k}">
+        <header><b>${LV_LBL[k][0]}</b><span class="bn">${cols[k].length}</span>${k==='done' ? (cols.done.length > 1 ? '<button class="lv-sadd" data-sudoneall title="Move all finished trades to History">✓ All seen</button>' : '') : `<button class="lv-sadd" data-suadd="${k}" title="Add a pair by hand to this step">＋ Add</button>`}<p>${LV_LBL[k][1]}</p></header>
+        ${body}${watch}
+      </section>`; }).join('') || `<div class="sx-empty">Nothing live right now. Sweeps in the bias direction show up here as soon as the liquidity alert fires.</div>`}
     </div>    </div>` : `
     <section class="sx-tools card">
       <div class="sx-tool">${tool==='history' ? sxHistory(all) : tool==='plan' ? alertPlan() : tool==='sim' ? simPanel() : sxGuide()}</div>
     </section>`}`;
   bindSetups(m, all);
+  suWatchChanges(true);
 }
 /* compact live status: engine + heartbeat per timeframe */
 function sxStatus(){
@@ -4802,7 +4830,7 @@ function sxMinutes(s, by){
 const sessTxt = (s, by) => sessOf(sxMinutes(s, by)).map(k => SESS[k][0]).join(' + ') || 'Off-session';
 function sxHistory(all){
   const H = S.su.hist, HT = S.su.htf || 'all', SS = S.su.sess || 'all', SB = S.su.sessBy || 'entry';
-  const hist = all.filter(s => ['taken','skipped','expired','invalid','ignored'].includes(s.stage) && !suOpenTrade(s) && (H==='all' ? s.stage!=='ignored' : s.stage===H) && (HT==='all' || s.tf===HT)
+  const hist = all.filter(s => ['taken','skipped','expired','invalid','ignored'].includes(s.stage) && !suOpenTrade(s) && !suFinished(s) && (H==='all' ? s.stage!=='ignored' : s.stage===H) && (HT==='all' || s.tf===HT)
     && (H!=='taken' || SS==='all' || sessOf(sxMinutes(s, SB)).includes(SS)));
   const d30 = Date.now() - 30*864e5, rec = all.filter(s => tms(s.startAt) >= d30 && !['ignored','deleted'].includes(s.stage));
   const formedN = rec.filter(s => s.bos).length, takenN = rec.filter(s => s.stage==='taken').length;
@@ -5013,6 +5041,12 @@ function bindSetups(m, all){
   });
   m.querySelectorAll('[data-vtype]').forEach(b => b.onclick = () => { const p = b.closest('.sx-val');
     p.querySelectorAll('[data-vtype]').forEach(x => x.setAttribute('aria-pressed', String(x===b))); p.querySelector('.sx-val-msg').textContent = ''; p.classList.add('dirty'); });
+  m.querySelector('#suSound')?.addEventListener('change', e => { ls.set('do_su_sound', e.target.checked); if(e.target.checked) tone(SOUNDS.validate, true); });
+  m.querySelectorAll('[data-sudone]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const s = byKey.get(b.dataset.sudone); if(!s) return;
+    await suValSet(s.key, r => ({ ...r, done:Date.now() })); renderMain(); toast(`${s.pair} ${s.tf} moved to History`); });
+  m.querySelector('[data-sudoneall]')?.addEventListener('click', async () => { const list = all.filter(x => suFinished(x));
+    if(!list.length) return; const map = { ...suValid() }, nw = Date.now(); list.forEach(x => map[x.key] = { ...(map[x.key] || {}), done:nw, ts:nw });
+    await saveSettingKey('su_valid', map); renderMain(); toast(`${list.length} trades moved to History`); });
   m.querySelectorAll('[data-suadd]').forEach(b => b.onclick = () => openAddSetup(b.dataset.suadd));
   m.querySelectorAll('[data-suwatch]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const s = byKey.get(b.dataset.suwatch); if(!s) return;
     await suValSet(s.key, r => ({ ...r, watch:Date.now() })); renderMain(); toast(`${s.pair} ${s.tf} → Watchlist · you'll get a Telegram message when price comes back`); });
@@ -5094,14 +5128,48 @@ function bindSetups(m, all){
 /* keep the board fresh while it's open */
 /* live refresh: every 30 s while the page is visible, and right away when you come back to it */
 S.liveAt = Date.now();
+/* ---- tab badge "(3) Daily Observer" + sounds for Setups changes ---- */
+const BASE_TITLE = document.title;
+let SND_CTX = null, SU_SNAP = null;
+const sndOn = () => ls.get('do_su_sound', true) !== false;
+document.addEventListener('pointerdown', () => { try{ SND_CTX ||= new (window.AudioContext || window.webkitAudioContext)(); if(SND_CTX.state==='suspended') SND_CTX.resume(); }catch(e){} }, { capture:true });
+function tone(seq, force = false){
+  if(!force && !sndOn()) return;
+  try{ SND_CTX ||= new (window.AudioContext || window.webkitAudioContext)(); const c = SND_CTX; if(c.state==='suspended') c.resume(); let t = c.currentTime + 0.03;
+    seq.forEach(([f, d, type = 'sine', g = 0.2]) => { const o = c.createOscillator(), v = c.createGain(); o.type = type; o.frequency.value = f;
+      v.gain.setValueAtTime(0.0001, t); v.gain.exponentialRampToValueAtTime(g, t + 0.015); v.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      o.connect(v).connect(c.destination); o.start(t); o.stop(t + d + 0.03); t += d * 0.8; }); }catch(e){}
+}
+const SOUNDS = { liq:[[660, .14]], validate:[[880, .14], [660, .14], [880, .22]], watch:[[523, .12], [784, .24]], entry:[[523, .1], [659, .1], [784, .26]],
+  tp:[[523, .1], [659, .1], [784, .1], [1047, .34]], sl:[[392, .18, 'triangle'], [311, .32, 'triangle']] };
+/* silent = only remember the state (after your own clicks), otherwise compare with the last check and play the most important sound */
+function suWatchChanges(silent){
+  if(S.signalsMissing || !S.signals) return;
+  let all; try{ all = deriveSetups(); }catch(e){ return; }
+  const LIVE = ['forming','validate','formed','trade','watch'], n = all.filter(x => LIVE.includes(sxCol(x)) && sxIsNew(x)).length;
+  document.title = n ? `(${n}) ${BASE_TITLE}` : BASE_TITLE;
+  const mine = new Set([...S.setupMarks.values()].map(m => m.trade_id).filter(Boolean));
+  const snap = { col:new Map(all.map(x => [x.key, sxCol(x)])), touch:new Map(all.map(x => [x.key, x.touches?.length || 0])), res:new Map([...S.trades.values()].filter(t => mine.has(t.id)).map(t => [t.id, t.result || ''])) };
+  if(SU_SNAP && !silent){
+    const ev = new Set();
+    snap.col.forEach((c, k) => { const was = SU_SNAP.col.get(k); if(c===was) return; if(c==='validate') ev.add('validate'); else if(c==='trade') ev.add('entry'); else if(c==='forming' && !was) ev.add('liq'); });
+    snap.touch.forEach((v, k) => { if(v > (SU_SNAP.touch.get(k) || 0)) ev.add('watch'); });
+    snap.res.forEach((r, id) => { if(r && !SU_SNAP.res.get(id)) ev.add(r==='W' ? 'tp' : r==='L' ? 'sl' : 'entry'); });
+    const pick = ['sl','tp','entry','validate','watch','liq'].find(k => ev.has(k)); if(pick) tone(SOUNDS[pick]);
+  }
+  SU_SNAP = snap;
+}
 async function liveRefresh(){
-  if(!CONFIGURED || document.visibilityState!=='visible' || S.liveBusy) return;
+  if(!CONFIGURED || S.liveBusy) return;
+  const vis = document.visibilityState==='visible';   /* in the background too: the tab badge and the sounds keep working */
   S.liveBusy = true;
   try{
     await loadSignals();
     /* trades opened / closed by the server engine */
     if(!S.legacyTrades){ try{ const tr = await fetchAll('do_trades'); const sig = m => [...m.values()].map(t => t.id + (t.updated_at || '') + (t.result || '')).sort().join();
       const fresh = new Map(tr.map(t => [t.id, t])); if(sig(fresh)!==sig(S.trades)){ S.trades = fresh; S.liveTrades = true; } }catch(e){ /* keep what we have */ } }
+    suWatchChanges(false);
+    if(!vis) return;
     const n = await autoRun(), busy = document.querySelector('dialog[open]') || document.querySelector('.su-skip') || document.querySelector('.sx-val.dirty') || S.drawerOpen || document.activeElement?.matches?.('input,textarea,select');
     S.liveAt = Date.now();
     if(!busy && (S.view==='setups' || ((n || S.liveTrades) && ['trades','today'].includes(S.view)))){ S.liveTrades = false; renderMain(); }
@@ -6172,8 +6240,10 @@ document.getElementById('csvFile').onchange = async ev => {
     /* address of this site, for the "Setups" button in phone notifications */
     const site = location.origin + location.pathname; if(location.protocol.startsWith('http') && S.settings && S.settings.site_url!==site) saveSettingKey('site_url', site);
     /* fractal breaks from now on wait for your "Validate" (older ones keep the automatic rule) */
-    if(S.settings && !S.settings.su_valid_from) saveSettingKey('su_valid_from', new Date().toISOString()); }
+    if(S.settings && !S.settings.su_valid_from) saveSettingKey('su_valid_from', new Date().toISOString());
+    if(S.settings && !S.settings.su_done_from) saveSettingKey('su_done_from', new Date().toISOString()); }
   if(CONFIGURED && await autoRun()){ render(); refreshDock?.(); }
+  if(CONFIGURED) suWatchChanges(true);
 })();
 </script>
 </body>
