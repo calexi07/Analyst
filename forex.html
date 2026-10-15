@@ -5081,8 +5081,22 @@ function tradeAutoFill(t){
     if((t.profit==null || t.profit==='') && R!=null && !hasAcc) f.profit = +(R * RISK_USD).toFixed(2);
     if(!t.duration){ const mins = tradeMinutes({ ...t, ...f }); if(mins!=null && mins >= 0) f.duration = fmtDur(mins); }
   }
+  /* no entry / SL in the journal, but a profit → R from the 1% = $100 rule */
+  if(t.result && (t.r_multiple==null || t.r_multiple==='') && f.r_multiple==null && numOr(t.profit)!=null) f.r_multiple = +(numOr(t.profit) / RISK_USD).toFixed(2);
   Object.keys(f).forEach(k => f[k]==null && delete f[k]);
   return f;
+}
+/* trades already in the journal with empty fields (session, risk, pips, R, profit, duration) → filled once, quietly, at start-up */
+async function backfillTrades(){
+  if(S.legacyTrades || !S.trades?.size) return;
+  let n = 0;
+  for(const t of [...S.trades.values()]){
+    const f = tradeAutoFill(t); if(!Object.keys(f).length) continue;
+    const { data, error } = await sb.from('do_trades').update(f).eq('id', t.id).select().single();
+    if(error){ console.warn('backfill', t.id, error.message); continue; }
+    S.trades.set(t.id, data); n++;
+  }
+  if(n){ toast(`Filled missing session / R / profit on ${n} trade${n > 1 ? 's' : ''}`); if(['trades','setups','today'].includes(S.view)) renderMain(); }
 }
 /* create the trade for a setup — by hand (Take) or automatically when the heartbeat sees the retest */
 async function takeSetup(s, auto = false){
@@ -6426,6 +6440,7 @@ document.getElementById('csvFile').onchange = async ev => {
     if(S.settings && !S.settings.su_done_from) saveSettingKey('su_done_from', new Date().toISOString()); }
   if(CONFIGURED && await autoRun()){ render(); refreshDock?.(); }
   if(CONFIGURED) suWatchChanges(true);
+  if(CONFIGURED) backfillTrades();
 })();
 </script>
 </body>
