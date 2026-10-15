@@ -4709,8 +4709,9 @@ function lvRow(s){
         + `<div class="lvr-live ${lv ? (lv.R >= 0 ? 'up' : 'dn') : ''}"><b>${lv ? `${lv.R >= 0 ? '+' : ''}${fmt(lv.R, 2)}R` : '…'}</b><small>${lv ? `${lv.pips >= 0 ? '+' : ''}${fmt(lv.pips, 1)} pips · ${lvl(lv.price)}` : 'waiting for a candle'}</small></div>`
         + `<div class="lvr-rail">${sxRail(tr, lv)}</div>`;
       act = `${chart}${back(4, 'Back to Step 3: the trade is deleted and the setup waits for a new touch of the line')}<button class="bt" data-sutskip="${s.key}">Skip</button><button class="btn btn-primary" data-sutrade="${tr.id}">Open</button>`;
-      if(pl && (Math.abs(Number(tr.sl) - pl.sl) > 1e-9 || Math.abs(Number(tr.tp) - pl.tp) > 1e-9))
-        extra = `<div class="sx-sync lvr-x"><span>The setup now has <b>SL ${lvl(pl.sl)}</b> and <b>TP ${lvl(pl.tp)}</b>. The trade still has SL ${sxPx(tr.sl)} and TP ${sxPx(tr.tp)}.</span><button class="bt" data-susync="${s.key}">Update the trade</button></div>`;
+      const kp = suValid()[s.key]?.keepPlan, kept = kp && Math.abs(kp.sl - pl?.sl) < 1e-9 && Math.abs(kp.tp - pl?.tp) < 1e-9;   /* you chose to keep your own SL / TP */
+      if(pl && !kept && (Math.abs(Number(tr.sl) - pl.sl) > 1e-9 || Math.abs(Number(tr.tp) - pl.tp) > 1e-9))
+        extra = `<div class="sx-sync lvr-x"><span>The setup now has <b>SL ${lvl(pl.sl)}</b> and <b>TP ${lvl(pl.tp)}</b>. The trade still has SL ${sxPx(tr.sl)} and TP ${sxPx(tr.tp)}.</span><button class="bt" data-sukeep="${s.key}|${pl.sl}|${pl.tp}" title="Keep the trade's SL / TP as they are and hide this message">Keep mine</button><button class="bt" data-susync="${s.key}">Update the trade</button></div>`;
     } else {   /* price at the line, auto-take is off */
       mid = (pl ? kv(`Entry`, sxPx(pl.entry), '', 'e') + kv('SL', sxPx(pl.sl), '', 'sl') + kv('TP', sxPx(pl.tp), '', 'tp') : '') + `<p class="lvr-note go">${nx.text}</p>`;
       act = `${chart}${skip}<button class="btn btn-primary" data-sutake="${s.key}">Take</button>`;
@@ -5187,6 +5188,8 @@ function bindSetups(m, all){
   m.querySelectorAll('[data-vtype]').forEach(b => b.onclick = () => { const p = b.closest('.sx-val');
     p.querySelectorAll('[data-vtype]').forEach(x => x.setAttribute('aria-pressed', String(x===b))); p.querySelector('.sx-val-msg').textContent = ''; p.classList.add('dirty'); });
   m.querySelector('#suSound')?.addEventListener('change', e => { ls.set('do_su_sound', e.target.checked); if(e.target.checked) tone(SOUNDS.validate, true); });
+  m.querySelectorAll('[data-sukeep]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const [key, sl, tp] = b.dataset.sukeep.split('|');
+    await suValSet(key, r => ({ ...r, keepPlan:{ sl:Number(sl), tp:Number(tp) } })); renderMain(); toast('Kept your SL / TP'); });
   m.querySelectorAll('[data-suprio]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const [key, lv] = b.dataset.suprio.split('|');
     await suValSet(key, r => { const n = { ...r }; if(n.prio===lv) delete n.prio; else n.prio = lv; return n; }); renderMain(); });
   m.querySelectorAll('[data-sudone]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const s = byKey.get(b.dataset.sudone); if(!s) return;
