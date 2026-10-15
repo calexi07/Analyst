@@ -1113,6 +1113,18 @@
   .lv-add{ order:9; margin-left:auto; border-style:dashed !important; color:var(--ink) !important; }
   .lv-sadd{ margin-left:4px; padding:2px 9px; border-radius:8px; border:1px dashed var(--line); background:none; color:var(--muted); font-size:11.5px; font-weight:800; cursor:pointer; }
   .lv-sadd:hover{ color:var(--ink); border-color:var(--ink); }
+  .lvr-prio{ display:inline-flex; gap:2px; padding:2px; border-radius:10px; border:1px solid var(--line); background:var(--surface); }
+  .lvr-prio button{ padding:3px 8px; border:0; border-radius:7px; background:none; color:var(--muted); font-size:11px; font-weight:800; cursor:pointer; }
+  .lvr-prio button:hover{ color:var(--ink); }
+  .lvr-prio .p-high[aria-pressed="true"]{ background:var(--accent); color:var(--on-accent); }
+  .lvr-prio .p-med[aria-pressed="true"]{ background:var(--info); color:#fff; }
+  .lvr-prio .p-low[aria-pressed="true"]{ background:color-mix(in srgb,var(--muted) 35%,transparent); color:var(--ink); }
+  .lvr.pr-high{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent), 0 6px 22px color-mix(in srgb,var(--accent) 18%,transparent); background:color-mix(in srgb,var(--accent) 7%,var(--surface-2)); }
+  .lvr.pr-high::before{ background:var(--accent); width:4px; }
+  .lvr.pr-med{ border-color:color-mix(in srgb,var(--info) 55%,var(--line)); }
+  .lvr.pr-low{ opacity:.6; } .lvr.pr-low:hover{ opacity:1; }
+  .lvr-pc{ font-size:10px; font-weight:800; padding:1px 6px; border-radius:6px; }
+  .lvr-pc.p-high{ background:var(--accent); color:var(--on-accent); } .lvr-pc.p-med{ background:var(--info); color:#fff; } .lvr-pc.p-low{ background:color-mix(in srgb,var(--muted) 30%,transparent); color:var(--ink); }
   .lvr-man{ font-size:10px; font-weight:800; padding:1px 6px; border-radius:6px; background:color-mix(in srgb,var(--info) 18%,transparent); color:var(--ink); }
   .lvr-cb{ font-size:10px; font-weight:800; padding:1px 6px; border-radius:6px; background:color-mix(in srgb,var(--neg) 18%,transparent); color:var(--neg); }
   .lvr.rev{ border-color:color-mix(in srgb,var(--amber) 70%,var(--line)); border-style:solid; background:color-mix(in srgb,var(--amber) 8%,var(--surface-2)); }
@@ -4637,7 +4649,7 @@ const LV_LBL = {
 function lvRow(s){
   const tr = suOpenTrade(s), L = s.dir==='Long', isNew = sxIsNew(s), pl = s.bos ? suPlan(s) : null, col = sxCol(s), nx = sxNext(s, tr, pl);
   const id = `<div class="lvr-id">${isNew ? `<button class="lvr-new" data-suseen="${s.key}" title="New · click to mark seen">NEW ✓</button>` : ''}
-      <b class="lvr-p">${base(s.pair)}<em>${quote(s.pair)}</em></b><span class="lvr-d ${L ? 'pos' : 'neg'}">${L ? '▲' : '▼'}</span><span class="tfl">${esc(s.tf)}</span>${s.manual ? `<span class="lvr-man" title="Added by you">manual</span>` : ''}${s.manual && !((s.bias==='bullish' && L) || (s.bias==='bearish' && !L)) ? `<span class="lvr-cb" title="Against the weekly bias">counter-bias</span>` : ''}</div>`;
+      <b class="lvr-p">${base(s.pair)}<em>${quote(s.pair)}</em></b><span class="lvr-d ${L ? 'pos' : 'neg'}">${L ? '▲' : '▼'}</span><span class="tfl">${esc(s.tf)}</span>${sxCol(s)!=='forming' && suValid()[s.key]?.prio ? `<span class="lvr-pc p-${suValid()[s.key].prio}">${{ high:'High', med:'Mid', low:'Low' }[suValid()[s.key].prio]}</span>` : ''}${s.manual ? `<span class="lvr-man" title="Added by you">manual</span>` : ''}${s.manual && !((s.bias==='bullish' && L) || (s.bias==='bearish' && !L)) ? `<span class="lvr-cb" title="Against the weekly bias">counter-bias</span>` : ''}</div>`;
   const kv = (k, v, t, cls = '') => `<div class="lvr-kv ${cls}"><span>${k}</span><b>${v}</b>${t ? `<small>${t}</small>` : ''}</div>`;
   const hm = at => at ? hhmm(at).slice(-5) : '';
   const chart = `<a class="bt lvr-ic" href="${tvUrl(s.pair, s.tf)}" target="_blank" rel="noopener" title="Open the chart on TradingView">↗</a>`;
@@ -4648,7 +4660,8 @@ function lvRow(s){
     mid = kv('Liquidity', sxPx(s.liq.level), `${s.liq.at ? hm(candleOpen(s.liq.at, s.liq.tf || s.tf))+' candle' : ''}${s.liqs.length > 1 ? ` · ${s.liqs.length} sweeps` : ''}`)
       + kv('Stop', sxPx(s.liq.extreme ?? s.liq.level), s.liq.extMovedAt ? 'moved to wick' : 'sweep wick', 'sl')
       + `<p class="lvr-note">${s.pend ? nx.text : `Waiting ${ago(s.startAt).replace(' ago','')} for a ${L ? 'bullish' : 'bearish'} fractal change`}${!s.bos && s.wicks?.length ? ` · <span class="warn">${esc(s.wicks[s.wicks.length-1].why)}</span>` : ''}</p>`;
-    act = `${chart}${skip}`;
+    const pr = suValid()[s.key]?.prio || '';
+    act = `<div class="lvr-prio" role="group" aria-label="Priority">${[['high','High'],['med','Mid'],['low','Low']].map(([k, l]) => `<button class="p-${k}" data-suprio="${s.key}|${k}" aria-pressed="${pr===k}" title="${l} priority${pr===k ? ' (click again to clear)' : ''}">${l}</button>`).join('')}</div>${chart}${skip}`;
   } else if(col==='validate'){
     if(s.stage==='validate'){
       const last = suValid()[s.key]?.last || {}, liq = last.liq ?? s.liq.level0 ?? s.liq.level, line = last.line ?? s.prop?.line ?? s.line, ty = last.type || '', slv = last.sl ?? s.liq.extreme ?? s.liq.level;
@@ -4703,7 +4716,8 @@ function lvRow(s){
       act = `${chart}${skip}<button class="btn btn-primary" data-sutake="${s.key}">Take</button>`;
     }
   }
-  return `<article class="lvr c-${col} ${L ? 'long' : 'short'}${isNew ? ' is-new' : ''}${extra.includes('lvr-rev') ? ' rev' : ''}" data-su="${s.key}">
+  const prio = suValid()[s.key]?.prio;
+  return `<article class="lvr c-${col} ${L ? 'long' : 'short'}${isNew ? ' is-new' : ''}${extra.includes('lvr-rev') ? ' rev' : ''}${prio ? ' pr-'+prio : ''}" data-su="${s.key}">
     ${id}<div class="lvr-mid">${mid}</div><div class="lvr-act">${act}</div>${extra}</article>`;
 }
 const TF_RANK = { '1M':9, '1W':8, '1D':7, 'D1':7, '8H':6, '4H':5, '2H':4, '1H':3, '30m':2, '15m':1, '5m':0, '3m':-1, '1m':-2 };
@@ -4726,7 +4740,7 @@ function renderSetups(){
   const d30 = Date.now() - 30*864e5, done = all.filter(s => s.stage==='taken' && tms(s.startAt) >= d30).map(s => S.trades.get(s.trade_id)).filter(t => t?.result);
   const wins = done.filter(t => t.result==='W').length, netR = done.reduce((a, t) => a + (Number(t.r_multiple) || 0), 0);
   const stage = S.su.stage || (toVal ? 'validate' : cols.trade.length ? 'trade' : cols.formed.length ? 'formed' : 'forming');
-  const lvt = S.su.lvt==='watch' ? 'formed' : S.su.lvt || 'all';
+  const lvt = S.su.lvt==='watch' ? 'formed' : S.su.lvt || 'all', VALS = suValid();
   const page = S.su.page || 'live', takenN = all.filter(x => x.stage==='taken' && !suOpenTrade(x) && !suFinished(x)).length;
   const tool = page==='live' ? null : page;
   m.innerHTML = `
@@ -4757,7 +4771,8 @@ function renderSetups(){
     </div>
     <div class="lv">
       ${LV_ORDER.filter(k => lvt==='all' ? cols[k].length || (k==='formed' && cols.watch.length) : lvt===k).map(k => {
-        const rows = list => [...list.filter(sxIsNew), ...list.filter(x => !sxIsNew(x))];
+        const PR = { high:0, med:1, low:3 }, pv = x => PR[VALS[x.key]?.prio] ?? 2;   /* High → Mid → (none) → Low, then new first */
+        const rows = list => [...list].sort((a, b) => pv(a) - pv(b) || (sxIsNew(b) - sxIsNew(a)));
         const body = cols[k].length ? (() => { const list = rows(cols[k]), fold = k==='forming' && lvt==='all' && list.length > 4 && !S.su.s1open;
           return `<div class="lv-list">${(fold ? list.slice(0, 3) : list).map(lvRow).join('')}</div>${k==='forming' && lvt==='all' && list.length > 4 ? `<button class="lv-more" data-s1more>${fold ? `Show all ${list.length} sweeps ▾` : 'Show less ▴'}</button>` : ''}`; })()
           : (k==='formed' && cols.watch.length ? '' : `<div class="sx-empty">${LV_LBL[k][2]}</div>`);
@@ -5172,6 +5187,8 @@ function bindSetups(m, all){
   m.querySelectorAll('[data-vtype]').forEach(b => b.onclick = () => { const p = b.closest('.sx-val');
     p.querySelectorAll('[data-vtype]').forEach(x => x.setAttribute('aria-pressed', String(x===b))); p.querySelector('.sx-val-msg').textContent = ''; p.classList.add('dirty'); });
   m.querySelector('#suSound')?.addEventListener('change', e => { ls.set('do_su_sound', e.target.checked); if(e.target.checked) tone(SOUNDS.validate, true); });
+  m.querySelectorAll('[data-suprio]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const [key, lv] = b.dataset.suprio.split('|');
+    await suValSet(key, r => { const n = { ...r }; if(n.prio===lv) delete n.prio; else n.prio = lv; return n; }); renderMain(); });
   m.querySelectorAll('[data-sudone]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const s = byKey.get(b.dataset.sudone); if(!s) return;
     await suValSet(s.key, r => ({ ...r, done:Date.now() })); renderMain(); toast(`${s.pair} ${s.tf} moved to History`); });
   m.querySelector('[data-sudoneall]')?.addEventListener('click', async () => { const list = all.filter(x => suFinished(x));
