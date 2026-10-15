@@ -2342,8 +2342,9 @@ function collectDay(panel){
     } else if(ex){
       const { error } = await sb.from('do_daily').delete().eq('id', ex.id); if(error) throw error; S.daily.delete(dk(p, ds));
     }
-    for(const { id, t } of cards){
+    for(const { id, t:t0 } of cards){
       const old = S.trades.get(id); if(!old) continue;
+      const t = { ...t0, ...tradeAutoFill({ ...old, ...t0 }) };   /* session, risk, pips, R, profit fill themselves */
       const changed = Object.keys(t).some(k => JSON.stringify(t[k] ?? null) !== JSON.stringify(old[k] ?? null));
       if(!changed) continue;
       if(S.legacyTrades){ noTradesTable(); continue; }
@@ -2451,7 +2452,8 @@ async function addTrade(p, ds, dir, extra = {}){
   if(S.legacyTrades){ noTradesTable(); return null; }
   await flushSave();
   const now = new Date(), hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  const { data, error } = await sb.from('do_trades').insert({ pair:p, day:ds, direction:dir, entry_time: ds===iso(now) ? hhmm : null, ...extra }).select().single();
+  const row = { pair:p, day:ds, direction:dir, entry_time: ds===iso(now) ? hhmm : null, ...extra }; Object.assign(row, tradeAutoFill(row));
+  const { data, error } = await sb.from('do_trades').insert(row).select().single();
   if(error){ toast('Not saved: ' + error.message); return null; }
   S.trades.set(data.id, data);
   const day = S.daily.get(dk(p, ds));
@@ -4385,7 +4387,7 @@ function openTradeModal(id){
       : `<div class="trm-empty"><b>No chart yet</b><span>In TradingView: camera icon → Copy link, then paste it below.</span></div>`; };
   tv?.addEventListener('input', prev); prev();
   const save = async () => {
-    const upd = collectTrade(card), changed = Object.keys(upd).filter(k => JSON.stringify(upd[k] ?? null) !== JSON.stringify(t[k] ?? null));
+    const upd0 = collectTrade(card), upd = { ...upd0, ...tradeAutoFill({ ...t, ...upd0 }) }, changed = Object.keys(upd).filter(k => JSON.stringify(upd[k] ?? null) !== JSON.stringify(t[k] ?? null));
     if(!changed.length){ trDlg.close(); return; }
     const row = Object.fromEntries(changed.map(k => [k, upd[k]]));
     const btn = trDlg.querySelector('[data-trsave]'); btn.disabled = true;
@@ -4527,7 +4529,8 @@ function openAddSetup(step0 = 'forming'){
       if(n >= 2){ const { error:e2 } = await sb.from('do_signals').insert({ pair:A.pair, tf:A.tf, kind:'bos', side: L ? 'bull' : 'bear', at:new Date(bt + len + 5000).toISOString(), source:'manual', raw:{ manual:true, key:lq.id, text:'manual break' } }); if(e2) throw e2; }
       if(A.step==='trade'){
         const r = Math.abs(line - sl), tp = L ? line + 2*r : line - 2*r, dg = line >= 20 ? 3 : 5, ed = new Date(et);
-        const t = await addTrade(A.pair, iso(ed), A.dir, { setup_tf:A.tf, entry_price:line, sl, tp:+tp.toFixed(dg), entry_time:`${String(ed.getHours()).padStart(2,'0')}:${String(ed.getMinutes()).padStart(2,'0')}`,
+        const et0 = `${String(ed.getHours()).padStart(2,'0')}:${String(ed.getMinutes()).padStart(2,'0')}`;
+        const t = await addTrade(A.pair, iso(ed), A.dir, { setup_tf:A.tf, entry_price:line, sl, tp:+tp.toFixed(dg), entry_time:et0, session:sessionName(et0), risk:RISK_PCT,
           notes:`[Manual] Setup ${A.tf}: liquidity ${lvl(liq)} → ${L ? 'bullish' : 'bearish'} fractal change (${A.type}) ${lvl(line)}. Plan: entry ${lvl(line)} · SL ${lvl(sl)} · TP ${lvl(tp)} (2R).` });
         if(t) await markSetup(lq.id, 'taken', { trade_id:t.id, reason:'manual' });
       }
@@ -5056,6 +5059,31 @@ function simPanel(){
       <button class="btn" data-simc="body|down">Body close below</button><button class="btn" data-simc="wick|down">Wick below only</button>
       <button class="btn" data-simc="touch|">Back at the line</button><button class="btn" data-simc="tp|">Next candle → TP</button><button class="btn" data-simc="sl|">Next candle → SL</button></div></section>`;
 }
+/* every trade risks 1% = $100 → the fields that follow from the others fill themselves */
+const RISK_PCT = 1, RISK_USD = 100;
+function sessionName(hm){
+  const m = /^(\d{1,2}):(\d{2})/.exec(String(hm || '')); if(!m) return null;
+  const x = +m[1]*60 + +m[2];
+  if(x >= 990 && x < 1080) return 'London / New York';
+  if(x < 540) return 'Asia'; if(x < 1080) return 'London'; if(x < 1410) return 'New York'; return null;
+}
+/* missing fields of a trade, computed from what is there: session, risk, pips, R, profit, duration */
+function tradeAutoFill(t){
+  const f = {}, E = numOr(t.entry_price), SL = numOr(t.sl), TP = numOr(t.tp), long = t.direction==='Long', ps = pipSize(t.pair || 'EURUSD');
+  if(!t.session && t.entry_time) { const sn = sessionName(t.entry_time); if(sn) f.session = sn; }
+  if(t.risk==null || t.risk==='') f.risk = RISK_PCT;
+  if(t.result && E!=null){
+    const risk = SL!=null ? Math.abs(E - SL) : null;
+    const exitPx = t.result==='W' ? TP : t.result==='L' ? SL : E;
+    if((t.pips==null || t.pips==='') && exitPx!=null) f.pips = +(((long ? exitPx - E : E - exitPx)) / ps).toFixed(1);
+    if((t.r_multiple==null || t.r_multiple==='') && risk) f.r_multiple = t.result==='L' ? -1 : t.result==='BE' ? 0 : (exitPx!=null ? +((long ? exitPx - E : E - exitPx) / risk).toFixed(2) : null);
+    const R = f.r_multiple ?? numOr(t.r_multiple), hasAcc = Array.isArray(t.trade_accounts) && t.trade_accounts.some(x => x.profit!=null);
+    if((t.profit==null || t.profit==='') && R!=null && !hasAcc) f.profit = +(R * RISK_USD).toFixed(2);
+    if(!t.duration){ const mins = tradeMinutes({ ...t, ...f }); if(mins!=null && mins >= 0) f.duration = fmtDur(mins); }
+  }
+  Object.keys(f).forEach(k => f[k]==null && delete f[k]);
+  return f;
+}
 /* create the trade for a setup — by hand (Take) or automatically when the heartbeat sees the retest */
 async function takeSetup(s, auto = false){
   const pl = suPlan(s), lineLvl = s.line ?? null;
@@ -5064,6 +5092,7 @@ async function takeSetup(s, auto = false){
   const extra = { setup_tf: ['1H','4H'].includes(s.tf) ? s.tf : null, entry_price: pl?.entry ?? lineLvl, notes };
   if(pl){ extra.sl = pl.sl; extra.tp = pl.tp; }
   if(auto) extra.entry_time = `${String(at.getHours()).padStart(2,'0')}:${String(at.getMinutes()).padStart(2,'0')}`;
+  Object.assign(extra, tradeAutoFill({ pair:s.pair, direction:s.dir, entry_time: extra.entry_time || `${String(at.getHours()).padStart(2,'0')}:${String(at.getMinutes()).padStart(2,'0')}`, ...extra }));
   const t = await addTrade(s.pair, ds, s.dir, extra);
   if(!t) return null;
   await markSetup(s.key, 'taken', { trade_id:t.id, reason: auto ? 'auto' : null });
@@ -5100,6 +5129,7 @@ async function autoCloseTrades(){
       const upd = { result:r.result, exit_date, exit_time, pips:r.pips, r_multiple:r.R,
         notes: `${t.notes ? t.notes + '\n' : ''}[Auto] ${r.result==='W' ? 'TP' : 'SL'} hit in the ${r.tf} candle ${hhmm(r.at)}${r.both ? ' (TP and SL in the same candle — counted as SL)' : ''}.` };
       const mins = tradeMinutes({ ...t, ...upd }); if(mins!=null) upd.duration = fmtDur(mins);
+      Object.assign(upd, tradeAutoFill({ ...t, ...upd }));
       const { data, error } = await sb.from('do_trades').update(upd).eq('id', id).select().single();
       if(error){ console.warn('auto-close failed', error); continue; }
       S.trades.set(id, data); n++;
