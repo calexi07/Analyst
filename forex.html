@@ -4078,7 +4078,7 @@ function deriveSetups(){
   for(const g of sigs){
     const k = g.pair, t = tms(g.at), list = (open.get(k) || []);   /* per pair: the break may come on a lower timeframe than the sweep */
     list.forEach(s => close(s, t));
-    const live = list.filter(s => ['forming','validate','wickwait','formed','retest','watch'].includes(s.stage)); open.set(k, live);
+    const live = list.filter(s => ['forming','validate','wickwait','wickfail','formed','retest','watch'].includes(s.stage)); open.set(k, live);
     if(g.kind==='liq'){
       const side = liqSide(g), dir = side==='sell' ? 'Long' : side==='buy' ? 'Short' : null, wr = biasAt(g.pair, g.at), bias = wr?.bias || null;
       const man = !!g.raw?.manual;   /* added by you: its own setup, kept even against the bias */
@@ -4129,10 +4129,13 @@ function deriveSetups(){
           const cnd = candleAt(x.pair, x.tf, t - 90e3), bo = cnd ? cnd.t : Math.round((t - len)/6e4)*6e4;
           x.pend = null;
           if(v.type==='body'){ x.bos = { ...g, level:f, candle:cnd || undefined, validated:true, how:'body' }; x.stage = 'formed'; x.line = f; return; }
-          const nx = (S.candleIdx.get(x.pair+'|'+x.tf) || []).find(c => c.t >= bo + len - 60e3 && !isRoll(c.t, x.tf));
-          if(!nx){ let nt = bo + len; if(isRoll(nt, x.tf)) nt += len; x.stage = 'wickwait'; x.line = f; x.pend = { ...g, wick:true, line:f, next:nt }; return; }
-          if(x.dir==='Long' ? nx.c > f : nx.c < f){ x.bos = { ...g, at:new Date(nx.t + len).toISOString(), price:nx.c, level:f, candle:nx, checked:true, second:true, validated:true, how:'wick' }; x.stage = 'formed'; x.line = f; }
-          else { x.stage = 'invalid'; x.endAt = new Date(nx.t + len).toISOString(); x.why = `Wick break: the ${hhmm(new Date(nx.t)).slice(-5)} candle closed ${lvl(nx.c)}, not ${x.dir==='Long' ? 'above' : 'below'} your line ${lvl(f)}`; }
+          const extra = Math.max(0, Number(v.wickExtra || 0)), list = (S.candleIdx.get(x.pair+'|'+x.tf) || []).filter(c => c.t >= bo + len - 60e3 && !isRoll(c.t, x.tf)).slice(0, 1 + extra);
+          const ok = list.find(c => x.dir==='Long' ? c.c > f : c.c < f);
+          if(ok){ x.bos = { ...g, at:new Date(ok.t + len).toISOString(), price:ok.c, level:f, candle:ok, checked:true, second:true, validated:true, how:'wick' }; x.stage = 'formed'; x.line = f; return; }
+          if(list.length < 1 + extra){ let nt = list.length ? list[list.length-1].t + len : bo + len; if(isRoll(nt, x.tf)) nt += len; x.stage = 'wickwait'; x.line = f; x.pend = { ...g, wick:true, line:f, next:nt, extra }; return; }
+          const last = list[list.length-1];
+          if(v.wickDrop){ x.stage = 'invalid'; x.endAt = new Date(last.t + len).toISOString(); x.why = `Wick break: the ${hhmm(new Date(last.t)).slice(-5)} candle closed ${lvl(last.c)}, not ${x.dir==='Long' ? 'above' : 'below'} your line ${lvl(f)}`; return; }
+          x.stage = 'wickfail'; x.line = f; x.pend = { ...g, wick:true, line:f, failed:{ t:last.t, c:last.c }, extra };   /* you decide: invalid or one more candle */
           return;
         }
         if(v) applyValid(x, v);
@@ -4171,13 +4174,13 @@ function deriveSetups(){
       if(TF_MS[g.tf] && isRoll(sigStart(g), g.tf)) continue;   /* a body close in the rollover candle doesn't invalidate */
       /* a candle closed its whole body beyond the swept level → that liquidity is no longer valid */
       const dir = g.side==='sell' ? 'Long' : g.side==='buy' ? 'Short' : null;
-      live.filter(x => ['forming','validate','wickwait','formed','retest'].includes(x.stage) && (!dir || x.dir===dir) && x.tf===g.tf
+      live.filter(x => ['forming','validate','wickwait','wickfail','formed','retest'].includes(x.stage) && (!dir || x.dir===dir) && x.tf===g.tf
           && (g.level==null || (x.liq.level0 ?? x.liq.level)==null || Math.abs(Number(x.liq.level0 ?? x.liq.level) - Number(g.level)) <= Math.abs(Number(g.level))*0.0005))   /* matched on the indicator's own level */
         .forEach(x => { x.stage = 'invalid'; x.why = `Body closed ${x.dir==='Long' ? 'below' : 'above'} the swept level${g.price!=null ? ' ('+lvl(g.price)+')' : ''}`; x.endAt = g.at; });
     } else if(g.kind==='candle'){
       const c = g.cnd, len = TF_MS[c.tf];
       /* a candle of the setup's timeframe CLOSES (body close) beyond the swept level → the liquidity is gone, the setup is invalid */
-      live.filter(x => ['forming','validate','wickwait','formed','retest'].includes(x.stage) && x.tf===c.tf && c.t >= tms(x.liq.at) - (TF_MS[c.tf] || 36e5)/2 && c.c!=null && !isRoll(c.t, c.tf)).forEach(x => {
+      live.filter(x => ['forming','validate','wickwait','wickfail','formed','retest'].includes(x.stage) && x.tf===c.tf && c.t >= tms(x.liq.at) - (TF_MS[c.tf] || 36e5)/2 && c.c!=null && !isRoll(c.t, c.tf)).forEach(x => {
         const Lv = x.liq.level; if(Lv==null) return;
         if(x.dir==='Long' ? Number(c.c) < Number(Lv) : Number(c.c) > Number(Lv)){
           x.stage = 'invalid'; x.endAt = g.at; x.why = `The ${c.tf} candle at ${hhmm(new Date(c.t)).slice(-5)} closed ${lvl(c.c)}, ${x.dir==='Long' ? 'below' : 'above'} the liquidity ${lvl(Lv)}`;
@@ -4594,7 +4597,7 @@ async function stepBack(s){
     refreshDock?.(); renderMain(); return toast(`${s.pair} ${s.tf} back to Step 3`);
   }
   if(col==='formed' || (col==='validate' && s.val)){
-    if(s.val){ await suValSet(s.key, r => { const { liq, line, type, sl, at, watch, ...rest } = r; return { ...rest, last:{ liq, line, type, sl } }; }); renderMain(); return toast(`${s.pair} ${s.tf} back to Step 2`); }
+    if(s.val){ await suValSet(s.key, r => { const { liq, line, type, sl, at, watch, wickExtra, wickDrop, ...rest } = r; return { ...rest, last:{ liq, line, type, sl } }; }); renderMain(); return toast(`${s.pair} ${s.tf} back to Step 2`); }
     const id = s.bos?.id; if(!id) return;   /* formed before Step 2 existed → its break alert is ignored */
     await suValSet(s.key, r => ({ ...r, dismiss:[...(r.dismiss || []), id] })); renderMain(); return toast(`${s.pair} ${s.tf} back to Step 1`);
   }
@@ -4730,7 +4733,7 @@ function sxRail(tr, lv){
     <div class="sx-rail-lbl"><span>SL ${lvl(SL)}</span><span style="left:${pe}%">Entry ${lvl(E)}</span><span>TP ${lvl(TP)}</span></div></div>`;
 }
 /* "new" cards: a setup is new until you mark it seen; it becomes new again when it moves to the next stage */
-const sxCol = s => suFinished(s) ? 'done' : s.stage==='watch' ? 'watch' : suOpenTrade(s) || s.stage==='retest' ? 'trade' : s.stage==='forming' && s.val ? 'validate' : s.stage==='wickwait' ? 'formed' : s.stage;
+const sxCol = s => suFinished(s) ? 'done' : s.stage==='watch' ? 'watch' : suOpenTrade(s) || s.stage==='retest' ? 'trade' : s.stage==='forming' && s.val ? 'validate' : ['wickwait','wickfail'].includes(s.stage) ? 'formed' : s.stage;
 function sxSeen(){ const v = S.settings?.su_seen; return v && typeof v==='object' ? v : (ls.get('do_su_seen', null) || null); }
 const sxIsNew = s => { const m = sxSeen(); return !!m && m[s.key]!==sxCol(s); };
 async function sxMarkSeen(list){
@@ -4831,13 +4834,17 @@ function lvRow(s){
   } else if(col==='formed'){
     const how = s.val?.type==='wick' ? 'Wick' : s.val?.type==='body' ? 'Body' : '';
     if(s.stage==='wickwait'){
+      mid = kv('Liquidity', sxPx(s.liq.level), 'yours') + kv('Fractal line', sxPx(s.line), `Wick break${s.pend?.extra ? ` · +${s.pend.extra} candle${s.pend.extra > 1 ? 's' : ''}` : ''}`)
+        + `<p class="lvr-note warn-n">Waiting for the ${hm(s.pend?.next)} candle to close ${L ? 'above' : 'below'} ${lvl(s.line)}. If it doesn't, you'll decide: invalid or one more candle.</p>`;
+    } else if(s.stage==='wickfail'){
       mid = kv('Liquidity', sxPx(s.liq.level), 'yours') + kv('Fractal line', sxPx(s.line), 'Wick break')
-        + `<p class="lvr-note warn-n">Waiting for the ${hm(s.pend?.next)} candle to close ${L ? 'above' : 'below'} ${lvl(s.line)}. If it doesn't, the setup is invalid.</p>`;
+        + `<p class="lvr-note warn-n">⚠️ The ${hm(s.pend?.failed?.t)} candle closed ${lvl(s.pend?.failed?.c)}, not ${L ? 'above' : 'below'} ${lvl(s.line)}. Invalidate it or wait one more candle?</p>`;
     } else {
       mid = kv('Liquidity', sxPx(s.liq.level), s.liq.at ? hm(candleOpen(s.liq.at, s.liq.tf || s.tf))+' candle' : '') + kv('Fractal', sxPx(s.line), `${how ? how+' · ' : ''}${s.bos ? hm(s.bos.candle ? s.bos.candle.t : candleOpen(s.bos.at, s.tf))+' candle' : ''}`)
         + (pl ? kv(`Limit ${L ? 'buy' : 'sell'}`, sxPx(pl.entry), '', 'e') + kv('SL', sxPx(pl.sl), '', 'sl') + kv('TP 2R', sxPx(pl.tp), '', 'tp') : `<p class="lvr-note">${nx.text}</p>`);
     }
-    act = `${chart}${s.stage==='formed' ? `<button class="bt lvr-w" data-suwatch="${s.key}" title="Keep this zone for later: no trade, a Telegram message when price comes back">☆ Watchlist</button>` : ''}${back(3, 'Back to Step 2 to change Wick / Body or the prices')}${skip}`;
+    if(s.stage==='wickfail') act = `${chart}<button class="bt" data-suwx="${s.key}|drop" title="The setup goes to History as invalid">✗ Invalidate</button><button class="btn btn-primary" data-suwx="${s.key}|more" title="Wait for one more candle to close beyond the line">+1 candle</button>${back(3, 'Back to Step 2')}`;
+    else act = `${chart}${s.stage==='formed' ? `<button class="bt lvr-w" data-suwatch="${s.key}" title="Keep this zone for later: no trade, a Telegram message when price comes back">☆ Watchlist</button>` : ''}${back(3, 'Back to Step 2 to change Wick / Body or the prices')}${skip}`;
   } else if(col==='done'){
     const t = S.trades.get(s.trade_id), W = t.result==='W', R = t.r_multiple!=null ? Number(t.r_multiple) : null;
     mid = `<div class="lvr-live ${W ? 'up' : t.result==='L' ? 'dn' : ''}"><b>${R!=null ? `${R > 0 ? '+' : ''}${fmt(R, R % 1 ? 2 : 0)}R` : esc(t.result)}</b><small>${{ W:'Take profit', L:'Stop loss', BE:'Break-even' }[t.result] || ''}${t.pips!=null ? ` · ${Number(t.pips) > 0 ? '+' : ''}${fmt(Number(t.pips), 1)} pips` : ''}</small></div>`
@@ -4879,7 +4886,7 @@ function renderSetups(){
   if(S.signalsMissing){ m.innerHTML = `<div class="pairtitle">Setups <span class="beta">beta</span></div><div class="card" style="margin-top:16px"><p>Run <b>migration-signals.sql</b> in Supabase, then reload. The signals table doesn't exist yet.</p></div>`; return; }
   const all = deriveSetups(), tf = S.su.tf || 'all';
   const inTf = x => tf==='all' || x.tf===tf;
-  const colOf = x => suFinished(x) ? 'done' : x.stage==='watch' ? 'watch' : suOpenTrade(x) ? 'trade' : x.stage==='retest' ? 'trade' : x.stage==='validate' || (x.stage==='forming' && x.val) ? 'validate' : x.stage==='wickwait' ? 'formed' : ['forming','formed'].includes(x.stage) ? x.stage : null;
+  const colOf = x => suFinished(x) ? 'done' : x.stage==='watch' ? 'watch' : suOpenTrade(x) ? 'trade' : x.stage==='retest' ? 'trade' : x.stage==='validate' || (x.stage==='forming' && x.val) ? 'validate' : ['wickwait','wickfail'].includes(x.stage) ? 'formed' : ['forming','formed'].includes(x.stage) ? x.stage : null;
   const act = all.filter(x => colOf(x) && inTf(x));
   const by = k => act.filter(x => colOf(x)===k).sort((a, b) => (b.stage==='validate') - (a.stage==='validate') || tms(b.bos?.at || b.prop?.at || b.startAt) - tms(a.bos?.at || a.prop?.at || a.startAt));
   const toVal = act.filter(x => x.stage==='validate').length;
@@ -5379,6 +5386,9 @@ function bindSetups(m, all){
   m.querySelectorAll('[data-vtype]').forEach(b => b.onclick = () => { const p = b.closest('.sx-val');
     p.querySelectorAll('[data-vtype]').forEach(x => x.setAttribute('aria-pressed', String(x===b))); p.querySelector('.sx-val-msg').textContent = ''; p.classList.add('dirty'); });
   m.querySelector('#suSound')?.addEventListener('change', e => { ls.set('do_su_sound', e.target.checked); if(e.target.checked) tone(SOUNDS.validate, true); });
+  m.querySelectorAll('[data-suwx]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const [key, what] = b.dataset.suwx.split('|'); const s = byKey.get(key); if(!s) return;
+    await suValSet(key, r => what==='drop' ? { ...r, wickDrop:true } : { ...r, wickExtra:(Number(r.wickExtra) || 0) + 1 });
+    renderMain(); toast(what==='drop' ? `${s.pair} ${s.tf} invalidated` : `${s.pair} ${s.tf}: waiting one more candle`); });
   m.querySelectorAll('[data-suwtake]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const s = byKey.get(b.dataset.suwtake); if(!s) return;
     const pl = suPlan(s); if(!confirm(`Take ${s.pair} ${s.tf} ${s.dir} now?${pl ? `\n\nEntry ${lvl(pl.entry)} · SL ${lvl(pl.sl)} · TP ${lvl(pl.tp)} (2R) — you can change them right after.` : ''}`)) return;
     b.disabled = true; const t = await takeSetup(s); if(!t){ b.disabled = false; return; }
