@@ -4848,10 +4848,10 @@ function lvRow(s){
     const tc = s.touches || [], lt = tc[tc.length-1], w = suValid()[s.key]?.watch;
     mid = kv('Zone', `${sxPx(s.line)} → ${sxPx(s.liq?.extreme ?? s.liq?.level)}`, s.bos ? `break ${hm(s.bos.candle ? s.bos.candle.t : candleOpen(s.bos.at, s.tf))} candle` : '')
       + kv('Added', w ? `${WD_SHORT[new Date(w).getDay()]} ${hm(w)}` : '—', w ? ago(new Date(w)) : '')
-      + `<p class="lvr-note ${lt ? 'go' : ''}">${lt ? `👀 Price came back: ${lvl(lt.price)} · ${lt.tf} candle ${hhmm(new Date(lt.at))}${tc.length > 1 ? ` · ${tc.length} touches` : ''}` : 'Not touched since you added it'}</p>`;
+      + `<p class="lvr-note ${lt ? 'go' : ''}">${lt ? `👀 Price came back: ${lvl(lt.price)} · ${lt.tf} candle ${hhmm(new Date(lt.at))}${(() => { let v = 1; for(let i = 1; i < tc.length; i++) if(tc[i].at - tc[i-1].at >= 4*36e5) v++; return v > 1 ? ` · ${v} visits` : ''; })()}` : 'Not touched since you added it'}</p>`;
     const cb = biasAt(s.pair, new Date())?.bias, rev = cb && cb!==s.bias;
     if(rev) extra = `<div class="lvr-x lvr-rev">⚠️ <b>Review:</b> the weekly bias is now <b>${BIAS_LBL[cb] || esc(cb)}</b> (it was ${BIAS_LBL[s.bias] || s.bias || 'not set'} when the zone formed). A trade from this zone would be counter-trend on fundamentals.</div>`;
-    act = `${chart}<button class="bt" data-suunwatch="${s.key}" title="Back to Step 3: the setup waits for the line again and takes the trade">↩ Undo</button>${skip}`;
+    act = `${chart}<button class="bt" data-suunwatch="${s.key}" title="Back to Step 3: the setup waits for the line again and takes the trade">↩ Undo</button>${skip}<button class="btn btn-primary" data-suwtake="${s.key}" title="Take the trade now: entry at the fractal line, SL as set, TP 2R — you can adjust it right after">Take trade</button>`;
   } else {
     if(tr){
       const lv = livePL(tr);
@@ -5379,6 +5379,10 @@ function bindSetups(m, all){
   m.querySelectorAll('[data-vtype]').forEach(b => b.onclick = () => { const p = b.closest('.sx-val');
     p.querySelectorAll('[data-vtype]').forEach(x => x.setAttribute('aria-pressed', String(x===b))); p.querySelector('.sx-val-msg').textContent = ''; p.classList.add('dirty'); });
   m.querySelector('#suSound')?.addEventListener('change', e => { ls.set('do_su_sound', e.target.checked); if(e.target.checked) tone(SOUNDS.validate, true); });
+  m.querySelectorAll('[data-suwtake]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const s = byKey.get(b.dataset.suwtake); if(!s) return;
+    const pl = suPlan(s); if(!confirm(`Take ${s.pair} ${s.tf} ${s.dir} now?${pl ? `\n\nEntry ${lvl(pl.entry)} · SL ${lvl(pl.sl)} · TP ${lvl(pl.tp)} (2R) — you can change them right after.` : ''}`)) return;
+    b.disabled = true; const t = await takeSetup(s); if(!t){ b.disabled = false; return; }
+    renderMain(); toast(`${s.pair} ${s.tf} → Step 4 · trade logged`); openTradeModal(t.id); });
   m.querySelectorAll('[data-sukeep]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const [key, sl, tp] = b.dataset.sukeep.split('|');
     await suValSet(key, r => ({ ...r, keepPlan:{ sl:Number(sl), tp:Number(tp) } })); renderMain(); toast('Kept your SL / TP'); });
   m.querySelectorAll('[data-suprio]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const [key, lv] = b.dataset.suprio.split('|');
