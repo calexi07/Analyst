@@ -287,6 +287,41 @@
   .tagp{ font-size:12px; font-weight:700; padding:2px 9px; border-radius:999px; background:color-mix(in srgb,var(--violet) 16%,transparent); color:var(--violet); }
   .ch.tag[aria-pressed="true"]{ background:var(--violet); color:#fff; }
   /* accounts */
+  .jn-wrap{ display:grid; gap:16px; }
+  .jn{ padding:14px 16px 16px; border-radius:20px; border:1px solid var(--line); background:var(--surface); box-shadow:var(--shadow); }
+  .jn.live{ border-color:color-mix(in srgb,var(--accent) 35%,var(--line)); }
+  .jn-h{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; margin-bottom:12px; font-size:12.5px; font-weight:700; color:var(--muted); }
+  .jn-h b{ font-family:'Bricolage Grotesque',sans-serif; font-size:18px; color:var(--ink); }
+  .jn-now{ margin-left:auto; padding:3px 10px; border-radius:99px; background:var(--surface-2); color:var(--muted); }
+  .jn-now.on{ background:color-mix(in srgb,var(--accent) 16%,transparent); color:var(--ink); }
+  .jn-lane{ display:flex; align-items:stretch; gap:0; overflow-x:auto; padding-bottom:6px; scrollbar-width:thin; }
+  .jn-lane + .jn-lane{ margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); }
+  .jn-from{ align-self:center; flex:none; margin-right:8px; font-size:11.5px; font-weight:800; color:var(--muted); }
+  .jn-node{ --c:var(--muted); flex:none; width:214px; display:grid; gap:4px; align-content:start; padding:12px 12px 10px; border-radius:16px; border:1px solid var(--line); background:var(--surface-2); cursor:pointer; position:relative; overflow:hidden; transition:transform .15s, border-color .15s; }
+  .jn-node::before{ content:''; position:absolute; left:0; right:0; top:0; height:3px; background:var(--c); }
+  .jn-node:hover{ transform:translateY(-2px); border-color:color-mix(in srgb,var(--c) 55%,var(--line)); }
+  .jn-node.sel{ border-color:var(--c); box-shadow:0 0 0 1px var(--c); }
+  .jn-node.st-active{ --c:var(--accent); background:linear-gradient(160deg, color-mix(in srgb,var(--accent) 10%,var(--surface-2)), var(--surface-2) 60%); }
+  .jn-node.st-passed{ --c:var(--pos); } .jn-node.st-payout{ --c:var(--violet); } .jn-node.st-failed{ --c:var(--neg); } .jn-node.st-archived{ --c:var(--muted); }
+  .jn-node:not(.st-active){ opacity:.88; }
+  .jn-top{ display:flex; justify-content:space-between; gap:6px; }
+  .jn-ph{ font-size:10.5px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; padding:1px 7px; border-radius:6px; background:color-mix(in srgb,var(--c) 18%,transparent); color:var(--ink); }
+  .jn-st{ font-size:10.5px; font-weight:800; color:var(--c); }
+  .jn-name{ font-size:14px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .jn-size{ font-size:12px; font-weight:700; color:var(--muted); }
+  .jn-pl{ font-family:'Bricolage Grotesque',sans-serif; font-size:20px; font-weight:800; } .jn-pl small{ font-size:12px; margin-left:6px; font-weight:700; color:var(--muted); }
+  .jn-bar{ height:5px; border-radius:99px; background:color-mix(in srgb,var(--muted) 20%,transparent); overflow:hidden; } .jn-bar i{ display:block; height:100%; background:var(--pos); border-radius:99px; }
+  .jn-paid{ font-size:12px; font-weight:800; color:var(--violet); }
+  .jn-date{ font-size:11.5px; font-weight:600; color:var(--muted); }
+  .jn-act{ display:flex; gap:4px; margin-top:6px; }
+  .jn-act button{ flex:1; white-space:nowrap; letter-spacing:-.01em; padding:5px 2px; border-radius:9px; border:1px solid var(--line); background:var(--surface); color:var(--ink); font-size:11px; font-weight:800; cursor:pointer; }
+  .jn-act button:hover{ border-color:var(--ink); }
+  .jn-link{ --lc:var(--muted); flex:none; width:96px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:0 4px; }
+  .jn-link.l-pos{ --lc:var(--pos); } .jn-link.l-info{ --lc:var(--info); } .jn-link.l-neg{ --lc:var(--neg); }
+  .jn-line{ display:none; }
+  .jn-link::before{ content:''; width:100%; height:2px; background:linear-gradient(90deg, transparent, var(--lc)); }
+  .jn-link::after{ content:'▶'; font-size:10px; color:var(--lc); margin-top:-12px; align-self:flex-end; }
+  .jn-chip{ order:-1; font-size:10.5px; font-weight:800; padding:2px 7px; border-radius:99px; background:color-mix(in srgb,var(--lc) 16%,transparent); color:var(--ink); white-space:nowrap; }
   .agrid{ display:grid; gap:14px; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); }
   .acard{ background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:12px; cursor:pointer; box-shadow:var(--shadow); transition:transform .12s, border-color .12s; }
   .acard:hover{ transform:translateY(-2px); border-color:var(--muted); }
@@ -2712,6 +2747,109 @@ function acctCard(a){ const s = acctStats(a);
         <div class="afoot"><span>${s.tr.length} trade${s.tr.length===1?'':'s'}${s.w+s.l ? ` · ${s.w}W/${s.l}L` : ''}</span><span>worst day ${money(s.worstDay)}</span></div>
       </article>`;
 }
+/* ---- connected accounts: challenge → next phase → funded → payout restart / scaled / retry ---- */
+const hasLinkCol = () => [...S.accounts.values()].some(a => 'parent_id' in a);
+const LINKS = { passed:['✓','Passed','pos'], payout:['💸','Payout · restart','pos'], scaled:['⤴','Scaled up','info'], retry:['↻','New attempt','neg'], reset:['⟲','Reset','muted'] };
+const nextPhase = ph => { const i = PHASES.indexOf(ph); return ph==='Challenge – Phase 1' ? 'Challenge – Phase 2' : ph==='Challenge – Phase 2' ? 'Funded' : ph==='Challenge – Phase 3' ? 'Funded' : i >= 0 ? ph : 'Funded'; };
+const shortPhase = ph => ({ 'Challenge – Phase 1':'Phase 1', 'Challenge – Phase 2':'Phase 2', 'Challenge – Phase 3':'Phase 3' }[ph] || ph || '—');
+/* journeys: each root account and everything that came from it, oldest first */
+function acctJourneys(){
+  const all = [...S.accounts.values()], kids = new Map();
+  all.forEach(a => { if(a.parent_id && S.accounts.has(a.parent_id)){ if(!kids.has(a.parent_id)) kids.set(a.parent_id, []); kids.get(a.parent_id).push(a); } });
+  kids.forEach(l => l.sort((x, y) => (x.start_date || x.created_at || '').localeCompare(y.start_date || y.created_at || '')));
+  const roots = all.filter(a => !a.parent_id || !S.accounts.has(a.parent_id));
+  const lanes = root => { const out = [], walk = (a, lane) => { lane.push(a); const ch = kids.get(a.id) || []; ch.slice(1).forEach(c => out.push({ from:a, nodes:walkNew(c) })); if(ch[0]) walk(ch[0], lane); };
+    const walkNew = a => { const lane = []; walk(a, lane); return lane; }; const main = []; walk(root, main); return [{ from:null, nodes:main }, ...out]; };
+  return roots.map(r => { const ls = lanes(r), nodes = ls.flatMap(l => l.nodes);
+    const paid = nodes.reduce((t, a) => t + msList(a).filter(m => m.kind==='payout').reduce((x, m) => x + (Number(m.amount) || 0), 0), 0);
+    const live = nodes.find(a => (a.status || 'active')==='active');
+    const last = nodes.reduce((m, a) => (a.start_date || a.created_at || '') > (m.start_date || m.created_at || '') ? a : m, nodes[0]);
+    return { root:r, lanes:ls, nodes, paid, live, last }; })
+    .sort((x, y) => (!!y.live - !!x.live) || (y.last.start_date || y.last.created_at || '').localeCompare(x.last.start_date || x.last.created_at || ''));
+}
+function jnNode(a){
+  const s = acctStats(a), st = a.status || 'active', on = st==='active', pct = a.size ? s.pnl / a.size * 100 : null;
+  const paid = msList(a).filter(m => m.kind==='payout').reduce((t, m) => t + (Number(m.amount) || 0), 0);
+  const prog = on && s.target ? Math.max(0, Math.min(100, s.pnl / s.target * 100)) : null;
+  const d = x => x ? x.split('-').reverse().join('.') : '';
+  return `<article class="jn-node st-${st} ${S.selAcct===a.id ? 'sel' : ''}" data-acc="${a.id}" tabindex="0">
+    <div class="jn-top"><span class="jn-ph">${esc(shortPhase(a.phase))}</span><span class="jn-st">${ACC_STATUS[st] || st}</span></div>
+    <b class="jn-name">${esc(a.name)}</b>
+    <div class="jn-size">${money(Number(a.size))}</div>
+    <div class="jn-pl ${sgn(s.pnl)}">${s.pnl > 0 ? '+' : ''}${money(s.pnl)}${pct!=null ? `<small>${pct > 0 ? '+' : ''}${fmt(pct, 1)}%</small>` : ''}</div>
+    ${prog!=null ? `<div class="jn-bar" title="Progress to target"><i style="width:${prog}%"></i></div>` : ''}
+    ${paid ? `<div class="jn-paid">💸 ${money(paid)} paid out</div>` : ''}
+    <div class="jn-date">${d(a.start_date)}${a.closed_date ? ' → ' + d(a.closed_date) : on ? ' → now' : ''}</div>
+    ${on ? `<div class="jn-act"><button data-jpass="${a.id}" title="Passed: archive it and open the next phase / funded">✓ Passed</button><button data-payout="${a.id}" title="Payout reached: archive it and restart">💸 Payout</button><button data-jfail="${a.id}" title="Failed: archive it, optionally start a new attempt">✗ Failed</button></div>` : ''}
+  </article>`;
+}
+function jnLink(a){
+  const [ico, lbl, cls] = LINKS[a.link_kind] || ['→', 'Next', 'muted'];
+  return `<div class="jn-link l-${cls}" aria-hidden="true"><span class="jn-line"></span><span class="jn-chip">${ico} ${lbl}</span><span class="jn-line"></span></div>`;
+}
+function journeysHtml(){
+  const js = acctJourneys();
+  return `<div class="jn-wrap">${js.map(j => {
+    const first = j.nodes.reduce((m, a) => (a.start_date || '9') < (m.start_date || '9') ? a : m, j.nodes[0]);
+    return `<section class="jn ${j.live ? 'live' : ''}">
+      <header class="jn-h"><b>${esc(j.root.firm || 'Account')}</b><span>${j.nodes.length} account${j.nodes.length > 1 ? 's' : ''}</span>
+        ${j.paid ? `<span class="pos">💸 ${money(j.paid)} paid out</span>` : ''}<span>since ${first.start_date ? first.start_date.split('-').reverse().join('.') : '…'}</span>
+        <span class="jn-now ${j.live ? 'on' : ''}">${j.live ? `Now: ${esc(shortPhase(j.live.phase))} · ${esc(j.live.name)}` : 'Closed'}</span></header>
+      ${j.lanes.map(l => `<div class="jn-lane">${l.from ? `<span class="jn-from">↳ from ${esc(l.from.name)}</span>` : ''}${l.nodes.map((a, i) => (i || l.from ? jnLink(a) : '') + jnNode(a)).join('')}</div>`).join('')}
+    </section>`; }).join('')}</div>`;
+}
+/* create the next account of a journey and archive the current one */
+async function journeyStep(a, kind, closeStatus, el, extraMs){
+  const date = el.date.value || iso(new Date());
+  const ms = extraMs ? [...msList(a), { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), ...extraMs, date, done:true, done_date:date }] : msList(a);
+  const { data:old, error:e1 } = await sb.from('do_accounts').update({ status:closeStatus, closed_date:date, closed_reason:kind, milestones:ms }).eq('id', a.id).select().single();
+  if(e1) return toast('Not saved: ' + e1.message);
+  S.accounts.set(old.id, old); S.selAcct = old.id;
+  if(el.next?.checked !== false && el.newname){
+    const row = { name:el.newname.value.trim() || nextName(a.name), firm:a.firm, phase:el.phase.value, status:'active', size:parseNum(el.size.value) ?? a.size,
+      start_date:el.start.value || date, target_pct: el.phase.value==='Funded' ? null : a.target_pct, daily_loss_pct:a.daily_loss_pct, max_loss_pct:a.max_loss_pct,
+      notes:`${LINKS[kind]?.[1] || 'Next'} from ${a.name}.`, milestones:[], ...(hasLinkCol() ? { parent_id:a.id, link_kind:kind } : {}) };
+    const { data:nw, error:e2 } = await sb.from('do_accounts').insert(row).select().single();
+    if(e2){ toast('Archived, but the new account failed: ' + e2.message); acctDlg.close(); return renderMain(); }
+    S.accounts.set(nw.id, nw); S.selAcct = nw.id;
+  }
+  acctDlg.close(); renderMain(); toast('Saved');
+}
+function openPass(a){
+  const today = iso(new Date()), np = nextPhase(a.phase);
+  acctDlg.innerHTML = `<form id="jForm" method="dialog"><div class="dlg-head"><h2>✓ Passed</h2><p class="muted" style="margin-top:4px;font-weight:600">${esc(a.name)} · ${esc(shortPhase(a.phase))}</p></div>
+    <div class="dlg-body" style="display:grid;gap:12px">
+      <div><label class="lbl">Date passed</label><input class="inp" name="date" type="date" value="${today}"></div>
+      <p class="hint" style="margin:0">This account goes to the archive as <b>Passed</b> and the next one opens, connected to it.</p>
+      <div class="g3" style="grid-template-columns:1fr 1fr">
+        <div><label class="lbl">Next account name</label><input class="inp" name="newname" value="${esc(nextName(a.name))}"></div>
+        <div><label class="lbl">Phase</label><select class="inp" name="phase">${PHASES.map(p => `<option ${p===np ? 'selected' : ''}>${p}</option>`).join('')}</select></div>
+        <div><label class="lbl">Size ($)</label><input class="inp num" name="size" inputmode="decimal" value="${esc(a.size)}"></div>
+        <div><label class="lbl">Start date</label><input class="inp" name="start" type="date" value="${today}"></div>
+      </div></div>
+    <div class="dlg-foot"><button type="button" class="btn" data-jx>Cancel</button><button class="btn btn-primary" type="submit">Pass & open next</button></div></form>`;
+  const f = acctDlg.querySelector('#jForm'); acctDlg.querySelector('[data-jx]').onclick = () => acctDlg.close();
+  f.onsubmit = ev => { ev.preventDefault(); journeyStep(a, 'passed', 'passed', f.elements, { kind:'achievement', title:`Passed ${shortPhase(a.phase)}` }); };
+  acctDlg.showModal();
+}
+function openFail(a){
+  const today = iso(new Date());
+  acctDlg.innerHTML = `<form id="jForm" method="dialog"><div class="dlg-head"><h2>✗ Failed</h2><p class="muted" style="margin-top:4px;font-weight:600">${esc(a.name)} · ${esc(shortPhase(a.phase))}</p></div>
+    <div class="dlg-body" style="display:grid;gap:12px">
+      <div><label class="lbl">Date</label><input class="inp" name="date" type="date" value="${today}"></div>
+      <label style="display:flex;gap:10px;align-items:center;font-weight:700"><input type="checkbox" name="next" checked style="width:18px;height:18px;accent-color:var(--accent)"> Start a new attempt, connected to this one</label>
+      <div id="jBox" class="g3" style="grid-template-columns:1fr 1fr">
+        <div><label class="lbl">New account name</label><input class="inp" name="newname" value="${esc(nextName(a.name))}"></div>
+        <div><label class="lbl">Phase</label><select class="inp" name="phase">${PHASES.map(p => `<option ${p===(a.phase==='Funded' ? 'Challenge – Phase 1' : a.phase) ? 'selected' : ''}>${p}</option>`).join('')}</select></div>
+        <div><label class="lbl">Size ($)</label><input class="inp num" name="size" inputmode="decimal" value="${esc(a.size)}"></div>
+        <div><label class="lbl">Start date</label><input class="inp" name="start" type="date" value="${today}"></div>
+      </div></div>
+    <div class="dlg-foot"><button type="button" class="btn" data-jx>Cancel</button><button class="btn btn-primary" type="submit">Save</button></div></form>`;
+  const f = acctDlg.querySelector('#jForm'); acctDlg.querySelector('[data-jx]').onclick = () => acctDlg.close();
+  f.elements.next.onchange = () => acctDlg.querySelector('#jBox').hidden = !f.elements.next.checked;
+  f.onsubmit = ev => { ev.preventDefault(); journeyStep(a, 'retry', 'failed', f.elements, null); };
+  acctDlg.showModal();
+}
 function renderAccounts(){
   const accs = [...S.accounts.values()].sort((a,b) => (a.status==='active' ? 0 : 1) - (b.status==='active' ? 0 : 1) || (a.name||'').localeCompare(b.name||''));
   if(S.selAcct && !S.accounts.has(S.selAcct)) S.selAcct = null;
@@ -2721,9 +2859,11 @@ function renderAccounts(){
   document.getElementById('main').innerHTML = `
     <div class="flex flex-wrap items-end gap-4 mb-4">
       <div><div class="pairtitle">Accounts</div><div class="muted mt-1" style="font-weight:600">Challenges and funded accounts — P/L from the trades linked to each account</div></div>
-      <button class="btn btn-primary ml-auto" id="newAcct">+ New account</button>
+      <div class="seg ml-auto" role="group" aria-label="View">${[['journeys','Journeys'],['cards','Cards']].map(([k, l]) => `<button data-aview="${k}" aria-pressed="${(S.aView || ls.get('do_aview', 'journeys'))===k}">${l}</button>`).join('')}</div>
+      <button class="btn btn-primary" id="newAcct">+ New account</button>
     </div>
-    ${accs.length ? `${active.length ? `<div class="agrid">${active.map(acctCard).join('')}</div>` : '<div class="card"><p class="muted">No active accounts. Open a new one or restore one from the archive.</p></div>'}
+    ${accs.length && !hasLinkCol() ? '<div class="card" style="margin-bottom:12px"><p class="hint" style="margin:0">To connect accounts (challenge → funded → payout restart …) run <b>migration-account-links.sql</b> in Supabase once, then reload.</p></div>' : ''}
+    ${accs.length && (S.aView || ls.get('do_aview', 'journeys'))==='journeys' ? journeysHtml() : accs.length ? `${active.length ? `<div class="agrid">${active.map(acctCard).join('')}</div>` : '<div class="card"><p class="muted">No active accounts. Open a new one or restore one from the archive.</p></div>'}
       ${archived.length ? `<details class="archive" ${ls.get('do_arch_open', false) ? 'open' : ''}><summary><h3>Archive <span class="pg-n">${archived.length}</span>
         <span class="muted" style="font-weight:600;font-size:13px;margin-left:8px">${money(archived.reduce((t,a) => t + msList(a).filter(m => m.kind==='payout').reduce((x,m) => x + (Number(m.amount)||0), 0), 0))} total paid out</span></h3></summary>
         <div class="agrid" style="margin-top:12px">${archived.map(acctCard).join('')}</div></details>` : ''}`
@@ -2732,6 +2872,9 @@ function renderAccounts(){
   const open = id => { S.selAcct = S.selAcct===id ? null : id; renderMain(); if(S.selAcct) document.getElementById('acctDetail')?.scrollIntoView({ behavior:'smooth', block:'start' }); };
   document.querySelectorAll('[data-acc]').forEach(c => { c.onclick = () => open(c.dataset.acc); c.onkeydown = e => { if(e.key==='Enter' && e.target===c) open(c.dataset.acc); }; });
   document.querySelectorAll('[data-payout]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openPayout(S.accounts.get(b.dataset.payout)); });
+  document.querySelectorAll('[data-jpass]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openPass(S.accounts.get(b.dataset.jpass)); });
+  document.querySelectorAll('[data-jfail]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openFail(S.accounts.get(b.dataset.jfail)); });
+  document.querySelectorAll('[data-aview]').forEach(b => b.onclick = () => { S.aView = b.dataset.aview; ls.set('do_aview', S.aView); renderMain(); });
   document.querySelector('.archive')?.addEventListener('toggle', ev => ls.set('do_arch_open', ev.target.open));
   document.querySelectorAll('[data-edit-acc]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openAcct(S.accounts.get(b.dataset.editAcc)); });
   document.getElementById('newAcct')?.addEventListener('click', () => openAcct());
@@ -2850,7 +2993,7 @@ function openPayout(a){
     if(el.restart.checked){
       const row = { name:el.newname.value.trim() || nextName(a.name), firm:a.firm, phase:el.phase.value, status:'active', size:parseNum(el.size.value) ?? a.size,
         start_date:el.start.value || date, target_pct:a.target_pct, daily_loss_pct:a.daily_loss_pct, max_loss_pct:a.max_loss_pct,
-        notes:`Restarted after payout on ${a.name}.`, milestones:[] };
+        notes:`Restarted after payout on ${a.name}.`, milestones:[], ...(hasLinkCol() ? { parent_id:a.id, link_kind: (parseNum(el.size.value) ?? a.size) > Number(a.size) ? 'scaled' : 'payout' } : {}) };
       const { data:nw, error:e2 } = await sb.from('do_accounts').insert(row).select().single();
       if(e2){ toast('Archived, but the new account failed: ' + e2.message); acctDlg.close(); return renderMain(); }
       S.accounts.set(nw.id, nw); S.selAcct = nw.id;
@@ -2877,6 +3020,9 @@ function openAcct(a){
         <div><label class="lbl" for="a_d">Daily loss %</label><input id="a_d" class="inp num" name="daily_loss_pct" inputmode="decimal" value="${v('daily_loss_pct')}" placeholder="5"></div>
         <div><label class="lbl" for="a_m">Max loss %</label><input id="a_m" class="inp num" name="max_loss_pct" inputmode="decimal" value="${v('max_loss_pct')}" placeholder="10"></div>
       </div>
+      ${hasLinkCol() ? `<div class="g3" style="grid-template-columns:1.4fr 1fr">
+        <div><label class="lbl" for="a_par">Comes from (connected account)</label><select id="a_par" class="inp" name="parent_id"><option value="">— none —</option>${[...S.accounts.values()].filter(x => x.id!==a?.id).sort((x, y) => (x.name||'').localeCompare(y.name||'')).map(x => `<option value="${x.id}" ${a?.parent_id===x.id ? 'selected' : ''}>${esc(x.name)} · ${esc(shortPhase(x.phase))}</option>`).join('')}</select></div>
+        <div><label class="lbl" for="a_lk">How</label><select id="a_lk" class="inp" name="link_kind">${Object.entries(LINKS).map(([k, [i, l]]) => `<option value="${k}" ${a?.link_kind===k ? 'selected' : ''}>${i} ${l}</option>`).join('')}</select></div></div>` : ''}
       <div><label class="lbl" for="a_notes">Notes</label><textarea id="a_notes" class="inp" name="notes" rows="2" placeholder="special rules, deadlines, payouts…">${v('notes')}</textarea></div>
       <datalist id="dl_firms"><option>The5ers</option><option>FTMO</option><option>FundingPips</option><option>Funded Next</option><option>Alpha Capital</option></datalist>
     </div>
@@ -2890,6 +3036,7 @@ function openAcct(a){
     const el = f.elements, row = { name:el.name.value.trim(), firm:el.firm.value.trim() || null, phase:el.phase.value, status:el.status.value,
       size:parseNum(el.size.value), start_date:el.start_date.value || null, target_pct:parseNum(el.target_pct.value),
       daily_loss_pct:parseNum(el.daily_loss_pct.value), max_loss_pct:parseNum(el.max_loss_pct.value), notes:el.notes.value.trim() || null };
+    if(el.parent_id){ row.parent_id = el.parent_id.value || null; row.link_kind = row.parent_id ? el.link_kind.value : null; }
     if(!row.name || row.size==null) return toast('Fill in the account name and size');
     const q = a ? sb.from('do_accounts').update(row).eq('id', a.id).select().single() : sb.from('do_accounts').insert(row).select().single();
     const { data, error } = await q; if(error) return toast('Not saved: ' + error.message);
