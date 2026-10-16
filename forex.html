@@ -294,6 +294,9 @@
   .jn-h b{ font-family:'Bricolage Grotesque',sans-serif; font-size:18px; color:var(--ink); }
   .jn-now{ margin-left:auto; padding:3px 10px; border-radius:99px; background:var(--surface-2); color:var(--muted); }
   .jn-now.on{ background:color-mix(in srgb,var(--accent) 16%,transparent); color:var(--ink); }
+  .jn-chain{ display:grid; gap:6px; }
+  .jn-chain + .jn-chain{ margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); }
+  .jn-cl{ font-size:11px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
   .jn-lane{ display:flex; align-items:stretch; gap:0; overflow-x:auto; padding-bottom:6px; scrollbar-width:thin; }
   .jn-lane + .jn-lane{ margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); }
   .jn-from{ align-self:center; flex:none; margin-right:8px; font-size:11.5px; font-weight:800; color:var(--muted); }
@@ -2788,14 +2791,21 @@ function jnLink(a){
   return `<div class="jn-link l-${cls}" aria-hidden="true"><span class="jn-line"></span><span class="jn-chip">${ico} ${lbl}</span><span class="jn-line"></span></div>`;
 }
 function journeysHtml(){
-  const js = acctJourneys();
-  return `<div class="jn-wrap">${js.map(j => {
-    const first = j.nodes.reduce((m, a) => (a.start_date || '9') < (m.start_date || '9') ? a : m, j.nodes[0]);
-    return `<section class="jn ${j.live ? 'live' : ''}">
-      <header class="jn-h"><b>${esc(j.root.firm || 'Account')}</b><span>${j.nodes.length} account${j.nodes.length > 1 ? 's' : ''}</span>
-        ${j.paid ? `<span class="pos">💸 ${money(j.paid)} paid out</span>` : ''}<span>since ${first.start_date ? first.start_date.split('-').reverse().join('.') : '…'}</span>
-        <span class="jn-now ${j.live ? 'on' : ''}">${j.live ? `Now: ${esc(shortPhase(j.live.phase))} · ${esc(j.live.name)}` : 'Closed'}</span></header>
-      ${j.lanes.map(l => `<div class="jn-lane">${l.from ? `<span class="jn-from">↳ from ${esc(l.from.name)}</span>` : ''}${l.nodes.map((a, i) => (i || l.from ? jnLink(a) : '') + jnNode(a)).join('')}</div>`).join('')}
+  /* one block per prop firm; inside it, each chain of connected accounts on its own line */
+  const js = acctJourneys(), firms = new Map();
+  js.forEach(j => { const f = (j.root.firm || 'Other').trim() || 'Other', k = f.toLowerCase(); if(!firms.has(k)) firms.set(k, { name:f, js:[] }); firms.get(k).js.push(j); });
+  const d = x => x ? x.split('-').reverse().join('.') : '…';
+  return `<div class="jn-wrap">${[...firms.values()].map(F => {
+    const nodes = F.js.flatMap(j => j.nodes), paid = F.js.reduce((t, j) => t + j.paid, 0), live = nodes.filter(a => (a.status || 'active')==='active');
+    const funded = live.filter(a => a.phase==='Funded'), ch = live.length - funded.length;
+    const first = nodes.reduce((m, a) => (a.start_date || '9') < (m.start_date || '9') ? a : m, nodes[0]);
+    const allocation = funded.reduce((t, a) => t + (Number(a.size) || 0), 0);
+    return `<section class="jn ${live.length ? 'live' : ''}">
+      <header class="jn-h"><b>${esc(F.name)}</b><span>${nodes.length} account${nodes.length > 1 ? 's' : ''}</span>
+        ${paid ? `<span class="pos">💸 ${money(paid)} paid out</span>` : ''}<span>since ${d(first.start_date)}</span>
+        <span class="jn-now ${live.length ? 'on' : ''}">${live.length ? [funded.length ? `${funded.length} funded · ${money(allocation)}` : '', ch ? `${ch} in challenge` : ''].filter(Boolean).join(' · ') : 'All closed'}</span></header>
+      ${F.js.map((j, n) => `<div class="jn-chain">${F.js.length > 1 ? `<span class="jn-cl">${j.live ? `● ${esc(shortPhase(j.live.phase))}` : 'Closed'}</span>` : ''}
+        ${j.lanes.map(l => `<div class="jn-lane">${l.from ? `<span class="jn-from">↳ from ${esc(l.from.name)}</span>` : ''}${l.nodes.map((a, i) => (i || l.from ? jnLink(a) : '') + jnNode(a)).join('')}</div>`).join('')}</div>`).join('')}
     </section>`; }).join('')}</div>`;
 }
 /* create the next account of a journey and archive the current one */
