@@ -4556,6 +4556,13 @@ function suPlan(s){
   const dg = E >= 20 ? 3 : 5, rd = v => Number(v.toFixed(dg));
   return { entry:rd(E), sl:rd(SL), tp:rd(s.dir==='Long' ? E + 2*r : E - 2*r) };
 }
+/* last heartbeat price of a pair (the candle that closed last; the smallest timeframe wins a tie) */
+function lastPx(pair){
+  let best = null;
+  ['1m','15m','1H','4H'].forEach(f => { const a = S.candleIdx?.get(pair+'|'+f) || []; const c = a[a.length - 1]; if(!c || c.c==null) return; const end = c.t + TF_MS[f];
+    if(!best || end > best.end || (end===best.end && TF_MS[f] < TF_MS[best.tf])) best = { c:c.c, end, tf:f }; });
+  return best;
+}
 /* undo "Taken" / "Skipped": the setup goes back to its stage; a trade it logged is deleted from the journal */
 async function undoSetup(s){
   if(!s) return;
@@ -5163,8 +5170,18 @@ function lvRow(s){
       mid = kv('Liquidity', sxPx(s.liq.level), s.liq.at ? hm(candleOpen(s.liq.at, s.liq.tf || s.tf))+' candle' : '') + kv('Fractal', sxPx(s.line), `${how ? how+' · ' : ''}${s.bos ? hm(s.bos.candle ? s.bos.candle.t : candleOpen(s.bos.at, s.tf))+' candle' : ''}`)
         + (pl ? kv(`Limit ${L ? 'buy' : 'sell'}`, sxPx(pl.entry), '', 'e') + kv('SL', sxPx(pl.sl), '', 'sl') + kv('TP 2R', sxPx(pl.tp), '', 'tp') : `<p class="lvr-note">${nx.text}</p>`);
     }
-    if(s.stage==='wickfail') act = `${chart}<button class="bt" data-suwx="${s.key}|drop" title="The setup goes to History as invalid">✗ Invalidate</button><button class="btn btn-primary" data-suwx="${s.key}|more" title="Wait for one more candle to close beyond the line">+1 candle</button>${back(3, 'Back to Step 2')}`;
-    else act = `${chart}${s.stage==='formed' ? `<button class="bt lvr-w" data-suwatch="${s.key}" title="Keep this zone for later: no trade, a Telegram message when price comes back">☆ Watchlist</button>` : ''}${back(3, 'Back to Step 2 to change Wick / Body or the prices')}${skip}`;
+    if(S.su.take===s.key){   /* take it now (on the break), at the current price — no waiting for the retest */
+      const px = lastPx(s.pair), sl0 = pl?.sl ?? s.val?.sl ?? s.liq.extreme ?? s.liq.level;
+      mid = `<div class="sx-val lvr-val dirty" data-takefor="${s.key}">
+          <span class="lvr-when">⚡ Take now${px ? ` · price ${lvl(px.c)} (${px.tf})` : ''}</span>
+          <label><span>Entry</span><input class="inp" inputmode="decimal" autocomplete="off" data-tentry value="${lvl(px?.c ?? s.line)}"></label>
+          <label class="sl"><span>Stop loss</span><input class="inp" inputmode="decimal" autocomplete="off" data-tsl value="${lvl(sl0)}"></label>
+          <label><span>TP (2R)</span><input class="inp" inputmode="decimal" autocomplete="off" data-ttp value="" placeholder="auto 2R"></label>
+          <span class="sx-val-msg neg"></span></div>`;
+      act = `<button class="bt" data-sutakex="${s.key}">Cancel</button><button class="btn btn-primary" data-sutakeok="${s.key}">✓ Open trade</button>`;
+    } else
+    if(s.stage==='wickfail') act = `${chart}<button class="bt lvr-fx" data-sutk="${s.key}" title="Open the trade now at the current price, without waiting for the retest">⚡ Take now</button><button class="bt" data-suwx="${s.key}|drop" title="The setup goes to History as invalid">✗ Invalidate</button><button class="btn btn-primary" data-suwx="${s.key}|more" title="Wait for one more candle to close beyond the line">+1 candle</button>${back(3, 'Back to Step 2')}`;
+    else act = `${chart}<button class="bt lvr-fx" data-sutk="${s.key}" title="Open the trade now at the current price (on the break), without waiting for the retest">⚡ Take now</button>${s.stage==='formed' ? `<button class="bt lvr-w" data-suwatch="${s.key}" title="Keep this zone for later: no trade, a Telegram message when price comes back">☆ Watchlist</button>` : ''}${back(3, 'Back to Step 2 to change Wick / Body or the prices')}${skip}`;
   } else if(col==='done'){
     const t = S.trades.get(s.trade_id), W = t.result==='W', R = t.r_multiple!=null ? Number(t.r_multiple) : null;
     mid = `<div class="lvr-live ${W ? 'up' : t.result==='L' ? 'dn' : ''}"><b>${R!=null ? `${R > 0 ? '+' : ''}${fmt(R, R % 1 ? 2 : 0)}R` : esc(t.result)}</b><small>${{ W:'Take profit', L:'Stop loss', BE:'Break-even' }[t.result] || ''}${t.pips!=null ? ` · ${Number(t.pips) > 0 ? '+' : ''}${fmt(Number(t.pips), 1)} pips` : ''}</small></div>`
@@ -5705,6 +5722,28 @@ function bindSetups(m, all){
   m.querySelectorAll('[data-suact]').forEach(b => b.onclick = () => { S.su.act = b.dataset.suact; renderMain(); document.querySelector(`[data-actfor="${b.dataset.suact}"] [data-aline]`)?.focus(); });
   m.querySelectorAll('[data-suactx]').forEach(b => b.onclick = () => { S.su.act = null; renderMain(); });
   m.querySelectorAll('[data-actfor] input').forEach(i => i.onkeydown = e => { if(e.key==='Enter') document.querySelector(`[data-suactok="${i.closest('[data-actfor]').dataset.actfor}"]`)?.click(); });
+  m.querySelectorAll('[data-sutk]').forEach(b => b.onclick = () => { S.su.take = b.dataset.sutk; renderMain(); document.querySelector(`[data-takefor="${b.dataset.sutk}"] [data-tentry]`)?.select(); });
+  m.querySelectorAll('[data-sutakex]').forEach(b => b.onclick = () => { S.su.take = null; renderMain(); });
+  m.querySelectorAll('[data-takefor] input').forEach(i => i.onkeydown = e => { if(e.key==='Enter') document.querySelector(`[data-sutakeok="${i.closest('[data-takefor]').dataset.takefor}"]`)?.click(); });
+  m.querySelectorAll('[data-sutakeok]').forEach(b => b.onclick = async () => {
+    const s = byKey.get(b.dataset.sutakeok), p = document.querySelector(`[data-takefor="${b.dataset.sutakeok}"]`); if(!s || !p) return;
+    const L = s.dir==='Long', msg = p.querySelector('.sx-val-msg');
+    const E = parseNum(p.querySelector('[data-tentry]').value), SL = parseNum(p.querySelector('[data-tsl]').value); let TP = parseNum(p.querySelector('[data-ttp]').value);
+    if(!(E > 0) || !(SL > 0)) return msg.textContent = 'Enter the entry and the stop loss.';
+    if(L ? SL >= E : SL <= E) return msg.textContent = `For a ${L ? 'long' : 'short'} the stop loss has to be ${L ? 'below' : 'above'} the entry.`;
+    const dg = E >= 20 ? 3 : 5, r = Math.abs(E - SL); if(!(TP > 0)) TP = +(L ? E + 2*r : E - 2*r).toFixed(dg);
+    if(L ? TP <= E : TP >= E) return msg.textContent = `For a ${L ? 'long' : 'short'} the take profit has to be ${L ? 'above' : 'below'} the entry.`;
+    b.disabled = true;
+    const now = new Date(), et = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`, rr = Math.abs(TP - E) / r;
+    const notes = `[Manual] Taken on the break · Setup ${s.tf}: liquidity ${lvl(s.liq.level)} → ${L ? 'bullish' : 'bearish'} fractal change${s.line!=null ? ' ' + lvl(s.line) : ''}. Entry ${lvl(E)} · SL ${lvl(SL)} · TP ${lvl(TP)} (${fmt(rr, 2)}R).`;
+    const extra = { setup_tf: ['1H','4H'].includes(s.tf) ? s.tf : null, entry_price:E, sl:+SL.toFixed(dg), tp:TP, entry_time:et, notes };
+    Object.assign(extra, tradeAutoFill({ pair:s.pair, direction:s.dir, ...extra }));
+    const t = await addTrade(s.pair, iso(now), s.dir, extra);
+    if(!t){ b.disabled = false; return msg.textContent = 'Not saved.'; }
+    await markSetup(s.key, 'taken', { trade_id:t.id, reason:'manual' });
+    S.su.take = null; renderMain();
+    toast(`⚡ ${L ? '▲' : '▼'} ${s.pair} opened · entry ${lvl(E)} · SL ${lvl(SL)} · TP ${lvl(TP)}`);
+  });
   m.querySelectorAll('[data-suactok]').forEach(b => b.onclick = async () => {
     const s = byKey.get(b.dataset.suactok), p = document.querySelector(`[data-actfor="${b.dataset.suactok}"]`); if(!s || !p) return;
     const L = s.dir==='Long', msg = p.querySelector('.sx-val-msg');
