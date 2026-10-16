@@ -1184,6 +1184,11 @@
   .lvr-ic{ font-weight:900; }
   .lvr-live{ display:grid; line-height:1.1; } .lvr-live b{ font-family:'Bricolage Grotesque',sans-serif; font-size:20px; font-weight:800; } .lvr-live small{ font-size:11.5px; font-weight:700; color:var(--muted); }
   .lvr-live.up b{ color:var(--pos); } .lvr-live.dn b{ color:var(--neg); }
+  .lvr-acc{ display:inline-flex; align-items:center; gap:4px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; font-weight:700; padding:2px 8px; border-radius:7px; border:1px dashed var(--line); background:none; color:var(--muted); }
+  .lvr-acc.on{ border-style:solid; border-color:color-mix(in srgb,var(--info) 50%,var(--line)); color:var(--info); background:color-mix(in srgb,var(--info) 10%,transparent); }
+  .lvr-acc:hover{ color:var(--ink); border-color:var(--muted); }
+  .lvr-accs{ grid-column:1 / -1; display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:10px 2px 2px; border-top:1px dashed var(--line); margin-top:4px; }
+  .lvr-accs .ch small{ margin-left:6px; color:var(--muted); font-weight:700; } .lvr-accs .bt{ margin-left:auto; }
   .lvr-fx{ color:var(--accent); border-color:color-mix(in srgb,var(--accent) 45%,var(--line)) !important; font-weight:800; }
   .lvr-rail{ flex:1 1 220px; min-width:180px; } .lvr-rail .sx-rail{ margin:0; }
   .lvr-val{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px 10px; padding:0; border:0; background:none; }
@@ -5116,9 +5121,26 @@ const LV_LBL = {
   trade:['Step 4 · Trade','Price reached the line, trade running live','No open trade.','Trade'],
   done:['Step 5 · Finished','Closed at TP or SL — tick ✓ Seen and it moves to History','Nothing finished.','Finished'],
   watch:['Extra · Watchlist','Zones you keep for later: no trade is taken, you get a Telegram message when price comes back','Nothing on the watchlist. Add a zone from Step 3 with ☆ Watchlist.','Watchlist'] };
+const shortAcc = n => String(n || '').replace(/\s*Account\s*/i, ' ').replace(/\s+/g, ' ').trim();
+function suAccts(s){
+  const t = s.trade_id ? S.trades.get(s.trade_id) : null;
+  if(t) return tradeAccts(t).map(x => x.id).filter(id => S.accounts.has(id));
+  return (suValid()[s.key]?.accts || []).filter(id => S.accounts.has(id));
+}
+async function suToggleAcct(s, accId){
+  const t = s.trade_id ? S.trades.get(s.trade_id) : null, cur = suAccts(s), next = cur.includes(accId) ? cur.filter(x => x!==accId) : [...cur, accId];
+  if(t){
+    const old = tradeAccts(t), list = next.map(id => old.find(x => x.id===id) || { id, profit:null });
+    const { data, error } = await sb.from('do_trades').update({ trade_accounts:list, account_id:list[0]?.id || null }).eq('id', t.id).select().single();
+    if(error) return toast('Not saved: ' + error.message); S.trades.set(t.id, data);
+  } else await suValSet(s.key, r => ({ ...r, accts:next }));
+  renderMain();
+}
+/* accounts picked on the setup → on the trade when it is created */
+const plannedAccts = key => { const a = (suValid()[key]?.accts || []).filter(id => S.accounts.has(id)); return a.length ? { trade_accounts:a.map(id => ({ id, profit:null })), account_id:a[0] } : {}; };
 function lvRow(s){
   const tr = suOpenTrade(s), L = s.dir==='Long', isNew = sxIsNew(s), pl = s.bos ? suPlan(s) : null, col = sxCol(s), nx = sxNext(s, tr, pl);
-  const id = `<div class="lvr-id">${isNew ? `<button class="lvr-new" data-suseen="${s.key}" title="New · click to mark seen">NEW ✓</button>` : ''}
+  let id = `<div class="lvr-id">${isNew ? `<button class="lvr-new" data-suseen="${s.key}" title="New · click to mark seen">NEW ✓</button>` : ''}
       <b class="lvr-p">${base(s.pair)}<em>${quote(s.pair)}</em></b><span class="lvr-d ${L ? 'pos' : 'neg'}">${L ? '▲' : '▼'}</span><span class="tfl">${esc(s.tf)}</span>${sxCol(s)!=='forming' && suValid()[s.key]?.prio ? `<span class="lvr-pc p-${suValid()[s.key].prio}">${{ high:'High', med:'Mid', low:'Low' }[suValid()[s.key].prio]}</span>` : ''}${s.manual ? `<span class="lvr-man" title="Added by you">manual</span>` : ''}${s.manual && !((s.bias==='bullish' && L) || (s.bias==='bearish' && !L)) ? `<span class="lvr-cb" title="Against the weekly bias">counter-bias</span>` : ''}</div>`;
   const kv = (k, v, t, cls = '') => `<div class="lvr-kv ${cls}"><span>${k}</span><b>${v}</b>${t ? `<small>${t}</small>` : ''}</div>`;
   const hm = at => at ? hhmm(at).slice(-5) : '';
@@ -5212,6 +5234,14 @@ function lvRow(s){
     }
   }
   const prio = suValid()[s.key]?.prio;
+  /* accounts for this trade / setup — pick them early, the trade gets them when it opens */
+  const accs = suAccts(s), accNames = accs.map(id => S.accounts.get(id)?.name).filter(Boolean);
+  const accBtn = `<button class="lvr-acc ${accs.length ? 'on' : ''}" data-suacc="${s.key}" title="${accNames.length ? esc(accNames.join('\n')) : 'Pick the accounts you take this trade on'}">👤 ${accNames.length ? esc(shortAcc(accNames[0])) + (accNames.length > 1 ? ` +${accNames.length - 1}` : '') : 'Accounts'}</button>`;
+  { const i = id.lastIndexOf('</div>'); if(i >= 0) id = id.slice(0, i) + accBtn + id.slice(i); }
+  if(S.su.accFor===s.key){
+    const act0 = [...S.accounts.values()].filter(a => (a.status || 'active')==='active').sort((a, b) => (a.firm || '').localeCompare(b.firm || '') || (a.name || '').localeCompare(b.name || ''));
+    extra += `<div class="lvr-accs"><span class="kick">${suOpenTrade(s) || s.trade_id ? 'Accounts on this trade' : 'Take it on'}</span>${act0.length ? act0.map(a => `<button class="ch" data-suacct="${s.key}|${a.id}" aria-pressed="${accs.includes(a.id)}">${esc(a.name)}<small>${esc(shortPhase(a.phase))}</small></button>`).join('') : '<span class="muted">No active accounts</span>'}<button class="bt" data-suacc="${s.key}">Done</button></div>`;
+  }
   return `<article class="lvr c-${col} ${L ? 'long' : 'short'}${isNew ? ' is-new' : ''}${extra.includes('lvr-rev') ? ' rev' : ''}${prio ? ' pr-'+prio : ''}" data-su="${s.key}">
     ${id}<div class="lvr-mid">${mid}</div><div class="lvr-act">${act}</div>${extra}</article>`;
 }
@@ -5608,7 +5638,7 @@ async function takeSetup(s, auto = false){
   const pl = suPlan(s), lineLvl = s.line ?? null;
   const at = auto && s.retest?.at ? new Date(s.retest.at) : new Date(), ds = iso(at);
   const notes = `${auto ? '[Auto] ' : ''}Setup ${s.tf}: ${s.side==='sell' ? 'sell-side' : 'buy-side'} liquidity${s.liq.level!=null ? ' '+lvl(s.liq.level) : ''} (${hhmm(s.liq.at)}) → ${s.dir==='Long' ? 'bullish' : 'bearish'} fractal break${lineLvl!=null ? ' '+lvl(lineLvl) : ''}${s.bos ? ' ('+hhmm(s.bos.at)+')' : ''}${s.retest ? ` → retest${s.retest.at ? ' '+hhmm(s.retest.at) : ''}${s.retest.auto ? ' ('+s.retest.tf+' candle)' : ''}` : ''}${pl ? `. Plan: entry ${lvl(pl.entry)} · SL ${lvl(pl.sl)} · TP ${lvl(pl.tp)} (2R)` : suZone(s) ? '. Entry zone '+suZoneTxt(s) : ''}. Bias ${s.bias || '–'}${s.conviction ? ' '+s.conviction : ''}.`;
-  const extra = { setup_tf: ['1H','4H'].includes(s.tf) ? s.tf : null, entry_price: pl?.entry ?? lineLvl, notes };
+  const extra = { setup_tf: ['1H','4H'].includes(s.tf) ? s.tf : null, entry_price: pl?.entry ?? lineLvl, notes, ...plannedAccts(s.key) };
   if(pl){ extra.sl = pl.sl; extra.tp = pl.tp; }
   if(auto) extra.entry_time = `${String(at.getHours()).padStart(2,'0')}:${String(at.getMinutes()).padStart(2,'0')}`;
   Object.assign(extra, tradeAutoFill({ pair:s.pair, direction:s.dir, entry_time: extra.entry_time || `${String(at.getHours()).padStart(2,'0')}:${String(at.getMinutes()).padStart(2,'0')}`, ...extra }));
@@ -5736,7 +5766,7 @@ function bindSetups(m, all){
     b.disabled = true;
     const now = new Date(), et = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`, rr = Math.abs(TP - E) / r;
     const notes = `[Manual] Taken on the break · Setup ${s.tf}: liquidity ${lvl(s.liq.level)} → ${L ? 'bullish' : 'bearish'} fractal change${s.line!=null ? ' ' + lvl(s.line) : ''}. Entry ${lvl(E)} · SL ${lvl(SL)} · TP ${lvl(TP)} (${fmt(rr, 2)}R).`;
-    const extra = { setup_tf: ['1H','4H'].includes(s.tf) ? s.tf : null, entry_price:E, sl:+SL.toFixed(dg), tp:TP, entry_time:et, notes };
+    const extra = { setup_tf: ['1H','4H'].includes(s.tf) ? s.tf : null, entry_price:E, sl:+SL.toFixed(dg), tp:TP, entry_time:et, notes, ...plannedAccts(s.key) };
     Object.assign(extra, tradeAutoFill({ pair:s.pair, direction:s.dir, ...extra }));
     const t = await addTrade(s.pair, iso(now), s.dir, extra);
     if(!t){ b.disabled = false; return msg.textContent = 'Not saved.'; }
@@ -5787,6 +5817,8 @@ function bindSetups(m, all){
     renderMain(); toast(`${s.pair} ${s.tf} → Step 4 · trade logged`); openTradeModal(t.id); });
   m.querySelectorAll('[data-sukeep]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const [key, sl, tp] = b.dataset.sukeep.split('|');
     await suValSet(key, r => ({ ...r, keepPlan:{ sl:Number(sl), tp:Number(tp) } })); renderMain(); toast('Kept your SL / TP'); });
+  m.querySelectorAll('[data-suacc]').forEach(b => b.onclick = ev => { ev.stopPropagation(); S.su.accFor = S.su.accFor===b.dataset.suacc ? null : b.dataset.suacc; renderMain(); });
+  m.querySelectorAll('[data-suacct]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const [key, id] = b.dataset.suacct.split('|'); const s = byKey.get(key); if(s) await suToggleAcct(s, id); });
   m.querySelectorAll('[data-suprio]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const [key, lv] = b.dataset.suprio.split('|');
     await suValSet(key, r => { const n = { ...r }; if(n.prio===lv) delete n.prio; else n.prio = lv; return n; }); renderMain(); });
   m.querySelectorAll('[data-sudone]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const s = byKey.get(b.dataset.sudone); if(!s) return;
