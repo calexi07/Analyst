@@ -323,6 +323,13 @@
   .ac-dist span{ display:inline-flex; align-items:center; gap:5px; } .ac-dist i{ width:8px; height:8px; border-radius:50%; }
   .ac-dist .d-neg{ background:var(--neg); } .ac-dist .d-amb{ background:var(--amber); } .ac-dist .d-pos{ background:var(--pos); }
   .ac-dist .neg{ color:var(--neg); } .ac-dist .pos{ color:var(--pos); }
+  .ac-open{ display:flex; flex-wrap:wrap; gap:5px; }
+  .ac-open.none{ font-size:11.5px; font-weight:700; color:var(--muted); }
+  .ac-ot{ display:inline-flex; align-items:center; gap:5px; padding:3px 8px; border-radius:8px; font-size:11.5px; font-weight:700; background:var(--surface-2); border:1px solid var(--line); color:var(--ink); }
+  .ac-ot i{ width:7px; height:7px; border-radius:50%; background:var(--muted); animation:acPulse 1.6s ease-in-out infinite; }
+  .ac-ot em{ font-style:normal; font-weight:800; } .ac-ot small{ color:var(--muted); font-weight:700; }
+  .ac-ot.up{ border-color:color-mix(in srgb,var(--pos) 45%,var(--line)); } .ac-ot.up em{ color:var(--pos); } .ac-ot.up i{ background:var(--pos); }
+  .ac-ot.dn{ border-color:color-mix(in srgb,var(--neg) 45%,var(--line)); } .ac-ot.dn em{ color:var(--neg); } .ac-ot.dn i{ background:var(--neg); }
   .pay-chip{ justify-self:start; font-size:11.5px; font-weight:800; padding:3px 9px; border-radius:8px; background:color-mix(in srgb,var(--muted) 16%,transparent); color:var(--muted); }
   .pay-chip.soon{ background:color-mix(in srgb,var(--amber) 18%,transparent); color:var(--amber); }
   .pay-chip.today{ background:color-mix(in srgb,var(--pos) 22%,transparent); color:var(--pos); animation:acPulse 1.6s ease-in-out infinite; }
@@ -2831,6 +2838,15 @@ function acctRail(a, s, compact){
     ${compact ? '' : `<div class="ac-dist">${toBlow!=null ? `<span class="${toBlow <= size*.01 ? 'neg' : ''}"><i class="d-neg"></i>${money(Math.max(0, toBlow))} to blown</span>` : ''}${toDay!=null ? `<span class="${toDay <= size*.005 ? 'neg' : ''}"><i class="d-amb"></i>${money(Math.max(0, toDay))} to daily stop</span>` : ''}${toTg!=null ? `<span class="${toTg <= 0 ? 'pos' : ''}"><i class="d-pos"></i>${toTg <= 0 ? 'target reached' : money(toTg) + ' to target'}</span>` : ''}</div>`}
   </div>`;
 }
+/* open trades on this account: pair, direction and running R (and $ at the account's risk) — or "no open trade" */
+function acctOpenHtml(a){
+  if((a.status || 'active')!=='active') return '';
+  const op = [...S.trades.values()].filter(e => e.direction && !e.result && !e.exit_date && tradeAccts(e).some(x => x.id===a.id));
+  if(!op.length) return '<div class="ac-open none">○ No open trade</div>';
+  return `<div class="ac-open">${op.map(t => { const lv = livePL(t), risk = numOr(t.risk) ?? RISK_PCT, usd = lv ? lv.R * risk / 100 * (Number(a.size) || 0) : null;
+    return `<span class="ac-ot ${lv ? (lv.R >= 0 ? 'up' : 'dn') : ''}" title="${esc(t.pair)} ${t.direction}${t.entry_price!=null ? ' @ ' + t.entry_price : ''}${lv ? ` · ${lv.pips >= 0 ? '+' : ''}${fmt(lv.pips, 1)} pips` : ' · waiting for a candle'}">
+      <i></i><b>${esc(t.pair)}</b> ${t.direction==='Long' ? '▲' : '▼'} ${lv ? `<em>${lv.R >= 0 ? '+' : ''}${fmt(lv.R, 2)}R</em><small>${usd >= 0 ? '+' : '−'}$${fmt(Math.abs(usd), 0)}</small>` : '<small>…</small>'}</span>`; }).join('')}</div>`;
+}
 function bar(label, val, max, cls, right){
   const w = max ? Math.max(0, Math.min(100, val/max*100)) : 0;
   return `<div class="abar"><div class="abar-h"><span>${label}</span><span class="num">${right}</span></div><div class="abar-t"><span class="${cls}" style="width:${w}%"></span></div></div>`;
@@ -2844,6 +2860,7 @@ function acctCard(a){ const s = acctStats(a);
         <div class="abal"><div><span class="kick">Balance</span><span class="bigval">${money(s.bal)}</span></div>
           <div style="text-align:right"><span class="kick">P/L</span><b class="${sgn(s.pnl)}" style="font-size:18px">${s.pnl>0?'+':''}${money(s.pnl)}</b>
           <div class="muted num" style="font-size:12px;font-weight:700">${a.size ? `${s.pnl>0?'+':''}${fmt(s.pnl/a.size*100)}%` : ''}</div></div></div>
+        ${acctOpenHtml(a)}
         ${payChip(a)}
         ${(a.status||'active')==='active' ? acctRail(a, s, false) : ''}
         ${s.target!=null && (a.status||'active')!=='active' ? bar('Target profit', Math.max(0,s.pnl), s.target, 'b-pos', `${money(Math.max(0,s.pnl))} / ${money(s.target)}`) : ''}
@@ -2889,6 +2906,7 @@ function jnNode(a){
     <b class="jn-name" title="${esc(a.name)}">${esc(a.name)}</b>
     <div class="jn-size">${money(Number(a.size))}</div>
     <div class="jn-pl ${sgn(s.pnl)}">${s.pnl > 0 ? '+' : ''}${money(s.pnl)}${pct!=null ? `<small>${pct > 0 ? '+' : ''}${fmt(pct, 1)}%</small>` : ''}</div>
+    ${acctOpenHtml(a)}
     ${payChip(a)}
     ${on ? acctRail(a, s, true) : ''}
     ${prog!=null ? `<div class="jn-tg">${money(Math.max(0, s.pnl))} / ${money(s.target)} · ${acctTargetPct(a)}%</div>` : ''}
@@ -5838,7 +5856,7 @@ async function liveRefresh(){
     if(!vis) return;
     const n = await autoRun(), busy = document.querySelector('dialog[open]') || document.querySelector('.su-skip') || document.querySelector('.sx-val.dirty') || S.drawerOpen || document.activeElement?.matches?.('input,textarea,select');
     S.liveAt = Date.now();
-    if(!busy && (S.view==='setups' || ((n || S.liveTrades) && ['trades','today'].includes(S.view)))){ S.liveTrades = false; renderMain(); }
+    if(!busy && (S.view==='setups' || S.view==='accounts' || ((n || S.liveTrades) && ['trades','today'].includes(S.view)))){ S.liveTrades = false; renderMain(); }
     if(n) refreshDock?.();
   } finally { S.liveBusy = false; }
 }
