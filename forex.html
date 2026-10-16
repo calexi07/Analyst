@@ -4909,7 +4909,7 @@ function openAddSetup(step0 = 'forming'){
       <div class="dlg-body asd">
         <div><span class="lbl">Start at</span><div class="asd-steps chips">${STEPS.map(([k, l]) => `<button class="ch" data-ast="${k}" aria-pressed="${A.step===k}">${l}</button>`).join('')}</div></div>
         <div class="asd-g">
-          <label>Pair<select class="inp" id="asPair">${PAIRS.map(p => `<option ${p===A.pair ? 'selected' : ''}>${p}</option>`).join('')}</select></label>
+          <label>Pair<select class="inp" id="asPair">${[...new Set([...allPairs(), "XAUUSD"])].map(p => `<option ${p===A.pair ? 'selected' : ''}>${p}</option>`).join('')}</select></label>
           <label>Timeframe<div class="seg">${['1H','4H'].map(f => `<button data-astf="${f}" aria-pressed="${A.tf===f}">${f}</button>`).join('')}</div></label>
           <label>Direction<div class="seg">${['Long','Short'].map(d => `<button data-asdir="${d}" aria-pressed="${A.dir===d}">${d==='Long' ? '▲ Long' : '▼ Short'}</button>`).join('')}</div></label>
         </div>
