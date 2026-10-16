@@ -524,6 +524,12 @@
   .gcal-day{ display:grid; gap:3px; }
   .gcal-it{ display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; text-align:left; background:none; border:none; padding:0; color:var(--ink); }
   .gcal-it.rep{ color:var(--muted); }
+  .gdays{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .gday{ width:46px; display:grid; place-items:center; gap:1px; padding:5px 0; border-radius:11px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); }
+  .gday small{ font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; } .gday b{ font-size:14px; }
+  .gday.today{ border-color:var(--accent); }
+  .gday.on{ background:color-mix(in srgb,var(--pos) 20%,var(--surface-2)); border-color:color-mix(in srgb,var(--pos) 55%,var(--line)); } .gday.on b{ color:var(--pos); }
+  .gday.late{ border-color:color-mix(in srgb,var(--neg) 50%,var(--line)); } .gday.late b{ color:var(--neg); }
   .gcal-it small{ margin-left:auto; color:var(--muted); font-weight:700; } .gcal-it.ok{ color:var(--pos); } .gcal-it.late{ color:var(--neg); } .gcal-it.pay{ color:var(--info); cursor:pointer; }
   .fundbox{ padding:14px; border-radius:14px; border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line)); background:color-mix(in srgb,var(--accent) 6%,var(--surface)); }
   .fpair{ display:inline-flex; align-items:center; gap:6px; }
@@ -1791,8 +1797,9 @@ async function loadAll(){
   const [d, w, n, a] = await Promise.all([fetchAll('do_daily'), fetchAll('do_weekly'), fetchAll('do_news'), fetchAll('do_accounts').catch(e => { console.warn(e); return []; })]);
   S.accounts = new Map(a.map(r => [r.id, r]));
   const g = await fetchAll('do_goals').catch(e => { console.warn(e); return []; });
-  if(g.length) S.goalDueCol = 'due_date' in g[0];
-  else { try{ const { error } = await sb.from('do_goals').select('due_date').limit(1); S.goalDueCol = !error; }catch(e){ S.goalDueCol = false; } }
+  if(g.length){ S.goalDueCol = 'due_date' in g[0]; S.goalRepCol = 'repeat_mode' in g[0]; }
+  else { try{ const { error } = await sb.from('do_goals').select('due_date').limit(1); S.goalDueCol = !error; }catch(e){ S.goalDueCol = false; }
+    try{ const { error } = await sb.from('do_goals').select('repeat_mode').limit(1); S.goalRepCol = !error; }catch(e){ S.goalRepCol = false; } }
   const bk = await fetchAll('do_bank').catch(e => { console.warn(e); return []; });
   const st = await fetchAll('do_settings').catch(e => { console.warn(e); return []; });
   /* daily_pips exists only after migration-daily-pips.sql — never send it before that */
@@ -3265,13 +3272,59 @@ function goalState(g){
   return { val, pct, done: pct >= 1 || !!g.done };
 }
 const weekGoals = (y, w) => [...S.goals.values()].filter(g => g.year===y && g.week===w).sort((a,b) => (a.sort ?? 0) - (b.sort ?? 0) || (a.created_at||'').localeCompare(b.created_at||''));
-function weekScore(y, w){ const gs = weekGoals(y, w); if(!gs.length) return null; const st = gs.map(goalState);
+function weekScore(y, w){ const gs = weekGoals(y, w); if(!gs.length) return null;
+  const st = goalItems(gs).map(it => Array.isArray(it) ? (n => ({ pct:n / it.length, done:n===it.length }))(it.filter(r => r.done).length) : goalState(it));
   return { n:gs.length, done:st.filter(s => s.done).length, pct: st.reduce((t,s) => t + s.pct, 0) / gs.length }; }
 const goalUnit = g => g.unit || GOAL_SOURCES[g.source||'manual']?.[1] || '';
 const fmtGoal = (v, u) => v==null ? '–' : u==='$' ? money(v) : `${fmt(v, 2)}${u==='%' ? '%' : u ? ' '+u : ''}`;
 function mood(p){ return p >= 1 ? 'Week crushed. All goals done 🔥' : p >= .75 ? 'Almost there — finish strong 💪' : p >= .4 ? 'Halfway. Keep pushing ⚡' : p > 0 ? 'Good start. Stay on it 🎯' : 'Fresh week. Make it count 🚀'; }
 
 const hasGoalDue = () => !!S.goalDueCol;
+const isDaily = g => !!g && g.repeat_mode==='day';
+const workDays = (y, w) => { const m = mondayOf(y, w); return [0,1,2,3,4].map(i => { const d = new Date(m); d.setDate(m.getDate() + i); return iso(d); }); };
+/* all rows of a daily goal in the same week */
+const dailyGroup = g => [...S.goals.values()].filter(x => isDaily(x) && x.year===g.year && x.week===g.week && gKey(x)===gKey(g)).sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
+/* the week's list: a daily goal shows as one card (array of its days), the rest one by one */
+function goalItems(gs){ const seen = new Set(), out = [];
+  gs.forEach(g => { if(!isDaily(g)) return out.push(g); const k = gKey(g); if(seen.has(k)) return; seen.add(k); out.push(gs.filter(x => isDaily(x) && gKey(x)===k).sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)))); });
+  return out; }
+function dailyCard(rows){
+  const g = rows[0], today = iso(new Date()), done = rows.filter(r => r.done).length, all = done===rows.length;
+  return `<article class="gcard ${all ? 'done' : ''}" data-gid="${g.id}">
+    <span class="gemo" aria-hidden="true">${esc(g.emoji || '🎯')}</span>
+    <div class="gc-b">
+      <div class="gc-t"><b>${esc(g.title)}</b><span class="gtag">↻ every day</span>${g.due_time ? `<span class="gtag">⏰ ${esc(g.due_time)}</span>` : ''}</div>
+      ${g.note ? `<div class="muted" style="font-size:12.5px">${esc(g.note)}</div>` : ''}
+      <div class="gdays">${rows.map(r => { const d = String(r.due_date).slice(0, 10), past = d < today || (d===today && goalDueAt(r) < new Date());
+        return `<button class="gday ${r.done ? 'on' : past ? 'late' : ''} ${d===today ? 'today' : ''}" data-gtoggle="${r.id}" aria-pressed="${!!r.done}" title="${fmtDayShort(d)}${r.done ? ' · done' : ''}">
+          <small>${WD_SHORT[parseISO(d).getDay()]}</small><b>${r.done ? '✓' : parseISO(d).getDate()}</b></button>`; }).join('')}
+        <span class="muted" style="font-size:12px;font-weight:700;align-self:center">${done} / ${rows.length}</span></div>
+    </div>
+    <div class="gc-a"><button class="ib sm" data-gedit="${g.id}" aria-label="Edit goal">✎</button><button class="rm" data-gdel="${g.id}" aria-label="Delete goal">×</button></div>
+  </article>`;
+}
+/* save a daily goal: one row per weekday (from the chosen day, or today, to Friday); editing changes every day of that week */
+async function saveDaily(row, old){
+  const days = d0 => { let k = isoWeek(parseISO(d0)), list = workDays(k.year, k.week).filter(d => d >= d0);
+    if(!list.length){ const n = new Date(parseISO(d0).getTime() + 3*864e5); k = isoWeek(n); list = workDays(k.year, k.week); } return { k, list }; };
+  if(old && isDaily(old)){
+    const grp = dailyGroup(old);
+    if(row.repeat_mode!=='day'){   /* no longer daily → keep the edited day, drop the others */
+      const others = grp.filter(x => x.id!==old.id).map(x => x.id);
+      if(others.length){ const { error } = await sb.from('do_goals').delete().in('id', others); if(error){ toast(error.message); return false; } others.forEach(id => S.goals.delete(id)); }
+      return !!(await saveGoal({ ...row, due_date:row.due_date || old.due_date }, old.id));
+    }
+    const { due_date, year, week, sort, ...common } = row;
+    const { data, error } = await sb.from('do_goals').update(common).in('id', grp.map(x => x.id)).select(); if(error){ toast('Not saved: ' + error.message); return false; }
+    (data || []).forEach(x => S.goals.set(x.id, x)); return true;
+  }
+  const start = row.due_date || (old?.due_date ? String(old.due_date).slice(0, 10) : iso(new Date()));
+  const { k, list } = days(start), base = { ...row, repeat_mode:'day', recurring:true, year:k.year, week:k.week };
+  if(old){ const { error } = await sb.from('do_goals').delete().eq('id', old.id); if(error){ toast(error.message); return false; } S.goals.delete(old.id); }
+  const { data, error } = await sb.from('do_goals').insert(list.map(d => ({ ...base, due_date:d, done:false }))).select();
+  if(error){ toast('Not saved: ' + error.message); return false; }
+  (data || []).forEach(x => S.goals.set(x.id, x)); return true;
+}
 const goalDueAt = g => g.due_date ? new Date(`${String(g.due_date).slice(0, 10)}T${g.due_time || '09:00'}`) : null;
 function goalDueChip(g, done){
   if(!g.due_date) return '';
@@ -3288,10 +3341,11 @@ function goalCalendar(){
   [...S.goals.values()].filter(g => g.due_date).forEach(g => add(String(g.due_date).slice(0, 10), { t:'g', g, done:goalState(g).done }));
   [...S.accounts.values()].filter(a => a.payout_date && (a.status || 'active')==='active').forEach(a => add(String(a.payout_date).slice(0, 10), { t:'p', a }));
   /* repeating goals: the next weeks, up to ~3 months ahead */
-  goalSeries().filter(g => g.due_date).forEach(g => { for(let i = 1; i <= 14; i++){ const d = addDays(g.due_date, 7*i); if(d >= today) add(d, { t:'r', g }); } });
+  goalSeries().filter(g => g.due_date && !isDaily(g)).forEach(g => { for(let i = 1; i <= 14; i++){ const d = addDays(g.due_date, 7*i); if(d >= today) add(d, { t:'r', g }); } });
+  goalSeries().filter(isDaily).forEach(g => { const m0 = mondayOf(g.year, g.week); for(let wk = 1; wk <= 8; wk++) for(let i = 0; i < 5; i++){ const d = iso(new Date(m0.getFullYear(), m0.getMonth(), m0.getDate() + 7*wk + i)); if(d >= today) add(d, { t:'r', g, daily:true }); } });
   const cells = []; for(let i = 0; i < 42; i++){ const d = new Date(start); d.setDate(start.getDate() + i); cells.push(d); if(i===34 && d.getMonth()!==M) break; }
   const sel = S.gcSel && byDay[S.gcSel] ? S.gcSel : null;
-  const list = (sel ? [[sel, byDay[sel]]] : Object.entries(byDay).filter(([d, it]) => d >= today || it.some(x => x.t==='g' && !x.done)).sort(([a], [b]) => a.localeCompare(b)).slice(0, 6));
+  const list = (sel ? [[sel, byDay[sel]]] : Object.entries(byDay).map(([d, it]) => [d, it.filter(x => !x.daily)]).filter(([d, it]) => it.length && (d >= today || it.some(x => x.t==='g' && !x.done))).sort(([a], [b]) => a.localeCompare(b)).slice(0, 6));
   return `<div class="card gcal" style="margin-top:14px">
     <div class="gcal-h"><button class="ib sm" id="gcPrev" aria-label="Previous month">‹</button><h3>${MONTHS[M]} ${Y}</h3><button class="ib sm" id="gcNext" aria-label="Next month">›</button></div>
     <div class="gcal-g">${['M','T','W','T','F','S','S'].map(x => `<span class="gcal-wd">${x}</span>`).join('')}
@@ -3360,7 +3414,7 @@ function renderGoals(){
             <p style="font-weight:700;margin-top:4px">${mood(sc?.pct || 0)}</p></div>
         </div>
         ${false ? `<button class="btn" id="gRecur" style="margin-top:12px;width:100%">↻ Start the week with ${recurring.length} recurring goal${recurring.length>1?'s':''} from last week</button>` : ''}
-        <div class="glist">${gs.length ? gs.map(goalCard).join('') : `<div class="card empty" style="margin-top:12px"><div class="orb" aria-hidden="true"></div><p>No goals for week ${w} yet. Add the first one below.</p></div>`}</div>
+        <div class="glist">${gs.length ? goalItems(gs).map(it => Array.isArray(it) ? dailyCard(it) : goalCard(it)).join('') : `<div class="card empty" style="margin-top:12px"><div class="orb" aria-hidden="true"></div><p>No goals for week ${w} yet. Add the first one below.</p></div>`}</div>
         <form class="card gform" id="gForm">
           <h3 id="gFormTitle">Add a goal</h3>
           <div class="gf-row">
@@ -3380,7 +3434,8 @@ function renderGoals(){
             <span class="muted" style="font-size:12px;font-weight:600">Telegram reminder at that time (no time = 09:00). The goal moves to that week.</span></div>`
             : `<p class="hint" style="margin:0">To set <b>when</b> a goal is due (with a Telegram reminder) run <b>migration-goal-due.sql</b> in Supabase once.</p>`}
           <div class="flex flex-wrap items-center gap-3">
-            <label style="display:flex;gap:8px;align-items:center;font-weight:700;font-size:13px"><input type="checkbox" name="recurring" style="width:17px;height:17px;accent-color:var(--accent)"> Repeat every week</label>
+            <label style="display:flex;gap:8px;align-items:center;font-weight:700;font-size:13px">Repeat
+              <select class="inp" name="repeat" style="width:auto"><option value="">No</option><option value="week">Every week</option><option value="day" ${S.goalRepCol ? '' : 'disabled'}>Every day (Mon–Fri)${S.goalRepCol ? '' : ' — run migration-goal-daily.sql'}</option></select></label>
             <input class="inp" name="note" placeholder="note (optional)" style="flex:1;min-width:160px" aria-label="Note">
             <button type="button" class="btn" id="gCancel" hidden>Cancel</button>
             <button class="btn btn-primary" type="submit" id="gSubmit">Add goal</button>
@@ -3438,7 +3493,8 @@ function bindGoals(){
   f.onsubmit = async ev => {
     ev.preventDefault();
     const el = f.elements, src = kind==='number' ? el.source.value : 'manual';
-    const row = { year:y, week:w, emoji:el.emoji.value, title:el.title.value.trim(), kind, note:el.note.value.trim() || null, recurring:el.recurring.checked,
+    const rep = el.repeat.value;
+    const row = { year:y, week:w, emoji:el.emoji.value, title:el.title.value.trim(), kind, note:el.note.value.trim() || null, recurring:!!rep, ...(S.goalRepCol ? { repeat_mode:rep || null } : {}),
       source:src, account_id: src.startsWith('acct_') ? (el.account_id.value || null) : null,
       target: kind==='number' ? parseNum(el.target.value) : null, unit: kind==='number' ? (src==='manual' ? el.unit.value.trim() || null : GOAL_SOURCES[src][1]) : null };
     if(el.due_date){ row.due_date = el.due_date.value || null; row.due_time = row.due_date && el.due_time.value ? el.due_time.value : null;
@@ -3446,21 +3502,23 @@ function bindGoals(){
     if(!row.title) return;
     if(kind==='number' && row.target==null) return toast('Set a target number');
     if(!editId) row.sort = weekGoals(y, w).length;
+    const old = editId ? S.goals.get(editId) : null;
+    if(rep==='day' || isDaily(old)){ if(await saveDaily(row, old)){ toast(editId ? 'Goal updated' : 'Daily goal added (Mon–Fri)'); renderMain(); } return; }
     if(await saveGoal(row, editId)){ toast(editId ? 'Goal updated' : row.due_date && (row.year!==y || row.week!==w) ? `Goal added to week ${row.week}` : 'Goal added'); renderMain(); }
   };
   document.querySelectorAll('[data-gtoggle]').forEach(b => b.onclick = async () => { const g = S.goals.get(b.dataset.gtoggle); if(await saveGoal({ done:!g.done }, g.id)) renderMain(); });
   document.querySelectorAll('[data-gval]').forEach(i => i.onchange = async () => { if(await saveGoal({ value:parseNum(i.value) }, i.dataset.gval)) renderMain(); });
   document.querySelectorAll('[data-gdel]').forEach(b => b.onclick = async () => {
-    const g = S.goals.get(b.dataset.gdel);
-    if(!confirm(g?.recurring ? 'Delete this goal and stop repeating it every week?' : 'Delete this goal?')) return;
-    const { error } = await sb.from('do_goals').delete().eq('id', b.dataset.gdel); if(error) return toast(error.message);
-    S.goals.delete(b.dataset.gdel);
+    const g = S.goals.get(b.dataset.gdel), grp = isDaily(g) ? dailyGroup(g) : [g];
+    if(!confirm(isDaily(g) ? 'Delete this daily goal (all days of this week) and stop repeating it?' : g?.recurring ? 'Delete this goal and stop repeating it every week?' : 'Delete this goal?')) return;
+    const { error } = await sb.from('do_goals').delete().in('id', grp.map(x => x.id)); if(error) return toast(error.message);
+    grp.forEach(x => S.goals.delete(x.id));
     if(g?.recurring){ const ids = [...S.goals.values()].filter(x => x.recurring && gKey(x)===gKey(g)).map(x => x.id);
       if(ids.length){ await sb.from('do_goals').update({ recurring:false }).in('id', ids); ids.forEach(id => S.goals.set(id, { ...S.goals.get(id), recurring:false })); } }
     renderMain(); });
   document.querySelectorAll('[data-gedit]').forEach(b => b.onclick = () => {
     const g = S.goals.get(b.dataset.gedit); editId = g.id; const el = f.elements;
-    el.emoji.value = g.emoji || '🎯'; el.title.value = g.title; el.note.value = g.note || ''; el.recurring.checked = !!g.recurring;
+    el.emoji.value = g.emoji || '🎯'; el.title.value = g.title; el.note.value = g.note || ''; el.repeat.value = isDaily(g) ? 'day' : g.recurring ? 'week' : '';
     setKind(g.kind || 'check'); el.source.value = g.source || 'manual'; if(g.account_id) el.account_id.value = g.account_id; syncSrc();
     el.target.value = g.target ?? ''; if((g.source||'manual')==='manual') el.unit.value = g.unit || '';
     if(el.due_date){ el.due_date.value = String(g.due_date || '').slice(0, 10); el.due_time.value = g.due_time || ''; }
