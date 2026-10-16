@@ -3321,6 +3321,7 @@ function ghostCard(g){
       ${g.note ? `<div class="muted" style="font-size:12.5px">${esc(g.note)}</div>` : ''}
       ${days ? `<div class="gdays">${days.map(d => `<span class="gday"><small>${WD_SHORT[parseISO(d).getDay()]}</small><b>${parseISO(d).getDate()}</b></span>`).join('')}</div>` : ''}
     </div>
+    <div class="gc-a"><button class="ib sm" data-gedit="${g.id}" aria-label="Edit repeating goal" title="Edit — changes the goal from week ${g.week} on, and every week after">✎</button><button class="rm" data-gstop="${g.id}" aria-label="Stop repeating" title="Stop repeating">×</button></div>
   </article>`;
 }
 /* save a daily goal: one row per weekday (from the chosen day, or today, to Friday); editing changes every day of that week */
@@ -3520,6 +3521,7 @@ function bindGoals(){
       target: kind==='number' ? parseNum(el.target.value) : null, unit: kind==='number' ? (src==='manual' ? el.unit.value.trim() || null : GOAL_SOURCES[src][1]) : null };
     if(el.due_date){ row.due_date = el.due_date.value || null; row.due_time = row.due_date && el.due_time.value ? el.due_time.value : null;
       if(row.due_date){ const k = isoWeek(parseISO(row.due_date)); row.year = k.year; row.week = k.week; } }
+    if(editId && !row.due_date){ const o = S.goals.get(editId); if(o){ row.year = o.year; row.week = o.week; } }   /* editing keeps the goal in its own week */
     if(!row.title) return;
     if(kind==='number' && row.target==null) return toast('Set a target number');
     if(!editId) row.sort = weekGoals(y, w).length;
@@ -3537,13 +3539,19 @@ function bindGoals(){
     if(g?.recurring){ const ids = [...S.goals.values()].filter(x => x.recurring && gKey(x)===gKey(g)).map(x => x.id);
       if(ids.length){ await sb.from('do_goals').update({ recurring:false }).in('id', ids); ids.forEach(id => S.goals.set(id, { ...S.goals.get(id), recurring:false })); } }
     renderMain(); });
+  document.querySelectorAll('[data-gstop]').forEach(b => b.onclick = async () => {
+    const g = S.goals.get(b.dataset.gstop); if(!g) return;
+    if(!confirm(`Stop repeating "${g.title}"?\n\nThe copy in week ${g.week} stays as it is; nothing more is added from next week.`)) return;
+    const ids = [...S.goals.values()].filter(x => x.recurring && gKey(x)===gKey(g)).map(x => x.id);
+    const { error } = await sb.from('do_goals').update({ recurring:false, ...(S.goalRepCol ? { repeat_mode:null } : {}) }).in('id', ids); if(error) return toast(error.message);
+    ids.forEach(id => S.goals.set(id, { ...S.goals.get(id), recurring:false, repeat_mode:null })); toast('Repeating stopped'); renderMain(); });
   document.querySelectorAll('[data-gedit]').forEach(b => b.onclick = () => {
     const g = S.goals.get(b.dataset.gedit); editId = g.id; const el = f.elements;
     el.emoji.value = g.emoji || '🎯'; el.title.value = g.title; el.note.value = g.note || ''; el.repeat.value = isDaily(g) ? 'day' : g.recurring ? 'week' : '';
     setKind(g.kind || 'check'); el.source.value = g.source || 'manual'; if(g.account_id) el.account_id.value = g.account_id; syncSrc();
     el.target.value = g.target ?? ''; if((g.source||'manual')==='manual') el.unit.value = g.unit || '';
     if(el.due_date){ el.due_date.value = String(g.due_date || '').slice(0, 10); el.due_time.value = g.due_time || ''; }
-    f.querySelector('#gFormTitle').textContent = 'Edit goal'; f.querySelector('#gSubmit').textContent = 'Save changes'; f.querySelector('#gCancel').hidden = false;
+    f.querySelector('#gFormTitle').textContent = g.year!==y || g.week!==w ? `Edit repeating goal (from week ${g.week} on)` : 'Edit goal'; f.querySelector('#gSubmit').textContent = 'Save changes'; f.querySelector('#gCancel').hidden = false;
     f.scrollIntoView({ behavior:'smooth', block:'center' }); el.title.focus();
   });
   document.getElementById('gcPrev')?.addEventListener('click', () => { const m = S.gcMonth || iso(new Date()).slice(0, 7); const d = new Date(+m.slice(0, 4), +m.slice(5) - 2, 1); S.gcMonth = iso(d).slice(0, 7); renderMain(); });
