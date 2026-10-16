@@ -524,6 +524,7 @@
   .gcal-day{ display:grid; gap:3px; }
   .gcal-it{ display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; text-align:left; background:none; border:none; padding:0; color:var(--ink); }
   .gcal-it.rep{ color:var(--muted); }
+  .gcard.ghost{ opacity:.6; border-style:dashed; box-shadow:none; }
   .gdays{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
   .gday{ width:46px; display:grid; place-items:center; gap:1px; padding:5px 0; border-radius:11px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); }
   .gday small{ font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; } .gday b{ font-size:14px; }
@@ -3303,6 +3304,25 @@ function dailyCard(rows){
     <div class="gc-a"><button class="ib sm" data-gedit="${g.id}" aria-label="Edit goal">✎</button><button class="rm" data-gdel="${g.id}" aria-label="Delete goal">×</button></div>
   </article>`;
 }
+/* repeating goals that will be created for a coming week (read-only preview until the server adds them on Monday) */
+function ghostGoals(y, w){
+  const vi = wkIdx(y, w), cur = isoWeek(new Date()); if(vi < wkIdx(cur.year, cur.week)) return [];
+  const have = new Set(weekGoals(y, w).map(gKey));
+  return goalSeries().filter(g => wkIdx(g.year, g.week) < vi && !have.has(gKey(g)));
+}
+function ghostCard(g){
+  const k = goalWeek(), days = isDaily(g) ? workDays(k.y, k.w) : null;
+  const due = !isDaily(g) && g.due_date ? addDays(g.due_date, 7*(wkIdx(k.y, k.w) - wkIdx(g.year, g.week))) : null;
+  return `<article class="gcard ghost">
+    <span class="gemo" aria-hidden="true">${esc(g.emoji || '🎯')}</span>
+    <div class="gc-b">
+      <div class="gc-t"><b>${esc(g.title)}</b><span class="gtag">↻ ${isDaily(g) ? 'every day' : 'weekly'}</span>${g.due_time ? `<span class="gtag">⏰ ${esc(g.due_time)}</span>` : ''}</div>
+      ${due ? `<span class="gdue">⏰ ${fmtDayShort(due)}${g.due_time ? ' · ' + esc(g.due_time) : ''}</span>` : ''}
+      ${g.note ? `<div class="muted" style="font-size:12.5px">${esc(g.note)}</div>` : ''}
+      ${days ? `<div class="gdays">${days.map(d => `<span class="gday"><small>${WD_SHORT[parseISO(d).getDay()]}</small><b>${parseISO(d).getDate()}</b></span>`).join('')}</div>` : ''}
+    </div>
+  </article>`;
+}
 /* save a daily goal: one row per weekday (from the chosen day, or today, to Friday); editing changes every day of that week */
 async function saveDaily(row, old){
   const days = d0 => { let k = isoWeek(parseISO(d0)), list = workDays(k.year, k.week).filter(d => d >= d0);
@@ -3414,6 +3434,7 @@ function renderGoals(){
             <p style="font-weight:700;margin-top:4px">${mood(sc?.pct || 0)}</p></div>
         </div>
         ${false ? `<button class="btn" id="gRecur" style="margin-top:12px;width:100%">↻ Start the week with ${recurring.length} recurring goal${recurring.length>1?'s':''} from last week</button>` : ''}
+        ${(() => { const gh = ghostGoals(y, w); return gh.length ? `<div class="glist gghost"><div class="kick" style="margin:2px 2px -4px">↻ Repeating — added automatically on Monday ${fmtDayShort(workDays(y, w)[0]).replace(/^\w+ /, '')}, then you can tick them</div>${gh.map(ghostCard).join('')}</div>` : ''; })()}
         <div class="glist">${gs.length ? goalItems(gs).map(it => Array.isArray(it) ? dailyCard(it) : goalCard(it)).join('') : `<div class="card empty" style="margin-top:12px"><div class="orb" aria-hidden="true"></div><p>No goals for week ${w} yet. Add the first one below.</p></div>`}</div>
         <form class="card gform" id="gForm">
           <h3 id="gFormTitle">Add a goal</h3>
