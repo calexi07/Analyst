@@ -1122,6 +1122,10 @@
   .sx-rail-entry{ position:absolute; top:-3px; width:2px; height:14px; margin-left:-1px; background:var(--ink); border-radius:2px; }
   .sx-rail-now{ position:absolute; top:50%; width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%; border:3px solid var(--surface); background:var(--pos); box-shadow:0 0 0 1px var(--pos); }
   .sx-rail-now.dn{ background:var(--neg); box-shadow:0 0 0 1px var(--neg); }
+  .sx-rail-range{ position:absolute; top:-2px; bottom:-2px; border-radius:3px; background:color-mix(in srgb,var(--ink) 16%,transparent); }
+  .sx-rail-pk{ position:absolute; top:-5px; width:3px; height:18px; margin-left:-1.5px; border-radius:2px; }
+  .sx-rail-pk.dn{ background:var(--neg); } .sx-rail-pk.up{ background:var(--pos); }
+  .sx-rail-pks{ display:flex; justify-content:space-between; gap:10px; font-size:10.5px; font-weight:800; font-variant-numeric:tabular-nums; margin-top:-2px; }
   .sx-rail-lbl{ position:relative; display:flex; justify-content:space-between; font-size:11px; font-weight:700; color:var(--muted); font-variant-numeric:tabular-nums; min-height:15px; }
   .sx-rail-lbl span:nth-child(2){ position:absolute; transform:translateX(-50%); color:var(--ink); white-space:nowrap; }
 
@@ -5007,10 +5011,17 @@ function sxRail(tr, lv){
   const E = numOr(tr.entry_price), SL = numOr(tr.sl), TP = numOr(tr.tp); if(E==null || SL==null || TP==null || SL===TP) return '';
   const pos = v => Math.max(0, Math.min(100, (v - SL)/(TP - SL)*100));
   const pe = pos(E), pp = lv ? pos(lv.price) : null;
+  /* peaks since the entry: deepest point against you (MAE) and best point in your favour (MFE), from the heartbeat candles */
+  const atR = r => E + r * (E - SL), pw = lv ? pos(atR(lv.dd)) : null, pb = lv ? pos(atR(lv.best)) : null;
+  const sg2 = v => `${v >= 0 ? '+' : '−'}${fmt(Math.abs(v), 2)}R`;
   return `<div class="sx-rail" role="img" aria-label="Price between stop loss and take profit">
     <div class="sx-rail-bar"><i class="sx-rail-loss" style="width:${pe}%"></i><i class="sx-rail-win" style="left:${pe}%"></i>
+      ${pw!=null ? `<i class="sx-rail-range" style="left:${Math.min(pw, pb)}%;width:${Math.abs(pb - pw)}%"></i>
+        <b class="sx-rail-pk dn" style="left:${pw}%" title="Lowest point: ${sg2(lv.dd)} · ${lvl(atR(lv.dd))}"></b>
+        <b class="sx-rail-pk up" style="left:${pb}%" title="Best point: ${sg2(lv.best)} · ${lvl(atR(lv.best))}"></b>` : ''}
       <b class="sx-rail-entry" style="left:${pe}%"></b>${pp!=null ? `<b class="sx-rail-now ${lv.R >= 0 ? 'up' : 'dn'}" style="left:${pp}%"></b>` : ''}</div>
-    <div class="sx-rail-lbl"><span>SL ${lvl(SL)}</span><span style="left:${pe}%">Entry ${lvl(E)}</span><span>TP ${lvl(TP)}</span></div></div>`;
+    <div class="sx-rail-lbl"><span>SL ${lvl(SL)}</span><span style="left:${pe}%">Entry ${lvl(E)}</span><span>TP ${lvl(TP)}</span></div>
+    ${lv ? `<div class="sx-rail-pks"><span class="neg">▼ low ${sg2(lv.dd)} · ${lvl(atR(lv.dd))}</span><span class="pos">▲ peak ${sg2(lv.best)} · ${lvl(atR(lv.best))}</span></div>` : ''}</div>`;
 }
 /* "new" cards: a setup is new until you mark it seen; it becomes new again when it moves to the next stage */
 const sxCol = s => suFinished(s) ? 'done' : s.stage==='watch' ? 'watch' : suOpenTrade(s) || s.stage==='retest' ? 'trade' : s.stage==='forming' && s.val ? 'validate' : ['wickwait','wickfail'].includes(s.stage) ? 'formed' : s.stage;
