@@ -717,6 +717,9 @@
   .side-i[aria-current="page"] .ico{ color:var(--accent); }
   :root[data-theme="light"] .side-i[aria-current="page"] .ico{ color:var(--accent); }
   .side-badge{ margin-left:auto; min-width:20px; height:20px; padding:0 6px; border-radius:999px; background:color-mix(in srgb,var(--info) 20%,transparent); color:var(--info); font-size:11px; font-weight:800; display:grid; place-items:center; }
+  .side-badge.run{ font-variant-numeric:tabular-nums; }
+  .side-badge.run.up{ background:color-mix(in srgb,var(--pos) 20%,transparent); color:var(--pos); }
+  .side-badge.run.dn{ background:color-mix(in srgb,var(--neg) 20%,transparent); color:var(--neg); }
   .side-badge.warn{ background:color-mix(in srgb,var(--amber) 20%,transparent); color:var(--amber); }
   .side-foot{ display:flex; flex-direction:column; gap:2px; border-top:1px solid var(--line); padding-top:8px; }
   .shell.mini .side-l, .shell.mini .side-g{ display:none; }
@@ -1142,14 +1145,6 @@
   .lvr-act{ display:flex; align-items:center; gap:6px; justify-content:flex-end; flex-wrap:wrap; }
   .lvr-act .bt, .lvr-act .btn{ padding:5px 11px; font-size:12.5px; }
   .lvr-ic{ font-weight:900; }
-  .sx-run{ display:grid; grid-template-columns:auto auto; align-items:baseline; gap:0 10px; padding:8px 14px; border-radius:16px; border:1px solid var(--line); background:var(--surface-2); line-height:1.15; }
-  .sx-run-k{ grid-column:1 / -1; font-size:11px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); }
-  .sx-run b{ font-family:'Bricolage Grotesque',sans-serif; font-size:24px; font-weight:800; font-variant-numeric:tabular-nums; }
-  .sx-run small{ font-size:12px; font-weight:700; color:var(--muted); }
-  .sx-run.up{ border-color:color-mix(in srgb,var(--pos) 45%,var(--line)); } .sx-run.up b{ color:var(--pos); }
-  .sx-run.dn{ border-color:color-mix(in srgb,var(--neg) 45%,var(--line)); } .sx-run.dn b{ color:var(--neg); }
-  .sx-run-l{ grid-column:1 / -1; display:flex; flex-wrap:wrap; gap:2px 8px; font-size:11px; font-weight:700; color:var(--muted); font-style:normal; }
-  .sx-run-l i{ font-style:normal; } .sx-run-l i.pos{ color:var(--pos); } .sx-run-l i.neg{ color:var(--neg); }
   .lvr-live{ display:grid; line-height:1.1; } .lvr-live b{ font-family:'Bricolage Grotesque',sans-serif; font-size:20px; font-weight:800; } .lvr-live small{ font-size:11.5px; font-weight:700; color:var(--muted); }
   .lvr-live.up b{ color:var(--pos); } .lvr-live.dn b{ color:var(--neg); }
   .lvr-rail{ flex:1 1 220px; min-width:180px; } .lvr-rail .sx-rail{ margin:0; }
@@ -1847,7 +1842,7 @@ function render(){
           <button class="side-col" id="sideCol" aria-label="${mini ? 'Expand sidebar' : 'Collapse sidebar'}" title="${mini ? 'Expand' : 'Collapse'}">${ico('collapse', 16)}</button></div>
         <button class="side-search" id="searchBtn" aria-label="Search">${ico('search', 16)}<span class="side-l">Search…</span><kbd class="side-l">/</kbd></button>
         <nav class="side-nav">${NAV.map(([g, items]) => `${g ? `<div class="side-g side-l">${g}</div>` : ''}${items.map(([v, l, i]) =>
-          `<button class="side-i" data-view="${v}" aria-current="${navActive(v) ? 'page' : 'false'}" title="${l}">${ico(i)}<span class="side-l">${l}</span>${v==='trades' && tjOpenCount() ? `<span class="side-badge">${tjOpenCount()}</span>` : ''}${v==='desk' && todayGapCount() ? `<span class="side-badge warn">${todayGapCount()}</span>` : ''}</button>`).join('')}`).join('')}</nav>
+          `<button class="side-i" data-view="${v}" aria-current="${navActive(v) ? 'page' : 'false'}" title="${l}">${ico(i)}<span class="side-l">${l}</span>${v==='trades' && tjOpenCount() ? `<span class="side-badge">${tjOpenCount()}</span>` : ''}${v==='setups' ? navRunHtml() : ''}${v==='desk' && todayGapCount() ? `<span class="side-badge warn">${todayGapCount()}</span>` : ''}</button>`).join('')}`).join('')}</nav>
         <div class="side-foot">
           <button class="side-i" id="openShare" title="Share to Discord">${ico('share')}<span class="side-l">Share</span></button>
           <button class="side-i" id="openData" title="Import / export">${ico('swap')}<span class="side-l">Import / export</span></button>
@@ -1888,6 +1883,15 @@ function openMore(){
   d.querySelectorAll('[data-ma]').forEach(b => b.onclick = () => { d.close(); ({ share:openShare, data:openData, theme:() => document.getElementById('themeBtn').click() })[b.dataset.ma](); });
   d.showModal();
 }
+/* running R of all open trades (live price from the heartbeat candles) → badge next to Setups in the menu */
+function navRunHtml(){
+  const op = [...S.trades.values()].filter(e => e.direction && !e.result && !e.exit_date && e.entry_price!=null && e.sl!=null);
+  if(!op.length) return '';
+  const lv = op.map(t => ({ t, l:livePL(t) })), R = lv.reduce((a, o) => a + (o.l ? o.l.R : 0), 0);
+  const tip = `${op.length} open trade${op.length===1 ? '' : 's'} · running ${R >= 0 ? '+' : ''}${fmt(R, 2)}R\n` + lv.map(o => `${o.t.pair} ${o.t.direction}: ${o.l ? (o.l.R >= 0 ? '+' : '') + fmt(o.l.R, 2) + 'R' : 'waiting for a candle'}`).join('\n');
+  return `<span class="side-badge run ${R >= 0 ? 'up' : 'dn'}" id="navRun" title="${esc(tip)}">${R >= 0 ? '+' : ''}${fmt(R, R && Math.abs(R) < 10 ? 2 : 1)}R</span>`;
+}
+function updNavRun(){ const b = document.querySelector('.side-i[data-view="setups"]'); if(!b) return; b.querySelector('#navRun')?.remove(); const h = navRunHtml(); if(h) b.insertAdjacentHTML('beforeend', h); }
 function tjOpenCount(){ let n = 0; S.trades.forEach(e => { if(e.direction && !e.result && !e.exit_date) n++; }); return n; }
 function todayGapCount(){
   const tr = [...trackedSet()]; if(!tr.length) return 0;
@@ -4978,14 +4982,6 @@ function renderSetups(){
   if(!sxSeen()){ const init = {}; act.forEach(x => init[x.key] = sxCol(x)); ls.set('do_su_seen', init); S.settings.su_seen = init; saveSettingKey('su_seen', init); }
   const fresh = act.filter(sxIsNew), newIn = k => cols[k].filter(sxIsNew).length;
   const live = cols.trade.map(x => suOpenTrade(x)).filter(Boolean).map(livePL).filter(Boolean), liveR = live.reduce((a, l) => a + l.R, 0);
-  /* running R of every open setup trade (all timeframes), shown top right */
-  const openAll = [...new Map(all.map(x => suOpenTrade(x)).filter(Boolean).map(t => [t.id, t])).values()];
-  const openLive = openAll.map(t => ({ t, lv:livePL(t) })), totR = openLive.reduce((a, o) => a + (o.lv ? o.lv.R : 0), 0), waitN = openLive.filter(o => !o.lv).length;
-  const runBox = openAll.length ? `<div class="sx-run ${totR >= 0 ? 'up' : 'dn'}" title="${esc(openLive.map(o => `${o.t.pair} ${o.t.direction}: ${o.lv ? (o.lv.R >= 0 ? '+' : '') + fmt(o.lv.R, 2) + 'R' : 'waiting for a candle'}`).join('\n'))}">
-      <span class="sx-run-k">${openAll.length} open trade${openAll.length===1 ? '' : 's'} · running</span>
-      <b>${totR >= 0 ? '+' : ''}${fmt(totR, 2)}R</b>
-      <small>${totR >= 0 ? '+' : '−'}$${fmt(Math.abs(totR * RISK_USD), 0)}${waitN ? ` · ${waitN} waiting` : ''}</small>
-      <span class="sx-run-l">${openLive.map(o => `<i class="${o.lv ? (o.lv.R >= 0 ? 'pos' : 'neg') : ''}">${esc(o.t.pair)} ${o.lv ? (o.lv.R >= 0 ? '+' : '') + fmt(o.lv.R, 2) + 'R' : '…'}</i>`).join('')}</span></div>` : '';
   /* last 30 days, trades that came from setups */
   const d30 = Date.now() - 30*864e5, done = all.filter(s => s.stage==='taken' && tms(s.startAt) >= d30).map(s => S.trades.get(s.trade_id)).filter(t => t?.result);
   const wins = done.filter(t => t.result==='W').length, netR = done.reduce((a, t) => a + (Number(t.r_multiple) || 0), 0);
@@ -4997,7 +4993,7 @@ function renderSetups(){
     <header class="sx-top">
       <div><h1 class="pairtitle">Setups <span class="beta">beta</span></h1>
         <p class="sx-sub">Bias, liquidity, break, retest, trade. Only setups in the direction of your weekly bias.</p></div>
-      <div class="sx-top-r">${runBox}${sxStatus()}${fresh.length ? `<button class="btn sx-allseen" id="suAllSeen" title="Mark every new card as seen">✓ ${fresh.length} new, mark seen</button>` : ''}<span class="sx-live-at" id="suLive" title="The page refreshes itself every 30 seconds">${liveAgo()}</span><button class="btn" id="suRefresh" title="Load the latest signals now">↻</button></div>
+      <div class="sx-top-r">${sxStatus()}${fresh.length ? `<button class="btn sx-allseen" id="suAllSeen" title="Mark every new card as seen">✓ ${fresh.length} new, mark seen</button>` : ''}<span class="sx-live-at" id="suLive" title="The page refreshes itself every 30 seconds">${liveAgo()}</span><button class="btn" id="suRefresh" title="Load the latest signals now">↻</button></div>
     </header>
     <nav class="sx-nav" role="tablist" aria-label="Setups pages">
       <button role="tab" data-supage="live" aria-selected="${page==='live'}"><i class="sx-nav-dot ${toVal ? 'warn' : act.length ? 'on' : ''}"></i>Live board<em>${act.length}</em>${toVal ? `<b class="sx-nav-v">${toVal} to validate</b>` : ''}</button>
@@ -5633,6 +5629,7 @@ async function liveRefresh(){
       const fresh = new Map(tr.map(t => [t.id, t])); if(sig(fresh)!==sig(S.trades)){ S.trades = fresh; S.liveTrades = true; } }catch(e){ /* keep what we have */ } }
     suWatchChanges(false);
     try{ acctEligNotify(); }catch(e){}
+    try{ updNavRun(); }catch(e){}
     if(!vis) return;
     const n = await autoRun(), busy = document.querySelector('dialog[open]') || document.querySelector('.su-skip') || document.querySelector('.sx-val.dirty') || S.drawerOpen || document.activeElement?.matches?.('input,textarea,select');
     S.liveAt = Date.now();
