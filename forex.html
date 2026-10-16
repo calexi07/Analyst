@@ -316,15 +316,15 @@
   .jn-bar{ height:5px; border-radius:99px; background:color-mix(in srgb,var(--muted) 20%,transparent); overflow:hidden; } .jn-bar i{ display:block; height:100%; background:var(--pos); border-radius:99px; }
   .ac-rail{ margin:4px 0 2px; } .ac-rail .sx-rail-bar{ height:10px; } .ac-rail.cmp{ gap:4px; margin:6px 0 0; } .ac-rail.cmp .sx-rail-bar{ height:7px; }
   .ac-rail.cmp .sx-rail-lbl{ font-size:10px; min-height:13px; }
-  .ac-day{ position:absolute; top:-3px; bottom:-3px; width:3px; margin-left:-1.5px; border-radius:2px; background:var(--amb, #f59e0b); }
+  .ac-day{ position:absolute; top:-3px; bottom:-3px; width:3px; margin-left:-1.5px; border-radius:2px; background:var(--amber); }
   .sx-rail-now.warn{ animation:acPulse 1.2s ease-in-out infinite; }
   @keyframes acPulse{ 50%{ box-shadow:0 0 0 6px color-mix(in srgb,var(--neg) 30%,transparent); } }
   .ac-dist{ display:flex; flex-wrap:wrap; gap:4px 12px; font-size:11.5px; font-weight:700; color:var(--muted); }
   .ac-dist span{ display:inline-flex; align-items:center; gap:5px; } .ac-dist i{ width:8px; height:8px; border-radius:50%; }
-  .ac-dist .d-neg{ background:var(--neg); } .ac-dist .d-amb{ background:var(--amb, #f59e0b); } .ac-dist .d-pos{ background:var(--pos); }
+  .ac-dist .d-neg{ background:var(--neg); } .ac-dist .d-amb{ background:var(--amber); } .ac-dist .d-pos{ background:var(--pos); }
   .ac-dist .neg{ color:var(--neg); } .ac-dist .pos{ color:var(--pos); }
   .pay-chip{ justify-self:start; font-size:11.5px; font-weight:800; padding:3px 9px; border-radius:8px; background:color-mix(in srgb,var(--muted) 16%,transparent); color:var(--muted); }
-  .pay-chip.soon{ background:color-mix(in srgb,var(--amb, #f59e0b) 18%,transparent); color:var(--amb, #f59e0b); }
+  .pay-chip.soon{ background:color-mix(in srgb,var(--amber) 18%,transparent); color:var(--amber); }
   .pay-chip.today{ background:color-mix(in srgb,var(--pos) 22%,transparent); color:var(--pos); animation:acPulse 1.6s ease-in-out infinite; }
   .pay-chip.late{ background:color-mix(in srgb,var(--neg) 16%,transparent); color:var(--neg); }
   .acard .pay-chip{ margin:2px 0; }
@@ -505,7 +505,25 @@
   .gh-l{ font-size:10.5px; font-weight:800; }
   .gstats{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
   .gstats b{ font-family:'Bricolage Grotesque',sans-serif; font-size:22px; }
-  .gideas{ display:flex; flex-wrap:wrap; gap:6px; }
+  .gf-when{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+  .gdue{ justify-self:start; display:inline-block; width:max-content; font-size:11.5px; font-weight:800; padding:2px 8px; border-radius:7px; background:var(--surface-2); color:var(--muted); margin:2px 0; }
+  .gdue.today{ background:color-mix(in srgb,var(--amber) 18%,transparent); color:var(--amber); }
+  .gdue.late{ background:color-mix(in srgb,var(--neg) 16%,transparent); color:var(--neg); }
+  .gdue.ok{ background:color-mix(in srgb,var(--pos) 15%,transparent); color:var(--pos); }
+  .gcal-h{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; } .gcal-h h3{ margin:0; }
+  .gcal-g{ display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+  .gcal-wd{ text-align:center; font-size:10.5px; font-weight:800; color:var(--muted); padding-bottom:2px; }
+  .gcal-d{ aspect-ratio:1; display:grid; grid-template-rows:1fr auto; place-items:center; padding:3px 0; border-radius:9px; border:1px solid transparent; background:var(--surface-2); font-size:12.5px; font-weight:700; color:var(--ink); }
+  .gcal-d.out{ opacity:.35; } .gcal-d.today{ border-color:var(--accent); } .gcal-d.sel{ background:color-mix(in srgb,var(--accent) 18%,var(--surface-2)); }
+  .gcal-d:hover{ border-color:var(--muted); }
+  .gcal-d i{ display:flex; gap:3px; height:6px; }
+  .gcal b.do, .gcal b.dd, .gcal b.dl, .gcal b.dp{ display:inline-block; width:6px; height:6px; border-radius:50%; }
+  .gcal b.do{ background:var(--amber); } .gcal b.dd{ background:var(--pos); } .gcal b.dl{ background:var(--neg); } .gcal b.dp{ background:var(--info); }
+  .gcal-k{ display:flex; flex-wrap:wrap; gap:4px 12px; margin:10px 0 6px; font-size:11px; font-weight:700; color:var(--muted); } .gcal-k span{ display:inline-flex; align-items:center; gap:5px; }
+  .gcal-l{ display:grid; gap:8px; border-top:1px solid var(--line); padding-top:10px; }
+  .gcal-day{ display:grid; gap:3px; }
+  .gcal-it{ display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; text-align:left; background:none; border:none; padding:0; color:var(--ink); }
+  .gcal-it small{ margin-left:auto; color:var(--muted); font-weight:700; } .gcal-it.ok{ color:var(--pos); } .gcal-it.late{ color:var(--neg); } .gcal-it.pay{ color:var(--info); cursor:pointer; }
   .fundbox{ padding:14px; border-radius:14px; border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line)); background:color-mix(in srgb,var(--accent) 6%,var(--surface)); }
   .fpair{ display:inline-flex; align-items:center; gap:6px; }
   .fdot{ width:7px; height:7px; border-radius:50%; background:var(--line); }
@@ -1772,6 +1790,8 @@ async function loadAll(){
   const [d, w, n, a] = await Promise.all([fetchAll('do_daily'), fetchAll('do_weekly'), fetchAll('do_news'), fetchAll('do_accounts').catch(e => { console.warn(e); return []; })]);
   S.accounts = new Map(a.map(r => [r.id, r]));
   const g = await fetchAll('do_goals').catch(e => { console.warn(e); return []; });
+  if(g.length) S.goalDueCol = 'due_date' in g[0];
+  else { try{ const { error } = await sb.from('do_goals').select('due_date').limit(1); S.goalDueCol = !error; }catch(e){ S.goalDueCol = false; } }
   const bk = await fetchAll('do_bank').catch(e => { console.warn(e); return []; });
   const st = await fetchAll('do_settings').catch(e => { console.warn(e); return []; });
   /* daily_pips exists only after migration-daily-pips.sql — never send it before that */
@@ -3250,6 +3270,47 @@ const goalUnit = g => g.unit || GOAL_SOURCES[g.source||'manual']?.[1] || '';
 const fmtGoal = (v, u) => v==null ? '–' : u==='$' ? money(v) : `${fmt(v, 2)}${u==='%' ? '%' : u ? ' '+u : ''}`;
 function mood(p){ return p >= 1 ? 'Week crushed. All goals done 🔥' : p >= .75 ? 'Almost there — finish strong 💪' : p >= .4 ? 'Halfway. Keep pushing ⚡' : p > 0 ? 'Good start. Stay on it 🎯' : 'Fresh week. Make it count 🚀'; }
 
+const hasGoalDue = () => !!S.goalDueCol;
+const goalDueAt = g => g.due_date ? new Date(`${String(g.due_date).slice(0, 10)}T${g.due_time || '09:00'}`) : null;
+function goalDueChip(g, done){
+  if(!g.due_date) return '';
+  const d = String(g.due_date).slice(0, 10), at = goalDueAt(g), today = iso(new Date());
+  const cls = done ? 'ok' : at < new Date() ? 'late' : d===today ? 'today' : '';
+  return `<span class="gdue ${cls}">⏰ ${d===today ? 'Today' : fmtDayShort(d)}${g.due_time ? ' · ' + esc(g.due_time) : ''}${done ? ' · done' : cls==='late' ? ' · overdue' : ''}</span>`;
+}
+/* month calendar: goals by their "when" date + payout dates of active accounts */
+function goalCalendar(){
+  const m = S.gcMonth || iso(new Date()).slice(0, 7), Y = +m.slice(0, 4), M = +m.slice(5) - 1;
+  const first = new Date(Y, M, 1), start = new Date(first); start.setDate(1 - ((first.getDay() || 7) - 1));
+  const today = iso(new Date()), now = new Date();
+  const byDay = {}; const add = (d, x) => (byDay[d] = byDay[d] || []).push(x);
+  [...S.goals.values()].filter(g => g.due_date).forEach(g => add(String(g.due_date).slice(0, 10), { t:'g', g, done:goalState(g).done }));
+  [...S.accounts.values()].filter(a => a.payout_date && (a.status || 'active')==='active').forEach(a => add(String(a.payout_date).slice(0, 10), { t:'p', a }));
+  const cells = []; for(let i = 0; i < 42; i++){ const d = new Date(start); d.setDate(start.getDate() + i); cells.push(d); if(i===34 && d.getMonth()!==M) break; }
+  const sel = S.gcSel && byDay[S.gcSel] ? S.gcSel : null;
+  const list = (sel ? [[sel, byDay[sel]]] : Object.entries(byDay).filter(([d, it]) => d >= today || it.some(x => x.t==='g' && !x.done)).sort(([a], [b]) => a.localeCompare(b)).slice(0, 8));
+  return `<div class="card gcal" style="margin-top:14px">
+    <div class="gcal-h"><button class="ib sm" id="gcPrev" aria-label="Previous month">‹</button><h3>${MONTHS[M]} ${Y}</h3><button class="ib sm" id="gcNext" aria-label="Next month">›</button></div>
+    <div class="gcal-g">${['M','T','W','T','F','S','S'].map(x => `<span class="gcal-wd">${x}</span>`).join('')}
+      ${cells.map(d => { const k = iso(d), it = byDay[k] || [];
+        const late = it.some(x => x.t==='g' && !x.done && goalDueAt(x.g) < now), open = it.some(x => x.t==='g' && !x.done), pay = it.some(x => x.t==='p'), allDone = it.length && it.every(x => x.t!=='g' || x.done) && it.some(x => x.t==='g');
+        return `<button class="gcal-d ${d.getMonth()!==M ? 'out' : ''} ${k===today ? 'today' : ''} ${k===sel ? 'sel' : ''}" data-gcday="${k}" title="${esc(it.map(x => x.t==='p' ? '💸 Payout · ' + x.a.name : (x.done ? '✓ ' : '○ ') + x.g.title).join('\n'))}">
+          <span>${d.getDate()}</span><i>${pay ? '<b class="dp"></b>' : ''}${late ? '<b class="dl"></b>' : open ? '<b class="do"></b>' : allDone ? '<b class="dd"></b>' : ''}</i></button>`; }).join('')}</div>
+    <div class="gcal-k"><span><b class="do"></b>to do</span><span><b class="dd"></b>done</span><span><b class="dl"></b>overdue</span><span><b class="dp"></b>payout</span></div>
+    <div class="gcal-l">${list.length ? list.map(([d, it]) => `<div class="gcal-day"><div class="kick">${d===today ? 'Today' : fmtDayShort(d)}</div>${it.map(x => x.t==='p'
+        ? `<button class="gcal-it pay" data-gcacc="${x.a.id}">💸 Payout · ${esc(x.a.name)}</button>`
+        : `<div class="gcal-it ${x.done ? 'ok' : goalDueAt(x.g) < now ? 'late' : ''}">${x.done ? '✓' : '○'} ${esc(x.g.emoji || '')} ${esc(x.g.title)}${x.g.due_time ? `<small>${esc(x.g.due_time)}</small>` : ''}</div>`).join('')}</div>`).join('')
+      : '<p class="muted" style="font-size:12.5px;margin:0">Nothing planned. Set a "When" on a goal or a payout date on a funded account.</p>'}</div>
+  </div>`;
+}
+/* goals due today → message on the site once (Telegram comes from the server) */
+function goalDueNotify(){
+  const seen = ls.get('do_gdue_seen', {}), now = new Date(), td = iso(now); let ch = false;
+  [...S.goals.values()].filter(g => g.due_date && String(g.due_date).slice(0, 10)===td && goalDueAt(g) <= now && !goalState(g).done && !seen[g.id + td]).forEach((g, i) => {
+    seen[g.id + td] = 1; ch = true; setTimeout(() => { toast(`⏰ Trebuie să faci: ${g.title}`); try{ tone(SOUNDS.tp); }catch(e){} }, 4500 + i*2800);
+  });
+  if(ch) ls.set('do_gdue_seen', seen);
+}
 function renderGoals(){
   const { y, w } = goalWeek(), [a, b] = weekRange(y, w), gs = weekGoals(y, w), sc = weekScore(y, w);
   const prev = isoWeek(new Date(mondayOf(y, w).getTime() - 7*864e5)), recurring = weekGoals(prev.year, prev.week).filter(g => g.recurring);
@@ -3291,6 +3352,11 @@ function renderGoals(){
             <div><label class="lbl" for="g_t">Target</label><input id="g_t" class="inp num" name="target" inputmode="decimal" placeholder="4"></div>
             <div><label class="lbl" for="g_u">Unit</label><input id="g_u" class="inp" name="unit" placeholder="%, $, pips, km…"></div>
           </div>
+          ${hasGoalDue() ? `<div class="gf-when"><span class="lbl" style="margin:0">When</span>
+            <input class="inp" type="date" name="due_date" aria-label="Due date" style="width:auto">
+            <input class="inp" type="time" name="due_time" aria-label="Time" style="width:auto">
+            <span class="muted" style="font-size:12px;font-weight:600">Telegram reminder at that time (no time = 09:00). The goal moves to that week.</span></div>`
+            : `<p class="hint" style="margin:0">To set <b>when</b> a goal is due (with a Telegram reminder) run <b>migration-goal-due.sql</b> in Supabase once.</p>`}
           <div class="flex flex-wrap items-center gap-3">
             <label style="display:flex;gap:8px;align-items:center;font-weight:700;font-size:13px"><input type="checkbox" name="recurring" style="width:17px;height:17px;accent-color:var(--accent)"> Repeat every week</label>
             <input class="inp" name="note" placeholder="note (optional)" style="flex:1;min-width:160px" aria-label="Note">
@@ -3305,10 +3371,7 @@ function renderGoals(){
             return `<button class="gh ${isSel ? 'sel' : ''}" data-gw="${h.year}|${h.week}" title="Week ${h.week}: ${h.s ? `${h.s.done}/${h.s.n} done` : 'no goals'}"><span class="gh-b"><i style="height:${Math.max(4,p)}%" class="${p>=100 ? 'full' : ''}"></i></span><span class="gh-l">W${h.week}</span></button>`; }).join('')}</div>
           <div class="gstats"><div><span class="kick">Perfect-week streak</span><b>${streak} 🔥</b></div><div><span class="kick">Goals achieved (all time)</span><b>${total} 🏆</b></div></div>
         </div>
-        <div class="card" style="margin-top:14px"><h3>Ideas</h3><div class="gideas">${[
-          ['💸','Payout 4% on an account'],['🛡️','No trade without a 4H setup'],['📈','+150 pips this week'],['🧠','Write a review every Friday'],
-          ['✅','Observe all 5 days'],['🏠','Pay a bill from trading profit'],['⏰','Max 3 trades this week'],['📚','Study 1 hour of fundamentals']]
-          .map(([e,t]) => `<button class="ch" data-idea="${esc(t)}" data-emo="${e}">${e} ${esc(t)}</button>`).join('')}</div></div>
+        ${goalCalendar()}
       </aside>
     </div>`;
   bindGoals();
@@ -3319,12 +3382,13 @@ function goalCard(g){
     ${g.kind==='check' ? `<button class="mschk big" data-gtoggle="${g.id}" aria-pressed="${!!g.done}" aria-label="${g.done ? 'Mark as not done' : 'Mark as done'}">${g.done ? '✓' : ''}</button>` : `<span class="gemo" aria-hidden="true">${esc(g.emoji || '🎯')}</span>`}
     <div class="gc-b">
       <div class="gc-t">${g.kind==='check' ? `<span aria-hidden="true">${esc(g.emoji || '🎯')}</span> ` : ''}<b>${esc(g.title)}</b>${g.recurring ? '<span class="gtag">↻ weekly</span>' : ''}${auto ? `<span class="gtag">auto${acc ? ' · '+esc(acc.name) : ''}</span>` : ''}</div>
+      ${goalDueChip(g, st.done)}
       ${g.note ? `<div class="muted" style="font-size:12.5px">${esc(g.note)}</div>` : ''}
       ${g.kind==='number' ? `<div class="gbar"><span style="width:${Math.round(st.pct*100)}%" class="${st.done ? 'full' : ''}"></span></div>
         <div class="gc-v"><span class="num ${st.val!=null && st.val<0 ? 'neg' : ''}"><b>${fmtGoal(st.val, u)}</b> / ${fmtGoal(Number(g.target), u)}</span><span class="muted">${Math.round(st.pct*100)}%</span>
           ${!auto ? `<input class="inp num gval" data-gval="${g.id}" inputmode="decimal" value="${g.value ?? ''}" placeholder="achieved" aria-label="Achieved so far">` : ''}</div>` : ''}
     </div>
-    <div class="gc-a"><button class="ib sm" data-gedit="${g.id}" aria-label="Edit goal">✎</button><button class="rm" data-gdel="${g.id}" aria-label="Delete goal">×</button></div>
+    <div class="gc-a">${g.kind==='number' ? `<button class="mschk" data-gtoggle="${g.id}" aria-pressed="${!!g.done}" title="${g.done ? 'Mark as not done' : 'Mark as done'}" aria-label="Done">${g.done ? '✓' : ''}</button>` : ''}<button class="ib sm" data-gedit="${g.id}" aria-label="Edit goal">✎</button><button class="rm" data-gdel="${g.id}" aria-label="Delete goal">×</button></div>
   </article>`;
 }
 async function saveGoal(row, id){
@@ -3355,10 +3419,12 @@ function bindGoals(){
     const row = { year:y, week:w, emoji:el.emoji.value, title:el.title.value.trim(), kind, note:el.note.value.trim() || null, recurring:el.recurring.checked,
       source:src, account_id: src.startsWith('acct_') ? (el.account_id.value || null) : null,
       target: kind==='number' ? parseNum(el.target.value) : null, unit: kind==='number' ? (src==='manual' ? el.unit.value.trim() || null : GOAL_SOURCES[src][1]) : null };
+    if(el.due_date){ row.due_date = el.due_date.value || null; row.due_time = row.due_date && el.due_time.value ? el.due_time.value : null;
+      if(row.due_date){ const k = isoWeek(parseISO(row.due_date)); row.year = k.year; row.week = k.week; } }
     if(!row.title) return;
     if(kind==='number' && row.target==null) return toast('Set a target number');
     if(!editId) row.sort = weekGoals(y, w).length;
-    if(await saveGoal(row, editId)){ toast(editId ? 'Goal updated' : 'Goal added'); renderMain(); }
+    if(await saveGoal(row, editId)){ toast(editId ? 'Goal updated' : row.due_date && (row.year!==y || row.week!==w) ? `Goal added to week ${row.week}` : 'Goal added'); renderMain(); }
   };
   document.querySelectorAll('[data-gtoggle]').forEach(b => b.onclick = async () => { const g = S.goals.get(b.dataset.gtoggle); if(await saveGoal({ done:!g.done }, g.id)) renderMain(); });
   document.querySelectorAll('[data-gval]').forEach(i => i.onchange = async () => { if(await saveGoal({ value:parseNum(i.value) }, i.dataset.gval)) renderMain(); });
@@ -3371,13 +3437,18 @@ function bindGoals(){
     el.emoji.value = g.emoji || '🎯'; el.title.value = g.title; el.note.value = g.note || ''; el.recurring.checked = !!g.recurring;
     setKind(g.kind || 'check'); el.source.value = g.source || 'manual'; if(g.account_id) el.account_id.value = g.account_id; syncSrc();
     el.target.value = g.target ?? ''; if((g.source||'manual')==='manual') el.unit.value = g.unit || '';
+    if(el.due_date){ el.due_date.value = String(g.due_date || '').slice(0, 10); el.due_time.value = g.due_time || ''; }
     f.querySelector('#gFormTitle').textContent = 'Edit goal'; f.querySelector('#gSubmit').textContent = 'Save changes'; f.querySelector('#gCancel').hidden = false;
     f.scrollIntoView({ behavior:'smooth', block:'center' }); el.title.focus();
   });
-  document.querySelectorAll('[data-idea]').forEach(b => b.onclick = () => { reset(); f.elements.title.value = b.dataset.idea; f.elements.emoji.value = b.dataset.emo; f.elements.title.focus(); f.scrollIntoView({ behavior:'smooth', block:'center' }); });
+  document.getElementById('gcPrev')?.addEventListener('click', () => { const m = S.gcMonth || iso(new Date()).slice(0, 7); const d = new Date(+m.slice(0, 4), +m.slice(5) - 2, 1); S.gcMonth = iso(d).slice(0, 7); renderMain(); });
+  document.getElementById('gcNext')?.addEventListener('click', () => { const m = S.gcMonth || iso(new Date()).slice(0, 7); const d = new Date(+m.slice(0, 4), +m.slice(5), 1); S.gcMonth = iso(d).slice(0, 7); renderMain(); });
+  document.querySelectorAll('[data-gcday]').forEach(b => b.onclick = () => { const k = isoWeek(parseISO(b.dataset.gcday)); S.gw = { y:k.year, w:k.week }; S.gcSel = b.dataset.gcday; renderMain(); });
+  document.querySelectorAll('[data-gcacc]').forEach(b => b.onclick = () => { S.selAcct = b.dataset.gcacc; goView('accounts'); });
   document.getElementById('gRecur')?.addEventListener('click', async () => {
     const prev = isoWeek(new Date(mondayOf(y, w).getTime() - 7*864e5));
-    const rows = weekGoals(prev.year, prev.week).filter(g => g.recurring).map(({ id, created_at, value, done, year, week, ...r }, i) => ({ ...r, year:y, week:w, value:null, done:false, sort:i }));
+    const rows = weekGoals(prev.year, prev.week).filter(g => g.recurring).map(({ id, created_at, value, done, year, week, ...r }, i) => ({ ...r, year:y, week:w, value:null, done:false, sort:i,
+      ...(r.due_date ? { due_date:iso(new Date(parseISO(String(r.due_date).slice(0, 10)).getTime() + 7*864e5 + 36e5*3)).slice(0, 10) } : {}) }));
     const { data, error } = await sb.from('do_goals').insert(rows).select(); if(error) return toast(error.message);
     (data||[]).forEach(g => S.goals.set(g.id, g)); renderMain(); toast(`${rows.length} recurring goal${rows.length>1?'s':''} added`);
   });
@@ -5638,6 +5709,7 @@ async function liveRefresh(){
     suWatchChanges(false);
     try{ acctEligNotify(); }catch(e){}
     try{ updNavRun(); }catch(e){}
+    try{ goalDueNotify(); }catch(e){}
     if(!vis) return;
     const n = await autoRun(), busy = document.querySelector('dialog[open]') || document.querySelector('.su-skip') || document.querySelector('.sx-val.dirty') || S.drawerOpen || document.activeElement?.matches?.('input,textarea,select');
     S.liveAt = Date.now();
@@ -6719,6 +6791,7 @@ document.getElementById('csvFile').onchange = async ev => {
   if(CONFIGURED) suWatchChanges(true);
   if(CONFIGURED) backfillTrades();
   if(CONFIGURED) setTimeout(acctEligNotify, 1500);
+  if(CONFIGURED) setTimeout(() => { try{ goalDueNotify(); }catch(e){} }, 2000);
 })();
 </script>
 </body>
