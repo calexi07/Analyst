@@ -314,6 +314,11 @@
   .jn-size{ font-size:12px; font-weight:700; color:var(--muted); }
   .jn-pl{ font-family:'Bricolage Grotesque',sans-serif; font-size:20px; font-weight:800; } .jn-pl small{ font-size:12px; margin-left:6px; font-weight:700; color:var(--muted); }
   .jn-bar{ height:5px; border-radius:99px; background:color-mix(in srgb,var(--muted) 20%,transparent); overflow:hidden; } .jn-bar i{ display:block; height:100%; background:var(--pos); border-radius:99px; }
+  .jn-tg{ font-size:11px; font-weight:700; color:var(--muted); }
+  .jn-elig{ font-size:11.5px; font-weight:800; padding:3px 8px; border-radius:8px; background:color-mix(in srgb,var(--pos) 18%,transparent); color:var(--pos); }
+  .acc-elig{ display:grid; gap:8px; margin-bottom:14px; }
+  .acc-elig > div{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; padding:12px 14px; border-radius:16px; border:1px solid color-mix(in srgb,var(--pos) 45%,var(--line)); background:color-mix(in srgb,var(--pos) 9%,var(--surface)); font-size:13.5px; font-weight:600; }
+  .acc-elig .btn{ margin-left:auto; }
   .jn-paid{ font-size:12px; font-weight:800; color:var(--violet); }
   .jn-date{ font-size:11.5px; font-weight:600; color:var(--muted); }
   .jn-act{ display:flex; gap:4px; margin-top:6px; }
@@ -2710,14 +2715,26 @@ const tagPills = tags => (tags||[]).length ? `<div class="tagrow">${tags.map(t =
 const PHASES = ['Challenge – Phase 1','Challenge – Phase 2','Challenge – Phase 3','Funded','Personal'];
 const ACC_STATUS = { active:'Active', payout:'Payout reached', passed:'Passed', failed:'Failed', archived:'Archived' };
 const money = n => n==null ? '–' : `${n<0 ? '−' : ''}$${Math.abs(n).toLocaleString('en-US',{ maximumFractionDigits:0 })}`;
+/* what a closed trade made on an account: the profit you entered for that account, otherwise R × risk % × account size (1% per trade) */
+function acctProfitOf(e, x, a){
+  if(x?.profit!=null && x.profit!=='') return { v:Number(x.profit), est:false };
+  if(!e.result) return null;
+  const R = numOr(e.r_multiple) ?? (e.result==='L' ? -1 : e.result==='BE' ? 0 : null); if(R==null) return null;
+  const risk = numOr(e.risk) ?? RISK_PCT;
+  return { v:+(R * risk / 100 * (Number(a.size) || 0)).toFixed(2), est:true };
+}
+/* profit target of an account: what you set; funded accounts default to 4% (payout) */
+const FUNDED_TARGET = 4;
+const acctTargetPct = a => numOr(a.target_pct) ?? (a.phase==='Funded' ? FUNDED_TARGET : null);
+const acctNextLbl = a => a.phase==='Funded' ? 'payout' : a.phase==='Challenge – Phase 1' ? 'Phase 2' : a.phase==='Personal' ? 'target' : 'Funded';
 function acctStats(a){
   const size = Number(a.size) || 0;
-  const tr = [...S.trades.values()].map(e => { const x = tradeAccts(e).find(t => t.id===a.id); return x && x.profit!=null ? { ...e, profit:Number(x.profit) } : null; })
+  const tr = [...S.trades.values()].map(e => { const x = tradeAccts(e).find(t => t.id===a.id); if(!x) return null; const pv = acctProfitOf(e, x, a); return pv ? { ...e, profit:pv.v, profitEst:pv.est } : null; })
     .filter(Boolean).sort((x,y) => exitDay(x).localeCompare(exitDay(y)));
   let bal = size, low = size; const curve = [{ day:a.start_date || (tr[0]?.day ?? ''), bal:size }], byDay = {};
   tr.forEach(t => { bal += Number(t.profit); low = Math.min(low, bal); curve.push({ day:exitDay(t), bal }); byDay[exitDay(t)] = (byDay[exitDay(t)]||0) + Number(t.profit); });
   const pnl = bal - size;
-  const target = a.target_pct ? size*a.target_pct/100 : null, maxLoss = a.max_loss_pct ? size*a.max_loss_pct/100 : null, dailyLim = a.daily_loss_pct ? size*a.daily_loss_pct/100 : null;
+  const target = acctTargetPct(a) ? size*acctTargetPct(a)/100 : null, maxLoss = a.max_loss_pct ? size*a.max_loss_pct/100 : null, dailyLim = a.daily_loss_pct ? size*a.daily_loss_pct/100 : null;
   const floor = maxLoss!=null ? size - maxLoss : null, today = byDay[iso(new Date())] || 0;
   const worstDay = Object.values(byDay).length ? Math.min(...Object.values(byDay)) : 0;
   const tradesR = tr.filter(t => ['W','L','BE'].includes(t.result));
@@ -2733,7 +2750,7 @@ function bar(label, val, max, cls, right){
   return `<div class="abar"><div class="abar-h"><span>${label}</span><span class="num">${right}</span></div><div class="abar-t"><span class="${cls}" style="width:${w}%"></span></div></div>`;
 }
 function acctCard(a){ const s = acctStats(a);
-      const alert = s.breachMax ? 'Max loss hit' : s.breachDaily ? 'Daily loss breached' : s.passed && a.status==='active' ? 'Target reached 🎯' : '';
+      const alert = s.breachMax ? 'Max loss hit' : s.breachDaily ? 'Daily loss breached' : s.passed && (a.status||'active')==='active' ? `🎯 Eligible for ${acctNextLbl(a)}` : '';
       return `<article class="acard ${S.selAcct===a.id ? 'sel' : ''} st-acc-${a.status||'active'}" data-acc="${a.id}" tabindex="0">
         <div class="acard-top"><div style="min-width:0"><h3>${esc(a.name)}</h3><div class="muted" style="font-size:12.5px;font-weight:600">${esc([a.firm, a.phase].filter(Boolean).join(' · '))}</div></div>
           <div style="display:flex;gap:6px;align-items:center"><span class="accst">${ACC_STATUS[a.status||'active']}</span><button class="ib sm" data-edit-acc="${a.id}" aria-label="Edit ${esc(a.name)}" title="Edit account">✎</button></div></div>
@@ -2780,7 +2797,8 @@ function jnNode(a){
     <b class="jn-name">${esc(a.name)}</b>
     <div class="jn-size">${money(Number(a.size))}</div>
     <div class="jn-pl ${sgn(s.pnl)}">${s.pnl > 0 ? '+' : ''}${money(s.pnl)}${pct!=null ? `<small>${pct > 0 ? '+' : ''}${fmt(pct, 1)}%</small>` : ''}</div>
-    ${prog!=null ? `<div class="jn-bar" title="Progress to target"><i style="width:${prog}%"></i></div>` : ''}
+    ${prog!=null ? `<div class="jn-bar" title="Progress to the ${acctTargetPct(a)}% target"><i style="width:${prog}%"></i></div><div class="jn-tg">${money(Math.max(0, s.pnl))} / ${money(s.target)} · ${acctTargetPct(a)}%</div>` : ''}
+    ${on && s.passed ? `<div class="jn-elig">🎯 Eligible for ${acctNextLbl(a)}</div>` : ''}
     ${paid ? `<div class="jn-paid">💸 ${money(paid)} paid out</div>` : ''}
     <div class="jn-date">${d(a.start_date)}${a.closed_date ? ' → ' + d(a.closed_date) : on ? ' → now' : ''}</div>
     ${on ? `<div class="jn-act"><button data-jpass="${a.id}" title="Passed: archive it and open the next phase / funded">✓ Passed</button><button data-payout="${a.id}" title="Payout reached: archive it and restart">💸 Payout</button><button data-jfail="${a.id}" title="Failed: archive it, optionally start a new attempt">✗ Failed</button></div>` : ''}
@@ -2872,6 +2890,8 @@ function renderAccounts(){
       <div class="seg ml-auto" role="group" aria-label="View">${[['journeys','Journeys'],['cards','Cards']].map(([k, l]) => `<button data-aview="${k}" aria-pressed="${(S.aView || ls.get('do_aview', 'journeys'))===k}">${l}</button>`).join('')}</div>
       <button class="btn btn-primary" id="newAcct">+ New account</button>
     </div>
+    ${(() => { const el = active.filter(a => acctStats(a).passed); return el.length ? `<div class="acc-elig">${el.map(a => `<div><b>🎯 ${esc(a.name)}</b> is eligible for <b>${acctNextLbl(a)}</b> — target ${acctTargetPct(a)}% reached (${money(acctStats(a).pnl)}).
+      ${a.phase==='Funded' ? `<button class="btn btn-primary" data-payout="${a.id}">💸 Log payout</button>` : `<button class="btn btn-primary" data-jpass="${a.id}">✓ Passed → next</button>`}</div>`).join('')}</div>` : ''; })()}
     ${accs.length && !hasLinkCol() ? '<div class="card" style="margin-bottom:12px"><p class="hint" style="margin:0">To connect accounts (challenge → funded → payout restart …) run <b>migration-account-links.sql</b> in Supabase once, then reload.</p></div>' : ''}
     ${accs.length && (S.aView || ls.get('do_aview', 'journeys'))==='journeys' ? journeysHtml() : accs.length ? `${active.length ? `<div class="agrid">${active.map(acctCard).join('')}</div>` : '<div class="card"><p class="muted">No active accounts. Open a new one or restore one from the archive.</p></div>'}
       ${archived.length ? `<details class="archive" ${ls.get('do_arch_open', false) ? 'open' : ''}><summary><h3>Archive <span class="pg-n">${archived.length}</span>
@@ -3026,7 +3046,7 @@ function openAcct(a){
         <div><label class="lbl" for="a_start">Start date</label><input id="a_start" class="inp" name="start_date" type="date" value="${v('start_date')}"></div>
       </div>
       <div class="g3">
-        <div><label class="lbl" for="a_t">Profit target %</label><input id="a_t" class="inp num" name="target_pct" inputmode="decimal" value="${v('target_pct')}" placeholder="8"></div>
+        <div><label class="lbl" for="a_t">Profit target %</label><input id="a_t" class="inp num" name="target_pct" inputmode="decimal" value="${v('target_pct')}" placeholder="challenge: e.g. 8 · funded: empty = 4"></div>
         <div><label class="lbl" for="a_d">Daily loss %</label><input id="a_d" class="inp num" name="daily_loss_pct" inputmode="decimal" value="${v('daily_loss_pct')}" placeholder="5"></div>
         <div><label class="lbl" for="a_m">Max loss %</label><input id="a_m" class="inp num" name="max_loss_pct" inputmode="decimal" value="${v('max_loss_pct')}" placeholder="10"></div>
       </div>
@@ -5250,6 +5270,16 @@ function tradeAutoFill(t){
   Object.keys(f).forEach(k => f[k]==null && delete f[k]);
   return f;
 }
+/* an account reached its target → a message on the site (once; Telegram comes from the server) */
+function acctEligNotify(){
+  const seen = ls.get('do_elig_seen', {}); let changed = false;
+  [...S.accounts.values()].filter(a => (a.status || 'active')==='active').forEach(a => {
+    const s = acctStats(a);
+    if(s.passed && !seen[a.id]){ seen[a.id] = Date.now(); changed = true; toast(`🎯 ${a.name} is eligible for ${acctNextLbl(a)} — ${acctTargetPct(a)}% target reached`); try{ tone(SOUNDS.tp); }catch(e){} }
+    if(!s.passed && seen[a.id]){ delete seen[a.id]; changed = true; }
+  });
+  if(changed) ls.set('do_elig_seen', seen);
+}
 /* trades already in the journal with empty fields (session, risk, pips, R, profit, duration) → filled once, quietly, at start-up */
 async function backfillTrades(){
   if(S.legacyTrades || !S.trades?.size) return;
@@ -5536,6 +5566,7 @@ async function liveRefresh(){
     if(!S.legacyTrades){ try{ const tr = await fetchAll('do_trades'); const sig = m => [...m.values()].map(t => t.id + (t.updated_at || '') + (t.result || '')).sort().join();
       const fresh = new Map(tr.map(t => [t.id, t])); if(sig(fresh)!==sig(S.trades)){ S.trades = fresh; S.liveTrades = true; } }catch(e){ /* keep what we have */ } }
     suWatchChanges(false);
+    try{ acctEligNotify(); }catch(e){}
     if(!vis) return;
     const n = await autoRun(), busy = document.querySelector('dialog[open]') || document.querySelector('.su-skip') || document.querySelector('.sx-val.dirty') || S.drawerOpen || document.activeElement?.matches?.('input,textarea,select');
     S.liveAt = Date.now();
@@ -6612,6 +6643,7 @@ document.getElementById('csvFile').onchange = async ev => {
   if(CONFIGURED && await autoRun()){ render(); refreshDock?.(); }
   if(CONFIGURED) suWatchChanges(true);
   if(CONFIGURED) backfillTrades();
+  if(CONFIGURED) setTimeout(acctEligNotify, 1500);
 })();
 </script>
 </body>
