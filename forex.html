@@ -310,7 +310,7 @@
   .jn-top{ display:flex; justify-content:space-between; gap:6px; }
   .jn-ph{ font-size:10.5px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; padding:1px 7px; border-radius:6px; background:color-mix(in srgb,var(--c) 18%,transparent); color:var(--ink); }
   .jn-st{ font-size:10.5px; font-weight:800; color:var(--c); }
-  .jn-name{ font-size:14px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .jn-name{ font-size:13.5px; font-weight:800; line-height:1.25; overflow-wrap:anywhere; }
   .jn-size{ font-size:12px; font-weight:700; color:var(--muted); }
   .jn-pl{ font-family:'Bricolage Grotesque',sans-serif; font-size:20px; font-weight:800; } .jn-pl small{ font-size:12px; margin-left:6px; font-weight:700; color:var(--muted); }
   .jn-bar{ height:5px; border-radius:99px; background:color-mix(in srgb,var(--muted) 20%,transparent); overflow:hidden; } .jn-bar i{ display:block; height:100%; background:var(--pos); border-radius:99px; }
@@ -350,7 +350,7 @@
   .acard.sel{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent), var(--shadow); }
   .acard.st-acc-failed, .acard.st-acc-archived{ opacity:.6; }
   .acard-top{ display:flex; gap:10px; align-items:flex-start; justify-content:space-between; }
-  .acard h3{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:18px; }
+  .acard h3{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:18px; overflow-wrap:anywhere; }
   .accst{ font-size:11px; font-weight:800; padding:2px 9px; border-radius:999px; background:var(--surface-2); color:var(--muted); white-space:nowrap; }
   .st-acc-active .accst{ background:color-mix(in srgb,var(--accent) 20%,transparent); color:var(--accent); }
   .st-acc-passed .accst{ background:color-mix(in srgb,var(--pos) 18%,transparent); color:var(--pos); }
@@ -2882,7 +2882,7 @@ function jnNode(a){
   const d = x => x ? x.split('-').reverse().join('.') : '';
   return `<article class="jn-node st-${st} ${S.selAcct===a.id ? 'sel' : ''}" data-acc="${a.id}" tabindex="0">
     <div class="jn-top"><span class="jn-ph">${esc(shortPhase(a.phase))}</span><span class="jn-st">${ACC_STATUS[st] || st}</span></div>
-    <b class="jn-name">${esc(a.name)}</b>
+    <b class="jn-name" title="${esc(a.name)}">${esc(a.name)}</b>
     <div class="jn-size">${money(Number(a.size))}</div>
     <div class="jn-pl ${sgn(s.pnl)}">${s.pnl > 0 ? '+' : ''}${money(s.pnl)}${pct!=null ? `<small>${pct > 0 ? '+' : ''}${fmt(pct, 1)}%</small>` : ''}</div>
     ${payChip(a)}
