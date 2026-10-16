@@ -1428,6 +1428,13 @@
   .qa-pend b{ color:var(--amber); font-size:15px; }
   @keyframes pendPulse{ 0%,100%{ box-shadow:0 6px 20px rgba(0,0,0,.3), 0 0 0 0 color-mix(in srgb,var(--amber) 40%,transparent); } 50%{ box-shadow:0 6px 20px rgba(0,0,0,.3), 0 0 0 6px transparent; } }
   @media (prefers-reduced-motion: reduce){ .qa-pend{ animation:none; } }
+  @media (min-width:901px){ .qa-dock{ display:none; } }
+  .side-qa{ display:grid; gap:6px; margin:2px 0 8px; }
+  .sq-add{ display:flex; align-items:center; justify-content:center; gap:8px; height:40px; border-radius:12px; border:none; background:var(--accent); color:var(--on-accent); font-weight:800; font-size:14px; }
+  .sq-add .qa-plus{ font-size:22px; } .sq-add:hover{ filter:brightness(1.06); }
+  .sq-pend{ display:flex; align-items:center; gap:8px; padding:7px 10px; border-radius:12px; border:1px solid color-mix(in srgb,var(--amber) 50%,var(--line)); background:color-mix(in srgb,var(--amber) 12%,var(--surface)); color:var(--ink); font-weight:700; font-size:13px; }
+  .sq-pend b{ color:var(--amber); }
+  .shell.mini .sq-add, .shell.mini .sq-pend{ justify-content:center; padding:0; height:38px; } .shell.mini .sq-pend b{ font-size:12px; }
   @media (max-width:900px){ .qa-dock{ right:14px; bottom:calc(80px + env(safe-area-inset-bottom,0px)); } .qa-fab{ height:48px; padding:0 16px 0 13px; } .qa-pend .qa-l{ display:none; } }
   .qa{ display:grid; gap:16px; }
   .qa .tc{ display:flex; flex-wrap:wrap; gap:6px; }
@@ -1841,6 +1848,7 @@ function render(){
         <div class="side-top"><div class="brand"><span class="mark" aria-hidden="true"></span><span class="side-l">Daily Observer</span></div>
           <button class="side-col" id="sideCol" aria-label="${mini ? 'Expand sidebar' : 'Collapse sidebar'}" title="${mini ? 'Expand' : 'Collapse'}">${ico('collapse', 16)}</button></div>
         <button class="side-search" id="searchBtn" aria-label="Search">${ico('search', 16)}<span class="side-l">Search…</span><kbd class="side-l">/</kbd></button>
+        <div class="side-qa" id="sideQa"></div>
         <nav class="side-nav">${NAV.map(([g, items]) => `${g ? `<div class="side-g side-l">${g}</div>` : ''}${items.map(([v, l, i]) =>
           `<button class="side-i" data-view="${v}" aria-current="${navActive(v) ? 'page' : 'false'}" title="${l}">${ico(i)}<span class="side-l">${l}</span>${v==='trades' && tjOpenCount() ? `<span class="side-badge">${tjOpenCount()}</span>` : ''}${v==='setups' ? navRunHtml() : ''}${v==='desk' && todayGapCount() ? `<span class="side-badge warn">${todayGapCount()}</span>` : ''}</button>`).join('')}`).join('')}</nav>
         <div class="side-foot">
@@ -5705,6 +5713,11 @@ function refreshDock(){
     <button class="qa-fab" id="qaFab" title="Quick add trade (T)" aria-label="Quick add trade"><span class="qa-plus">+</span><span class="qa-l">Trade</span></button>`;
   qaDock.querySelector('#qaFab').onclick = openQuickAdd;
   qaDock.querySelector('#qaPend')?.addEventListener('click', openPending);
+  /* desktop: the same two buttons live in the sidebar, so nothing floats over the page buttons */
+  const sq = document.getElementById('sideQa');
+  if(sq){ sq.innerHTML = `<button class="sq-add" id="sqAdd" title="Quick add trade (T)">${'<span class="qa-plus">+</span>'}<span class="side-l">New trade</span></button>
+      ${n ? `<button class="sq-pend" id="sqPend" title="${n} trade${n>1 ? 's' : ''} to complete">⏳<b>${n}</b><span class="side-l">to complete</span></button>` : ''}`;
+    sq.querySelector('#sqAdd').onclick = openQuickAdd; sq.querySelector('#sqPend')?.addEventListener('click', openPending); }
 }
 const qaDlg = document.getElementById('qaDlg');
 function openQuickAdd(){
