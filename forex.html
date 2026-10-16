@@ -314,6 +314,15 @@
   .jn-size{ font-size:12px; font-weight:700; color:var(--muted); }
   .jn-pl{ font-family:'Bricolage Grotesque',sans-serif; font-size:20px; font-weight:800; } .jn-pl small{ font-size:12px; margin-left:6px; font-weight:700; color:var(--muted); }
   .jn-bar{ height:5px; border-radius:99px; background:color-mix(in srgb,var(--muted) 20%,transparent); overflow:hidden; } .jn-bar i{ display:block; height:100%; background:var(--pos); border-radius:99px; }
+  .ac-rail{ margin:4px 0 2px; } .ac-rail .sx-rail-bar{ height:10px; } .ac-rail.cmp{ gap:4px; margin:6px 0 0; } .ac-rail.cmp .sx-rail-bar{ height:7px; }
+  .ac-rail.cmp .sx-rail-lbl{ font-size:10px; min-height:13px; }
+  .ac-day{ position:absolute; top:-3px; bottom:-3px; width:3px; margin-left:-1.5px; border-radius:2px; background:var(--amb, #f59e0b); }
+  .sx-rail-now.warn{ animation:acPulse 1.2s ease-in-out infinite; }
+  @keyframes acPulse{ 50%{ box-shadow:0 0 0 6px color-mix(in srgb,var(--neg) 30%,transparent); } }
+  .ac-dist{ display:flex; flex-wrap:wrap; gap:4px 12px; font-size:11.5px; font-weight:700; color:var(--muted); }
+  .ac-dist span{ display:inline-flex; align-items:center; gap:5px; } .ac-dist i{ width:8px; height:8px; border-radius:50%; }
+  .ac-dist .d-neg{ background:var(--neg); } .ac-dist .d-amb{ background:var(--amb, #f59e0b); } .ac-dist .d-pos{ background:var(--pos); }
+  .ac-dist .neg{ color:var(--neg); } .ac-dist .pos{ color:var(--pos); }
   .jn-tg{ font-size:11px; font-weight:700; color:var(--muted); }
   .jn-elig{ font-size:11.5px; font-weight:800; padding:3px 8px; border-radius:8px; background:color-mix(in srgb,var(--pos) 18%,transparent); color:var(--pos); }
   .acc-elig{ display:grid; gap:8px; margin-bottom:14px; }
@@ -2745,6 +2754,25 @@ function acctStats(a){
     passed: target!=null && pnl >= target,
     w: tradesR.filter(t => t.result==='W').length, l: tradesR.filter(t => t.result==='L').length };
 }
+/* risk rail: max loss (blown) ─ start balance ─ profit target, with the balance as the dot and today's daily-loss stop as an amber tick */
+function acctRail(a, s, compact){
+  const size = Number(a.size) || 0; if(!size || (s.maxLoss==null && s.target==null)) return '';
+  const lo = s.maxLoss!=null ? size - s.maxLoss : size - (s.target || size*.1), hi = s.target!=null ? size + s.target : size + (s.maxLoss || size*.1);
+  const pos = v => Math.max(0, Math.min(100, (v - lo) / (hi - lo) * 100));
+  const ps = pos(size), pb = pos(s.bal);
+  const dayStart = s.bal - s.today, dStop = s.dailyLim!=null ? Math.max(lo, dayStart - s.dailyLim) : null;
+  const toBlow = s.maxLoss!=null ? s.bal - lo : null, toDay = dStop!=null ? s.bal - dStop : null, toTg = s.target!=null ? hi - s.bal : null;
+  const near = (toBlow!=null && toBlow <= size*.01) || (toDay!=null && toDay <= size*.005);
+  const k = v => compact ? `${v >= 0 ? '+' : '−'}${fmt(Math.abs(v)/size*100, 1)}%` : money(size + v);
+  return `<div class="sx-rail ac-rail ${compact ? 'cmp' : ''}" role="img" aria-label="Balance between max loss and profit target">
+    <div class="sx-rail-bar"><i class="sx-rail-loss" style="width:${ps}%"></i><i class="sx-rail-win" style="left:${ps}%"></i>
+      <b class="sx-rail-entry" style="left:${ps}%"></b>
+      ${dStop!=null && dStop > lo ? `<b class="ac-day" style="left:${pos(dStop)}%" title="Daily loss stop ${money(dStop)}"></b>` : ''}
+      <b class="sx-rail-now ${s.bal >= size ? 'up' : 'dn'} ${near ? 'warn' : ''}" style="left:${pb}%" title="Balance ${money(s.bal)}"></b></div>
+    <div class="sx-rail-lbl"><span>${s.maxLoss!=null ? (compact ? '' : 'Blown ') + k(-s.maxLoss) : ''}</span><span style="left:${ps}%">${compact ? 'Start' : 'Start ' + money(size)}</span><span>${s.target!=null ? (compact ? '' : 'Target ') + k(s.target) : ''}</span></div>
+    ${compact ? '' : `<div class="ac-dist">${toBlow!=null ? `<span class="${toBlow <= size*.01 ? 'neg' : ''}"><i class="d-neg"></i>${money(Math.max(0, toBlow))} to blown</span>` : ''}${toDay!=null ? `<span class="${toDay <= size*.005 ? 'neg' : ''}"><i class="d-amb"></i>${money(Math.max(0, toDay))} to daily stop</span>` : ''}${toTg!=null ? `<span class="${toTg <= 0 ? 'pos' : ''}"><i class="d-pos"></i>${toTg <= 0 ? 'target reached' : money(toTg) + ' to target'}</span>` : ''}</div>`}
+  </div>`;
+}
 function bar(label, val, max, cls, right){
   const w = max ? Math.max(0, Math.min(100, val/max*100)) : 0;
   return `<div class="abar"><div class="abar-h"><span>${label}</span><span class="num">${right}</span></div><div class="abar-t"><span class="${cls}" style="width:${w}%"></span></div></div>`;
@@ -2758,9 +2786,8 @@ function acctCard(a){ const s = acctStats(a);
         <div class="abal"><div><span class="kick">Balance</span><span class="bigval">${money(s.bal)}</span></div>
           <div style="text-align:right"><span class="kick">P/L</span><b class="${sgn(s.pnl)}" style="font-size:18px">${s.pnl>0?'+':''}${money(s.pnl)}</b>
           <div class="muted num" style="font-size:12px;font-weight:700">${a.size ? `${s.pnl>0?'+':''}${fmt(s.pnl/a.size*100)}%` : ''}</div></div></div>
-        ${s.target!=null ? bar('Target profit', Math.max(0,s.pnl), s.target, 'b-pos', `${money(Math.max(0,s.pnl))} / ${money(s.target)}`) : ''}
-        ${s.maxLoss!=null ? bar('Max loss used', Math.max(0, a.size - s.bal), s.maxLoss, 'b-neg', `${money(s.room)} left`) : ''}
-        ${s.dailyLim!=null ? bar('Daily loss today', Math.max(0,-s.today), s.dailyLim, 'b-amb', `${money(Math.max(0,-s.today))} / ${money(s.dailyLim)}`) : ''}
+        ${(a.status||'active')==='active' ? acctRail(a, s, false) : ''}
+        ${s.target!=null && (a.status||'active')!=='active' ? bar('Target profit', Math.max(0,s.pnl), s.target, 'b-pos', `${money(Math.max(0,s.pnl))} / ${money(s.target)}`) : ''}
         ${msSummary(a)}
         ${(a.status||'active')==='active' ? `<button class="btn paybtn" data-payout="${a.id}">💸 Payout reached — archive & restart</button>`
           : `<div class="muted" style="font-size:12px;font-weight:700">${a.start_date ? a.start_date.split('-').reverse().join('.') : '…'} → ${a.closed_date ? a.closed_date.split('-').reverse().join('.') : '…'}</div>`}
@@ -2797,7 +2824,8 @@ function jnNode(a){
     <b class="jn-name">${esc(a.name)}</b>
     <div class="jn-size">${money(Number(a.size))}</div>
     <div class="jn-pl ${sgn(s.pnl)}">${s.pnl > 0 ? '+' : ''}${money(s.pnl)}${pct!=null ? `<small>${pct > 0 ? '+' : ''}${fmt(pct, 1)}%</small>` : ''}</div>
-    ${prog!=null ? `<div class="jn-bar" title="Progress to the ${acctTargetPct(a)}% target"><i style="width:${prog}%"></i></div><div class="jn-tg">${money(Math.max(0, s.pnl))} / ${money(s.target)} · ${acctTargetPct(a)}%</div>` : ''}
+    ${on ? acctRail(a, s, true) : ''}
+    ${prog!=null ? `<div class="jn-tg">${money(Math.max(0, s.pnl))} / ${money(s.target)} · ${acctTargetPct(a)}%</div>` : ''}
     ${on && s.passed ? `<div class="jn-elig">🎯 Eligible for ${acctNextLbl(a)}</div>` : ''}
     ${paid ? `<div class="jn-paid">💸 ${money(paid)} paid out</div>` : ''}
     <div class="jn-date">${d(a.start_date)}${a.closed_date ? ' → ' + d(a.closed_date) : on ? ' → now' : ''}</div>
