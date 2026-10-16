@@ -1184,6 +1184,7 @@
   .lvr-ic{ font-weight:900; }
   .lvr-live{ display:grid; line-height:1.1; } .lvr-live b{ font-family:'Bricolage Grotesque',sans-serif; font-size:20px; font-weight:800; } .lvr-live small{ font-size:11.5px; font-weight:700; color:var(--muted); }
   .lvr-live.up b{ color:var(--pos); } .lvr-live.dn b{ color:var(--neg); }
+  .lvr-fx{ color:var(--accent); border-color:color-mix(in srgb,var(--accent) 45%,var(--line)) !important; font-weight:800; }
   .lvr-rail{ flex:1 1 220px; min-width:180px; } .lvr-rail .sx-rail{ margin:0; }
   .lvr-val{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px 10px; padding:0; border:0; background:none; }
   .lvr-val label{ display:grid; gap:3px; font-size:10.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); }
@@ -5123,7 +5124,17 @@ function lvRow(s){
       + kv('Stop', sxPx(s.liq.extreme ?? s.liq.level), s.liq.extMovedAt ? 'moved to wick' : 'sweep wick', 'sl')
       + `<p class="lvr-note">${s.pend ? nx.text : `Waiting ${ago(s.startAt).replace(' ago','')} for a ${L ? 'bullish' : 'bearish'} fractal change`}${!s.bos && s.wicks?.length ? ` · <span class="warn">${esc(s.wicks[s.wicks.length-1].why)}</span>` : ''}</p>`;
     const pr = suValid()[s.key]?.prio || '';
-    act = `<div class="lvr-prio" role="group" aria-label="Priority">${[['high','High'],['med','Mid'],['low','Low']].map(([k, l]) => `<button class="p-${k}" data-suprio="${s.key}|${k}" aria-pressed="${pr===k}" title="${l} priority${pr===k ? ' (click again to clear)' : ''}">${l}</button>`).join('')}</div>${chart}${skip}`;
+    if(S.su.act===s.key){   /* activate the fractal by hand: no break alert needed → straight to Step 3 */
+      const slv = s.liq.extreme ?? s.liq.level;
+      mid = `<div class="sx-val lvr-val dirty" data-actfor="${s.key}">
+          <span class="lvr-when">⚡ Activate fractal</span>
+          <label><span>Liquidity</span><input class="inp" inputmode="decimal" autocomplete="off" data-aliq value="${lvl(s.liq.level ?? slv)}"></label>
+          <label><span>Fractal line</span><input class="inp" inputmode="decimal" autocomplete="off" data-aline value="" placeholder="entry price"></label>
+          <label class="sl"><span>Stop loss</span><input class="inp" inputmode="decimal" autocomplete="off" data-asl value="${lvl(slv)}"></label>
+          <span class="sx-val-msg neg"></span></div>`;
+      act = `<button class="bt" data-suactx="${s.key}">Cancel</button><button class="btn btn-primary" data-suactok="${s.key}">✓ To Step 3</button>`;
+    } else
+    act = `<button class="bt lvr-fx" data-suact="${s.key}" title="Don't wait for the break alert: set the fractal line yourself and go straight to Step 3 · Setup formed">⚡ Activate fractal</button><div class="lvr-prio" role="group" aria-label="Priority">${[['high','High'],['med','Mid'],['low','Low']].map(([k, l]) => `<button class="p-${k}" data-suprio="${s.key}|${k}" aria-pressed="${pr===k}" title="${l} priority${pr===k ? ' (click again to clear)' : ''}">${l}</button>`).join('')}</div>${chart}${skip}`;
   } else if(col==='validate'){
     if(s.stage==='validate'){
       const last = suValid()[s.key]?.last || {}, liq = last.liq ?? s.liq.level0 ?? s.liq.level, line = last.line ?? s.prop?.line ?? s.line, ty = last.type || '', slv = last.sl ?? s.liq.extreme ?? s.liq.level;
@@ -5690,6 +5701,25 @@ function bindSetups(m, all){
     const sync = () => { const ch = ins.some(i => i.value.trim()!==i.dataset.orig); ins.forEach(i => i.classList.toggle('changed', i.value.trim()!==i.dataset.orig));
       p.classList.toggle('dirty', ch); btn.textContent = ch ? '✓ Save and validate' : '✓ Validate'; p.querySelector('.sx-val-msg').textContent = ''; };
     ins.forEach(i => { i.oninput = sync; i.onkeydown = e => { if(e.key==='Enter') btn.click(); }; });
+  });
+  m.querySelectorAll('[data-suact]').forEach(b => b.onclick = () => { S.su.act = b.dataset.suact; renderMain(); document.querySelector(`[data-actfor="${b.dataset.suact}"] [data-aline]`)?.focus(); });
+  m.querySelectorAll('[data-suactx]').forEach(b => b.onclick = () => { S.su.act = null; renderMain(); });
+  m.querySelectorAll('[data-actfor] input').forEach(i => i.onkeydown = e => { if(e.key==='Enter') document.querySelector(`[data-suactok="${i.closest('[data-actfor]').dataset.actfor}"]`)?.click(); });
+  m.querySelectorAll('[data-suactok]').forEach(b => b.onclick = async () => {
+    const s = byKey.get(b.dataset.suactok), p = document.querySelector(`[data-actfor="${b.dataset.suactok}"]`); if(!s || !p) return;
+    const L = s.dir==='Long', msg = p.querySelector('.sx-val-msg');
+    const liq = parseNum(p.querySelector('[data-aliq]').value), line = parseNum(p.querySelector('[data-aline]').value), sl = parseNum(p.querySelector('[data-asl]').value);
+    if(!(liq > 0) || !(line > 0) || !(sl > 0)) return msg.textContent = 'Enter the liquidity, the fractal line and the stop loss.';
+    if(L ? line <= liq : line >= liq) return msg.textContent = `For a ${L ? 'long' : 'short'} the fractal line has to be ${L ? 'above' : 'below'} the liquidity.`;
+    if(L ? sl >= line : sl <= line) return msg.textContent = `For a ${L ? 'long' : 'short'} the stop loss has to be ${L ? 'below' : 'above'} the fractal line.`;
+    b.disabled = true;
+    try{
+      await suValSet(s.key, r => ({ ...r, liq, line, type:'body', sl, at:new Date().toISOString(), last:{ liq, line, type:'body', sl }, activated:Date.now() }));
+      const { error } = await sb.from('do_signals').insert({ pair:s.pair, tf:s.tf, kind:'bos', side: L ? 'bull' : 'bear', level:line, price:line, at:new Date().toISOString(), source:'manual', raw:{ manual:true, key:s.key, text:'fractal activated by hand' } });
+      if(error) throw error;
+      S.su.act = null; await loadSignals(); renderMain();
+      toast(`⚡ ${s.pair} ${s.tf} → Step 3 · line ${lvl(line)} · SL ${lvl(sl)}`);
+    }catch(e){ msg.textContent = 'Not saved: ' + (e.message || e); b.disabled = false; }
   });
   m.querySelectorAll('[data-suval]').forEach(b => b.onclick = async () => {
     const s = byKey.get(b.dataset.suval), p = b.closest('.sx-val'); if(!s || !p) return;
