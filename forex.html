@@ -523,6 +523,7 @@
   .gcal-l{ display:grid; gap:8px; border-top:1px solid var(--line); padding-top:10px; }
   .gcal-day{ display:grid; gap:3px; }
   .gcal-it{ display:flex; align-items:center; gap:6px; font-size:12.5px; font-weight:600; text-align:left; background:none; border:none; padding:0; color:var(--ink); }
+  .gcal-it.rep{ color:var(--muted); }
   .gcal-it small{ margin-left:auto; color:var(--muted); font-weight:700; } .gcal-it.ok{ color:var(--pos); } .gcal-it.late{ color:var(--neg); } .gcal-it.pay{ color:var(--info); cursor:pointer; }
   .fundbox{ padding:14px; border-radius:14px; border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line)); background:color-mix(in srgb,var(--accent) 6%,var(--surface)); }
   .fpair{ display:inline-flex; align-items:center; gap:6px; }
@@ -3286,22 +3287,43 @@ function goalCalendar(){
   const byDay = {}; const add = (d, x) => (byDay[d] = byDay[d] || []).push(x);
   [...S.goals.values()].filter(g => g.due_date).forEach(g => add(String(g.due_date).slice(0, 10), { t:'g', g, done:goalState(g).done }));
   [...S.accounts.values()].filter(a => a.payout_date && (a.status || 'active')==='active').forEach(a => add(String(a.payout_date).slice(0, 10), { t:'p', a }));
+  /* repeating goals: the next weeks, up to ~3 months ahead */
+  goalSeries().filter(g => g.due_date).forEach(g => { for(let i = 1; i <= 14; i++){ const d = addDays(g.due_date, 7*i); if(d >= today) add(d, { t:'r', g }); } });
   const cells = []; for(let i = 0; i < 42; i++){ const d = new Date(start); d.setDate(start.getDate() + i); cells.push(d); if(i===34 && d.getMonth()!==M) break; }
   const sel = S.gcSel && byDay[S.gcSel] ? S.gcSel : null;
-  const list = (sel ? [[sel, byDay[sel]]] : Object.entries(byDay).filter(([d, it]) => d >= today || it.some(x => x.t==='g' && !x.done)).sort(([a], [b]) => a.localeCompare(b)).slice(0, 8));
+  const list = (sel ? [[sel, byDay[sel]]] : Object.entries(byDay).filter(([d, it]) => d >= today || it.some(x => x.t==='g' && !x.done)).sort(([a], [b]) => a.localeCompare(b)).slice(0, 6));
   return `<div class="card gcal" style="margin-top:14px">
     <div class="gcal-h"><button class="ib sm" id="gcPrev" aria-label="Previous month">‹</button><h3>${MONTHS[M]} ${Y}</h3><button class="ib sm" id="gcNext" aria-label="Next month">›</button></div>
     <div class="gcal-g">${['M','T','W','T','F','S','S'].map(x => `<span class="gcal-wd">${x}</span>`).join('')}
       ${cells.map(d => { const k = iso(d), it = byDay[k] || [];
-        const late = it.some(x => x.t==='g' && !x.done && goalDueAt(x.g) < now), open = it.some(x => x.t==='g' && !x.done), pay = it.some(x => x.t==='p'), allDone = it.length && it.every(x => x.t!=='g' || x.done) && it.some(x => x.t==='g');
-        return `<button class="gcal-d ${d.getMonth()!==M ? 'out' : ''} ${k===today ? 'today' : ''} ${k===sel ? 'sel' : ''}" data-gcday="${k}" title="${esc(it.map(x => x.t==='p' ? '💸 Payout · ' + x.a.name : (x.done ? '✓ ' : '○ ') + x.g.title).join('\n'))}">
+        const late = it.some(x => x.t==='g' && !x.done && goalDueAt(x.g) < now), open = it.some(x => (x.t==='g' && !x.done) || x.t==='r'), pay = it.some(x => x.t==='p'), allDone = it.length && it.every(x => x.t!=='g' || x.done) && it.some(x => x.t==='g');
+        return `<button class="gcal-d ${d.getMonth()!==M ? 'out' : ''} ${k===today ? 'today' : ''} ${k===sel ? 'sel' : ''}" data-gcday="${k}" title="${esc(it.map(x => x.t==='p' ? '💸 Payout · ' + x.a.name : x.t==='r' ? '↻ ' + x.g.title : (x.done ? '✓ ' : '○ ') + x.g.title).join('\n'))}">
           <span>${d.getDate()}</span><i>${pay ? '<b class="dp"></b>' : ''}${late ? '<b class="dl"></b>' : open ? '<b class="do"></b>' : allDone ? '<b class="dd"></b>' : ''}</i></button>`; }).join('')}</div>
     <div class="gcal-k"><span><b class="do"></b>to do</span><span><b class="dd"></b>done</span><span><b class="dl"></b>overdue</span><span><b class="dp"></b>payout</span></div>
     <div class="gcal-l">${list.length ? list.map(([d, it]) => `<div class="gcal-day"><div class="kick">${d===today ? 'Today' : fmtDayShort(d)}</div>${it.map(x => x.t==='p'
         ? `<button class="gcal-it pay" data-gcacc="${x.a.id}">💸 Payout · ${esc(x.a.name)}</button>`
+        : x.t==='r' ? `<div class="gcal-it rep">↻ ${esc(x.g.emoji || '')} ${esc(x.g.title)}${x.g.due_time ? `<small>${esc(x.g.due_time)}</small>` : ''}</div>`
         : `<div class="gcal-it ${x.done ? 'ok' : goalDueAt(x.g) < now ? 'late' : ''}">${x.done ? '✓' : '○'} ${esc(x.g.emoji || '')} ${esc(x.g.title)}${x.g.due_time ? `<small>${esc(x.g.due_time)}</small>` : ''}</div>`).join('')}</div>`).join('')
       : '<p class="muted" style="font-size:12.5px;margin:0">Nothing planned. Set a "When" on a goal or a payout date on a funded account.</p>'}</div>
   </div>`;
+}
+/* repeating goals: the latest copy of each series (same title) with "Repeat every week" → a copy in every week up to this one, date moved by 7 days per week */
+const gKey = g => `${(g.title || '').trim().toLowerCase()}|${g.kind || 'check'}`;
+const wkIdx = (y, w) => Math.round(mondayOf(y, w).getTime() / (7*864e5));
+const addDays = (ds, n) => iso(new Date(parseISO(String(ds).slice(0, 10)).getTime() + n*864e5 + 3*36e5));
+function goalSeries(){
+  const last = new Map();
+  [...S.goals.values()].forEach(g => { const k = gKey(g), cur = last.get(k); if(!cur || wkIdx(g.year, g.week) > wkIdx(cur.year, cur.week)) last.set(k, g); });
+  return [...last.values()].filter(g => g.recurring);
+}
+/* the copies are made by the server (tv-signal, every minute) so there are never two; the site only reloads when a series is behind */
+async function ensureRecurring(){
+  if(!CONFIGURED || ensureRecurring.busy) return;
+  const now = isoWeek(new Date()), ni = wkIdx(now.year, now.week);
+  if(!goalSeries().some(g => wkIdx(g.year, g.week) < ni)) return;
+  if(Date.now() - (ensureRecurring.at || 0) < 60e3) return; ensureRecurring.at = Date.now(); ensureRecurring.busy = true;
+  try{ const g = await fetchAll('do_goals'); S.goals = new Map(g.map(r => [r.id, r])); if(S.view==='goals') renderMain(); }
+  catch(e){ console.warn(e); } finally { ensureRecurring.busy = false; }
 }
 /* goals due today → message on the site once (Telegram comes from the server) */
 function goalDueNotify(){
@@ -3337,7 +3359,7 @@ function renderGoals(){
           <div style="min-width:0"><div class="bigval">${sc ? `${sc.done} / ${sc.n}` : '0'} <span class="muted" style="font-size:15px;font-weight:700">goals done</span></div>
             <p style="font-weight:700;margin-top:4px">${mood(sc?.pct || 0)}</p></div>
         </div>
-        ${!gs.length && recurring.length ? `<button class="btn" id="gRecur" style="margin-top:12px;width:100%">↻ Start the week with ${recurring.length} recurring goal${recurring.length>1?'s':''} from last week</button>` : ''}
+        ${false ? `<button class="btn" id="gRecur" style="margin-top:12px;width:100%">↻ Start the week with ${recurring.length} recurring goal${recurring.length>1?'s':''} from last week</button>` : ''}
         <div class="glist">${gs.length ? gs.map(goalCard).join('') : `<div class="card empty" style="margin-top:12px"><div class="orb" aria-hidden="true"></div><p>No goals for week ${w} yet. Add the first one below.</p></div>`}</div>
         <form class="card gform" id="gForm">
           <h3 id="gFormTitle">Add a goal</h3>
@@ -3429,9 +3451,13 @@ function bindGoals(){
   document.querySelectorAll('[data-gtoggle]').forEach(b => b.onclick = async () => { const g = S.goals.get(b.dataset.gtoggle); if(await saveGoal({ done:!g.done }, g.id)) renderMain(); });
   document.querySelectorAll('[data-gval]').forEach(i => i.onchange = async () => { if(await saveGoal({ value:parseNum(i.value) }, i.dataset.gval)) renderMain(); });
   document.querySelectorAll('[data-gdel]').forEach(b => b.onclick = async () => {
-    if(!confirm('Delete this goal?')) return;
+    const g = S.goals.get(b.dataset.gdel);
+    if(!confirm(g?.recurring ? 'Delete this goal and stop repeating it every week?' : 'Delete this goal?')) return;
     const { error } = await sb.from('do_goals').delete().eq('id', b.dataset.gdel); if(error) return toast(error.message);
-    S.goals.delete(b.dataset.gdel); renderMain(); });
+    S.goals.delete(b.dataset.gdel);
+    if(g?.recurring){ const ids = [...S.goals.values()].filter(x => x.recurring && gKey(x)===gKey(g)).map(x => x.id);
+      if(ids.length){ await sb.from('do_goals').update({ recurring:false }).in('id', ids); ids.forEach(id => S.goals.set(id, { ...S.goals.get(id), recurring:false })); } }
+    renderMain(); });
   document.querySelectorAll('[data-gedit]').forEach(b => b.onclick = () => {
     const g = S.goals.get(b.dataset.gedit); editId = g.id; const el = f.elements;
     el.emoji.value = g.emoji || '🎯'; el.title.value = g.title; el.note.value = g.note || ''; el.recurring.checked = !!g.recurring;
@@ -5710,6 +5736,7 @@ async function liveRefresh(){
     try{ acctEligNotify(); }catch(e){}
     try{ updNavRun(); }catch(e){}
     try{ goalDueNotify(); }catch(e){}
+    try{ ensureRecurring(); }catch(e){}
     if(!vis) return;
     const n = await autoRun(), busy = document.querySelector('dialog[open]') || document.querySelector('.su-skip') || document.querySelector('.sx-val.dirty') || S.drawerOpen || document.activeElement?.matches?.('input,textarea,select');
     S.liveAt = Date.now();
@@ -6790,6 +6817,7 @@ document.getElementById('csvFile').onchange = async ev => {
   if(CONFIGURED && await autoRun()){ render(); refreshDock?.(); }
   if(CONFIGURED) suWatchChanges(true);
   if(CONFIGURED) backfillTrades();
+  if(CONFIGURED) ensureRecurring();
   if(CONFIGURED) setTimeout(acctEligNotify, 1500);
   if(CONFIGURED) setTimeout(() => { try{ goalDueNotify(); }catch(e){} }, 2000);
 })();
