@@ -5709,21 +5709,20 @@ const qaDock = (() => { const d = document.createElement('div'); d.className = '
 function refreshDock(){
   if(!CONFIGURED){ qaDock.innerHTML = ''; return; }
   const n = pendingList().length;
-  qaDock.innerHTML = `${n ? `<button class="qa-pend" id="qaPend" title="Trades to complete">⏳ <b>${n}</b><span class="qa-l"> trade${n>1 ? 's' : ''} to complete</span></button>` : ''}
-    <button class="qa-fab" id="qaFab" title="Quick add trade (T)" aria-label="Quick add trade"><span class="qa-plus">+</span><span class="qa-l">Trade</span></button>`;
+  qaDock.innerHTML = `<button class="qa-fab" id="qaFab" title="Quick add trade (T)" aria-label="Quick add trade"><span class="qa-plus">+</span><span class="qa-l">Trade</span></button>`;
   qaDock.querySelector('#qaFab').onclick = openQuickAdd;
   qaDock.querySelector('#qaPend')?.addEventListener('click', openPending);
   /* desktop: the same two buttons live in the sidebar, so nothing floats over the page buttons */
   const sq = document.getElementById('sideQa');
   if(sq){ sq.innerHTML = `<button class="sq-add" id="sqAdd" title="Quick add trade (T)">${'<span class="qa-plus">+</span>'}<span class="side-l">New trade</span></button>
-      ${n ? `<button class="sq-pend" id="sqPend" title="${n} trade${n>1 ? 's' : ''} to complete">⏳<b>${n}</b><span class="side-l">to complete</span></button>` : ''}`;
+`;
     sq.querySelector('#sqAdd').onclick = openQuickAdd; sq.querySelector('#sqPend')?.addEventListener('click', openPending); }
 }
 const qaDlg = document.getElementById('qaDlg');
 function openQuickAdd(){
   const now = new Date(), Q = { pair:S.pair, dir:null, tf:null, accts:new Set() };
   const accs = [...S.accounts.values()].filter(a => (a.status||'active')==='active');
-  qaDlg.innerHTML = `<div class="dlg-head"><h2>Quick trade</h2><p class="muted" style="font-size:13px;margin-top:4px">Just the basics now — the rest later. It stays in ⏳ until you complete it.</p></div>
+  qaDlg.innerHTML = `<div class="dlg-head"><h2>Quick trade</h2><p class="muted" style="font-size:13px;margin-top:4px">Just the basics now — session, R and profit fill in by themselves.</p></div>
     <div class="dlg-body qa">
       <div><span class="lbl">Pair</span><input id="qaQ" class="inp" autocomplete="off" placeholder="Search — eurj, gbpusd, gold…" style="margin-bottom:8px"><div class="tc" id="qaPairs"></div></div>
       <div class="g2">
