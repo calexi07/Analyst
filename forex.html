@@ -1184,6 +1184,22 @@
   .lvr-ic{ font-weight:900; }
   .lvr-live{ display:grid; line-height:1.1; } .lvr-live b{ font-family:'Bricolage Grotesque',sans-serif; font-size:20px; font-weight:800; } .lvr-live small{ font-size:11.5px; font-weight:700; color:var(--muted); }
   .lvr-live.up b{ color:var(--pos); } .lvr-live.dn b{ color:var(--neg); }
+  .pp{ margin:0 0 12px; border:1px solid var(--line); border-radius:16px; background:var(--surface); }
+  .pp > summary{ list-style:none; cursor:pointer; display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; padding:11px 14px; }
+  .pp > summary::-webkit-details-marker{ display:none; }
+  .pp > summary::before{ content:'▸'; color:var(--muted); transition:transform .15s; } .pp[open] > summary::before{ transform:rotate(90deg); }
+  .pp-t{ font-weight:800; } .pp-h{ margin-left:auto; font-size:12px; font-weight:600; color:var(--muted); }
+  .pp-n{ font-size:11.5px; font-weight:800; padding:2px 8px; border-radius:7px; background:var(--surface-2); color:var(--muted); }
+  .pp-n.on{ background:color-mix(in srgb,var(--pos) 16%,transparent); color:var(--pos); } .pp-n.man{ background:color-mix(in srgb,var(--amber) 16%,transparent); color:var(--amber); }
+  .pp-g{ display:grid; grid-template-columns:72px 1fr; gap:8px; padding:4px 14px 10px; align-items:start; }
+  .pp-l{ font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); padding-top:6px; }
+  .pp-row{ display:flex; flex-wrap:wrap; gap:6px; }
+  .pp-c{ display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-size:12px; }
+  .pp-c b{ font-weight:800; } .pp-c b em{ font-style:normal; color:var(--muted); } .pp-c small{ font-size:10px; color:var(--muted); font-weight:700; }
+  .pp-c i{ font-style:normal; font-size:10px; font-weight:800; color:var(--amber); }
+  .pp-c.bull span{ color:var(--pos); } .pp-c.bear span{ color:var(--neg); } .pp-c.off{ opacity:.55; } .pp-c.off.man{ opacity:.85; }
+  .pp-c.man{ border-color:color-mix(in srgb,var(--amber) 55%,var(--line)); } .pp-c.sel{ outline:2px solid var(--accent); }
+  .pp-ed{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin:0 14px 10px; padding:10px 12px; border-radius:12px; background:var(--surface-2); border:1px dashed var(--line); }
   .lvr-acc{ display:inline-flex; align-items:center; gap:4px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; font-weight:700; padding:2px 8px; border-radius:7px; border:1px dashed var(--line); background:none; color:var(--muted); }
   .lvr-acc.on{ border-style:solid; border-color:color-mix(in srgb,var(--info) 50%,var(--line)); color:var(--info); background:color-mix(in srgb,var(--info) 10%,transparent); }
   .lvr-acc:hover{ color:var(--ink); border-color:var(--muted); }
@@ -4270,7 +4286,7 @@ async function loadSignals(){
     return;
   }
   if(!S.signalsMissing) await loadCandles();
-  try{ const { data } = await sb.from('do_settings').select('*').range(0, 999); (data || []).forEach(r => { if(['engine','hb_1m','hb_15m','hb_1H','hb_4H'].includes(r.key)) S.settings[r.key] = r.value; }); }catch(e){ /* keep what we have */ }
+  try{ const { data } = await sb.from('do_settings').select('*').range(0, 999); (data || []).forEach(r => { if(['engine','hb_1m','hb_15m','hb_1H','hb_4H','pair_override'].includes(r.key)) S.settings[r.key] = r.value; }); }catch(e){ /* keep what we have */ }
 }
 /* the server engine (tv-signal) is running → it does the auto-take / auto-close; the browser only shows */
 const engineOn = () => { const at = S.settings?.engine?.at; return !!at && Date.now() - tms(at) < 40*60e3; };
@@ -4332,6 +4348,34 @@ const hbOn = tf => Date.now() - hbSet(tf) < 4*864e5 || [...S.candleIdx.entries()
 function hbLast(tf){ let m = hbSet(tf); S.candleIdx.forEach((a, k) => { if(k.endsWith('|'+tf) && a.length) m = Math.max(m, a[a.length-1].t); }); return m ? m + (TF_MS[tf] || 0) : 0; }
 const suAutoClose = () => (S.settings?.su_autoclose ?? ls.get('do_su_autoclose', true)) !== false;
 const suAuto = () => (S.settings?.su_auto ?? ls.get('do_su_auto', true)) !== false;   /* auto-take the trade when the heartbeat sees the retest */
+/* pairs panel (top of Setups): which pairs give setups this week, from the weekly bias or changed by you */
+function pairPanel(){
+  const now = new Date(), k = isoWeek(now), pairs = [...new Set([...allPairs(), 'XAUUSD'])];
+  const rows = pairs.map(p => { const raw = biasRaw(p, now), o = pairOv(p, now), eff = biasAt(p, now)?.bias;
+    return { p, raw, o, on: eff==='bullish' || eff==='bearish', eff }; });
+  const on = rows.filter(r => r.on), off = rows.filter(r => !r.on), man = rows.filter(r => r.o).length;
+  const chip = r => { const b = r.eff, arrow = b==='bullish' ? '▲' : b==='bearish' ? '▼' : '–';
+    return `<button class="pp-c ${r.on ? (b==='bullish' ? 'bull' : 'bear') : 'off'} ${r.o ? 'man' : ''} ${S.su.ppEdit===r.p ? 'sel' : ''}" data-ppe="${r.p}" title="${r.o ? (r.o.bias==='off' ? 'Deactivated' : 'Activated') + ' by you ' + hhmm(r.o.from) + ' · weekly bias: ' + (BIAS_LBL[r.raw?.bias] || 'none') : 'From the weekly bias' + (r.raw?.conviction ? ' · ' + r.raw.conviction : '')}">
+      <b>${base(r.p)}<em>${quote(r.p)}</em></b><span>${arrow}</span>${r.o ? `<i>${r.o.bias==='off' ? 'off · manual' : 'manual'}</i>` : r.raw?.conviction && r.on ? `<small>${esc(r.raw.conviction)}</small>` : ''}</button>`; };
+  const ed = S.su.ppEdit ? rows.find(r => r.p===S.su.ppEdit) : null;
+  return `<details class="pp" ${ls.get('do_pp_open', false) ? 'open' : ''} id="ppBox">
+    <summary><span class="pp-t">Pairs this week</span><span class="pp-n on">${on.length} active</span><span class="pp-n">${off.length} inactive</span>${man ? `<span class="pp-n man">${man} changed by you</span>` : ''}<span class="pp-h">W${k.week} · click a pair to switch it on / off</span></summary>
+    ${ed ? `<div class="pp-ed"><b>${ed.p}</b><span class="muted">weekly bias: ${BIAS_LBL[ed.raw?.bias] || 'none'}${ed.raw?.conviction ? ' ' + esc(ed.raw.conviction) : ''}</span>
+      <div class="seg"><button data-ppset="${ed.p}|bullish" aria-pressed="${ed.eff==='bullish'}">▲ Bullish (longs)</button><button data-ppset="${ed.p}|bearish" aria-pressed="${ed.eff==='bearish'}">▼ Bearish (shorts)</button><button data-ppset="${ed.p}|off" aria-pressed="${!ed.on}">Off</button></div>
+      ${ed.o ? `<button class="bt" data-ppset="${ed.p}|reset">↺ Back to the weekly bias</button>` : ''}
+      <span class="muted" style="font-size:12px">Applies from now until the end of week ${k.week}; setups already on the board stay.</span></div>` : ''}
+    <div class="pp-g"><div class="pp-l">Active</div><div class="pp-row">${on.map(chip).join('') || '<span class="muted">none</span>'}</div></div>
+    <div class="pp-g"><div class="pp-l">Inactive</div><div class="pp-row">${off.map(chip).join('') || '<span class="muted">none</span>'}</div></div>
+  </details>`;
+}
+async function setPairOv(pair, what){
+  const ov = { ...(S.settings?.pair_override || {}) }, k = isoWeek(new Date());
+  if(what==='reset') delete ov[pair];
+  else { const raw = biasRaw(pair, new Date())?.bias; if(what===raw && !ov[pair]) return; ov[pair] = { bias:what, from:new Date().toISOString(), year:k.year, week:k.week }; if(what===raw) delete ov[pair]; }
+  Object.keys(ov).forEach(p => { if(ov[p].year!==k.year || ov[p].week!==k.week) delete ov[p]; });   /* last week's changes expire */
+  await saveSettingKey('pair_override', ov); renderMain();
+  toast(what==='reset' ? `${pair}: back to the weekly bias` : what==='off' ? `${pair} switched off — no new setups this week` : `${pair} active · ${what==='bullish' ? 'longs' : 'shorts'} from now`);
+}
 async function saveSettingKey(key, value){
   S.settings[key] = value;
   try{ const { error } = await sb.from('do_settings').upsert({ key, value }, { onConflict:'key' }); if(error) throw error; }
@@ -4340,7 +4384,12 @@ async function saveSettingKey(key, value){
 const SU_DEF = { forming:24, formed:24 };   /* hours a stage may wait before it expires */
 const suWin = () => ({ ...SU_DEF, ...(S.settings?.setup_windows || ls.get('do_su_win', {})) });
 const tms = v => new Date(v).getTime();
-function biasAt(pair, at){ const k = isoWeek(new Date(at)); return S.weekly.get(wk(pair, k.year, k.week)) || null; }
+function biasRaw(pair, at){ const k = isoWeek(new Date(at)); return S.weekly.get(wk(pair, k.year, k.week)) || null; }
+/* your manual change for this week (set on the Setups page): from the moment you set it, the pair is on (bullish / bearish) or off */
+function pairOv(pair, at){ const o = (S.settings?.pair_override || {})[pair]; if(!o) return null; const k = isoWeek(new Date(at));
+  return o.year===k.year && o.week===k.week && tms(at) >= tms(o.from) ? o : null; }
+function biasAt(pair, at){ const raw = biasRaw(pair, at), o = pairOv(pair, at); if(!o) return raw;
+  return o.bias==='off' ? { ...(raw || {}), bias:null, manual:'off' } : { ...(raw || {}), bias:o.bias, conviction:raw?.bias===o.bias ? raw.conviction : 'manual', manual:'on' }; }
 function mergeLiq(liqs, dir){
   const last = liqs[liqs.length-1], ex = liqs.map(x => x.extreme ?? x.level).filter(v => v!=null).map(Number);
   return { ...last, extreme: ex.length ? (dir==='Short' ? Math.max(...ex) : Math.min(...ex)) : last.extreme, merged: liqs.length };
@@ -5274,6 +5323,7 @@ function renderSetups(){
         <p class="sx-sub">Bias, liquidity, break, retest, trade. Only setups in the direction of your weekly bias.</p></div>
       <div class="sx-top-r">${sxStatus()}${fresh.length ? `<button class="btn sx-allseen" id="suAllSeen" title="Mark every new card as seen">✓ ${fresh.length} new, mark seen</button>` : ''}<span class="sx-live-at" id="suLive" title="The page refreshes itself every 30 seconds">${liveAgo()}</span><button class="btn" id="suRefresh" title="Load the latest signals now">↻</button></div>
     </header>
+    ${pairPanel()}
     <nav class="sx-nav" role="tablist" aria-label="Setups pages">
       <button role="tab" data-supage="live" aria-selected="${page==='live'}"><i class="sx-nav-dot ${toVal ? 'warn' : act.length ? 'on' : ''}"></i>Live board<em>${act.length}</em>${toVal ? `<b class="sx-nav-v">${toVal} to validate</b>` : ''}</button>
       <button role="tab" data-supage="history" aria-selected="${page==='history'}">History<em>${takenN}</em></button>
@@ -5817,6 +5867,9 @@ function bindSetups(m, all){
     renderMain(); toast(`${s.pair} ${s.tf} → Step 4 · trade logged`); openTradeModal(t.id); });
   m.querySelectorAll('[data-sukeep]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const [key, sl, tp] = b.dataset.sukeep.split('|');
     await suValSet(key, r => ({ ...r, keepPlan:{ sl:Number(sl), tp:Number(tp) } })); renderMain(); toast('Kept your SL / TP'); });
+  m.querySelector('#ppBox')?.addEventListener('toggle', e => ls.set('do_pp_open', e.target.open));
+  m.querySelectorAll('[data-ppe]').forEach(b => b.onclick = () => { S.su.ppEdit = S.su.ppEdit===b.dataset.ppe ? null : b.dataset.ppe; renderMain(); });
+  m.querySelectorAll('[data-ppset]').forEach(b => b.onclick = async () => { const [p, w] = b.dataset.ppset.split('|'); await setPairOv(p, w); });
   m.querySelectorAll('[data-suacc]').forEach(b => b.onclick = ev => { ev.stopPropagation(); S.su.accFor = S.su.accFor===b.dataset.suacc ? null : b.dataset.suacc; renderMain(); });
   m.querySelectorAll('[data-suacct]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const [key, id] = b.dataset.suacct.split('|'); const s = byKey.get(key); if(s) await suToggleAcct(s, id); });
   m.querySelectorAll('[data-suprio]').forEach(b => b.onclick = async ev => { ev.stopPropagation(); const [key, lv] = b.dataset.suprio.split('|');
