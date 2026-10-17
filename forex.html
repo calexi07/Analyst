@@ -1799,6 +1799,13 @@ const dk = (p,d) => `${p}|${d}`, wk = (p,y,w) => `${p}|${y}|${w}`, nk = (c,d) =>
 function firstOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
 function iso(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function parseISO(s){ const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); }
+/* "Finish week" on Today: during the weekend you can switch the site to next week early; on Monday it is next week anyway */
+function planDate(){
+  const a = S.settings?.week_ahead; if(!a?.year) return new Date();
+  const mon = mondayOf(a.year, a.week), now = new Date();
+  return now < mon && mon - now < 3*864e5 ? new Date(mon.getTime() + 60e3) : now;
+}
+const weekAhead = () => planDate() > new Date();
 function isoWeek(date){
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const day = d.getUTCDay() || 7; d.setUTCDate(d.getUTCDate() + 4 - day);
@@ -1815,7 +1822,7 @@ const pct = n => n==null ? '' : `${n>0?'+':''}${Number(n).toFixed(2)}%`;
 const pipSize = p => p.startsWith('XAU') ? 0.1 : p.includes('JPY') ? 0.01 : p.startsWith('XAG') ? 0.01 : 0.0001;
 const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 function toast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(()=> t.hidden = true, 2600); }
-function currentWeekBias(p){ const w = isoWeek(new Date()); return S.weekly.get(wk(p,w.year,w.week))?.bias || ''; }
+function currentWeekBias(p){ const w = isoWeek(planDate()); return S.weekly.get(wk(p,w.year,w.week))?.bias || ''; }
 
 /* ---------- data ---------- */
 async function fetchAll(table){
@@ -1971,11 +1978,11 @@ function todayGapCount(){
   return n;
 }
 const CONV_TIERS = [['high','High'],['medium','Medium'],['low','Low'],['','Not rated']];
-function curWeekRec(p){ const w = isoWeek(new Date()); return S.weekly.get(wk(p, w.year, w.week)) || null; }
+function curWeekRec(p){ const w = isoWeek(planDate()); return S.weekly.get(wk(p, w.year, w.week)) || null; }
 function pairDiv(r){ const d = det(r); return d.base_score!=null && d.quote_score!=null ? Math.abs(d.base_score - d.quote_score) : null; }
 function renderStrip(){
   const nav = document.getElementById('pairs'); if(!nav) return;
-  const compact = ls.get('do_board_compact', window.innerWidth < 720), cw = isoWeek(new Date());
+  const compact = ls.get('do_board_compact', window.innerWidth < 720), cw = isoWeek(planDate());
   const info = allPairs().map(p => { const r = curWeekRec(p); return { p, bias: r?.bias || 'none', conv: r?.conviction || '', div: pairDiv(r) }; });
   const byDiv = (a, b) => (b.div ?? -1) - (a.div ?? -1) || a.p.localeCompare(b.p);
   const chip = x => `<button class="pc b-${x.bias}" data-pair="${x.p}" aria-current="${x.p===S.pair}" title="${x.p}${x.bias!=='none' ? ` · ${BIAS_LBL[x.bias]}${x.conv ? ', '+CONV_LBL[x.conv] : ''}` : ''}${x.div!=null ? ` · divergence ${x.div}` : ''}">
@@ -3291,7 +3298,7 @@ const GOAL_SOURCES = {
   days_week:   ['Days observed this week', 'days'],
 };
 const GOAL_EMOJIS = ['🎯','💸','🏆','📈','🧠','📚','💪','🧘','⚡','🏠','💡','🔥','🛡️','⏰','✅'];
-const goalWeek = () => { if(!S.gw){ const w = isoWeek(new Date()); S.gw = { y:w.year, w:w.week }; } return S.gw; };
+const goalWeek = () => { if(!S.gw){ const w = isoWeek(planDate()); S.gw = { y:w.year, w:w.week }; } return S.gw; };
 function weekRange(y, w){ const m = mondayOf(y, w), e = new Date(m); e.setDate(m.getDate()+6); return [iso(m), iso(e)]; }
 function goalAuto(g, y, w){
   const [a, b] = weekRange(y, w), inW = d => d >= a && d <= b;
@@ -4350,7 +4357,7 @@ const suAutoClose = () => (S.settings?.su_autoclose ?? ls.get('do_su_autoclose',
 const suAuto = () => (S.settings?.su_auto ?? ls.get('do_su_auto', true)) !== false;   /* auto-take the trade when the heartbeat sees the retest */
 /* pairs panel (top of Setups): which pairs give setups this week, from the weekly bias or changed by you */
 function pairPanel(){
-  const now = new Date(), k = isoWeek(now), pairs = [...new Set([...allPairs(), 'XAUUSD'])];
+  const now = planDate(), k = isoWeek(now), pairs = [...new Set([...allPairs(), 'XAUUSD'])];
   const rows = pairs.map(p => { const raw = biasRaw(p, now), o = pairOv(p, now), eff = biasAt(p, now)?.bias;
     return { p, raw, o, on: eff==='bullish' || eff==='bearish', eff }; });
   const on = rows.filter(r => r.on), off = rows.filter(r => !r.on), man = rows.filter(r => r.o).length;
@@ -4369,9 +4376,9 @@ function pairPanel(){
   </details>`;
 }
 async function setPairOv(pair, what){
-  const ov = { ...(S.settings?.pair_override || {}) }, k = isoWeek(new Date());
+  const ov = { ...(S.settings?.pair_override || {}) }, k = isoWeek(planDate());
   if(what==='reset') delete ov[pair];
-  else { const raw = biasRaw(pair, new Date())?.bias; if(what===raw && !ov[pair]) return; ov[pair] = { bias:what, from:new Date().toISOString(), year:k.year, week:k.week }; if(what===raw) delete ov[pair]; }
+  else { const raw = biasRaw(pair, planDate())?.bias; if(what===raw && !ov[pair]) return; ov[pair] = { bias:what, from:new Date().toISOString(), year:k.year, week:k.week }; if(what===raw) delete ov[pair]; }
   Object.keys(ov).forEach(p => { if(ov[p].year!==k.year || ov[p].week!==k.week) delete ov[p]; });   /* last week's changes expire */
   await saveSettingKey('pair_override', ov); renderMain();
   toast(what==='reset' ? `${pair}: back to the weekly bias` : what==='off' ? `${pair} switched off — no new setups this week` : `${pair} active · ${what==='bullish' ? 'longs' : 'shorts'} from now`);
@@ -6221,6 +6228,16 @@ function bindPairSwitcher(panel, ds){
   const c = s.querySelector('[aria-current="true"]');
   if(c){ s.style.scrollBehavior = 'auto'; s.scrollLeft += c.getBoundingClientRect().left - s.getBoundingClientRect().left - s.clientWidth/2 + c.offsetWidth/2; s.style.scrollBehavior = ''; }
 }
+async function finishWeek(on){
+  if(!on){ await saveSettingKey('week_ahead', null); S.desk.k = null; S.gw = null; render(); return toast(`Back to week ${isoWeek(new Date()).week}`); }
+  const n = isoWeek(new Date(Date.now() + 3*864e5)), cur = isoWeek(new Date());
+  if(n.week===cur.week && n.year===cur.year) return toast('Finish week works on Saturday and Sunday.');
+  const loaded = [...S.weekly.values()].filter(r => r.year===n.year && r.week===n.week && r.bias).length;
+  if(!loaded){ alert(`No fundamentals for week ${n.week} yet.\n\nImport the analysis for week ${n.week} first (Prompts → Import into Daily Observer, or Import / export), then press Finish week again.`); return; }
+  if(!confirm(`Finish week ${cur.week}?\n\nThe site switches to week ${n.week} now: ${loaded} pairs with a bias, the Desk, the pairs strip, Goals and the Setups pairs panel. On Monday it would switch by itself anyway.`)) return;
+  await saveSettingKey('week_ahead', { year:n.year, week:n.week, at:new Date().toISOString() });
+  S.desk.k = null; S.gw = null; render(); toast(`🏁 Week ${n.week} is on · ${loaded} pairs with a bias`);
+}
 function renderToday(){
   const now = new Date(), today = iso(now), k = isoWeek(now), [wFrom, wTo] = weekRange(k.year, k.week);
   const weekend = now.getDay()===0 || now.getDay()===6, last = weekend || now.getHours() < 12 ? prevWeekday(weekend ? iso(new Date(now.getTime()+864e5)) : today) : today;
@@ -6262,7 +6279,7 @@ function renderToday(){
       <div><span class="kick">${WD[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]} · Week ${k.week}</span>
         <div class="pairtitle" style="margin-top:6px">${hello}, Alessio.</div>
         <p class="muted" style="font-weight:600;margin-top:6px">${weekend ? 'Weekend — time to review the week and prepare the next one.' : open.length ? `You have ${open.length} open trade${open.length>1?'s':''} to manage.` : 'Flat. Wait for your setup.'}</p></div>
-      <div class="td-actions">${weekend ? `<button class="btn btn-primary" data-act="prompts">Weekly review ${ico('spark',14)}</button>` : `<button class="btn btn-primary" data-act="gap">Fill next gap →</button>`}<button class="btn" data-act="journal">Open journal</button></div>
+      <div class="td-actions">${weekend ? (weekAhead() ? `<button class="btn" data-act="unfinish" title="Show week ${isoWeek(new Date()).week} again">↩ Back to week ${isoWeek(new Date()).week}</button>` : `<button class="btn" data-act="finish" title="Switch the whole site to next week now, with the fundamentals you loaded">🏁 Finish week ${isoWeek(new Date()).week} → ${isoWeek(new Date(Date.now() + 3*864e5)).week}</button>`) : ''}${weekend ? `<button class="btn btn-primary" data-act="prompts">Weekly review ${ico('spark',14)}</button>` : `<button class="btn btn-primary" data-act="gap">Fill next gap →</button>`}<button class="btn" data-act="journal">Open journal</button></div>
     </div>
     <div class="pl" id="tdBoard"></div>
     <div class="tj-kpis">
@@ -6304,6 +6321,7 @@ function renderToday(){
   m.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { S.pair = b.dataset.pick; ls.set('do_pair', S.pair); goView('journal'); });
   m.querySelectorAll('[data-cell]').forEach(b => b.onclick = async () => { const [p, ds] = b.dataset.cell.split('|'); S.view = 'desk'; ls.set('do_view', 'desk'); S.desk.k = null; render(); openDeskCell(p, ds); });
   m.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => { const a = b.dataset.act;
+    if(a==='finish' || a==='unfinish') return finishWeek(a==='finish');
     if(a==='journal') goView('journal'); else if(a==='data') openData(); else if(a==='prompts') goView('prompts');
     else { S.desk.k = null; const g = nextGap(); if(g){ S.td.day = g.ds; openPairDay(g.p, g.ds); } else toast('No gaps this week 🎉'); } });
   if(S.sel) renderPanel();
@@ -6311,7 +6329,7 @@ function renderToday(){
 
 /* ---------- Desk: coverage matrix + editor ---------- */
 S.desk = { k:null, filter: ls.get('do_desk_f', 'all'), ccy: ls.get('do_desk_ccy', '') };
-function deskWeek(){ if(!S.desk.k){ const k = isoWeek(new Date()); S.desk.k = { y:k.year, w:k.week }; } return S.desk.k; }
+function deskWeek(){ if(!S.desk.k){ const k = isoWeek(planDate()); S.desk.k = { y:k.year, w:k.week }; } return S.desk.k; }
 const trackedSet = () => new Set(ls.get('do_tracked', []));
 function dayCov(e){
   const parts = { close: e?.daily_change!=null, d: !!e?.daily_obs, h4: !!e?.h4_obs, h1: !!e?.h1_obs };
