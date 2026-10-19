@@ -800,6 +800,8 @@
   .tjx-more em{ font-style:normal; margin-left:4px; padding:0 6px; border-radius:6px; background:var(--accent); color:var(--on-accent); font-size:11px; }
   .tjx-more.on{ border-color:var(--accent); }
   .tjx-adv{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; padding:10px; border-radius:14px; border:1px dashed var(--line); } .tjx-adv[hidden]{ display:none; }
+  .tjx-pct{ font-style:normal; font-size:22px; margin-left:12px; opacity:.85; }
+  .tjx-bal{ font-size:13px; font-weight:700; color:var(--muted); } .tjx-bal b{ color:var(--ink); font-weight:800; } .tjx-bal span{ font-weight:600; }
   .tjx-mini{ display:flex; flex-wrap:wrap; gap:4px 16px; margin-top:4px; padding-top:10px; border-top:1px solid var(--line); font-size:12.5px; font-weight:600; color:var(--muted); } .tjx-mini b{ font-weight:800; color:var(--ink); } .tjx-mini b.pos{ color:var(--pos); } .tjx-mini b.neg{ color:var(--neg); }
   .hp-side.tjx-side{ grid-template-columns:repeat(2,minmax(0,1fr)); } .hp-side.tjx-side .ab-k b{ font-size:30px; }
   .tjx-row{ display:grid; grid-template-columns:minmax(0,1.7fr) minmax(0,1fr); gap:14px; margin-bottom:14px; align-items:start; } .tjx-row.b{ grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); }
@@ -6861,7 +6863,7 @@ function openTradeShare(e){
 }
 
 /* ---------- Trades: full journal ---------- */
-S.tj = { period: ls.get('do_tj_period','all'), metric: ls.get('do_tj_metric','usd'), dir:'all', res:'all', pair:'all', acct:'all', tf:'all', sess:'all', tag:'all', q:'', sort:'new', open:null };
+S.tj = { period: ls.get('do_tj_period','all'), metric: ls.get('do_tj_metric2','model'), dir:'all', res:'all', pair:'all', acct:'all', tf:'all', sess:'all', tag:'all', q:'', sort:'new', open:null };
 function tjAll(){ return [...S.trades.values()].map(t => tjInfer(tradeFull(t))); }
 const tjIsOpen = e => !e.result && !e.exit_date;
 /* a trade with an exit date but no W/L set is still closed — infer the result from P/L */
@@ -6889,7 +6891,7 @@ function tjStats(list){
   const closed = list.filter(e => ['W','L','BE'].includes(e.result)).sort((a,b) => (exitDay(a)+(a.exit_time||'')).localeCompare(exitDay(b)+(b.exit_time||'')));
   const W = closed.filter(e => e.result==='W'), L = closed.filter(e => e.result==='L');
   const sum = (a, f) => a.reduce((t,e) => t + (Number(e[f])||0), 0);
-  const val = e => S.tj.metric==='usd' ? Number(e.profit)||0 : Number(e.pips)||0;
+  const val = e => S.tj.metric!=='pips' ? Number(e.profit)||0 : Number(e.pips)||0;
   let cum = 0, peak = 0, dd = 0; const curve = closed.map(e => { cum += val(e); peak = Math.max(peak, cum); dd = Math.max(dd, peak - cum); return { d:exitDay(e), v:+cum.toFixed(2), e }; });
   let best = 0, run = 0, cur = 0, curType = ''; closed.forEach(e => { if(e.result==='W'){ run++; best = Math.max(best, run); } else if(e.result==='L') run = 0; });
   for(let i = closed.length-1; i >= 0; i--){ const r = closed[i].result; if(r==='BE') continue; if(!curType) curType = r; if(r===curType) cur++; else break; }
@@ -6902,9 +6904,9 @@ function tjStats(list){
     avgW: W.length ? sum(W,'profit')/W.length : null, avgL: L.length ? sum(L,'profit')/L.length : null,
     curve, dd, best, cur, curType, avgHold: mins.length ? Math.round(mins.reduce((a,b) => a+b, 0)/mins.length) : null };
 }
-const tjv = v => S.tj.metric==='usd' ? `${v>0?'+':''}${money(v)}` : `${v>0?'+':''}${fmt(v,1)} pips`;
+const tjv = v => S.tj.metric!=='pips' ? `${v>0?'+':''}${money(v)}` : `${v>0?'+':''}${fmt(v,1)} pips`;
 function tjHeat(list){
-  const by = {}; list.filter(e => ['W','L','BE'].includes(e.result)).forEach(e => { const d = exitDay(e); by[d] = (by[d]||0) + (S.tj.metric==='usd' ? Number(e.profit)||0 : Number(e.pips)||0); });
+  const by = {}; list.filter(e => ['W','L','BE'].includes(e.result)).forEach(e => { const d = exitDay(e); by[d] = (by[d]||0) + (S.tj.metric!=='pips' ? Number(e.profit)||0 : Number(e.pips)||0); });
   const cur = isoWeek(new Date()), weeks = []; for(let i = 15; i >= 0; i--){ const m = mondayOf(cur.year, cur.week); m.setDate(m.getDate() - 7*i); weeks.push(m); }
   const max = Math.max(1, ...Object.values(by).map(Math.abs));
   return `<div class="tj-heat">${['Mon','Tue','Wed','Thu','Fri'].map((l, r) => `<span class="tj-hl">${l}</span>${weeks.map(m => { const d = new Date(m); d.setDate(m.getDate()+r); const ds = iso(d), v = by[ds];
@@ -6912,24 +6914,27 @@ function tjHeat(list){
     return `<i style="${st}" title="${fmtDayShort(ds)}${v!=null ? ' · '+tjv(+v.toFixed(2)) : ''}"></i>`; }).join('')}`).join('')}
     ${'<span></span>'+weeks.map((m,i) => `<span class="tj-hw">${i%2===0 ? 'W'+isoWeek(m).week : ''}</span>`).join('')}</div>`;
 }
+/* model account: the strategy on a fixed $10,000 account, always 1% risk — win = +2% (TP 2R), loss = −1% (SL), BE = 0 */
+const MODEL_SIZE = 10000;
+const modelize = e => ['W','L','BE'].includes(e.result) ? { ...e, profit: e.result==='W' ? MODEL_SIZE*.02 : e.result==='L' ? -MODEL_SIZE*.01 : 0, r_multiple: e.result==='W' ? 2 : e.result==='L' ? -1 : 0 } : e;
 function renderTrades(){
-  const T = S.tj, list = tjFiltered(), st = tjStats(list), all = tjAll();
+  const T = S.tj, list0 = tjFiltered(), model = T.metric==='model', list = model ? list0.map(modelize) : list0, st = tjStats(list), all = tjAll();
   const pairs = [...new Set(all.map(e => e.pair))].sort(), tags = [...new Set(all.flatMap(e => e.tags||[]))].sort(), sess = [...new Set(all.map(e => e.session).filter(Boolean))];
   const sel = (id, v, opts) => `<select class="inp tj-sel" id="${id}">${opts.map(([k,l]) => `<option value="${esc(k)}" ${v===k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
   const seg = (k, opts) => `<div class="seg" role="group">${opts.map(([v,l]) => `<button data-tj="${k}" data-v="${v}" aria-pressed="${T[k]===v}">${l}</button>`).join('')}</div>`;
-  const sorted = [...list].sort((a,b) => {
+  const sorted = [...list0].sort((a,b) => {
     if(T.sort==='profit') return (Number(b.profit)||0) - (Number(a.profit)||0);
     if(T.sort==='pips') return (Number(b.pips)||0) - (Number(a.pips)||0);
     if(T.sort==='old') return a.day.localeCompare(b.day);
     return (tjIsOpen(b) - tjIsOpen(a)) || b.day.localeCompare(a.day); });
-  const byPair = groupStats(st.closed, e => e.pair).map(g => ({ ...g, v: T.metric==='usd' ? g.profit : g.pips })).sort((a,b) => b.v - a.v);
+  const byPair = groupStats(st.closed, e => e.pair).map(g => ({ ...g, v: T.metric!=='pips' ? g.profit : g.pips })).sort((a,b) => b.v - a.v);
   const maxAbs = Math.max(1, ...byPair.map(g => Math.abs(g.v)));
   const kpi = (l, v, c='', sub='') => `<div class="tj-kpi"><span class="kick">${l}</span><b class="${c}">${v}</b>${sub ? `<span class="muted">${sub}</span>` : ''}</div>`;
   document.getElementById('main').innerHTML = `
     <div class="flex flex-wrap items-end gap-4 mb-4">
       <div><div class="pairtitle">Trades</div><div class="muted mt-1" style="font-weight:600">Your complete trading journal — every position, every account, one place.</div></div>
       <div class="flex flex-wrap items-center gap-2 ml-auto">
-        ${seg('metric', [['usd','$'],['pips','Pips']])}
+        ${seg('metric', [['model','Model 1%'],['usd','$ real'],['pips','Pips']])}
         ${seg('period', [['30','30d'],['90','90d'],['ytd','YTD'],['all','All']])}
       </div>
     </div>
@@ -6947,10 +6952,11 @@ function renderTrades(){
       ${sel('tjSess', T.sess, [['all','All sessions'], ...sess.map(s => [s,s])])}
       ${sel('tjTag', T.tag, [['all','All tags'], ...tags.map(t => [t,'#'+t])])}
     </div>
-    ${(() => { const net = T.metric==='usd' ? st.profit : st.pips, netR = st.closed.reduce((x, e) => x + (Number(e.r_multiple) || 0), 0);
+    ${(() => { const net = T.metric!=='pips' ? st.profit : st.pips, netR = st.closed.reduce((x, e) => x + (Number(e.r_multiple) || 0), 0);
       return `<section class="hp-hero">
-      <div class="hp-main"><span class="kick">Net result · ${{ '30':'last 30 days', '90':'last 90 days', ytd:'this year', all:'all time' }[T.period] || ''}</span>
-        <b class="bk-big ${sgn(net)}">${tjv(+net.toFixed(2))}</b>
+      <div class="hp-main"><span class="kick">${model ? `Model account · $${(MODEL_SIZE/1000)}k · 1% risk · TP 2% · SL 1%` : T.metric==='pips' ? 'Net pips' : 'Net result · real $ on your accounts'} · ${{ '30':'last 30 days', '90':'last 90 days', ytd:'this year', all:'all time' }[T.period] || ''}</span>
+        <b class="bk-big ${sgn(net)}">${tjv(+net.toFixed(2))}${model ? `<em class="tjx-pct">${net >= 0 ? '+' : ''}${fmt(net / MODEL_SIZE * 100, 2)}%</em>` : ''}</b>
+        ${model ? `<div class="tjx-bal">Balance <b>${money(MODEL_SIZE + net)}</b> <span>from ${money(MODEL_SIZE)}</span></div>` : ''}
         <div class="bk-split"><i class="p" style="flex:${Math.max(st.W.length, .0001)}"></i><i class="n" style="flex:${st.L.length}"></i></div>
         <div class="bk-io"><span><i class="p"></i><b class="pos">${st.W.length}</b> wins</span><span><i class="n"></i><b class="neg">${st.L.length}</b> losses</span><span class="muted">${st.closed.length} closed · ${st.open.length} open · ${netR >= 0 ? '+' : ''}${fmt(netR, 2)}R</span></div>
         <div class="tjx-mini"><span>Avg win <b class="pos">${st.avgW!=null ? money(st.avgW) : '–'}</b></span><span>Avg loss <b class="neg">${st.avgL!=null ? money(st.avgL) : '–'}</b></span><span>Streak <b class="${st.curType==='W' ? 'pos' : st.curType==='L' ? 'neg' : ''}">${st.cur ? st.cur + st.curType : '–'}</b> · best ${st.best}W</span><span>Avg hold <b>${st.avgHold!=null ? fmtDur(st.avgHold) : '–'}</b></span></div></div>
@@ -6958,10 +6964,10 @@ function renderTrades(){
         <div class="ab-k ${st.wr==null ? '' : st.wr >= 33.4 ? 'up' : 'dn'}"><span>Win rate</span><b>${st.wr!=null ? fmt(st.wr,1)+'%' : '–'}</b><small>${st.W.length}W · ${st.L.length}L · BE at 33.3%</small></div>
         <div class="ab-k ${st.pf==null ? '' : st.pf >= 1 ? 'up' : 'dn'}"><span>Profit factor</span><b>${st.pf!=null ? fmt(st.pf) : '–'}</b><small>gross win ÷ gross loss</small></div>
         <div class="ab-k ${st.avgR==null ? '' : st.avgR >= 0 ? 'up' : 'dn'}"><span>Avg R</span><b>${st.avgR!=null ? (st.avgR > 0 ? '+' : '') + fmt(st.avgR) + 'R' : '–'}</b><small>expectancy per trade</small></div>
-        <div class="ab-k ${st.dd ? 'dn' : ''}"><span>Max drawdown</span><b>${st.dd ? (T.metric==='usd' ? money(-st.dd) : '-'+fmt(st.dd,1)) : '–'}</b><small>${T.metric==='usd' ? 'peak to trough $' : 'pips'}</small></div>
+        <div class="ab-k ${st.dd ? 'dn' : ''}"><span>Max drawdown</span><b>${st.dd ? (T.metric!=='pips' ? money(-st.dd) : '-'+fmt(st.dd,1)) : '–'}</b><small>${model ? (st.dd ? `−${fmt(st.dd / MODEL_SIZE * 100, 1)}% of the model account` : 'model account') : T.metric!=='pips' ? 'peak to trough $' : 'pips'}</small></div>
       </div></section>`; })()}
     <div class="tjx-row">
-      <div class="card"><h3>Equity curve <span class="muted" style="font-size:12px;font-weight:600">· ${T.metric==='usd' ? 'profit $' : 'pips'}, by exit date</span></h3>
+      <div class="card"><h3>Equity curve <span class="muted" style="font-size:12px;font-weight:600">· ${model ? 'model account $ (1% risk, 2R)' : T.metric!=='pips' ? 'real profit $' : 'pips'}, by exit date</span></h3>
         ${st.curve.length > 1 ? '<div class="chartbox" style="height:270px"><canvas id="tjEq"></canvas></div>' : '<p class="muted">Close at least two trades to draw the curve.</p>'}</div>
       <div class="card"><h3>Open positions <span class="pg-n">${st.open.length}</span></h3>
         ${st.open.length ? `<div class="td2-live">${st.open.map(e => { const lv = e.entry_price!=null ? livePL(e) : null, days = Math.max(0, Math.round((new Date() - parseISO(e.day))/864e5));
@@ -6983,7 +6989,7 @@ function renderTrades(){
       ${sorted.length ? `<div class="tj-list">${sorted.map(tjRow).join('')}</div>` : '<div class="empty"><div class="orb" aria-hidden="true"></div><p>No trades match these filters.</p></div>'}
     </div>`;
   const set = (k, v, key) => { S.tj[k] = v; if(key) ls.set(key, v); renderMain(); };
-  document.querySelectorAll('[data-tj]').forEach(b => b.onclick = () => set(b.dataset.tj, b.dataset.v, b.dataset.tj==='metric' ? 'do_tj_metric' : b.dataset.tj==='period' ? 'do_tj_period' : null));
+  document.querySelectorAll('[data-tj]').forEach(b => b.onclick = () => set(b.dataset.tj, b.dataset.v, b.dataset.tj==='metric' ? 'do_tj_metric2' : b.dataset.tj==='period' ? 'do_tj_period' : null));
   [['tjPair','pair'],['tjAcct','acct'],['tjTf','tf'],['tjSess','sess'],['tjTag','tag'],['tjSort','sort']].forEach(([id,k]) => document.getElementById(id).onchange = e => set(k, e.target.value));
   const q = document.getElementById('tjQ'); let qt; q.oninput = () => { clearTimeout(qt); qt = setTimeout(() => { S.tj.q = q.value; renderMain(); const n = document.getElementById('tjQ'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }, 250); };
   document.getElementById('tjMore')?.addEventListener('click', () => { S.tj.more = !S.tj.more; renderMain(); });
