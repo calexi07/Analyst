@@ -111,6 +111,21 @@
 
   /* calendar */
   .cal{ display:grid; grid-template-columns:124px repeat(5,minmax(0,1fr)); gap:8px; }
+  .jh{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.6fr); gap:12px; margin-bottom:16px; }
+  @media (max-width:1100px){ .jh{ grid-template-columns:1fr; } }
+  .jh-bias{ --bc:var(--muted); display:grid; align-content:center; gap:6px; padding:16px 20px; border-radius:22px; border:1px solid color-mix(in srgb,var(--bc) 45%,var(--line));
+    background:radial-gradient(130% 150% at 0% 0%, color-mix(in srgb,var(--bc) 22%,transparent), transparent 60%), var(--surface); }
+  .jh-bias.b-bullish{ --bc:var(--pos); } .jh-bias.b-bearish{ --bc:var(--neg); } .jh-bias.b-two-sided{ --bc:var(--amber); }
+  .jh-bias > b{ font-family:'Bricolage Grotesque',sans-serif; font-size:30px; font-weight:800; line-height:1; color:var(--bc); }
+  .jh-bias.b-none > b{ color:var(--muted); font-size:22px; }
+  .jh-meta{ display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; font-size:12.5px; font-weight:700; color:var(--muted); }
+  .jh-bias p{ margin:0; font-size:12.5px; line-height:1.45; color:var(--muted); }
+  .jh-tiles{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; } .jh-tiles .ab-k{ align-content:center; } .jh-tiles .ab-k b{ font-size:26px; } .jh-tiles .ab-k b em{ font-style:normal; font-size:16px; color:var(--muted); }
+  @media (max-width:700px){ .jh-tiles{ grid-template-columns:1fr 1fr; } }
+  .jh-dots{ display:flex; gap:4px; margin-top:3px; } .jh-d{ width:14px; height:14px; border-radius:4px; border:1px solid var(--line); background:var(--surface-2); padding:0; }
+  .jh-d.ok{ background:var(--pos); border-color:var(--pos); } .jh-d.no{ background:var(--neg); border-color:var(--neg); }
+  .cd.today{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent), 0 10px 30px color-mix(in srgb,var(--accent) 18%,transparent); }
+  .cd.res-W{ background:linear-gradient(180deg, var(--surface) 55%, color-mix(in srgb,var(--pos) 12%,var(--surface))); } .cd.res-L{ background:linear-gradient(180deg, var(--surface) 55%, color-mix(in srgb,var(--neg) 12%,var(--surface))); }
   .cal-h{ font-size:11px; font-weight:800; color:var(--muted); text-align:center; text-transform:uppercase; letter-spacing:.08em; padding:2px 0 2px; }
   .cw{ border-radius:16px; padding:11px 12px; text-align:left; display:flex; flex-direction:column; gap:3px; border:1px solid var(--line); background:var(--surface); color:var(--ink); transition:transform .12s; }
   .cw:hover{ transform:translateY(-1px); }
@@ -2308,6 +2323,7 @@ function renderJournal(){
             <button class="btn btn-primary" id="goToday">Today</button>
           </div>
         </div>
+        <div id="jrHero"></div>
         <div id="cal" class="cal"></div>
         <div class="legend">
           ${stBadge('YES')}${stBadge('In trade')}${stBadge('Wait')}${stBadge('Setup formed')}${stBadge('No trade')}
@@ -2367,7 +2383,34 @@ function renderCalendar(){
   }
   cal.innerHTML = h;
   const ms = document.getElementById('mStats'); if(ms) ms.textContent = monthStats();
+  const jh = document.getElementById('jrHero'); if(jh){ jh.innerHTML = journalHero(p); jh.querySelectorAll('[data-jhw]').forEach(b => b.onclick = () => { const [y, w] = b.dataset.jhw.split('|').map(Number); goTo(p, { type:'week', y, w }); }); }
   renderStrip();
+}
+/* journal header: this week's bias for the pair + the month at a glance */
+function journalHero(p){
+  const now = planDate(), k = isoWeek(now), wr = S.weekly.get(wk(p, k.year, k.week)), d = det(wr), y = S.month.getFullYear(), m = S.month.getMonth();
+  const inM = ds => { const x = parseISO(ds); return x.getFullYear()===y && x.getMonth()===m; };
+  const es = [...S.daily.values()].filter(e => e.pair===p && inM(e.day));
+  let wd = 0; for(let dd = new Date(y, m, 1); dd.getMonth()===m; dd.setDate(dd.getDate() + 1)){ if(dd.getDay() % 6 && iso(dd) <= iso(new Date())) wd++; }
+  const tr = [...S.trades.values()].filter(e => e.pair===p && ['W','L','BE'].includes(e.result) && inM(exitDay(e)));
+  const W = tr.filter(e => e.result==='W').length, L = tr.filter(e => e.result==='L').length, pips = tr.reduce((t, e) => t + (Number(e.pips) || 0), 0), R = tr.reduce((t, e) => t + (Number(e.r_multiple) || 0), 0);
+  const hist = []; for(let i = 7; i >= 0; i--){ const dd = mondayOf(k.year, k.week); dd.setDate(dd.getDate() - 7*i); const kk = isoWeek(dd), r = S.weekly.get(wk(p, kk.year, kk.week)), re = weekRealized(p, kk.year, kk.week);
+    hist.push({ kk, bias:r?.bias, re, hit: re && (r?.bias==='bullish' || r?.bias==='bearish') ? (r.bias==='bullish') === (re.sum > 0) : null }); }
+  const checked = hist.filter(h => h.hit!=null), hits = checked.filter(h => h.hit).length;
+  const open = [...S.trades.values()].filter(e => e.pair===p && e.direction && !e.result && !e.exit_date), olv = open.map(e => livePL(e)).filter(Boolean), oR = olv.reduce((t, x) => t + x.R, 0);
+  const b = wr?.bias, arrow = b==='bullish' ? '▲' : b==='bearish' ? '▼' : '◆';
+  return `<section class="jh">
+    <div class="jh-bias b-${b || 'none'}"><span class="kick">Week ${k.week} bias</span>
+      <b>${arrow} ${b ? BIAS_LBL[b] : 'No bias yet'}</b>
+      <div class="jh-meta">${wr?.conviction ? `<span class="conv">${esc(wr.conviction)} conviction</span>` : ''}${d.base_score!=null && d.quote_score!=null ? `<span>${base(p)} ${d.base_score > 0 ? '+' : ''}${d.base_score} vs ${quote(p)} ${d.quote_score > 0 ? '+' : ''}${d.quote_score}</span>` : ''}</div>
+      ${d.main_driver ? `<p>${esc(String(d.main_driver).slice(0, 170))}${String(d.main_driver).length > 170 ? '…' : ''}</p>` : wr?.summary ? `<p>${esc(wr.summary)}</p>` : ''}</div>
+    <div class="jh-tiles">
+      <div class="ab-k ${es.length >= wd && wd ? 'up' : ''}"><span>Observed · ${MONTHS[m].slice(0, 3)}</span><b>${es.length}<em>/${wd}</em></b><small>weekdays logged</small></div>
+      <div class="ab-k ${tr.length ? (R >= 0 ? 'up' : 'dn') : ''}"><span>Trades · ${MONTHS[m].slice(0, 3)}</span><b>${tr.length ? `${R >= 0 ? '+' : ''}${fmt(R, 2)}R` : '–'}</b><small>${tr.length ? `${W}W / ${L}L · ${pips > 0 ? '+' : ''}${fmt(pips, 1)} pips` : 'no closed trades'}</small></div>
+      <div class="ab-k ${open.length ? (oR >= 0 ? 'up' : 'dn') : ''}"><span>Open now</span><b>${open.length ? (olv.length ? `${oR >= 0 ? '+' : ''}${fmt(oR, 2)}R` : open.length) : 'Flat'}</b><small>${open.length ? `${open.length} position${open.length > 1 ? 's' : ''} on ${p}` : 'no position on this pair'}</small></div>
+      <div class="ab-k ${checked.length ? (hits / checked.length >= .5 ? 'up' : 'dn') : ''}"><span>Bias hit · 8 wks</span><b>${checked.length ? Math.round(hits / checked.length * 100) + '%' : '–'}</b><small>
+        <span class="jh-dots">${hist.map(h => `<button class="jh-d ${h.hit==null ? '' : h.hit ? 'ok' : 'no'}" data-jhw="${h.kk.year}|${h.kk.week}" title="W${h.kk.week}: ${h.bias ? BIAS_LBL[h.bias] : 'no bias'}${h.re ? ' · ' + pct(h.re.sum) : ''}"></button>`).join('')}</span></small></div>
+    </div></section>`;
 }
 function monthStats(){
   const y = S.month.getFullYear(), m = S.month.getMonth();
