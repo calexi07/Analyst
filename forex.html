@@ -782,6 +782,17 @@
   .more-i{ display:flex; flex-direction:column; align-items:center; gap:8px; padding:16px 8px; border-radius:16px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-weight:700; font-size:12.5px; }
   .more-i .ico{ color:var(--accent); }
   /* ===== today ===== */
+  .hp-top{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px 20px; margin-bottom:14px; }
+  .hp-tabs{ display:flex; gap:6px; padding:5px; border-radius:16px; border:1px solid var(--line); background:var(--surface); }
+  .hp-tabs button{ padding:9px 16px; border-radius:12px; border:none; background:none; color:var(--muted); font-weight:800; font-size:14px; }
+  .hp-tabs button[aria-selected="true"]{ background:var(--accent); color:var(--on-accent); }
+  .hp-tabs button:hover:not([aria-selected="true"]){ color:var(--ink); background:var(--surface-2); }
+  .hp-hero{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.7fr); gap:12px; margin-bottom:16px; }
+  @media (max-width:1100px){ .hp-hero{ grid-template-columns:1fr; } }
+  .hp-main{ display:grid; align-content:center; gap:8px; padding:20px 22px; border-radius:22px; border:1px solid var(--line); background:radial-gradient(120% 140% at 0% 0%, color-mix(in srgb,var(--accent) 14%,transparent), transparent 55%), var(--surface); }
+  .hp-side{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; } .hp-side .ab-k{ align-content:center; } .hp-side .ab-k b{ font-size:24px; }
+  @media (max-width:1300px){ .hp-side{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  @media (max-width:640px){ .hp-side{ grid-template-columns:1fr 1fr; } }
   .td2-hero{ display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:16px 24px; margin:4px 0 14px; padding:22px 26px; border-radius:24px; border:1px solid var(--line);
     background:radial-gradient(120% 160% at 0% 0%, color-mix(in srgb,var(--accent) 13%,transparent), transparent 55%), radial-gradient(90% 120% at 100% 100%, color-mix(in srgb,var(--violet) 10%,transparent), transparent 60%), var(--surface); }
   @media (max-width:1100px){ .td2-hero{ grid-template-columns:1fr; } }
@@ -2014,11 +2025,11 @@ const ico = (k, s = 18) => `<svg class="ico" width="${s}" height="${s}" viewBox=
 const NAV = [
   [null, [['today','Today','home']]],
   ['Work', [['journal','Journal','calendar'],['trades','Trades','list'],['setups','Setups','radar']]],
-  ['Insights', [['analysis','Analytics','chart'],['history','History','trend']]],
+  ['Insights', [['history','History','trend']]],
   ['Money', [['accounts','Accounts','wallet'],['bank','Bank','bank'],['goals','Goals','target']]],
   ['Tools', [['prompts','Prompts','spark']]],
 ];
-const navActive = v => S.view===v || (v==='history' && S.view==='overview');
+const navActive = v => S.view===v || (v==='history' && ['overview','analysis'].includes(S.view));
 async function goView(v){ await flushSave(); S.drawerOpen = false; S.view = v; ls.set('do_view', v); render(); window.scrollTo({ top:0 }); }
 function render(){
   const app = document.getElementById('app');
@@ -2067,7 +2078,7 @@ function render(){
 function openMore(){
   const d = document.getElementById('moreDlg'), light = document.documentElement.dataset.theme === 'light';
   d.innerHTML = `<div class="dlg-head"><h2>More</h2></div><div class="dlg-body more-g">
-    ${[['analysis','Analytics','chart'],['history','History','trend'],['accounts','Accounts','wallet'],['bank','Bank','bank'],['goals','Goals','target'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
+    ${[['history','History','trend'],['accounts','Accounts','wallet'],['bank','Bank','bank'],['goals','Goals','target'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
     <button class="more-i" data-ma="share">${ico('share', 22)}<span>Share</span></button>
     <button class="more-i" data-ma="data">${ico('swap', 22)}<span>Import / export</span></button>
     <button class="more-i" data-ma="theme">${ico(light ? 'moon' : 'sun', 22)}<span>${light ? 'Dark' : 'Light'} theme</span></button></div>`;
@@ -2144,11 +2155,11 @@ function renderStrip(){
 function tierIdx(x){ return ['high','medium','low',''].indexOf(x.conv); }
 function renderMain(){
   S.charts.forEach(c => c.destroy()); S.charts = [];
-  if(S.view === 'analysis') renderAnalysis();
-  else if(S.view === 'overview') renderOverview();
+  if(S.view === 'analysis'){ renderAnalysis(); histTabsInto('perf'); }
+  else if(S.view === 'overview'){ renderOverview(); histTabsInto('week'); }
   else if(S.view === 'accounts') renderAccounts();
   else if(S.view === 'goals') renderGoals();
-  else if(S.view === 'history') renderHistory();
+  else if(S.view === 'history'){ if(ls.get('do_hist_tab', 'perf')==='perf'){ S.view = 'analysis'; renderAnalysis(); histTabsInto('perf'); } else { renderHistory(); histTabsInto('fund'); } }
   else if(S.view === 'desk'){ S.view = 'today'; ls.set('do_view', 'today'); renderToday(); }   /* Desk was removed */
   else if(S.view === 'today') renderToday();
   else if(S.view === 'prompts') renderPrompts();
@@ -4034,6 +4045,14 @@ function spark(vals, w = 120, h = 30){
     <path d="${d}" fill="none" stroke="${last[1]>0 ? 'var(--pos)' : last[1]<0 ? 'var(--neg)' : 'var(--muted)'}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
     <circle cx="${x(last[0])}" cy="${y(last[1])}" r="3" fill="${last[1]>0 ? 'var(--pos)' : last[1]<0 ? 'var(--neg)' : 'var(--muted)'}"/></svg>`;
 }
+/* History = one page, three tabs: your trading results, the fundamentals over time, this week's picture */
+function histTabsInto(tab){
+  const m = document.getElementById('main'); if(!m) return;
+  m.insertAdjacentHTML('afterbegin', `<header class="hp-top"><div><div class="pairtitle">History</div></div>
+    <nav class="hp-tabs" role="tablist">${[['perf','📈 Performance','your trades: win rate, R, sessions, setups'],['fund','🧭 Fundamentals','bias & scores week by week'],['week','🗓️ This week','every pair at a glance']].map(([k, l, t]) => `<button role="tab" data-htab="${k}" aria-selected="${tab===k}" title="${t}">${l}</button>`).join('')}</nav></header>`);
+  m.querySelectorAll('[data-htab]').forEach(b => b.onclick = () => { const k = b.dataset.htab; if(k!=='week') ls.set('do_hist_tab', k);
+    S.view = k==='perf' ? 'analysis' : k==='week' ? 'overview' : 'history'; ls.set('do_view', 'history'); if(k==='fund') ls.set('do_hist_tab', 'fund'); renderMain(); });
+}
 function renderHistory(){
   const H = S.hist, weeks = histWeeks(H.n), cur = weeks.at(-1);
   const filt = H.ccy==='ALL' ? allPairs() : allPairs().filter(p => base(p)===H.ccy || quote(p)===H.ccy);
@@ -4059,8 +4078,8 @@ function renderHistory(){
   const flips = H.mode==='pairs' ? rows.filter(r => r.last!=null && r.prev!=null && Math.sign(r.last)!==Math.sign(r.prev) && r.last!==0 && r.prev!==0) : [];
   document.getElementById('main').innerHTML = `
     <div class="flex flex-wrap items-end gap-4 mb-4">
-      <div><div class="pairtitle">History</div><div class="muted mt-1" style="font-weight:600">How the fundamental picture evolves week by week — score = base minus quote (positive = bullish pair).</div></div>
-      <div class="seg ml-auto" role="group" aria-label="View"><button data-hm="pairs" aria-pressed="${H.mode==='pairs'}">Pairs</button><button data-hm="ccy" aria-pressed="${H.mode==='ccy'}">Currencies</button><button data-hov="1" aria-pressed="false">This week</button></div>
+      <div class="muted" style="font-weight:600">How the fundamental picture evolves week by week — score = base minus quote (positive = bullish pair).</div>
+      <div class="seg ml-auto" role="group" aria-label="View"><button data-hm="pairs" aria-pressed="${H.mode==='pairs'}">Pairs</button><button data-hm="ccy" aria-pressed="${H.mode==='ccy'}">Currencies</button></div>
       <div class="seg" role="group" aria-label="Range">${[8,12,26].map(n => `<button data-hn="${n}" aria-pressed="${H.n===n}">${n}w</button>`).join('')}</div>
     </div>
     ${H.mode==='pairs' ? `<div class="hfilters card">
@@ -7058,7 +7077,7 @@ function renderAnalysis(){
   const main = document.getElementById('main');
   main.innerHTML = `
     <div class="flex flex-wrap items-end gap-4 mb-4">
-      <div><div class="pairtitle">${S.scope==='all' ? 'All pairs' : S.pair}</div><div class="muted mt-1">${es.length} observed days in period</div></div>
+      <div class="muted" style="font-weight:600">Your trading results · ${S.scope==='all' ? 'all pairs' : S.pair} · ${es.length} observed days</div>
       <div class="seg" role="group" aria-label="Scope">
         <button data-scope="pair" aria-pressed="${S.scope==='pair'}">${S.pair}</button><button data-scope="all" aria-pressed="${S.scope==='all'}">All</button></div>
       <div class="seg" role="group" aria-label="Period">
@@ -7067,16 +7086,19 @@ function renderAnalysis(){
         <option value="all">All accounts</option><option value="none" ${S.acct==='none' ? 'selected' : ''}>No account</option>
         ${[...S.accounts.values()].map(a => `<option value="${a.id}" ${S.acct===a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select>` : ''}
     </div>
-    <table class="sumtable kpi mb-4"><thead><tr><th>Trades</th><th>Win rate</th><th>Pips</th><th>Profit</th><th>Avg R</th><th>Profit factor</th><th>Weekly bias hit</th></tr></thead>
-      <tbody><tr>
-        <td>${trades.length}<span class="muted" style="font-size:13px;font-weight:400"> ${W.length}W ${L.length}L</span></td>
-        <td>${wr!=null ? fmt(wr,1)+'%' : '–'}</td>
-        <td class="${sgn(pips)}">${fmt(pips,1)}</td>
-        <td class="${sgn(profit)}">${fmt(profit)}</td>
-        <td>${avgR!=null ? fmt(avgR) : '–'}</td>
-        <td>${pf!=null ? fmt(pf) : '–'}</td>
-        <td>${hitRate!=null ? fmt(hitRate,0)+'%' : '–'}<span class="muted" style="font-size:13px;font-weight:400"> ${weeks.length} wks</span></td>
-      </tr></tbody></table>
+    <section class="hp-hero">
+      <div class="hp-main"><span class="kick">Net result · ${{ '30':'last 30 days', '90':'last 90 days', ytd:'this year', all:'all time' }[S.period] || ''}</span>
+        <b class="bk-big ${sgn(profit)}">${profit>0?'+':''}${money(profit)}</b>
+        <div class="bk-split" title="Wins vs losses"><i class="p" style="flex:${Math.max(W.length, .0001)}"></i><i class="n" style="flex:${L.length}"></i></div>
+        <div class="bk-io"><span><i class="p"></i><b class="pos">${W.length}</b> wins</span><span><i class="n"></i><b class="neg">${L.length}</b> losses</span><span class="muted">${trades.length} closed · ${rs.length ? `${rs.reduce((x,t) => x + Number(t.r_multiple), 0) >= 0 ? '+' : ''}${fmt(rs.reduce((x,t) => x + Number(t.r_multiple), 0), 2)}R net` : ''}</span></div></div>
+      <div class="hp-side">
+        <div class="ab-k ${wr==null ? '' : wr >= 33.4 ? 'up' : 'dn'}"><span>Win rate</span><b>${wr!=null ? fmt(wr,1)+'%' : '–'}</b><small>break-even at 2R: 33.3%</small></div>
+        <div class="ab-k ${avgR==null ? '' : avgR >= 0 ? 'up' : 'dn'}"><span>Avg R / trade</span><b>${avgR!=null ? (avgR>0?'+':'')+fmt(avgR) : '–'}</b><small>expectancy</small></div>
+        <div class="ab-k ${pf==null ? '' : pf >= 1 ? 'up' : 'dn'}"><span>Profit factor</span><b>${pf!=null ? fmt(pf) : '–'}</b><small>gross win ÷ gross loss</small></div>
+        <div class="ab-k ${sgn(pips)==='pos' ? 'up' : sgn(pips)==='neg' ? 'dn' : ''}"><span>Pips</span><b>${pips>0?'+':''}${fmt(pips,1)}</b><small>closed trades</small></div>
+        <div class="ab-k"><span>Weekly bias hit</span><b>${hitRate!=null ? fmt(hitRate,0)+'%' : '–'}</b><small>${weeks.length} pair-weeks checked</small></div>
+      </div>
+    </section>
     ${trades.length ? '' : '<div class="card mb-4"><p>No closed trades in this period. Set W/L, Long/Short and pips on the entry day in the journal and stats will show up here.</p></div>'}
     <div class="grid gap-4" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr))">
       <div class="card" style="grid-column:1/-1"><div class="flex items-center gap-3"><h3 style="margin:0">Cumulative performance</h3>
