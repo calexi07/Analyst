@@ -1290,7 +1290,17 @@
   .ab-firm, .ab-rows, .ab-row > *{ min-width:0; }
   .ab-bar .seg em{ font-style:normal; margin-left:6px; opacity:.6; font-size:11px; }
   .ab-q{ margin-left:auto; width:240px; max-width:100%; }
-  .ab-firm{ border:1px solid var(--line); border-radius:20px; background:var(--surface); margin-bottom:14px; overflow:hidden; }
+  .ab-firm{ border:1px solid var(--line); border-radius:20px; background:var(--surface); margin-bottom:14px; }
+  .ab-firm > .ab-fh{ border-radius:20px 20px 0 0; } .ab-firm.closed > .ab-fh{ border-radius:20px; }
+  .ab-flw{ position:relative; display:inline-flex; outline:none; }
+  .ab-pop{ position:absolute; top:calc(100% + 8px); left:0; z-index:60; display:none; width:max-content; min-width:300px; max-width:420px; padding:10px; border-radius:14px; border:1px solid var(--line); background:var(--surface); box-shadow:0 18px 40px rgba(0,0,0,.45); gap:6px; }
+  .ab-pop::before{ content:''; position:absolute; left:0; right:0; top:-10px; height:10px; }
+  .ab-flw:hover .ab-pop, .ab-flw:focus-within .ab-pop{ display:grid; }
+  .ab-pr2{ display:grid; grid-template-columns:auto auto auto 1fr auto; align-items:center; gap:4px 8px; padding:7px 9px; border-radius:10px; background:var(--surface-2); border:1px solid var(--line); font-size:12.5px; }
+  .ab-pr2 b{ font-weight:800; } .ab-pr2 b em{ font-style:normal; color:var(--muted); } .ab-pr2 small{ color:var(--muted); font-weight:600; font-size:11px; white-space:nowrap; }
+  .ab-pr2 strong{ display:grid; justify-items:end; line-height:1.1; font-family:'Bricolage Grotesque',sans-serif; font-size:15px; font-weight:800; } .ab-pr2 strong i{ font-style:normal; font-family:inherit; font-size:11px; color:var(--muted); }
+  .ab-pr2.up strong{ color:var(--pos); } .ab-pr2.dn strong{ color:var(--neg); } .ab-pr2.up{ border-color:color-mix(in srgb,var(--pos) 35%,var(--line)); } .ab-pr2.dn{ border-color:color-mix(in srgb,var(--neg) 35%,var(--line)); }
+  .ab-popf{ display:flex; justify-content:space-between; padding:4px 4px 0; font-size:12px; font-weight:700; color:var(--muted); }
   .ab-fh{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; padding:13px 16px; cursor:pointer; background:linear-gradient(90deg, color-mix(in srgb,var(--accent) 7%,transparent), transparent 55%); }
   .ab-fh h3{ margin:0; font-family:'Bricolage Grotesque',sans-serif; font-size:19px; font-weight:800; }
   .ab-chev{ color:var(--muted); transition:transform .15s; } .ab-firm.closed .ab-chev{ transform:rotate(-90deg); }
@@ -3219,10 +3229,11 @@ function openFail(a){
 const phaseKey = ph => ph==='Funded' ? 'fd' : ph==='Challenge – Phase 2' ? 'p2' : ph==='Challenge – Phase 3' ? 'p3' : ph==='Personal' ? 'ps' : 'p1';
 const acctPaid = a => msList(a).filter(m => m.kind==='payout').reduce((t, m) => t + (Number(m.amount) || 0), 0);
 function acctFloat(a){   /* running $ on this account from its open trades */
-  let usd = 0, n = 0, R = 0;
-  S.trades.forEach(e => { if(!e.direction || e.result || e.exit_date || !tradeAccts(e).some(x => x.id===a.id)) return; n++; const lv = livePL(e); if(!lv) return;
-    const risk = numOr(e.risk) ?? RISK_PCT; R += lv.R; usd += lv.R * risk / 100 * (Number(a.size) || 0); });
-  return { n, R, usd };
+  let usd = 0, n = 0, R = 0; const list = [];
+  S.trades.forEach(e => { if(!e.direction || e.result || e.exit_date || !tradeAccts(e).some(x => x.id===a.id)) return; n++; const lv = livePL(e);
+    const risk = numOr(e.risk) ?? RISK_PCT, u = lv ? lv.R * risk / 100 * (Number(a.size) || 0) : null; list.push({ e, lv, usd:u });
+    if(!lv) return; R += lv.R; usd += u; });
+  return { n, R, usd, list };
 }
 function acctFlags(a, s){
   const size = Number(a.size) || 0, f = [], dayStart = s.bal - s.today, dStop = s.dailyLim!=null ? dayStart - s.dailyLim : null, pd = payDays(a);
@@ -3246,7 +3257,12 @@ function boardRow(a){
       <div class="ab-bv eq ${fl.n ? (fl.usd >= 0 ? 'up' : 'dn') : ''}"><span>Equity</span><b>${money(s.bal + fl.usd)}</b><small class="${fl.n ? sgn(fl.usd) : ''}">${fl.n ? `${fl.usd >= 0 ? '+' : '−'}${money(Math.abs(fl.usd))} floating` : 'no open trades'}</small></div>
     </div>
     <div class="ab-rail">${acctRail(a, s, true, fl.n ? s.bal + fl.usd : null)}${tg!=null ? `<div class="ab-tg">${Math.round(tg)}% of target${s.target ? ` · ${money(Math.max(0, s.target - s.pnl))} to go` : ''}</div>` : ''}</div>
-    <div class="ab-live">${fl.n ? `<span class="ab-fl ${fl.usd >= 0 ? 'up' : 'dn'}"><i></i>${fl.n} open · <b>${fl.R >= 0 ? '+' : ''}${fmt(fl.R, 2)}R</b> ${fl.usd >= 0 ? '+' : '−'}$${fmt(Math.abs(fl.usd), 0)}</span>` : '<span class="ab-fl none">flat</span>'}
+    <div class="ab-live">${fl.n ? `<span class="ab-flw" tabindex="0"><span class="ab-fl ${fl.usd >= 0 ? 'up' : 'dn'}"><i></i>${fl.n} open · <b>${fl.R >= 0 ? '+' : ''}${fmt(fl.R, 2)}R</b> ${fl.usd >= 0 ? '+' : '−'}$${fmt(Math.abs(fl.usd), 0)}</span>
+        <span class="ab-pop" role="tooltip"><span class="kick">Open on ${esc(shortAcc(a.name))}</span>${fl.list.map(({ e, lv, usd }) => `<span class="ab-pr2 ${lv ? (lv.R >= 0 ? 'up' : 'dn') : ''}">
+          <span class="tj-dir ${e.direction.toLowerCase()}">${e.direction==='Long' ? '▲' : '▼'}</span><b>${e.pair.slice(0,3)}<em>${e.pair.slice(3)}</em></b>${e.setup_tf ? `<span class="tfl">${esc(e.setup_tf)}</span>` : ''}
+          <small>${fmtDayShort(e.day)}${e.entry_time ? ' ' + esc(e.entry_time) : ''}${e.entry_price!=null ? ' · @ ' + e.entry_price : ''}</small>
+          <strong>${lv ? `${lv.R >= 0 ? '+' : ''}${fmt(lv.R, 2)}R` : '…'}<i>${usd!=null ? `${usd >= 0 ? '+' : '−'}$${fmt(Math.abs(usd), 0)}` : 'no price'}</i></strong></span>`).join('')}
+          <span class="ab-popf">Total <b class="${sgn(fl.usd)}">${fl.R >= 0 ? '+' : ''}${fmt(fl.R, 2)}R · ${fl.usd >= 0 ? '+' : '−'}$${fmt(Math.abs(fl.usd), 0)}</b></span></span></span>` : '<span class="ab-fl none">flat</span>'}
       ${pd!=null && pd > 0 ? `<span class="ab-pay ${pd <= 3 ? 'soon' : ''}">💸 ${pd===1 ? 'tomorrow' : pd + 'd'}</span>` : ''}</div>
     <div class="ab-flags">${flags.map(([k, t]) => `<span class="ab-flag ${k}">${t}</span>`).join('')}</div>
     <div class="ab-act">
