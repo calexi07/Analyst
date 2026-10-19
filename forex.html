@@ -782,6 +782,15 @@
   .more-i{ display:flex; flex-direction:column; align-items:center; gap:8px; padding:16px 8px; border-radius:16px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-weight:700; font-size:12.5px; }
   .more-i .ico{ color:var(--accent); }
   /* ===== today ===== */
+  .tjx-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:10px; } .tjx-bar #tjQ{ flex:1; min-width:200px; }
+  .tjx-more em{ font-style:normal; margin-left:4px; padding:0 6px; border-radius:6px; background:var(--accent); color:var(--on-accent); font-size:11px; }
+  .tjx-more.on{ border-color:var(--accent); }
+  .tjx-adv{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; padding:10px; border-radius:14px; border:1px dashed var(--line); } .tjx-adv[hidden]{ display:none; }
+  .tjx-mini{ display:flex; flex-wrap:wrap; gap:4px 16px; margin-top:4px; padding-top:10px; border-top:1px solid var(--line); font-size:12.5px; font-weight:600; color:var(--muted); } .tjx-mini b{ font-weight:800; color:var(--ink); } .tjx-mini b.pos{ color:var(--pos); } .tjx-mini b.neg{ color:var(--neg); }
+  .hp-side.tjx-side{ grid-template-columns:repeat(2,minmax(0,1fr)); } .hp-side.tjx-side .ab-k b{ font-size:30px; }
+  .tjx-row{ display:grid; grid-template-columns:minmax(0,1.7fr) minmax(0,1fr); gap:14px; margin-bottom:14px; align-items:start; } .tjx-row.b{ grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); }
+  .tjx-row > .card{ margin:0; }
+  @media (max-width:1000px){ .tjx-row, .tjx-row.b{ grid-template-columns:1fr; } }
   .hp-top{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px 20px; margin-bottom:14px; }
   .hp-tabs{ display:flex; gap:6px; padding:5px; border-radius:16px; border:1px solid var(--line); background:var(--surface); }
   .hp-tabs button{ padding:9px 16px; border-radius:12px; border:none; background:none; color:var(--muted); font-weight:800; font-size:14px; }
@@ -6900,38 +6909,46 @@ function renderTrades(){
         ${seg('period', [['30','30d'],['90','90d'],['ytd','YTD'],['all','All']])}
       </div>
     </div>
-    <div class="card tj-filters">
-      <input class="inp" id="tjQ" type="search" placeholder="Search notes, tags, pairs…" value="${esc(T.q)}" style="flex:1;min-width:180px">
-      ${seg('dir', [['all','All'],['Long','▲ Long'],['Short','▼ Short']])}
+    <div class="tjx-bar">
+      <input class="inp" id="tjQ" type="search" placeholder="Search notes, tags, pairs…" value="${esc(T.q)}">
       ${seg('res', [['all','All'],['W','Win'],['L','Loss'],['BE','BE'],['open','Open']])}
+      ${seg('dir', [['all','Both'],['Long','▲ Long'],['Short','▼ Short']])}
+      <button class="bt tjx-more ${S.tj.more ? 'on' : ''}" id="tjMore">⚙ Filters${['pair','acct','tf','sess','tag'].filter(k => T[k]!=='all').length ? ` <em>${['pair','acct','tf','sess','tag'].filter(k => T[k]!=='all').length}</em>` : ''}</button>
+      ${['dir','res','pair','acct','tf','sess','tag'].some(k => T[k]!=='all') || T.q ? '<button class="bt" id="tjReset">↺ Reset</button>' : ''}
+    </div>
+    <div class="tjx-adv" ${S.tj.more || ['pair','acct','tf','sess','tag'].some(k => T[k]!=='all') ? '' : 'hidden'}>
       ${sel('tjPair', T.pair, [['all','All pairs'], ...pairs.map(p => [p,p])])}
       ${sel('tjAcct', T.acct, [['all','All accounts'],['none','No account'], ...[...S.accounts.values()].map(a => [a.id, a.name])])}
       ${sel('tjTf', T.tf, [['all','Any setup TF'],['1H','1H setup'],['4H','4H setup'],['none','Not set']])}
       ${sel('tjSess', T.sess, [['all','All sessions'], ...sess.map(s => [s,s])])}
       ${sel('tjTag', T.tag, [['all','All tags'], ...tags.map(t => [t,'#'+t])])}
-      ${['dir','res','pair','acct','tf','sess','tag'].some(k => T[k]!=='all') || T.q ? '<button class="btn" id="tjReset">Reset</button>' : ''}
     </div>
-    <div class="tj-kpis">
-      ${kpi('Net result', tjv(+(T.metric==='usd' ? st.profit : st.pips).toFixed(2)), sgn(T.metric==='usd' ? st.profit : st.pips), `${st.closed.length} closed · ${st.open.length} open`)}
-      ${kpi('Win rate', st.wr!=null ? fmt(st.wr,1)+'%' : '–', '', `${st.W.length}W · ${st.L.length}L`)}
-      ${kpi('Profit factor', st.pf!=null ? fmt(st.pf) : '–', st.pf!=null ? (st.pf>=1 ? 'pos' : 'neg') : '')}
-      ${kpi('Avg R', st.avgR!=null ? fmt(st.avgR) + 'R' : '–', sgn(st.avgR))}
-      ${kpi('Avg win / loss', `${st.avgW!=null ? money(st.avgW) : '–'} / ${st.avgL!=null ? money(st.avgL) : '–'}`)}
-      ${kpi('Max drawdown', st.dd ? (T.metric==='usd' ? money(-st.dd) : '-'+fmt(st.dd,1)+' pips') : '–', st.dd ? 'neg' : '')}
-      ${kpi('Streak', st.cur ? `${st.cur}${st.curType}` : '–', st.curType==='W' ? 'pos' : st.curType==='L' ? 'neg' : '', `best ${st.best}W in a row`)}
-      ${kpi('Avg hold', st.avgHold!=null ? fmtDur(st.avgHold) : '–')}
-    </div>
-    <div class="tj-row">
+    ${(() => { const net = T.metric==='usd' ? st.profit : st.pips, netR = st.closed.reduce((x, e) => x + (Number(e.r_multiple) || 0), 0);
+      return `<section class="hp-hero">
+      <div class="hp-main"><span class="kick">Net result · ${{ '30':'last 30 days', '90':'last 90 days', ytd:'this year', all:'all time' }[T.period] || ''}</span>
+        <b class="bk-big ${sgn(net)}">${tjv(+net.toFixed(2))}</b>
+        <div class="bk-split"><i class="p" style="flex:${Math.max(st.W.length, .0001)}"></i><i class="n" style="flex:${st.L.length}"></i></div>
+        <div class="bk-io"><span><i class="p"></i><b class="pos">${st.W.length}</b> wins</span><span><i class="n"></i><b class="neg">${st.L.length}</b> losses</span><span class="muted">${st.closed.length} closed · ${st.open.length} open · ${netR >= 0 ? '+' : ''}${fmt(netR, 2)}R</span></div>
+        <div class="tjx-mini"><span>Avg win <b class="pos">${st.avgW!=null ? money(st.avgW) : '–'}</b></span><span>Avg loss <b class="neg">${st.avgL!=null ? money(st.avgL) : '–'}</b></span><span>Streak <b class="${st.curType==='W' ? 'pos' : st.curType==='L' ? 'neg' : ''}">${st.cur ? st.cur + st.curType : '–'}</b> · best ${st.best}W</span><span>Avg hold <b>${st.avgHold!=null ? fmtDur(st.avgHold) : '–'}</b></span></div></div>
+      <div class="hp-side tjx-side">
+        <div class="ab-k ${st.wr==null ? '' : st.wr >= 33.4 ? 'up' : 'dn'}"><span>Win rate</span><b>${st.wr!=null ? fmt(st.wr,1)+'%' : '–'}</b><small>${st.W.length}W · ${st.L.length}L · BE at 33.3%</small></div>
+        <div class="ab-k ${st.pf==null ? '' : st.pf >= 1 ? 'up' : 'dn'}"><span>Profit factor</span><b>${st.pf!=null ? fmt(st.pf) : '–'}</b><small>gross win ÷ gross loss</small></div>
+        <div class="ab-k ${st.avgR==null ? '' : st.avgR >= 0 ? 'up' : 'dn'}"><span>Avg R</span><b>${st.avgR!=null ? (st.avgR > 0 ? '+' : '') + fmt(st.avgR) + 'R' : '–'}</b><small>expectancy per trade</small></div>
+        <div class="ab-k ${st.dd ? 'dn' : ''}"><span>Max drawdown</span><b>${st.dd ? (T.metric==='usd' ? money(-st.dd) : '-'+fmt(st.dd,1)) : '–'}</b><small>${T.metric==='usd' ? 'peak to trough $' : 'pips'}</small></div>
+      </div></section>`; })()}
+    <div class="tjx-row">
       <div class="card"><h3>Equity curve <span class="muted" style="font-size:12px;font-weight:600">· ${T.metric==='usd' ? 'profit $' : 'pips'}, by exit date</span></h3>
-        ${st.curve.length > 1 ? '<div class="chartbox" style="height:250px"><canvas id="tjEq"></canvas></div>' : '<p class="muted">Close at least two trades to draw the curve.</p>'}</div>
+        ${st.curve.length > 1 ? '<div class="chartbox" style="height:270px"><canvas id="tjEq"></canvas></div>' : '<p class="muted">Close at least two trades to draw the curve.</p>'}</div>
       <div class="card"><h3>Open positions <span class="pg-n">${st.open.length}</span></h3>
-        ${st.open.length ? `<div class="tj-open">${st.open.map(e => { const days = Math.max(0, Math.round((new Date() - parseISO(e.day))/864e5));
-          return `<button class="tj-op ${e.direction.toLowerCase()}" data-tjgo="${e.pair}|${e.day}"><b>${e.direction==='Long' ? '▲' : '▼'} ${e.pair}</b>
-            <span class="muted">since ${fmtDayShort(e.day)} · ${days}d${e.setup_tf ? ' · '+e.setup_tf : ''}</span>
-            ${e.entry_price!=null ? `<span class="num" style="font-size:12px">@ ${e.entry_price}${e.sl!=null ? ` · SL ${e.sl}` : ''}${e.tp!=null ? ` · TP ${e.tp}` : ''}</span>` : ''}</button>`; }).join('')}</div>`
-          : '<p class="muted">No open trades. Flat and focused.</p>'}</div>
+        ${st.open.length ? `<div class="td2-live">${st.open.map(e => { const lv = e.entry_price!=null ? livePL(e) : null, days = Math.max(0, Math.round((new Date() - parseISO(e.day))/864e5));
+          return `<div class="td2-tr ${lv ? (lv.R >= 0 ? 'up' : 'dn') : ''}" data-tjgo="${e.pair}|${e.day}" style="cursor:pointer">
+            <div class="td2-trh"><span class="tj-dir ${e.direction.toLowerCase()}">${e.direction==='Long' ? '▲' : '▼'}</span><b>${e.pair.slice(0,3)}<em>${e.pair.slice(3)}</em></b>${e.setup_tf ? `<span class="tfl">${esc(e.setup_tf)}</span>` : ''}
+              <span class="muted td2-since">${days}d · since ${fmtDayShort(e.day)}</span>
+              <span class="td2-r">${lv ? `${lv.R >= 0 ? '+' : ''}${fmt(lv.R, 2)}R` : '–'}<small>${lv ? `${lv.pips >= 0 ? '+' : ''}${fmt(lv.pips, 1)} pips` : 'no live price'}</small></span></div>
+            ${e.sl!=null && e.tp!=null ? sxRail(e, lv) : ''}</div>`; }).join('')}</div>`
+          : '<div class="td2-empty"><b>Flat.</b><span>No open trades.</span></div>'}</div>
     </div>
-    <div class="tj-row">
+    <div class="tjx-row b">
       <div class="card"><h3>Result calendar <span class="muted" style="font-size:12px;font-weight:600">· last 16 weeks</span></h3>${tjHeat(list)}</div>
       <div class="card"><h3>By pair</h3>${byPair.length ? `<div class="tj-bars">${byPair.slice(0,8).map(g => `<button class="tj-bar" data-tjpair="${g.k}"><span class="tj-bl">${g.k}</span>
           <span class="tj-bt"><i class="${g.v>=0 ? 'p' : 'n'}" style="width:${Math.abs(g.v)/maxAbs*100}%"></i></span><span class="num ${sgn(g.v)}">${tjv(+g.v.toFixed(2))}</span><span class="muted">${g.w}W/${g.l}L</span></button>`).join('')}</div>` : '<p class="muted">No closed trades.</p>'}</div>
@@ -6945,6 +6962,7 @@ function renderTrades(){
   document.querySelectorAll('[data-tj]').forEach(b => b.onclick = () => set(b.dataset.tj, b.dataset.v, b.dataset.tj==='metric' ? 'do_tj_metric' : b.dataset.tj==='period' ? 'do_tj_period' : null));
   [['tjPair','pair'],['tjAcct','acct'],['tjTf','tf'],['tjSess','sess'],['tjTag','tag'],['tjSort','sort']].forEach(([id,k]) => document.getElementById(id).onchange = e => set(k, e.target.value));
   const q = document.getElementById('tjQ'); let qt; q.oninput = () => { clearTimeout(qt); qt = setTimeout(() => { S.tj.q = q.value; renderMain(); const n = document.getElementById('tjQ'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }, 250); };
+  document.getElementById('tjMore')?.addEventListener('click', () => { S.tj.more = !S.tj.more; renderMain(); });
   document.getElementById('tjReset')?.addEventListener('click', () => { Object.assign(S.tj, { dir:'all', res:'all', pair:'all', acct:'all', tf:'all', sess:'all', tag:'all', q:'' }); renderMain(); });
   document.querySelectorAll('[data-tjpair]').forEach(b => b.onclick = () => set('pair', b.dataset.tjpair));
   document.querySelectorAll('[data-tjgo]').forEach(b => b.onclick = ev => { ev.stopPropagation(); const [p, d] = b.dataset.tjgo.split('|'); goTo(p, { type:'day', day:d }); });
