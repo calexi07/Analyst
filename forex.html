@@ -782,6 +782,20 @@
   .more-i{ display:flex; flex-direction:column; align-items:center; gap:8px; padding:16px 8px; border-radius:16px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-weight:700; font-size:12.5px; }
   .more-i .ico{ color:var(--accent); }
   /* ===== today ===== */
+  .gx-hero{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) minmax(0,1fr); gap:12px; margin-bottom:16px; }
+  @media (max-width:1200px){ .gx-hero{ grid-template-columns:1fr 1fr; } .gx-hist{ grid-column:1 / -1; } }
+  @media (max-width:700px){ .gx-hero{ grid-template-columns:1fr; } }
+  .gx-ring{ display:flex; align-items:center; gap:18px; padding:18px 20px; border-radius:22px; border:1px solid var(--line); background:radial-gradient(120% 140% at 0% 0%, color-mix(in srgb,var(--accent) 14%,transparent), transparent 55%), var(--surface); }
+  .gring.big{ width:104px; height:104px; flex:none; } .gring.big span{ font-size:24px; }
+  .gx-n{ font-family:'Bricolage Grotesque',sans-serif; font-size:44px; font-weight:800; line-height:1; } .gx-n em{ font-style:normal; font-size:24px; color:var(--muted); }
+  .gx-l{ display:block; font-size:12px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+  .gx-ring p{ margin:6px 0 0; font-weight:700; }
+  .gx-tiles{ display:grid; grid-template-columns:1fr 1fr; gap:10px; } .gx-tiles .ab-k{ padding:12px 14px; } .gx-tiles .ab-k b{ font-size:24px; }
+  .gx-hist{ display:grid; align-content:center; gap:8px; padding:16px 18px; border-radius:22px; border:1px solid var(--line); background:var(--surface); }
+  .gx-hist .ghist{ margin:0; }
+  .gx-sec{ margin-top:14px; } .gx-sh{ display:flex; align-items:baseline; gap:10px; margin:0 4px 8px; } .gx-sh b{ font-family:'Bricolage Grotesque',sans-serif; font-size:17px; font-weight:800; }
+  .gx-sh span{ font-size:12px; font-weight:600; color:var(--muted); } .gx-sh em{ margin-left:auto; font-style:normal; font-size:11.5px; font-weight:800; padding:1px 8px; border-radius:7px; background:var(--surface-2); color:var(--muted); }
+  .gx-sec .glist{ margin-top:0; }
   .tjx-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:10px; } .tjx-bar #tjQ{ flex:1; min-width:200px; }
   .tjx-more em{ font-style:normal; margin-left:4px; padding:0 6px; border-radius:6px; background:var(--accent); color:var(--on-accent); font-size:11px; }
   .tjx-more.on{ border-color:var(--accent); }
@@ -3697,20 +3711,34 @@ function renderGoals(){
         <div class="monthnav"><button class="ib" id="gPrev" aria-label="Previous week">‹</button>
           <div class="mlabel">Week ${w} <span class="muted" style="font-size:13px;font-weight:600">· ${fmtDayShort(a)} – ${fmtDayShort(b)}</span></div>
           <button class="ib" id="gNext" aria-label="Next week">›</button></div>
-        <button class="btn btn-primary" id="gNow">This week</button>
+        <button class="btn" id="gNow">This week</button>
+        <button class="btn btn-primary" id="gAddBtn">+ Add goal</button>
       </div>
     </div>
+    ${(() => { const today = iso(new Date()), dueT = [...S.goals.values()].filter(g => g.due_date && String(g.due_date).slice(0, 10)===today), dT = dueT.filter(g => goalState(g).done).length;
+      const daily = gs.filter(isDaily), dD = daily.filter(g => g.done).length;
+      return `<section class="gx-hero">
+        <div class="gx-ring"><div class="gring big" style="--p:${ring}"><span>${ring}%</span></div>
+          <div><b class="gx-n">${sc ? `${sc.done}<em>/${sc.n}</em>` : '0'}</b><span class="gx-l">goals done · week ${w}</span><p>${mood(sc?.pct || 0)}</p></div></div>
+        <div class="gx-tiles">
+          <div class="ab-k ${dueT.length && dT===dueT.length ? 'up' : dueT.length ? 'att' : ''}"><span>Today</span><b>${dueT.length ? `${dT}/${dueT.length}` : '–'}</b><small>${dueT.length ? (dT===dueT.length ? 'all done 🎉' : `${dueT.length - dT} left today`) : 'nothing due today'}</small></div>
+          <div class="ab-k ${daily.length && dD===daily.length ? 'up' : ''}"><span>Daily habits</span><b>${daily.length ? `${dD}/${daily.length}` : '–'}</b><small>days ticked this week</small></div>
+          <div class="ab-k ${streak ? 'up' : ''}"><span>Perfect weeks</span><b>${streak} 🔥</b><small>in a row</small></div>
+          <div class="ab-k pay"><span>Achieved</span><b>${total} 🏆</b><small>all time</small></div>
+        </div>
+        <div class="gx-hist"><span class="kick">Last 10 weeks</span><div class="ghist">${hist.map(h => { const pp = h.s ? Math.round(h.s.pct*100) : 0; const isSel = h.year===y && h.week===w;
+            return `<button class="gh ${isSel ? 'sel' : ''}" data-gw="${h.year}|${h.week}" title="Week ${h.week}: ${h.s ? `${h.s.done}/${h.s.n} done` : 'no goals'}"><span class="gh-b"><i style="height:${Math.max(4,pp)}%" class="${pp>=100 ? 'full' : ''}"></i></span><span class="gh-l">W${h.week}</span></button>`; }).join('')}</div></div>
+      </section>`; })()}
     <div class="ggrid">
       <section>
-        <div class="gscore card">
-          <div class="gring" style="--p:${ring}"><span>${ring}%</span></div>
-          <div style="min-width:0"><div class="bigval">${sc ? `${sc.done} / ${sc.n}` : '0'} <span class="muted" style="font-size:15px;font-weight:700">goals done</span></div>
-            <p style="font-weight:700;margin-top:4px">${mood(sc?.pct || 0)}</p></div>
-        </div>
         ${false ? `<button class="btn" id="gRecur" style="margin-top:12px;width:100%">↻ Start the week with ${recurring.length} recurring goal${recurring.length>1?'s':''} from last week</button>` : ''}
         ${(() => { const gh = ghostGoals(y, w); return gh.length ? `<div class="glist gghost"><div class="kick" style="margin:2px 2px -4px">↻ Repeating — added automatically on Monday ${fmtDayShort(workDays(y, w)[0]).replace(/^\w+ /, '')}, then you can tick them</div>${gh.map(ghostCard).join('')}</div>` : ''; })()}
-        <div class="glist">${gs.length ? goalItems(gs).map(it => Array.isArray(it) ? dailyCard(it) : goalCard(it)).join('') : `<div class="card empty" style="margin-top:12px"><div class="orb" aria-hidden="true"></div><p>No goals for week ${w} yet. Add the first one below.</p></div>`}</div>
-        <form class="card gform" id="gForm">
+        ${gs.length ? (() => { const its = goalItems(gs), dl = its.filter(Array.isArray), rest = its.filter(x => !Array.isArray(x));
+          const sch = rest.filter(g => g.due_date).sort((x, y2) => `${x.due_date}${x.due_time || '09:00'}`.localeCompare(`${y2.due_date}${y2.due_time || '09:00'}`)), tgt = rest.filter(g => !g.due_date && g.kind==='number'), any = rest.filter(g => !g.due_date && g.kind!=='number');
+          const sec = (t, sub, list, fn) => list.length ? `<div class="gx-sec"><div class="gx-sh"><b>${t}</b><span>${sub}</span><em>${list.length}</em></div><div class="glist">${list.map(fn).join('')}</div></div>` : '';
+          return sec('🔁 Daily habits', 'Mon–Fri · tick each day', dl, dailyCard) + sec('📅 Scheduled', 'with a day and time · Telegram reminder', sch, goalCard) + sec('🎯 Targets', 'measured progress', tgt, goalCard) + sec('✅ Anytime this week', 'no fixed day', any, goalCard); })()
+          : `<div class="card empty" style="margin-top:12px"><div class="orb" aria-hidden="true"></div><p>No goals for week ${w} yet. Press <b>+ Add goal</b>.</p></div>`}
+        <form class="card gform" id="gForm" ${S.gAdd ? '' : 'hidden'}>
           <h3 id="gFormTitle">Add a goal</h3>
           <div class="gf-row">
             <select class="inp" name="emoji" aria-label="Icon" style="width:72px">${GOAL_EMOJIS.map(e => `<option>${e}</option>`).join('')}</select>
@@ -3732,17 +3760,12 @@ function renderGoals(){
             <label style="display:flex;gap:8px;align-items:center;font-weight:700;font-size:13px">Repeat
               <select class="inp" name="repeat" style="width:auto"><option value="">No</option><option value="week">Every week</option><option value="day" ${S.goalRepCol ? '' : 'disabled'}>Every day (Mon–Fri)${S.goalRepCol ? '' : ' — run migration-goal-daily.sql'}</option></select></label>
             <input class="inp" name="note" placeholder="note (optional)" style="flex:1;min-width:160px" aria-label="Note">
-            <button type="button" class="btn" id="gCancel" hidden>Cancel</button>
+            <button type="button" class="btn" id="gCancel">Cancel</button>
             <button class="btn btn-primary" type="submit" id="gSubmit">Add goal</button>
           </div>
         </form>
       </section>
       <aside>
-        <div class="card"><h3>Last 10 weeks</h3>
-          <div class="ghist">${hist.map(h => { const p = h.s ? Math.round(h.s.pct*100) : 0; const isSel = h.year===y && h.week===w;
-            return `<button class="gh ${isSel ? 'sel' : ''}" data-gw="${h.year}|${h.week}" title="Week ${h.week}: ${h.s ? `${h.s.done}/${h.s.n} done` : 'no goals'}"><span class="gh-b"><i style="height:${Math.max(4,p)}%" class="${p>=100 ? 'full' : ''}"></i></span><span class="gh-l">W${h.week}</span></button>`; }).join('')}</div>
-          <div class="gstats"><div><span class="kick">Perfect-week streak</span><b>${streak} 🔥</b></div><div><span class="kick">Goals achieved (all time)</span><b>${total} 🏆</b></div></div>
-        </div>
         ${goalCalendar()}
       </aside>
     </div>`;
@@ -3777,14 +3800,15 @@ function bindGoals(){
   document.getElementById('gPrev').onclick = () => go(-1);
   document.getElementById('gNext').onclick = () => go(1);
   document.getElementById('gNow').onclick = () => { S.gw = null; renderMain(); };
+  document.getElementById('gAddBtn').onclick = () => { const fm = document.getElementById('gForm'); fm.hidden = false; S.gAdd = true; fm.scrollIntoView({ behavior:'smooth', block:'center' }); fm.elements.title.focus(); };
   document.querySelectorAll('[data-gw]').forEach(b => b.onclick = () => { const [yy, ww] = b.dataset.gw.split('|').map(Number); S.gw = { y:yy, w:ww }; renderMain(); });
   const setKind = k => { kind = k; f.querySelectorAll('#gKind [data-k]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k===k))); f.querySelector('#gNum').hidden = k!=='number'; };
   const syncSrc = () => { const src = f.elements.source.value; f.querySelector('#gAcc').hidden = !src.startsWith('acct_');
     const u = GOAL_SOURCES[src][1]; f.elements.unit.disabled = src!=='manual'; if(src!=='manual') f.elements.unit.value = u; };
   f.querySelectorAll('#gKind [data-k]').forEach(b => b.onclick = () => setKind(b.dataset.k));
   f.elements.source.onchange = syncSrc;
-  const reset = () => { editId = null; f.reset(); setKind('check'); syncSrc(); f.querySelector('#gFormTitle').textContent = 'Add a goal'; f.querySelector('#gSubmit').textContent = 'Add goal'; f.querySelector('#gCancel').hidden = true; };
-  f.querySelector('#gCancel').onclick = reset;
+  const reset = () => { editId = null; f.reset(); setKind('check'); syncSrc(); if(!S.gAdd) f.hidden = true; f.querySelector('#gFormTitle').textContent = 'Add a goal'; f.querySelector('#gSubmit').textContent = 'Add goal'; f.querySelector('#gCancel').hidden = true; };
+  f.querySelector('#gCancel').onclick = () => { S.gAdd = false; reset(); f.hidden = true; };
   f.onsubmit = async ev => {
     ev.preventDefault();
     const el = f.elements, src = kind==='number' ? el.source.value : 'manual';
@@ -3799,8 +3823,8 @@ function bindGoals(){
     if(kind==='number' && row.target==null) return toast('Set a target number');
     if(!editId) row.sort = weekGoals(y, w).length;
     const old = editId ? S.goals.get(editId) : null;
-    if(rep==='day' || isDaily(old)){ if(await saveDaily(row, old)){ toast(editId ? 'Goal updated' : 'Daily goal added (Mon–Fri)'); renderMain(); } return; }
-    if(await saveGoal(row, editId)){ toast(editId ? 'Goal updated' : row.due_date && (row.year!==y || row.week!==w) ? `Goal added to week ${row.week}` : 'Goal added'); renderMain(); }
+    if(rep==='day' || isDaily(old)){ if(await saveDaily(row, old)){ S.gAdd = false; toast(editId ? 'Goal updated' : 'Daily goal added (Mon–Fri)'); renderMain(); } return; }
+    if(await saveGoal(row, editId)){ S.gAdd = false; toast(editId ? 'Goal updated' : row.due_date && (row.year!==y || row.week!==w) ? `Goal added to week ${row.week}` : 'Goal added'); renderMain(); }
   };
   document.querySelectorAll('[data-gtoggle]').forEach(b => b.onclick = async () => { const g = S.goals.get(b.dataset.gtoggle); if(await saveGoal({ done:!g.done }, g.id)) renderMain(); });
   document.querySelectorAll('[data-gval]').forEach(i => i.onchange = async () => { if(await saveGoal({ value:parseNum(i.value) }, i.dataset.gval)) renderMain(); });
@@ -3819,7 +3843,7 @@ function bindGoals(){
     const { error } = await sb.from('do_goals').update({ recurring:false, ...(S.goalRepCol ? { repeat_mode:null } : {}) }).in('id', ids); if(error) return toast(error.message);
     ids.forEach(id => S.goals.set(id, { ...S.goals.get(id), recurring:false, repeat_mode:null })); toast('Repeating stopped'); renderMain(); });
   document.querySelectorAll('[data-gedit]').forEach(b => b.onclick = () => {
-    const g = S.goals.get(b.dataset.gedit); editId = g.id; const el = f.elements;
+    const g = S.goals.get(b.dataset.gedit); editId = g.id; const el = f.elements; f.hidden = false;
     el.emoji.value = g.emoji || '🎯'; el.title.value = g.title; el.note.value = g.note || ''; el.repeat.value = isDaily(g) ? 'day' : g.recurring ? 'week' : '';
     setKind(g.kind || 'check'); el.source.value = g.source || 'manual'; if(g.account_id) el.account_id.value = g.account_id; syncSrc();
     el.target.value = g.target ?? ''; if((g.source||'manual')==='manual') el.unit.value = g.unit || '';
