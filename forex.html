@@ -1185,6 +1185,19 @@
   .lvr-live{ display:grid; line-height:1.1; } .lvr-live b{ font-family:'Bricolage Grotesque',sans-serif; font-size:20px; font-weight:800; } .lvr-live small{ font-size:11.5px; font-weight:700; color:var(--muted); }
   .lvr-live.up b{ color:var(--pos); } .lvr-live.dn b{ color:var(--neg); }
   /* ===== accounts board ===== */
+  .bk-hero{ display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1.4fr); gap:12px; margin-bottom:16px; }
+  @media (max-width:1000px){ .bk-hero{ grid-template-columns:1fr; } }
+  .bk-main{ display:grid; align-content:center; gap:8px; padding:20px 22px; border-radius:22px; border:1px solid var(--line); background:radial-gradient(120% 140% at 0% 0%, color-mix(in srgb,var(--accent) 14%,transparent), transparent 55%), var(--surface); }
+  .bk-big{ font-family:'Bricolage Grotesque',sans-serif; font-size:52px; font-weight:800; line-height:1; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+  .bk-big.pos{ color:var(--pos); } .bk-big.neg{ color:var(--neg); }
+  .bk-split{ display:flex; gap:3px; height:10px; border-radius:99px; overflow:hidden; background:var(--surface-2); }
+  .bk-split i{ display:block; min-width:0; } .bk-split i.p{ background:var(--pos); } .bk-split i.n{ background:var(--neg); }
+  .bk-io{ display:flex; flex-wrap:wrap; gap:6px 16px; font-size:13px; font-weight:600; color:var(--muted); }
+  .bk-io span{ display:inline-flex; align-items:center; gap:6px; } .bk-io i{ width:8px; height:8px; border-radius:50%; } .bk-io i.p{ background:var(--pos); } .bk-io i.n{ background:var(--neg); }
+  .bk-io b{ font-weight:800; }
+  .bk-side{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; } .bk-side .ab-k{ align-content:center; }
+  @media (max-width:640px){ .bk-side{ grid-template-columns:1fr 1fr; } .bk-big{ font-size:40px; } }
+  .bk-date{ flex:none; width:40px; display:grid; place-items:center; line-height:1.05; } .bk-date b{ font-family:'Bricolage Grotesque',sans-serif; font-size:18px; font-weight:800; } .bk-date small{ font-size:10px; font-weight:800; text-transform:uppercase; color:var(--muted); }
   .ab-kpis{ display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
   @media (max-width:1200px){ .ab-kpis{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
   @media (max-width:640px){ .ab-kpis{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
@@ -4180,8 +4193,11 @@ function bankEntries(){
   if(S.bank.withPayouts) S.accounts.forEach(a => msList(a).filter(m => m.kind==='payout' && m.amount!=null).forEach(m => out.push({
     id:'acc-'+a.id+'-'+m.id, src:'account', kind:'income', category:'Payout', amount:Number(m.amount), currency:'USD', usd:Number(m.amount),
     date:m.date || m.done_date || (a.closed_date || iso(new Date())), note:`${m.title && m.title!=='Payout reached' ? m.title+' · ' : ''}${a.name}`, account:a })));
-  return out.sort((x,y) => (y.date||'').localeCompare(x.date||'') || (y.created_at||'').localeCompare(x.created_at||''));
+  const hid = new Set(bankHidden());
+  return out.filter(e => !hid.has(e.id)).sort((x,y) => (y.date||'').localeCompare(x.date||'') || (y.created_at||'').localeCompare(x.created_at||''));
 }
+/* account payouts you removed from Bank (they stay in Accounts) */
+const bankHidden = () => Array.isArray(S.settings?.bank_hidden) ? S.settings.bank_hidden : [];
 function bankFrom(){
   const now = new Date(), p = S.bank.period;
   if(p==='month') return iso(new Date(now.getFullYear(), now.getMonth(), 1));
@@ -4217,14 +4233,19 @@ function renderBank(){
         <button class="btn btn-primary" id="bkAdd">+ Add entry</button>
       </div>
     </div>
-    <div class="tj-kpis">
-      ${kpi('Net cash flow', `${net>0?'+':''}${money(net)}`, sgn(net), `${inP.length} entr${inP.length===1?'y':'ies'}`)}
-      ${kpi('Income', money(inc), 'pos')}
-      ${kpi('Expenses', money(exp), exp ? 'neg' : '')}
-      ${kpi('Payouts received', money(pay), pay ? 'pos' : '', `${inP.filter(e => e.category==='Payout').length} payout${inP.filter(e => e.category==='Payout').length===1?'':'s'}`)}
-      ${kpi('Trading net', `${trNet>0?'+':''}${money(trNet)}`, sgn(trNet), fees ? `after ${money(fees)} fees & tools` : 'payouts + trading − fees')}
-      ${kpi('Avg / month', avg!=null ? `${avg>0?'+':''}${money(avg)}` : '–', sgn(avg), mk.length ? `${mk.length} month${mk.length===1?'':'s'}` : '')}
-    </div>
+    <section class="bk-hero">
+      <div class="bk-main">
+        <span class="kick">Net cash flow · ${{ month:'this month', '3m':'last 3 months', ytd:'year to date', all:'all time' }[B.period] || ''}</span>
+        <b class="bk-big ${sgn(net)}">${net>0?'+':''}${money(net)}</b>
+        <div class="bk-split" title="Income vs expenses"><i class="p" style="flex:${Math.max(inc, .0001)}"></i><i class="n" style="flex:${exp}"></i></div>
+        <div class="bk-io"><span><i class="p"></i>In <b class="pos">${money(inc)}</b></span><span><i class="n"></i>Out <b class="${exp ? 'neg' : ''}">${money(exp)}</b></span><span class="muted">${inP.length} entr${inP.length===1?'y':'ies'}</span></div>
+      </div>
+      <div class="bk-side">
+        <div class="ab-k pay"><span>Payouts received</span><b>${money(pay)}</b><small>${inP.filter(e => e.category==='Payout').length} payout${inP.filter(e => e.category==='Payout').length===1?'':'s'}</small></div>
+        <div class="ab-k ${trNet >= 0 ? 'up' : 'dn'}"><span>Trading net</span><b>${trNet>0?'+':''}${money(trNet)}</b><small>${fees ? `after ${money(fees)} fees & tools` : 'payouts − fees & tools'}</small></div>
+        <div class="ab-k ${avg==null ? '' : avg >= 0 ? 'up' : 'dn'}"><span>Avg / month</span><b>${avg!=null ? `${avg>0?'+':''}${money(avg)}` : '–'}</b><small>${mk.length ? `${mk.length} month${mk.length===1?'':'s'}` : 'no data yet'}</small></div>
+      </div>
+    </section>
     <div class="tj-row">
       <div class="card"><h3>Monthly cash flow</h3>${mk.length ? '<div class="chartbox" style="height:250px"><canvas id="bkChart"></canvas></div>' : '<p class="muted">Add your first entry to see the monthly flow.</p>'}</div>
       <div class="card"><h3>Where it comes from & goes</h3>
@@ -4238,17 +4259,19 @@ function renderBank(){
           ${seg('kind', [['all','All'],['income','Income'],['expense','Expenses']])}
           <select class="inp tj-sel" id="bkCat"><option value="all">All categories</option>${usedCats.map(c => `<option ${B.cat===c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
           <label class="bk-tog"><input type="checkbox" id="bkPay" ${B.withPayouts ? 'checked' : ''}> Include account payouts</label>
+          ${bankHidden().length ? `<button class="bt" id="bkRestore" title="Show the account payouts you removed from Bank again">↺ ${bankHidden().length} hidden</button>` : ''}
         </span></div>
       ${list.length ? Object.entries(groups).map(([m, es]) => { const n = es.reduce((t,e) => t + (e.kind==='income' ? e.usd : -e.usd), 0);
         return `<div class="bk-mh"><b>${monthName(m)}</b><span class="num ${sgn(n)}">${n>0?'+':''}${money(n)}</span></div>
           ${es.map(e => { const [c, icon] = catInfo(e.kind, e.category);
             return `<div class="bk-row ${e.kind}">
+              <span class="bk-date"><b>${e.date ? Number(e.date.slice(8, 10)) : '–'}</b><small>${e.date ? WD_SHORT[parseISO(e.date).getDay()] : ''}</small></span>
               <span class="bk-ico">${icon}</span>
-              <div class="bk-b"><b>${esc(c)}</b><span class="muted">${e.date ? fmtDayShort(e.date) : 'No date'}${e.note ? ' · '+esc(e.note) : ''}</span></div>
+              <div class="bk-b"><b>${esc(c)}</b><span class="muted">${e.note ? esc(e.note) : e.date ? fmtDayShort(e.date) : 'No date'}</span></div>
               ${e.src==='account' ? '<span class="bk-src" title="Logged in Accounts → Goals & achievements. Edit it there.">from Accounts</span>' : ''}
               <div class="bk-amt"><b class="num ${e.kind==='income' ? 'pos' : 'neg'}">${e.kind==='income' ? '+' : '−'}${fmtCur(Math.abs(Number(e.amount)), e.currency||'USD')}</b>
                 ${e.currency && e.currency!=='USD' ? `<span class="muted">≈ ${money(e.usd)}</span>` : ''}</div>
-              ${e.src==='manual' ? `<div class="gc-a"><button class="ib sm" data-bkedit="${e.id}" aria-label="Edit">✎</button><button class="rm" data-bkdel="${e.id}" aria-label="Delete">×</button></div>` : '<div class="gc-a" style="width:64px"></div>'}
+              ${e.src==='manual' ? `<div class="gc-a"><button class="ib sm" data-bkedit="${e.id}" aria-label="Edit">✎</button><button class="rm" data-bkdel="${e.id}" aria-label="Delete">×</button></div>` : `<div class="gc-a"><span style="width:30px"></span><button class="rm" data-bkhide="${e.id}" aria-label="Remove from Bank" title="Remove from Bank only — it stays in Accounts">×</button></div>`}
             </div>`; }).join('')}`; }).join('')
         : `<div class="empty"><div class="orb" aria-hidden="true"></div><p>No transactions${B.kind!=='all' || B.cat!=='all' ? ' for this filter' : ' in this period'}.</p><button class="btn btn-primary" id="bkAdd2">+ Add entry</button></div>`}
     </div>`;
@@ -4259,6 +4282,10 @@ function renderBank(){
   m.querySelectorAll('[data-bkcat]').forEach(b => b.onclick = () => { S.bank.cat = b.dataset.bkcat; S.bank.kind = 'all'; renderMain(); });
   ['bkAdd','bkAdd2'].forEach(id => m.querySelector('#'+id)?.addEventListener('click', () => openBankEntry()));
   m.querySelectorAll('[data-bkedit]').forEach(b => b.onclick = () => openBankEntry(S.bank.rows.get(b.dataset.bkedit)));
+  m.querySelectorAll('[data-bkhide]').forEach(b => b.onclick = async () => {
+    if(!confirm('Remove this payout from Bank?\n\nIt stays in Accounts (the account, its payout and its history do not change). You can bring it back with "↺ hidden".')) return;
+    await saveSettingKey('bank_hidden', [...new Set([...bankHidden(), b.dataset.bkhide])]); renderMain(); toast('Removed from Bank · still in Accounts'); });
+  m.querySelector('#bkRestore')?.addEventListener('click', async () => { if(!confirm(`Show the ${bankHidden().length} hidden account payout(s) in Bank again?`)) return; await saveSettingKey('bank_hidden', []); renderMain(); toast('Hidden payouts are back'); });
   m.querySelectorAll('[data-bkdel]').forEach(b => b.onclick = async () => { if(!confirm('Delete this entry?')) return;
     const { error } = await sb.from('do_bank').delete().eq('id', b.dataset.bkdel); if(error) return toast('Not deleted: ' + error.message);
     S.bank.rows.delete(b.dataset.bkdel); renderMain(); toast('Entry deleted'); });
@@ -4445,7 +4472,7 @@ async function loadSignals(){
     return;
   }
   if(!S.signalsMissing) await loadCandles();
-  try{ const { data } = await sb.from('do_settings').select('*').range(0, 999); (data || []).forEach(r => { if(['engine','hb_1m','hb_15m','hb_1H','hb_4H','pair_override'].includes(r.key)) S.settings[r.key] = r.value; }); }catch(e){ /* keep what we have */ }
+  try{ const { data } = await sb.from('do_settings').select('*').range(0, 999); (data || []).forEach(r => { if(['engine','hb_1m','hb_15m','hb_1H','hb_4H','pair_override','bank_hidden'].includes(r.key)) S.settings[r.key] = r.value; }); }catch(e){ /* keep what we have */ }
 }
 /* the server engine (tv-signal) is running → it does the auto-take / auto-close; the browser only shows */
 const engineOn = () => { const at = S.settings?.engine?.at; return !!at && Date.now() - tms(at) < 40*60e3; };
