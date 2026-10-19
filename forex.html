@@ -782,6 +782,43 @@
   .more-i{ display:flex; flex-direction:column; align-items:center; gap:8px; padding:16px 8px; border-radius:16px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-weight:700; font-size:12.5px; }
   .more-i .ico{ color:var(--accent); }
   /* ===== today ===== */
+  .td2-hero{ display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:16px 24px; margin:4px 0 14px; padding:22px 26px; border-radius:24px; border:1px solid var(--line);
+    background:radial-gradient(120% 160% at 0% 0%, color-mix(in srgb,var(--accent) 13%,transparent), transparent 55%), radial-gradient(90% 120% at 100% 100%, color-mix(in srgb,var(--violet) 10%,transparent), transparent 60%), var(--surface); }
+  @media (max-width:1100px){ .td2-hero{ grid-template-columns:1fr; } }
+  .td2-hi h1{ font-family:'Bricolage Grotesque',sans-serif; font-size:38px; font-weight:800; letter-spacing:-.02em; line-height:1.05; margin:6px 0 4px; }
+  .td2-hi p{ margin:0; font-weight:600; color:var(--muted); }
+  .td2-ses{ display:grid; gap:6px; justify-items:start; } .td2-ses > small{ font-size:11.5px; font-weight:700; color:var(--muted); }
+  .td2-ses{ grid-template-columns:repeat(3,auto); } .td2-ses > small{ grid-column:1 / -1; }
+  .td2-s{ display:inline-flex; align-items:center; gap:6px; padding:6px 11px; border-radius:10px; border:1px solid var(--line); font-size:12.5px; font-weight:800; color:var(--muted); background:var(--surface-2); }
+  .td2-s.on{ color:var(--pos); border-color:color-mix(in srgb,var(--pos) 50%,var(--line)); background:color-mix(in srgb,var(--pos) 10%,var(--surface-2)); }
+  .td2-s i{ width:7px; height:7px; border-radius:50%; background:var(--pos); animation:acPulse 1.6s ease-in-out infinite; }
+  .td-k{ text-align:left; cursor:pointer; color:var(--ink); transition:transform .12s, border-color .12s; } .td-k:hover{ transform:translateY(-2px); border-color:var(--muted); }
+  .td2-main{ display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:14px; margin-bottom:14px; align-items:start; }
+  .td2-grid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-bottom:14px; align-items:start; }
+  @media (max-width:1200px){ .td2-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  @media (max-width:900px){ .td2-main, .td2-grid{ grid-template-columns:1fr; } }
+  .td2-main .td-card, .td2-grid .td-card{ margin:0; }
+  .td2-live{ display:grid; gap:10px; }
+  .td2-tr{ display:grid; gap:8px; padding:12px 14px; border-radius:14px; border:1px solid var(--line); background:var(--surface-2); }
+  .td2-tr.up{ border-color:color-mix(in srgb,var(--pos) 35%,var(--line)); } .td2-tr.dn{ border-color:color-mix(in srgb,var(--neg) 35%,var(--line)); }
+  .td2-trh{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; } .td2-trh > b{ font-size:15px; font-weight:800; } .td2-trh > b em{ font-style:normal; color:var(--muted); }
+  .td2-since{ font-size:12px; font-weight:600; }
+  .td2-r{ margin-left:auto; display:grid; justify-items:end; line-height:1.05; font-family:'Bricolage Grotesque',sans-serif; font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .td2-r small{ font-family:inherit; font-size:11px; font-weight:700; color:var(--muted); }
+  .td2-tr.up .td2-r{ color:var(--pos); } .td2-tr.dn .td2-r{ color:var(--neg); }
+  .td2-empty{ display:grid; gap:4px; padding:18px; border-radius:14px; border:1px dashed var(--line); text-align:center; } .td2-empty span{ color:var(--muted); font-size:13px; font-weight:600; }
+  .td2-todos{ display:grid; gap:8px; }
+  .td2-todo{ display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:10px 12px; border-radius:12px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); }
+  .td2-todo > i{ font-style:normal; font-size:16px; } .td2-todo > span{ display:grid; min-width:0; } .td2-todo b{ font-size:13px; font-weight:800; } .td2-todo small{ font-size:11.5px; font-weight:600; color:var(--muted); }
+  .td2-todo > em{ margin-left:auto; font-style:normal; color:var(--muted); }
+  .td2-todo.ok{ border-color:color-mix(in srgb,var(--pos) 45%,var(--line)); } .td2-todo.warn{ border-color:color-mix(in srgb,var(--amber) 45%,var(--line)); } .td2-todo.bad, .td2-todo.late{ border-color:color-mix(in srgb,var(--neg) 50%,var(--line)); }
+  .td2-todo.done{ opacity:.6; } .td2-todo.done b{ text-decoration:line-through; }
+  .td2-chk{ flex:none; width:24px; height:24px; display:grid; place-items:center; border-radius:8px; border:2px solid var(--muted); background:none; color:var(--on-accent); font-weight:900; font-size:13px; }
+  .td2-chk[aria-pressed="true"]{ background:var(--pos); border-color:var(--pos); }
+  .td2-board{ border:1px solid var(--line); border-radius:20px; background:var(--surface); margin-bottom:14px; }
+  .td2-board > summary{ list-style:none; cursor:pointer; display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; padding:13px 16px; }
+  .td2-board > summary::-webkit-details-marker{ display:none; } .td2-board > summary::before{ content:'▸'; color:var(--muted); transition:transform .15s; } .td2-board[open] > summary::before{ transform:rotate(90deg); }
+  .td2-board > .pl{ margin:0 4px 6px; border:none !important; background:none !important; box-shadow:none !important; }
   .td-hero{ display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:16px; margin:6px 0 18px; padding:22px 24px; border-radius:22px; border:1px solid var(--line);
             background:radial-gradient(600px 220px at 0% 0%, color-mix(in srgb,var(--accent) 16%,transparent), transparent 70%), radial-gradient(500px 200px at 100% 100%, color-mix(in srgb,var(--violet) 16%,transparent), transparent 70%), var(--surface); }
   .td-actions{ display:flex; gap:8px; flex-wrap:wrap; }
@@ -6453,50 +6490,78 @@ function renderToday(){
   const kpi = (l, v, c='', sub='') => `<div class="tj-kpi"><span class="kick">${l}</span><b class="${c}">${v}</b>${sub ? `<span class="muted">${sub}</span>` : ''}</div>`;
   const card = (title, action, body, cls='') => `<section class="card td-card ${cls}"><div class="td-h"><h3>${title}</h3>${action || ''}</div>${body}</section>`;
   const link = (lbl, attr) => `<button class="td-link" ${attr}>${lbl} →</button>`;
+  /* ---- live data for the new layout ---- */
+  const hmNow = now.getHours()*60 + now.getMinutes(), SES = [['Asia', 0, 540], ['London', 540, 1080], ['New York', 990, 1410]];
+  const sesOn = weekend ? [] : SES.filter(([, a, b]) => hmNow >= a && hmNow < b).map(x => x[0]);
+  const nextSes = weekend ? null : SES.map(([n, a]) => ({ n, a })).find(x => x.a > hmNow);
+  const hhmmOf = m => `${Math.floor(m/60)}h ${String(m%60).padStart(2,'0')}m`;
+  const live = open.map(t => ({ t, lv:livePL(t) })), runR = live.reduce((x, o) => x + (o.lv ? o.lv.R : 0), 0), runUsd = live.reduce((x, o) => x + (o.lv ? o.lv.R * RISK_USD : 0), 0);
+  let sus = []; try{ sus = deriveSetups(); }catch(e){ sus = []; }
+  const colN = c => sus.filter(x => { try{ return sxCol(x)===c; }catch(e){ return false; } }).length;
+  const nVal = colN('validate'), nForm = colN('formed'), nLiq = colN('forming');
+  const wR = wTrades.reduce((x, e) => x + (Number(e.r_multiple) || 0), 0), wW = wTrades.filter(e => e.result==='W').length, wL = wTrades.filter(e => e.result==='L').length;
+  const attn = accs.filter(a => { try{ return acctFlags(a, acctStats(a)).length; }catch(e){ return false; } });
+  const nextPay = accs.filter(a => payDays(a)!=null && payDays(a) >= 0).sort((x, y) => payDays(x) - payDays(y))[0];
+  const gDue = [...S.goals.values()].filter(g => g.due_date && String(g.due_date).slice(0, 10)===today).sort((a, b) => String(a.due_time || '09:00').localeCompare(String(b.due_time || '09:00')));
+  const gDone = gDue.filter(g => goalState(g).done).length;
+  const todayCov = tr.length ? tr.filter(p => dayCov(S.daily.get(dk(p, today))).state==='done').length : null;
+  const kpi2 = (lbl, val, sub, cls = '', act = '') => `<button class="ab-k td-k ${cls}" ${act}><span>${lbl}</span><b>${val}</b><small>${sub}</small></button>`;
+  const todo = [
+    ...(nVal ? [`<button class="td2-todo warn" data-view2="setups"><i>🔎</i><span><b>${nVal} setup${nVal > 1 ? 's' : ''} to validate</b><small>Step 2 · fractal change</small></span><em>→</em></button>`] : []),
+    ...attn.flatMap(a => acctFlags(a, acctStats(a)).map(([k, t]) => `<button class="td2-todo ${k==='ok' ? 'ok' : k==='bad' ? 'bad' : 'warn'}" data-view2="accounts"><i>💼</i><span><b>${t}</b><small>${esc(shortAcc(a.name))}</small></span><em>→</em></button>`)),
+    ...gDue.map(g => { const d = goalState(g).done, late = !d && goalDueAt(g) < now;
+      return `<div class="td2-todo goal ${d ? 'done' : late ? 'late' : ''}"><button class="td2-chk" data-tdg="${g.id}" aria-pressed="${d}" aria-label="${d ? 'Mark as not done' : 'Mark as done'}">${d ? '✓' : ''}</button><span><b>${esc(g.emoji || '')} ${esc(g.title)}</b><small>${g.due_time ? esc(g.due_time) : 'today'}${late ? ' · overdue' : ''}</small></span></div>`; }),
+  ];
+  const boardOpen = ls.get('do_td_board', true);
   document.getElementById('main').innerHTML = `
-    <div class="td-hero">
-      <div><span class="kick">${WD[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]} · Week ${k.week}</span>
-        <div class="pairtitle" style="margin-top:6px">${hello}, Alessio.</div>
-        <p class="muted" style="font-weight:600;margin-top:6px">${weekend ? 'Weekend — time to review the week and prepare the next one.' : open.length ? `You have ${open.length} open trade${open.length>1?'s':''} to manage.` : 'Flat. Wait for your setup.'}</p></div>
-      <div class="td-actions">${weekend ? (weekAhead() ? `<button class="btn" data-act="unfinish" title="Show week ${isoWeek(new Date()).week} again">↩ Back to week ${isoWeek(new Date()).week}</button>` : `<button class="btn" data-act="finish" title="Switch the whole site to next week now, with the fundamentals you loaded">🏁 Finish week ${isoWeek(new Date()).week} → ${isoWeek(new Date(Date.now() + 3*864e5)).week}</button>`) : ''}${weekend ? `<button class="btn btn-primary" data-act="prompts">Weekly review ${ico('spark',14)}</button>` : `<button class="btn btn-primary" data-act="gap">Fill next gap →</button>`}<button class="btn" data-act="journal">Open journal</button></div>
+    <section class="td2-hero">
+      <div class="td2-hi"><span class="kick">${WD[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]} · Week ${isoWeek(planDate()).week}${weekAhead() ? ' (next week, early)' : ''}</span>
+        <h1>${hello}, Alessio.</h1>
+        <p>${weekend ? 'Weekend — review the week and prepare the next one.' : open.length ? `${open.length} open trade${open.length > 1 ? 's' : ''} running · ${runR >= 0 ? '+' : ''}${fmt(runR, 2)}R right now.` : nForm ? `Flat · ${nForm} setup${nForm > 1 ? 's' : ''} waiting at the line.` : 'Flat. Wait for your setup.'}</p></div>
+      <div class="td2-ses">${weekend ? '<span class="td2-s off">Markets closed</span>' : SES.map(([n]) => `<span class="td2-s ${sesOn.includes(n) ? 'on' : ''}">${sesOn.includes(n) ? '<i></i>' : ''}${n}</span>`).join('')}
+        ${nextSes ? `<small>${esc(nextSes.n)} opens in ${hhmmOf(nextSes.a - hmNow)}</small>` : !weekend ? '<small>Last session of the day</small>' : ''}</div>
+      <div class="td-actions">${weekend ? (weekAhead() ? `<button class="btn" data-act="unfinish">↩ Back to week ${isoWeek(new Date()).week}</button>` : `<button class="btn" data-act="finish" title="Switch the whole site to next week now, with the fundamentals you loaded">🏁 Finish week ${isoWeek(new Date()).week} → ${isoWeek(new Date(Date.now() + 3*864e5)).week}</button>`) : ''}${weekend ? `<button class="btn btn-primary" data-act="prompts">Weekly review ${ico('spark',14)}</button>` : `<button class="btn btn-primary" data-act="gap">Fill next gap →</button>`}<button class="btn" data-act="journal">Open journal</button></div>
+    </section>
+    <div class="ab-kpis">
+      ${kpi2('Running now', open.length ? `${runR >= 0 ? '+' : ''}${fmt(runR, 2)}R` : 'Flat', open.length ? `${open.length} open · ${runUsd >= 0 ? '+' : '−'}$${fmt(Math.abs(runUsd), 0)}` : 'no open trades', open.length ? (runR >= 0 ? 'up' : 'dn') : '', 'data-view2="setups"')}
+      ${kpi2('Setups', nLiq + nVal + nForm, `${nLiq} liquidity · ${nVal} to validate · ${nForm} formed`, nVal ? 'att' : '', 'data-view2="setups"')}
+      ${kpi2('This week', wTrades.length ? `${wR >= 0 ? '+' : ''}${fmt(wR, 2)}R` : '–', wTrades.length ? `${wW}W / ${wL}L${wProfit ? ' · ' + (wProfit > 0 ? '+' : '') + money(wProfit) : ''}` : 'no closed trades', wTrades.length ? (wR >= 0 ? 'up' : 'dn') : '', 'data-view2="trades"')}
+      ${kpi2('Accounts', attn.length ? `${attn.length} need you` : accs.length, nextPay ? `next payout ${payDays(nextPay)===0 ? 'today' : 'in ' + payDays(nextPay) + 'd'}` : `${accs.length} live`, attn.length ? 'att' : '', 'data-view2="accounts"')}
+      ${kpi2('Today’s to-do', gDue.length ? `${gDone}/${gDue.length}` : '–', gDue.length ? (gDone===gDue.length ? 'all done 🎉' : `${gDue.length - gDone} left`) : 'nothing due today', gDue.length && gDone===gDue.length ? 'up' : '', 'data-view2="goals"')}
+      ${kpi2('Observations', todayCov!=null ? `${todayCov}/${tr.length}` : due ? Math.round(done/due*100) + '%' : '–', todayCov!=null ? `today · week ${due ? Math.round(done/due*100) : 0}%` : 'this week', todayCov!=null && todayCov===tr.length ? 'up' : '', 'data-act="gap"')}
     </div>
-    <div class="pl" id="tdBoard"></div>
-    <div class="tj-kpis">
-      ${kpi('Open trades', open.length, open.length ? 'pos' : '')}
-      ${kpi('This week', wTrades.length ? `${wPips>0?'+':''}${fmt(wPips,1)} pips` : '–', sgn(wPips), wTrades.length ? `${wTrades.length} closed${wProfit ? ' · '+(wProfit>0?'+':'')+money(wProfit) : ''}` : 'no closed trades')}
-      ${kpi('Coverage', due ? Math.round(done/due*100)+'%' : '–', due && done===due ? 'pos' : '', due ? `${done}/${due} days · ${covPairs.length} pair${covPairs.length===1?'':'s'}` : 'track pairs in Desk')}
-      ${kpi('Weekly goals', gsc ? Math.round(gsc.pct*100)+'%' : '–', gsc && gsc.pct>=1 ? 'pos' : '', gsc ? `${gsc.done}/${gsc.n} done` : 'none set')}
+    <div class="td2-main">
+      ${card('⚡ Live now', link('Setups', 'data-view2="setups"'), live.length ? `<div class="td2-live">${live.map(({ t, lv }) => { const accN = tradeAccts(t).map(x => S.accounts.get(x.id)?.name).filter(Boolean);
+          return `<div class="td2-tr ${lv ? (lv.R >= 0 ? 'up' : 'dn') : ''}">
+            <div class="td2-trh"><span class="tj-dir ${t.direction.toLowerCase()}">${t.direction==='Long' ? '▲' : '▼'}</span><b>${t.pair.slice(0,3)}<em>${t.pair.slice(3)}</em></b><span class="tfl">${esc(t.setup_tf || '')}</span>
+              <span class="muted td2-since">since ${fmtDayShort(t.day)}${t.entry_time ? ' ' + esc(t.entry_time) : ''}${accN.length ? ' · 👤 ' + esc(accN.map(shortAcc).join(', ')) : ''}</span>
+              <span class="td2-r">${lv ? `${lv.R >= 0 ? '+' : ''}${fmt(lv.R, 2)}R` : '…'}<small>${lv ? `${lv.pips >= 0 ? '+' : ''}${fmt(lv.pips, 1)} pips` : 'waiting for a candle'}</small></span></div>
+            ${sxRail(t, lv)}</div>`; }).join('')}</div>`
+          : `<div class="td2-empty"><b>No open trades.</b><span>${nForm ? `${nForm} setup${nForm > 1 ? 's' : ''} in Step 3 waiting for price at the line.` : 'Nothing at the line yet.'}</span></div>`, 'td2-wide')}
+      ${card('✅ Today', link('Goals', 'data-view2="goals"'), todo.length ? `<div class="td2-todos">${todo.join('')}</div>` : '<div class="td2-empty"><b>All clear.</b><span>No goals due, nothing to validate, no account alerts.</span></div>')}
     </div>
-    <div class="td-grid">
-      ${card(`📰 ${weekend ? 'Monday\'s' : 'Today\'s'} news`, link('Calendar', 'data-act="journal"'),
+    <div class="td2-grid">
+      ${card(`📰 ${weekend ? 'Monday’s' : 'Today’s'} news`, link('Calendar', 'data-act="journal"'),
         news.length ? `<div class="td-news">${news.map(n => `<div class="td-nw"><span class="ncur">${n.currency}</span><ul class="nl">${newsList(n.events)}</ul></div>`).join('')}</div>`
-          : '<p class="muted">No events logged. Import the weekly analysis or add news in the journal.</p>')}
-      ${card(`🗒️ Plan from ${fmtDayShort(planDay)}`, '', plans.length ? `<div class="td-list">${plans.slice(0,8).map(e => `<button class="td-row" data-go="${e.pair}|${e.day}">
-          <b>${e.pair.slice(0,3)}<em>${e.pair.slice(3)}</em></b><span class="td-grow">${esc(e.action)}</span>${e.trade_status ? stBadge(e.trade_status) : ''}</button>`).join('')}</div>`
-          : '<p class="muted">No plan written last session. Use "Plan for tomorrow" in the journal.</p>')}
-      ${card('⚡ Open trades', link('All trades', 'data-view2="trades"'), open.length ? `<div class="td-list">${open.map(e => { const days = Math.max(0, Math.round((now - parseISO(e.day))/864e5));
-          return `<button class="td-row" data-go="${e.pair}|${e.day}"><span class="tj-dir ${e.direction.toLowerCase()}">${e.direction==='Long' ? '▲' : '▼'}</span><b>${e.pair.slice(0,3)}<em>${e.pair.slice(3)}</em></b>
-            <span class="muted td-grow">${days}d · since ${fmtDayShort(e.day)}${e.setup_tf ? ' · '+e.setup_tf : ''}</span>${e.entry_price!=null ? `<span class="num" style="margin-left:auto;font-size:12px">@ ${e.entry_price}</span>` : ''}</button>`; }).join('')}</div>`
-          : '<p class="muted">No open positions.</p>')}
+          : '<p class="muted">No events logged for this day.</p>')}
+      ${card('📅 Coming up', '', upcoming.length ? `<div class="cats">${upcoming.map(c => `<div class="cat"><time>${esc(c.date)}</time><span>${esc(c.event)} <span class="muted" style="font-size:11.5px">· ${[...c.pairs].length} pair${[...c.pairs].length>1?'s':''}</span></span>${c.imp ? `<span class="imp ${impCls(c.imp)}">${esc(c.imp)}</span>` : ''}</div>`).join('')}</div>`
+          : '<p class="muted">No dated catalysts in this week’s analysis.</p>')}
       ${card('🎯 High conviction', link('History', 'data-view2="history"'), strong.length ? `<div class="td-chips">${strong.map(x => `<button class="pc b-${x.r.bias}" data-pick="${x.p}"><span class="pc-n">${x.p.slice(0,3)}<i>${x.p.slice(3)}</i></span><span class="pc-d">${x.div ?? ''}</span></button>`).join('')}</div>`
           : '<p class="muted">No high-conviction pairs this week.</p>')}
-      ${card('📅 Upcoming catalysts', '', upcoming.length ? `<div class="cats">${upcoming.map(c => `<div class="cat"><time>${esc(c.date)}</time><span>${esc(c.event)} <span class="muted" style="font-size:11.5px">· ${[...c.pairs].length} pair${[...c.pairs].length>1?'s':''}</span></span>${c.imp ? `<span class="imp ${impCls(c.imp)}">${esc(c.imp)}</span>` : ''}</div>`).join('')}</div>`
-          : '<p class="muted">No dated catalysts in this week\'s analysis.</p>')}
-      ${card('🏆 Goals', link('Goals', 'data-view2="goals"'), gs.length ? `<div class="td-list">${gs.slice(0,5).map(g => { const st = goalState(g);
-          return `<div class="td-goal ${st.done ? 'done' : ''}"><span>${esc(g.emoji || '🎯')} ${esc(g.title)}</span><span class="gbar"><span style="width:${Math.round(st.pct*100)}%" class="${st.done ? 'full' : ''}"></span></span></div>`; }).join('')}</div>`
-          : '<p class="muted">No goals for this week yet.</p>')}
-      ${card('💼 Accounts', link('Accounts', 'data-view2="accounts"'), accs.length ? `<div class="td-list">${accs.map(a => { const s = acctStats(a);
-          return `<div class="td-acc"><div><b>${esc(a.name)}</b><span class="num ${sgn(s.pnl)}">${s.pnl>0?'+':''}${money(s.pnl)}</span></div>
-            ${s.target!=null ? `<span class="gbar"><span style="width:${Math.max(0,Math.min(100, s.pnl/s.target*100))}%" class="${s.passed ? 'full' : ''}"></span></span>` : ''}
-            ${s.room!=null ? `<span class="muted" style="font-size:12px">${money(s.room)} to max loss${s.target!=null ? ` · ${money(Math.max(0, s.target - s.pnl))} to target` : ''}</span>` : ''}</div>`; }).join('')}</div>`
-          : '<p class="muted">No active accounts.</p>')}
+      ${card(`🗒️ Plan from ${fmtDayShort(planDay)}`, '', plans.length ? `<div class="td-list">${plans.slice(0,6).map(e => `<button class="td-row" data-go="${e.pair}|${e.day}">
+          <b>${e.pair.slice(0,3)}<em>${e.pair.slice(3)}</em></b><span class="td-grow">${esc(e.action)}</span>${e.trade_status ? stBadge(e.trade_status) : ''}</button>`).join('')}</div>`
+          : '<p class="muted">No plan written last session.</p>')}
     </div>
+    <details class="td2-board" ${boardOpen ? 'open' : ''} id="tdBoardBox"><summary><span class="pp-t">Daily observations</span><span class="pp-n ${todayCov!=null && todayCov===tr.length ? 'on' : ''}">${todayCov!=null ? `${todayCov}/${tr.length} today` : 'pairs'}</span><span class="pp-h">tap a pair to open its day</span></summary>
+      <div class="pl" id="tdBoard"></div></details>
     <aside id="panel" class="panel-side" aria-live="polite"></aside>`;
   const m = document.getElementById('main');
   renderTdBoard();
   const tp = m.querySelector('.td-pend'); if(tp) bindPend(tp);
   m.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const [p, d] = b.dataset.go.split('|'); openPairDay(p, d, 'view'); });
   m.querySelectorAll('[data-view2]').forEach(b => b.onclick = () => goView(b.dataset.view2));
+  m.querySelector('#tdBoardBox')?.addEventListener('toggle', e => ls.set('do_td_board', e.target.open));
+  m.querySelectorAll('[data-tdg]').forEach(b => b.onclick = async () => { const g = S.goals.get(b.dataset.tdg); if(g && await saveGoal({ done:!g.done }, g.id)) renderMain(); });
   m.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { S.pair = b.dataset.pick; ls.set('do_pair', S.pair); goView('journal'); });
   m.querySelectorAll('[data-cell]').forEach(b => b.onclick = async () => { const [p, ds] = b.dataset.cell.split('|'); openPairDay(p, ds, 'edit'); });
   m.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => { const a = b.dataset.act;
