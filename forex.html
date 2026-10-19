@@ -1864,7 +1864,7 @@ const ls = {
 };
 
 const S = {
-  view: new URLSearchParams(location.search).get('view') || ls.get('do_view','today'), pair: ls.get('do_pair','EURUSD'),
+  view: ((v) => v==='desk' ? 'today' : v)(new URLSearchParams(location.search).get('view') || ls.get('do_view','today')), pair: ls.get('do_pair','EURUSD'),
   month: firstOfMonth(new Date()), scope: ls.get('do_scope','pair'), period: ls.get('do_period','all'), metric:'pips',
   daily:new Map(), weekly:new Map(), news:new Map(), charts:[], extra: ls.get('do_extra_pairs', []),
   sel:null, goals:new Map(), gw:null, accounts:new Map(), selAcct:null, acct: ls.get('do_acct','all')
@@ -1976,7 +1976,7 @@ const ICONS = {
 const ico = (k, s = 18) => `<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]||''}</svg>`;
 const NAV = [
   [null, [['today','Today','home']]],
-  ['Work', [['journal','Journal','calendar'],['desk','Desk','grid'],['trades','Trades','list'],['setups','Setups','radar']]],
+  ['Work', [['journal','Journal','calendar'],['trades','Trades','list'],['setups','Setups','radar']]],
   ['Insights', [['analysis','Analytics','chart'],['history','History','trend']]],
   ['Money', [['accounts','Accounts','wallet'],['bank','Bank','bank'],['goals','Goals','target']]],
   ['Tools', [['prompts','Prompts','spark']]],
@@ -2011,8 +2011,8 @@ function render(){
         <main id="main" class="wrap"></main>
       </div>
       <nav class="bnav" aria-label="Main navigation">
-        ${[['today','Today','home'],['journal','Journal','calendar'],['desk','Desk','grid'],['trades','Trades','list']].map(([v,l,i]) => `<button data-view="${v}" aria-current="${navActive(v) ? 'page' : 'false'}">${ico(i, 20)}<span>${l}</span></button>`).join('')}
-        <button id="bnMore" aria-current="${['setups','analysis','history','overview','accounts','bank','goals','prompts'].includes(S.view) ? 'page' : 'false'}">${ico('more', 20)}<span>More</span></button>
+        ${[['today','Today','home'],['journal','Journal','calendar'],['setups','Setups','radar'],['trades','Trades','list']].map(([v,l,i]) => `<button data-view="${v}" aria-current="${navActive(v) ? 'page' : 'false'}">${ico(i, 20)}<span>${l}</span></button>`).join('')}
+        <button id="bnMore" aria-current="${['analysis','history','overview','accounts','bank','goals','prompts'].includes(S.view) ? 'page' : 'false'}">${ico('more', 20)}<span>More</span></button>
       </nav>
     </div>`;
   app.querySelectorAll('[data-view]').forEach(b => b.onclick = () => goView(b.dataset.view));
@@ -2030,7 +2030,7 @@ function render(){
 function openMore(){
   const d = document.getElementById('moreDlg'), light = document.documentElement.dataset.theme === 'light';
   d.innerHTML = `<div class="dlg-head"><h2>More</h2></div><div class="dlg-body more-g">
-    ${[['setups','Setups','radar'],['analysis','Analytics','chart'],['history','History','trend'],['accounts','Accounts','wallet'],['bank','Bank','bank'],['goals','Goals','target'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
+    ${[['analysis','Analytics','chart'],['history','History','trend'],['accounts','Accounts','wallet'],['bank','Bank','bank'],['goals','Goals','target'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
     <button class="more-i" data-ma="share">${ico('share', 22)}<span>Share</span></button>
     <button class="more-i" data-ma="data">${ico('swap', 22)}<span>Import / export</span></button>
     <button class="more-i" data-ma="theme">${ico(light ? 'moon' : 'sun', 22)}<span>${light ? 'Dark' : 'Light'} theme</span></button></div>`;
@@ -2112,7 +2112,7 @@ function renderMain(){
   else if(S.view === 'accounts') renderAccounts();
   else if(S.view === 'goals') renderGoals();
   else if(S.view === 'history') renderHistory();
-  else if(S.view === 'desk') renderDesk();
+  else if(S.view === 'desk'){ S.view = 'today'; ls.set('do_view', 'today'); renderToday(); }   /* Desk was removed */
   else if(S.view === 'today') renderToday();
   else if(S.view === 'prompts') renderPrompts();
   else if(S.view === 'bank') renderBank();
@@ -6498,7 +6498,7 @@ function renderToday(){
   m.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const [p, d] = b.dataset.go.split('|'); openPairDay(p, d, 'view'); });
   m.querySelectorAll('[data-view2]').forEach(b => b.onclick = () => goView(b.dataset.view2));
   m.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { S.pair = b.dataset.pick; ls.set('do_pair', S.pair); goView('journal'); });
-  m.querySelectorAll('[data-cell]').forEach(b => b.onclick = async () => { const [p, ds] = b.dataset.cell.split('|'); S.view = 'desk'; ls.set('do_view', 'desk'); S.desk.k = null; render(); openDeskCell(p, ds); });
+  m.querySelectorAll('[data-cell]').forEach(b => b.onclick = async () => { const [p, ds] = b.dataset.cell.split('|'); openPairDay(p, ds, 'edit'); });
   m.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => { const a = b.dataset.act;
     if(a==='finish' || a==='unfinish') return finishWeek(a==='finish');
     if(a==='journal') goView('journal'); else if(a==='data') openData(); else if(a==='prompts') goView('prompts');
