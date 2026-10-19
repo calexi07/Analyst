@@ -1309,6 +1309,9 @@
   .ab-pl{ display:grid; line-height:1.15; } .ab-pl b{ font-family:'Bricolage Grotesque',sans-serif; font-size:20px; font-weight:800; font-variant-numeric:tabular-nums; }
   .ab-pl small{ font-size:11.5px; font-weight:700; color:var(--muted); } .ab-pl small.pos{ color:var(--pos); } .ab-pl small.neg{ color:var(--neg); }
   .ab-rail .ac-rail{ margin:0; } .ab-tg{ font-size:10.5px; font-weight:700; color:var(--muted); margin-top:3px; text-align:center; }
+  .adj-tr td{ color:var(--muted); font-style:italic; }
+  .adj-list{ display:grid; gap:6px; padding-top:8px; border-top:1px dashed var(--line); }
+  .adj-row{ display:grid; grid-template-columns:90px 90px 1fr auto; align-items:center; gap:8px; font-size:13px; } .adj-row span{ color:var(--muted); font-weight:600; } .adj-row em{ font-style:normal; color:var(--muted); }
   .ab-be{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }
   .ab-bv{ display:grid; line-height:1.15; padding:6px 10px; border-radius:11px; background:var(--surface-2); border:1px solid var(--line); min-width:0; }
   .ab-bv span{ font-size:9.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
@@ -2991,10 +2994,41 @@ function acctProfitOf(e, x, a){
 const FUNDED_TARGET = 4;
 const acctTargetPct = a => numOr(a.target_pct) ?? (a.phase==='Funded' ? FUNDED_TARGET : null);
 const acctNextLbl = a => a.phase==='Funded' ? 'payout' : a.phase==='Challenge – Phase 1' ? 'Phase 2' : a.phase==='Personal' ? 'target' : 'Funded';
+/* manual corrections on an account (spread, a trade you forgot, a typo …) — kept in milestones as kind "adjust" */
+const acctAdj = a => msList(a).filter(m => m.kind==='adjust' && m.amount!=null);
+function openAdjust(a){
+  const list = acctAdj(a).sort((x, y) => (y.date || '').localeCompare(x.date || '')), tot = list.reduce((t, m) => t + Number(m.amount), 0);
+  acctDlg.innerHTML = `<form id="adjForm" method="dialog">
+    <div class="dlg-head"><h2>Adjust balance</h2><p class="muted" style="font-size:13px;margin-top:4px">${esc(a.name)} · for spread, commissions, a trade you forgot or a wrong number. It counts in Balance, Equity, targets and alerts.</p></div>
+    <div class="dlg-body" style="display:grid;gap:12px">
+      <div class="seg adj-dir" role="group"><button type="button" data-adj="-1" aria-pressed="true">− Subtract</button><button type="button" data-adj="1" aria-pressed="false">+ Add</button></div>
+      <div class="g3" style="grid-template-columns:1fr 1fr">
+        <div><label class="lbl" for="adjAmt">Amount ($)</label><input id="adjAmt" class="inp num" inputmode="decimal" placeholder="e.g. 12.40" required></div>
+        <div><label class="lbl" for="adjDate">Date</label><input id="adjDate" class="inp" type="date" value="${iso(new Date())}"></div>
+      </div>
+      <div><label class="lbl" for="adjNote">Reason</label><input id="adjNote" class="inp" value="Human mistake" list="adjReasons"><datalist id="adjReasons"><option>Human mistake</option><option>Spread</option><option>Commission</option><option>Swap</option><option>Missed trade</option><option>Wrong profit typed</option></datalist></div>
+      ${list.length ? `<div class="adj-list"><div class="kick">Adjustments on this account · total <b class="${sgn(tot)}">${tot > 0 ? '+' : ''}${money(tot)}</b></div>
+        ${list.map(m => `<div class="adj-row"><span>${m.date ? fmtDayShort(m.date) : ''}</span><b class="${sgn(Number(m.amount))}">${Number(m.amount) > 0 ? '+' : ''}${fmtCur(Number(m.amount), 'USD')}</b><em>${esc(m.title || '')}</em><button type="button" class="rm" data-adjdel="${m.id}" aria-label="Delete">×</button></div>`).join('')}</div>` : ''}
+    </div>
+    <div class="dlg-foot"><button type="button" class="btn" id="adjCancel">Close</button><button type="submit" class="btn btn-primary">Save adjustment</button></div></form>`;
+  const f = acctDlg.querySelector('#adjForm'); let sign = -1;
+  f.querySelectorAll('[data-adj]').forEach(b => b.onclick = () => { sign = +b.dataset.adj; f.querySelectorAll('[data-adj]').forEach(x => x.setAttribute('aria-pressed', String(x===b))); });
+  f.querySelector('#adjCancel').onclick = () => acctDlg.close();
+  f.querySelectorAll('[data-adjdel]').forEach(b => b.onclick = async () => { if(!confirm('Delete this adjustment?')) return;
+    if(await saveMilestones(a, msList(a).filter(m => m.id!==b.dataset.adjdel))){ toast('Adjustment deleted'); openAdjust(S.accounts.get(a.id)); } });
+  f.onsubmit = async ev => { ev.preventDefault();
+    const v = Math.abs(parseNum(f.querySelector('#adjAmt').value) || 0); if(!v) return toast('Enter an amount');
+    const item = { id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()), kind:'adjust', amount: +(sign * v).toFixed(2), title: f.querySelector('#adjNote').value.trim() || 'Human mistake', date: f.querySelector('#adjDate').value || iso(new Date()), done:true };
+    if(await saveMilestones(a, [...msList(a), item])){ acctDlg.close(); toast(`${a.name}: ${item.amount > 0 ? '+' : ''}${money(item.amount)} · ${item.title}`); } };
+  if(!acctDlg.open) acctDlg.showModal();
+  f.querySelector('#adjAmt').focus();
+}
 function acctStats(a){
   const size = Number(a.size) || 0;
   const tr = [...S.trades.values()].map(e => { const x = tradeAccts(e).find(t => t.id===a.id); if(!x) return null; const pv = acctProfitOf(e, x, a); return pv ? { ...e, profit:pv.v, profitEst:pv.est } : null; })
-    .filter(Boolean).sort((x,y) => exitDay(x).localeCompare(exitDay(y)));
+    .filter(Boolean)
+    .concat(acctAdj(a).map(m => ({ id:'adj-' + m.id, adj:true, day:m.date, exit_date:m.date, profit:Number(m.amount) || 0, result:null, pair:'Adjustment', note:m.title })))
+    .sort((x,y) => exitDay(x).localeCompare(exitDay(y)));
   let bal = size, low = size; const curve = [{ day:a.start_date || (tr[0]?.day ?? ''), bal:size }], byDay = {};
   tr.forEach(t => { bal += Number(t.profit); low = Math.min(low, bal); curve.push({ day:exitDay(t), bal }); byDay[exitDay(t)] = (byDay[exitDay(t)]||0) + Number(t.profit); });
   const pnl = bal - size;
@@ -3058,7 +3092,7 @@ function acctCard(a){ const s = acctStats(a);
         ${msSummary(a)}
         ${(a.status||'active')==='active' ? `<button class="btn paybtn" data-payout="${a.id}">💸 Payout reached — archive & restart</button>`
           : `<div class="muted" style="font-size:12px;font-weight:700">${a.start_date ? a.start_date.split('-').reverse().join('.') : '…'} → ${a.closed_date ? a.closed_date.split('-').reverse().join('.') : '…'}</div>`}
-        <div class="afoot"><span>${s.tr.length} trade${s.tr.length===1?'':'s'}${s.w+s.l ? ` · ${s.w}W/${s.l}L` : ''}</span><span>worst day ${money(s.worstDay)}</span></div>
+        <div class="afoot"><span>${s.tr.filter(t => !t.adj).length} trade${s.tr.filter(t => !t.adj).length===1?'':'s'}${s.w+s.l ? ` · ${s.w}W/${s.l}L` : ''}</span><span>worst day ${money(s.worstDay)}</span></div>
       </article>`;
 }
 /* ---- connected accounts: challenge → next phase → funded → payout restart / scaled / retry ---- */
@@ -3208,7 +3242,7 @@ function boardRow(a){
     <div class="ab-id"><span class="ab-ph">${esc(shortPhase(a.phase))}</span>
       <div class="ab-nm"><b title="${esc(a.name)}">${esc(shortAcc(a.name))}</b><small>${money(size)}${a.start_date ? ' · since ' + a.start_date.slice(5).split('-').reverse().join('.') : ''}${par ? ` · ↳ ${esc(lk || 'from')} of ${esc(shortAcc(par.name))}` : ''}</small></div></div>
     <div class="ab-be">
-      <div class="ab-bv"><span>Balance</span><b>${money(s.bal)}</b><small class="${sgn(s.pnl)}">${s.pnl > 0 ? '+' : ''}${money(s.pnl)} · ${pct > 0 ? '+' : ''}${fmt(pct, 2)}%</small></div>
+      <div class="ab-bv"><span>Balance</span><b>${money(s.bal)}</b><small class="${sgn(s.pnl)}" title="${acctAdj(a).length ? 'includes ' + acctAdj(a).length + ' manual adjustment(s)' : ''}">${s.pnl > 0 ? '+' : ''}${money(s.pnl)} · ${pct > 0 ? '+' : ''}${fmt(pct, 2)}%${acctAdj(a).length ? ` · adj ${(t => `${t > 0 ? '+' : '−'}$${fmt(Math.abs(t), 0)}`)(acctAdj(a).reduce((t, m) => t + Number(m.amount), 0))}` : ''}</small></div>
       <div class="ab-bv eq ${fl.n ? (fl.usd >= 0 ? 'up' : 'dn') : ''}"><span>Equity</span><b>${money(s.bal + fl.usd)}</b><small class="${fl.n ? sgn(fl.usd) : ''}">${fl.n ? `${fl.usd >= 0 ? '+' : '−'}${money(Math.abs(fl.usd))} floating` : 'no open trades'}</small></div>
     </div>
     <div class="ab-rail">${acctRail(a, s, true, fl.n ? s.bal + fl.usd : null)}${tg!=null ? `<div class="ab-tg">${Math.round(tg)}% of target${s.target ? ` · ${money(Math.max(0, s.target - s.pnl))} to go` : ''}</div>` : ''}</div>
@@ -3219,6 +3253,7 @@ function boardRow(a){
       <button class="ab-ic ok" data-jpass="${a.id}" title="Passed → archive and open the next phase / funded">✓</button>
       <button class="ab-ic pay" data-payout="${a.id}" title="Payout reached → archive and restart">💸</button>
       <button class="ab-ic bad" data-jfail="${a.id}" title="Failed → archive, optionally a new attempt">✗</button>
+      <button class="ab-ic" data-adjacc="${a.id}" title="Adjust balance (spread, missed trade, human mistake)">±</button>
       <button class="ab-ic" data-edit-acc="${a.id}" title="Edit account">✎</button></div>
   </div>
   ${S.selAcct===a.id ? `<div class="ab-detail">${acctDetail(a)}</div>` : ''}`;
@@ -3303,6 +3338,7 @@ function renderAccounts(){
   document.querySelectorAll('[data-abpast]').forEach(b => b.onclick = () => { const c = new Set(ls.get('do_ab_past', [])), f = b.dataset.abpast; c.has(f) ? c.delete(f) : c.add(f); ls.set('do_ab_past', [...c]); renderMain(); });
   document.querySelector('.archive')?.addEventListener('toggle', ev => ls.set('do_arch_open', ev.target.open));
   document.querySelectorAll('[data-edit-acc]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openAcct(S.accounts.get(b.dataset.editAcc)); });
+  document.querySelectorAll('[data-adjacc]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openAdjust(S.accounts.get(b.dataset.adjacc)); });
   document.getElementById('newAcct')?.addEventListener('click', () => openAcct());
   document.getElementById('newAcct2')?.addEventListener('click', () => openAcct());
   if(sel){
@@ -3329,7 +3365,7 @@ function acctDetail(a){
     ${msSection(a)}
     <h3 style="margin-top:22px">Trades</h3>
     <div style="overflow-x:auto"><table class="sumtable"><thead><tr><th>Exit date</th><th>Pair</th><th>Direction</th><th>Result</th><th>Pips</th><th>Profit</th><th>Balance after</th></tr></thead><tbody>
-      ${s.tr.length ? s.tr.map((t,i) => `<tr class="click" data-goday-acc="${t.pair}|${t.day}"><td class="num">${exitDay(t).split('-').reverse().join('.')}</td><td style="font-weight:700">${t.pair}</td>
+      ${s.tr.length ? s.tr.map((t,i) => `${t.adj ? '<tr class="adj-tr">' : `<tr class="click" data-goday-acc="${t.pair}|${t.day}">`}<td class="num">${exitDay(t).split('-').reverse().join('.')}</td><td style="font-weight:700">${t.adj ? `± ${esc(t.note || 'Adjustment')}` : t.pair}</td>
         <td class="${t.direction==='Long' ? 'pos' : t.direction==='Short' ? 'neg' : ''}">${esc(t.direction||'–')}</td><td>${esc(t.result||'–')}</td>
         <td class="num ${sgn(t.pips)}">${t.pips!=null ? fmt(t.pips,1) : '–'}</td><td class="num ${sgn(t.profit)}">${money(Number(t.profit))}</td>
         <td class="num">${money(s.curve[i+1].bal)}</td></tr>`).reverse().join('') : '<tr><td colspan="7" class="muted">No trades with profit linked to this account yet.</td></tr>'}
@@ -3339,14 +3375,14 @@ function acctDetail(a){
 const MS_KINDS = { goal:['🎯','Goal'], payout:['💸','Payout'], achievement:['🏆','Achievement'] };
 const msList = a => Array.isArray(a.milestones) ? a.milestones : [];
 function msSummary(a){
-  const ms = msList(a); if(!ms.length) return '';
+  const ms = msList(a).filter(m => m.kind!=='adjust'); if(!ms.length) return '';
   const pays = ms.filter(m => m.kind==='payout'), paid = pays.reduce((t,m) => t + (Number(m.amount)||0), 0);
   const next = ms.filter(m => m.kind==='goal' && !m.done).sort((x,y) => (x.date||'9').localeCompare(y.date||'9'))[0];
   const ach = ms.filter(m => m.kind==='achievement' || (m.kind==='goal' && m.done)).length;
   return `<div class="msum">${pays.length ? `<span>💸 <b>${money(paid)}</b> paid out (${pays.length})</span>` : ''}${ach ? `<span>🏆 ${ach} achieved</span>` : ''}${next ? `<span class="msnext">🎯 ${esc(next.title)}${next.amount ? ' · '+money(Number(next.amount)) : ''}</span>` : ''}</div>`;
 }
 function msSection(a){
-  const ms = msList(a);
+  const ms = msList(a).filter(m => m.kind!=='adjust');
   const order = m => m.kind==='goal' && !m.done ? 0 : 1;
   const sorted = [...ms].sort((x,y) => order(x)-order(y) || (y.date||'').localeCompare(x.date||''));
   const paid = ms.filter(m => m.kind==='payout').reduce((t,m) => t + (Number(m.amount)||0), 0);
