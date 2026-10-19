@@ -1184,6 +1184,71 @@
   .lvr-ic{ font-weight:900; }
   .lvr-live{ display:grid; line-height:1.1; } .lvr-live b{ font-family:'Bricolage Grotesque',sans-serif; font-size:20px; font-weight:800; } .lvr-live small{ font-size:11.5px; font-weight:700; color:var(--muted); }
   .lvr-live.up b{ color:var(--pos); } .lvr-live.dn b{ color:var(--neg); }
+  /* ===== accounts board ===== */
+  .ab-kpis{ display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+  @media (max-width:1200px){ .ab-kpis{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  @media (max-width:640px){ .ab-kpis{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  .ab-k{ position:relative; display:grid; gap:2px; padding:14px 16px; border-radius:18px; border:1px solid var(--line); background:linear-gradient(160deg, color-mix(in srgb,var(--accent) 6%,var(--surface)), var(--surface) 60%); overflow:hidden; }
+  .ab-k span{ font-size:10.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .ab-k b{ font-family:'Bricolage Grotesque',sans-serif; font-size:28px; font-weight:800; line-height:1.05; font-variant-numeric:tabular-nums; }
+  .ab-k small{ font-size:12px; font-weight:600; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ab-k.up b{ color:var(--pos); } .ab-k.dn b{ color:var(--neg); } .ab-k.pay b{ color:var(--pos); }
+  .ab-k.att{ border-color:color-mix(in srgb,var(--amber) 55%,var(--line)); } .ab-k.att b{ color:var(--amber); }
+  .ab-att{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+  .ab-ac{ display:inline-flex; align-items:center; gap:8px; padding:7px 12px; border-radius:12px; border:1px solid var(--line); background:var(--surface); color:var(--ink); font-size:12.5px; font-weight:700; }
+  .ab-ac b{ font-weight:800; } .ab-ac.ok{ border-color:color-mix(in srgb,var(--pos) 55%,var(--line)); background:color-mix(in srgb,var(--pos) 10%,var(--surface)); }
+  .ab-ac.warn{ border-color:color-mix(in srgb,var(--amber) 55%,var(--line)); background:color-mix(in srgb,var(--amber) 10%,var(--surface)); }
+  .ab-ac.bad{ border-color:color-mix(in srgb,var(--neg) 60%,var(--line)); background:color-mix(in srgb,var(--neg) 12%,var(--surface)); }
+  .ab-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:12px; }
+  .ab-bar .seg{ max-width:100%; overflow-x:auto; flex-wrap:nowrap; scrollbar-width:none; } .ab-bar .seg button{ white-space:nowrap; }
+  .ab-firm, .ab-rows, .ab-row > *{ min-width:0; }
+  .ab-bar .seg em{ font-style:normal; margin-left:6px; opacity:.6; font-size:11px; }
+  .ab-q{ margin-left:auto; width:240px; max-width:100%; }
+  .ab-firm{ border:1px solid var(--line); border-radius:20px; background:var(--surface); margin-bottom:14px; overflow:hidden; }
+  .ab-fh{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; padding:13px 16px; cursor:pointer; background:linear-gradient(90deg, color-mix(in srgb,var(--accent) 7%,transparent), transparent 55%); }
+  .ab-fh h3{ margin:0; font-family:'Bricolage Grotesque',sans-serif; font-size:19px; font-weight:800; }
+  .ab-chev{ color:var(--muted); transition:transform .15s; } .ab-firm.closed .ab-chev{ transform:rotate(-90deg); }
+  .ab-fs{ font-size:12px; font-weight:700; color:var(--muted); } .ab-fs.pos{ color:var(--pos); } .ab-fs.neg{ color:var(--neg); } .ab-fs.pay{ color:var(--pos); }
+  .ab-rows{ display:grid; }
+  .ab-row{ --c:var(--info); position:relative; display:grid; grid-template-columns:minmax(220px,1.5fr) minmax(110px,.7fr) minmax(180px,1.3fr) minmax(150px,1fr) minmax(0,1fr) auto; align-items:center; gap:10px 18px; padding:12px 16px 12px 20px; border-top:1px solid var(--line); cursor:pointer; transition:background .12s; }
+  .ab-row::before{ content:''; position:absolute; left:0; top:10px; bottom:10px; width:4px; border-radius:0 4px 4px 0; background:var(--c); }
+  .ab-row:hover{ background:color-mix(in srgb,var(--ink) 3%,transparent); } .ab-row.sel{ background:color-mix(in srgb,var(--accent) 7%,transparent); }
+  .ab-row.bad{ background:color-mix(in srgb,var(--neg) 6%,transparent); }
+  .ph-fd{ --c:var(--pos); } .ph-p1{ --c:var(--info); } .ph-p2{ --c:var(--violet); } .ph-p3{ --c:var(--amber); } .ph-ps{ --c:var(--muted); }
+  .ab-id{ display:flex; align-items:center; gap:10px; min-width:0; }
+  .ab-ph{ flex:none; font-size:10.5px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; padding:3px 8px; border-radius:7px; color:var(--c); background:color-mix(in srgb,var(--c) 15%,transparent); }
+  .ab-ph.sm{ font-size:9.5px; padding:2px 6px; }
+  .ab-nm{ display:grid; min-width:0; } .ab-nm b{ font-size:14px; font-weight:800; overflow-wrap:anywhere; line-height:1.25; }
+  .ab-nm small{ font-size:11.5px; font-weight:600; color:var(--muted); }
+  .ab-pl{ display:grid; line-height:1.15; } .ab-pl b{ font-family:'Bricolage Grotesque',sans-serif; font-size:20px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .ab-pl small{ font-size:11.5px; font-weight:700; color:var(--muted); } .ab-pl small.pos{ color:var(--pos); } .ab-pl small.neg{ color:var(--neg); }
+  .ab-rail .ac-rail{ margin:0; }
+  .ab-live{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .ab-fl{ display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border-radius:9px; font-size:12px; font-weight:700; border:1px solid var(--line); background:var(--surface-2); }
+  .ab-fl i{ width:7px; height:7px; border-radius:50%; background:currentColor; animation:acPulse 1.6s ease-in-out infinite; }
+  .ab-fl.up{ color:var(--pos); border-color:color-mix(in srgb,var(--pos) 45%,var(--line)); } .ab-fl.dn{ color:var(--neg); border-color:color-mix(in srgb,var(--neg) 45%,var(--line)); }
+  .ab-fl.none{ color:var(--muted); border-style:dashed; background:none; }
+  .ab-pay{ font-size:11.5px; font-weight:800; padding:3px 8px; border-radius:8px; background:var(--surface-2); color:var(--muted); } .ab-pay.soon{ color:var(--amber); background:color-mix(in srgb,var(--amber) 14%,transparent); }
+  .ab-flags{ display:flex; flex-wrap:wrap; gap:5px; }
+  .ab-flag{ font-size:11px; font-weight:800; padding:3px 8px; border-radius:7px; }
+  .ab-flag.ok{ color:var(--pos); background:color-mix(in srgb,var(--pos) 15%,transparent); } .ab-flag.warn{ color:var(--amber); background:color-mix(in srgb,var(--amber) 15%,transparent); } .ab-flag.bad{ color:var(--neg); background:color-mix(in srgb,var(--neg) 15%,transparent); }
+  .ab-act{ display:flex; gap:4px; opacity:.55; transition:opacity .12s; } .ab-row:hover .ab-act, .ab-row.sel .ab-act{ opacity:1; }
+  .ab-ic{ width:30px; height:30px; display:grid; place-items:center; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-size:13px; }
+  .ab-ic.ok:hover{ border-color:var(--pos); color:var(--pos); } .ab-ic.bad:hover{ border-color:var(--neg); color:var(--neg); } .ab-ic.pay:hover{ border-color:var(--pos); }
+  .ab-detail{ border-top:1px solid var(--line); padding:0 14px 14px; background:color-mix(in srgb,var(--accent) 3%,transparent); } .ab-detail .acct-detail{ margin-top:12px !important; }
+  .ab-pt{ display:block; width:100%; text-align:left; padding:10px 16px; border:none; border-top:1px dashed var(--line); background:none; color:var(--muted); font-size:12.5px; font-weight:800; }
+  .ab-pt em{ font-style:normal; margin-left:4px; opacity:.7; }
+  .ab-past{ display:flex; flex-wrap:wrap; gap:8px; padding:0 16px 14px; }
+  .ab-pr{ display:inline-flex; align-items:center; gap:7px; padding:6px 10px; border-radius:11px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-size:12px; }
+  .ab-pr b{ font-weight:800; } .ab-pr em{ font-style:normal; font-size:10.5px; font-weight:800; padding:1px 6px; border-radius:6px; background:var(--surface); color:var(--muted); }
+  .ab-pr.st-failed em.st{ color:var(--neg); } .ab-pr.st-passed em.st, .ab-pr em.pd{ color:var(--pos); } .ab-pr.st-payout em.st{ color:var(--violet); }
+  .ab-pr small{ color:var(--muted); font-weight:600; }
+  @media (max-width:1100px){
+    .ab-row{ grid-template-columns:minmax(0,1fr) auto; padding:12px 12px 12px 16px; }
+    .ab-q{ width:100%; margin-left:0; }
+    .ab-id{ grid-column:1; } .ab-pl{ grid-column:2; text-align:right; } .ab-rail, .ab-flags{ grid-column:1 / -1; } .ab-live{ grid-column:1; } .ab-act{ grid-column:2; opacity:1; justify-content:flex-end; }
+    .ab-flags:empty{ display:none; }
+  }
   .pp{ margin:0 0 12px; border:1px solid var(--line); border-radius:16px; background:var(--surface); }
   .pp > summary{ list-style:none; cursor:pointer; display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; padding:11px 14px; }
   .pp > summary::-webkit-details-marker{ display:none; }
@@ -3019,36 +3084,123 @@ function openFail(a){
   f.onsubmit = ev => { ev.preventDefault(); journeyStep(a, 'retry', 'failed', f.elements, null); };
   acctDlg.showModal();
 }
+/* ===== Accounts · Board: one dense row per live account, grouped by firm, with what needs you on top ===== */
+const phaseKey = ph => ph==='Funded' ? 'fd' : ph==='Challenge – Phase 2' ? 'p2' : ph==='Challenge – Phase 3' ? 'p3' : ph==='Personal' ? 'ps' : 'p1';
+const acctPaid = a => msList(a).filter(m => m.kind==='payout').reduce((t, m) => t + (Number(m.amount) || 0), 0);
+function acctFloat(a){   /* running $ on this account from its open trades */
+  let usd = 0, n = 0, R = 0;
+  S.trades.forEach(e => { if(!e.direction || e.result || e.exit_date || !tradeAccts(e).some(x => x.id===a.id)) return; n++; const lv = livePL(e); if(!lv) return;
+    const risk = numOr(e.risk) ?? RISK_PCT; R += lv.R; usd += lv.R * risk / 100 * (Number(a.size) || 0); });
+  return { n, R, usd };
+}
+function acctFlags(a, s){
+  const size = Number(a.size) || 0, f = [], dayStart = s.bal - s.today, dStop = s.dailyLim!=null ? dayStart - s.dailyLim : null, pd = payDays(a);
+  if(s.breachMax) f.push(['bad', 'Max loss hit']);
+  else if(s.floor!=null && s.bal - s.floor <= size*.01) f.push(['bad', `${money(s.bal - s.floor)} to blown`]);
+  if(s.breachDaily) f.push(['bad', 'Daily loss breached']);
+  else if(dStop!=null && s.bal - dStop <= size*.005) f.push(['warn', `${money(s.bal - dStop)} to daily stop`]);
+  if(s.passed) f.push(['ok', `🎯 Eligible for ${acctNextLbl(a)}`]);
+  if(pd===0) f.push(['ok', '💸 Payout day']); else if(pd!=null && pd < 0) f.push(['warn', 'Payout date passed']);
+  return f;
+}
+function boardRow(a){
+  const s = acctStats(a), size = Number(a.size) || 0, pct = size ? s.pnl / size * 100 : 0, fl = acctFloat(a), flags = acctFlags(a, s), pd = payDays(a);
+  const par = a.parent_id ? S.accounts.get(a.parent_id) : null, [, lk] = LINKS[a.link_kind] || [];
+  const tg = s.target ? Math.max(0, Math.min(100, s.pnl / s.target * 100)) : null;
+  return `<div class="ab-row ph-${phaseKey(a.phase)} ${S.selAcct===a.id ? 'sel' : ''} ${flags.some(x => x[0]==='bad') ? 'bad' : ''}" data-acc="${a.id}" tabindex="0">
+    <div class="ab-id"><span class="ab-ph">${esc(shortPhase(a.phase))}</span>
+      <div class="ab-nm"><b title="${esc(a.name)}">${esc(shortAcc(a.name))}</b><small>${money(size)}${a.start_date ? ' · since ' + a.start_date.slice(5).split('-').reverse().join('.') : ''}${par ? ` · ↳ ${esc(lk || 'from')} of ${esc(shortAcc(par.name))}` : ''}</small></div></div>
+    <div class="ab-pl"><b class="${sgn(s.pnl)}">${s.pnl > 0 ? '+' : ''}${money(s.pnl)}</b><small class="${sgn(pct)}">${pct > 0 ? '+' : ''}${fmt(pct, 2)}%${tg!=null ? ` · ${Math.round(tg)}% of target` : ''}</small></div>
+    <div class="ab-rail">${acctRail(a, s, true)}</div>
+    <div class="ab-live">${fl.n ? `<span class="ab-fl ${fl.usd >= 0 ? 'up' : 'dn'}"><i></i>${fl.n} open · <b>${fl.R >= 0 ? '+' : ''}${fmt(fl.R, 2)}R</b> ${fl.usd >= 0 ? '+' : '−'}$${fmt(Math.abs(fl.usd), 0)}</span>` : '<span class="ab-fl none">flat</span>'}
+      ${pd!=null && pd > 0 ? `<span class="ab-pay ${pd <= 3 ? 'soon' : ''}">💸 ${pd===1 ? 'tomorrow' : pd + 'd'}</span>` : ''}</div>
+    <div class="ab-flags">${flags.map(([k, t]) => `<span class="ab-flag ${k}">${t}</span>`).join('')}</div>
+    <div class="ab-act">
+      <button class="ab-ic ok" data-jpass="${a.id}" title="Passed → archive and open the next phase / funded">✓</button>
+      <button class="ab-ic pay" data-payout="${a.id}" title="Payout reached → archive and restart">💸</button>
+      <button class="ab-ic bad" data-jfail="${a.id}" title="Failed → archive, optionally a new attempt">✗</button>
+      <button class="ab-ic" data-edit-acc="${a.id}" title="Edit account">✎</button></div>
+  </div>
+  ${S.selAcct===a.id ? `<div class="ab-detail">${acctDetail(a)}</div>` : ''}`;
+}
+function boardPast(list){
+  return `<div class="ab-past">${list.map(a => { const paid = acctPaid(a), st = a.status || 'archived';
+    return `<button class="ab-pr st-${st}" data-acc="${a.id}" title="${esc(a.name)}"><span class="ab-ph sm ph-${phaseKey(a.phase)}">${esc(shortPhase(a.phase))}</span><b>${esc(shortAcc(a.name))}</b>
+      <em class="st">${ACC_STATUS[st] || st}</em>${paid ? `<em class="pd">💸 ${money(paid)}</em>` : ''}<small>${(a.start_date || '').slice(5).split('-').reverse().join('.')} → ${(a.closed_date || '').slice(5).split('-').reverse().join('.')}</small></button>`; }).join('')}</div>`;
+}
+function boardHtml(){
+  const all = [...S.accounts.values()], live = all.filter(a => (a.status || 'active')==='active'), flt = S.aFilter || ls.get('do_afilter', 'all'), q = (S.aQ || '').toLowerCase();
+  const st = new Map(live.map(a => [a.id, acctStats(a)])), fl = new Map(live.map(a => [a.id, acctFloat(a)])), fg = new Map(live.map(a => [a.id, acctFlags(a, st.get(a.id))]));
+  const funded = live.filter(a => a.phase==='Funded'), chal = live.filter(a => a.phase && a.phase.startsWith('Challenge'));
+  const paid = all.reduce((t, a) => t + acctPaid(a), 0), floatUsd = [...fl.values()].reduce((t, x) => t + x.usd, 0), openN = [...fl.values()].reduce((t, x) => t + x.n, 0);
+  const att = live.filter(a => fg.get(a.id).length), nextPay = live.filter(a => payDays(a)!=null && payDays(a) >= 0).sort((x, y) => payDays(x) - payDays(y))[0];
+  const pass = a => flt==='funded' ? a.phase==='Funded' : flt==='chal' ? (a.phase || '').startsWith('Challenge') : flt==='trade' ? fl.get(a.id).n > 0 : flt==='att' ? fg.get(a.id).length > 0 : true;
+  const shown = live.filter(a => pass(a) && (!q || `${a.name} ${a.firm || ''} ${a.phase || ''}`.toLowerCase().includes(q)));
+  const firms = [...new Set(all.map(a => a.firm || 'Other'))].sort((x, y) => live.filter(a => (a.firm || 'Other')===y).length - live.filter(a => (a.firm || 'Other')===x).length || x.localeCompare(y));
+  const closed = new Set(ls.get('do_ab_closed', [])), pastOpen = new Set(ls.get('do_ab_past', []));
+  const kpi = (lbl, val, sub, cls = '') => `<div class="ab-k ${cls}"><span>${lbl}</span><b>${val}</b><small>${sub}</small></div>`;
+  const order = a => (fg.get(a.id).some(x => x[0]==='bad') ? 0 : fg.get(a.id).length ? 1 : 2) * 10 + ({ fd:0, p3:1, p2:2, p1:3, ps:4 }[phaseKey(a.phase)] ?? 5);
+  return `
+  <div class="ab-kpis">
+    ${kpi('Live accounts', live.length, `${funded.length} funded · ${chal.length} in challenge`)}
+    ${kpi('Funded capital', money(funded.reduce((t, a) => t + (Number(a.size) || 0), 0)), `${money(chal.reduce((t, a) => t + (Number(a.size) || 0), 0))} in challenges`)}
+    ${kpi('Open now', openN ? `${floatUsd >= 0 ? '+' : '−'}$${fmt(Math.abs(floatUsd), 0)}` : 'Flat', openN ? `${openN} position${openN > 1 ? 's' : ''} across accounts` : 'no open trades', openN ? (floatUsd >= 0 ? 'up' : 'dn') : '')}
+    ${kpi('Paid out', money(paid), 'all time', 'pay')}
+    ${kpi('Next payout', nextPay ? (payDays(nextPay)===0 ? 'Today' : `${payDays(nextPay)}d`) : '—', nextPay ? esc(shortAcc(nextPay.name)) : 'set a payout date on funded accounts')}
+    ${kpi('Needs you', att.length, att.length ? 'eligible · payout · risk' : 'all calm', att.length ? 'att' : '')}
+  </div>
+  ${att.length ? `<div class="ab-att">${att.sort((x, y) => order(x) - order(y)).map(a => fg.get(a.id).map(([k, t]) => `<button class="ab-ac ${k}" data-acc="${a.id}"><b>${esc(shortAcc(a.name))}</b>${t}</button>`).join('')).join('')}</div>` : ''}
+  <div class="ab-bar">
+    <div class="seg" role="group" aria-label="Filter">${[['all','All', live.length],['funded','Funded', funded.length],['chal','Challenges', chal.length],['trade','In trade', live.filter(a => fl.get(a.id).n).length],['att','Needs you', att.length]].map(([k, l, n]) => `<button data-afl="${k}" aria-pressed="${flt===k}">${l}<em>${n}</em></button>`).join('')}</div>
+    <input class="inp ab-q" id="abQ" placeholder="Search account, firm…" value="${esc(S.aQ || '')}" aria-label="Search accounts">
+  </div>
+  ${firms.map(f => { const fl0 = live.filter(a => (a.firm || 'Other')===f), rows = shown.filter(a => (a.firm || 'Other')===f).sort((x, y) => order(x) - order(y) || (x.name || '').localeCompare(y.name || ''));
+    const past = all.filter(a => (a.firm || 'Other')===f && (a.status || 'active')!=='active').sort((x, y) => (y.closed_date || '').localeCompare(x.closed_date || ''));
+    if(!rows.length && (flt!=='all' || q)) return '';
+    const fpaid = all.filter(a => (a.firm || 'Other')===f).reduce((t, a) => t + acctPaid(a), 0), fpnl = fl0.reduce((t, a) => t + st.get(a.id).pnl, 0), isClosed = closed.has(f);
+    return `<section class="ab-firm ${isClosed ? 'closed' : ''}">
+      <header class="ab-fh" data-abfirm="${esc(f)}"><span class="ab-chev">▾</span><h3>${esc(f)}</h3>
+        <span class="ab-fs">${fl0.length} live${fl0.filter(a => a.phase==='Funded').length ? ` · ${fl0.filter(a => a.phase==='Funded').length} funded` : ''}</span>
+        <span class="ab-fs ${sgn(fpnl)}">${fpnl > 0 ? '+' : ''}${money(fpnl)} P/L on live accounts</span>${fpaid ? `<span class="ab-fs pay">💸 ${money(fpaid)} paid</span>` : ''}</header>
+      ${isClosed ? '' : `<div class="ab-rows">${rows.length ? rows.map(boardRow).join('') : '<p class="muted" style="padding:10px 14px;margin:0">No live accounts at this firm.</p>'}</div>
+      ${past.length ? `<button class="ab-pt" data-abpast="${esc(f)}">${pastOpen.has(f) ? '▾' : '▸'} Past accounts <em>${past.length}</em></button>${pastOpen.has(f) ? boardPast(past) : ''}` : ''}`}
+    </section>`; }).join('') || '<div class="card"><p class="muted" style="margin:0">Nothing matches this filter.</p></div>'}`;
+}
 function renderAccounts(){
   const accs = [...S.accounts.values()].sort((a,b) => (a.status==='active' ? 0 : 1) - (b.status==='active' ? 0 : 1) || (a.name||'').localeCompare(b.name||''));
   if(S.selAcct && !S.accounts.has(S.selAcct)) S.selAcct = null;
   const sel = S.selAcct ? S.accounts.get(S.selAcct) : null;
   const active = accs.filter(a => (a.status||'active')==='active'), archived = accs.filter(a => (a.status||'active')!=='active')
     .sort((x,y) => (y.closed_date||y.created_at||'').localeCompare(x.closed_date||x.created_at||''));
+  const aview = S.aView || ls.get('do_aview2', 'board');
   document.getElementById('main').innerHTML = `
     <div class="flex flex-wrap items-end gap-4 mb-4">
       <div><div class="pairtitle">Accounts</div><div class="muted mt-1" style="font-weight:600">Challenges and funded accounts — P/L from the trades linked to each account</div></div>
-      <div class="seg ml-auto" role="group" aria-label="View">${[['journeys','Journeys'],['cards','Cards']].map(([k, l]) => `<button data-aview="${k}" aria-pressed="${(S.aView || ls.get('do_aview', 'journeys'))===k}">${l}</button>`).join('')}</div>
+      <div class="seg ml-auto" role="group" aria-label="View">${[['board','Board'],['journeys','Journeys'],['cards','Cards']].map(([k, l]) => `<button data-aview="${k}" aria-pressed="${aview===k}">${l}</button>`).join('')}</div>
       <button class="btn btn-primary" id="newAcct">+ New account</button>
     </div>
-    ${(() => { const pd = active.filter(a => payDays(a)===0); return pd.length ? `<div class="acc-elig pay">${pd.map(a => `<div><b>💸 ${esc(a.name)}</b> — today is the payout day. Request the payout.
+    ${aview==='board' ? '' : `${(() => { const pd = active.filter(a => payDays(a)===0); return pd.length ? `<div class="acc-elig pay">${pd.map(a => `<div><b>💸 ${esc(a.name)}</b> — today is the payout day. Request the payout.
       <button class="btn btn-primary" data-payout="${a.id}">💸 Log payout</button></div>`).join('')}</div>` : ''; })()}
     ${(() => { const el = active.filter(a => acctStats(a).passed); return el.length ? `<div class="acc-elig">${el.map(a => `<div><b>🎯 ${esc(a.name)}</b> is eligible for <b>${acctNextLbl(a)}</b> — target ${acctTargetPct(a)}% reached (${money(acctStats(a).pnl)}).
-      ${a.phase==='Funded' ? `<button class="btn btn-primary" data-payout="${a.id}">💸 Log payout</button>` : `<button class="btn btn-primary" data-jpass="${a.id}">✓ Passed → next</button>`}</div>`).join('')}</div>` : ''; })()}
+      ${a.phase==='Funded' ? `<button class="btn btn-primary" data-payout="${a.id}">💸 Log payout</button>` : `<button class="btn btn-primary" data-jpass="${a.id}">✓ Passed → next</button>`}</div>`).join('')}</div>` : ''; })()}`}
     ${accs.length && !hasPayCol() ? '<div class="card" style="margin-bottom:12px"><p class="hint" style="margin:0">To set a payout date on funded accounts run <b>migration-payout-date.sql</b> in Supabase → SQL Editor once.</p></div>' : ''}
     ${accs.length && !hasLinkCol() ? '<div class="card" style="margin-bottom:12px"><p class="hint" style="margin:0">To connect accounts (challenge → funded → payout restart …) run <b>migration-account-links.sql</b> in Supabase once, then reload.</p></div>' : ''}
-    ${accs.length && (S.aView || ls.get('do_aview', 'journeys'))==='journeys' ? journeysHtml() : accs.length ? `${active.length ? `<div class="agrid">${active.map(acctCard).join('')}</div>` : '<div class="card"><p class="muted">No active accounts. Open a new one or restore one from the archive.</p></div>'}
+    ${accs.length && aview==='board' ? boardHtml() : accs.length && aview==='journeys' ? journeysHtml() : accs.length ? `${active.length ? `<div class="agrid">${active.map(acctCard).join('')}</div>` : '<div class="card"><p class="muted">No active accounts. Open a new one or restore one from the archive.</p></div>'}
       ${archived.length ? `<details class="archive" ${ls.get('do_arch_open', false) ? 'open' : ''}><summary><h3>Archive <span class="pg-n">${archived.length}</span>
         <span class="muted" style="font-weight:600;font-size:13px;margin-left:8px">${money(archived.reduce((t,a) => t + msList(a).filter(m => m.kind==='payout').reduce((x,m) => x + (Number(m.amount)||0), 0), 0))} total paid out</span></h3></summary>
         <div class="agrid" style="margin-top:12px">${archived.map(acctCard).join('')}</div></details>` : ''}`
       : `<div class="card empty"><div class="orb" aria-hidden="true"></div><p>No accounts yet. Add a challenge or funded account, then pick it in the Trade section of a day.</p><button class="btn btn-primary" id="newAcct2">+ New account</button></div>`}
-    ${sel ? acctDetail(sel) : accs.length ? '<p class="muted" style="margin-top:16px;font-weight:600">Click an account card to see its balance curve, trades, goals, payouts and achievements.</p>' : ''}`;
+    ${aview==='board' ? (sel && (sel.status || 'active')!=='active' ? acctDetail(sel) : '') : sel ? acctDetail(sel) : accs.length ? '<p class="muted" style="margin-top:16px;font-weight:600">Click an account card to see its balance curve, trades, goals, payouts and achievements.</p>' : ''}`;
   const open = id => { S.selAcct = S.selAcct===id ? null : id; renderMain(); if(S.selAcct) document.getElementById('acctDetail')?.scrollIntoView({ behavior:'smooth', block:'start' }); };
   document.querySelectorAll('[data-acc]').forEach(c => { c.onclick = () => open(c.dataset.acc); c.onkeydown = e => { if(e.key==='Enter' && e.target===c) open(c.dataset.acc); }; });
   document.querySelectorAll('[data-payout]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openPayout(S.accounts.get(b.dataset.payout)); });
   document.querySelectorAll('[data-jpass]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openPass(S.accounts.get(b.dataset.jpass)); });
   document.querySelectorAll('[data-jfail]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openFail(S.accounts.get(b.dataset.jfail)); });
-  document.querySelectorAll('[data-aview]').forEach(b => b.onclick = () => { S.aView = b.dataset.aview; ls.set('do_aview', S.aView); renderMain(); });
+  document.querySelectorAll('[data-aview]').forEach(b => b.onclick = () => { S.aView = b.dataset.aview; ls.set('do_aview2', S.aView); renderMain(); });
+  document.querySelectorAll('[data-afl]').forEach(b => b.onclick = () => { S.aFilter = b.dataset.afl; ls.set('do_afilter', S.aFilter); renderMain(); });
+  const abq = document.getElementById('abQ'); if(abq){ abq.oninput = () => { S.aQ = abq.value; clearTimeout(abq._t); abq._t = setTimeout(() => { renderMain(); const n = document.getElementById('abQ'); n?.focus(); n?.setSelectionRange(n.value.length, n.value.length); }, 250); }; }
+  document.querySelectorAll('[data-abfirm]').forEach(h => h.onclick = () => { const c = new Set(ls.get('do_ab_closed', [])), f = h.dataset.abfirm; c.has(f) ? c.delete(f) : c.add(f); ls.set('do_ab_closed', [...c]); renderMain(); });
+  document.querySelectorAll('[data-abpast]').forEach(b => b.onclick = () => { const c = new Set(ls.get('do_ab_past', [])), f = b.dataset.abpast; c.has(f) ? c.delete(f) : c.add(f); ls.set('do_ab_past', [...c]); renderMain(); });
   document.querySelector('.archive')?.addEventListener('toggle', ev => ls.set('do_arch_open', ev.target.open));
   document.querySelectorAll('[data-edit-acc]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openAcct(S.accounts.get(b.dataset.editAcc)); });
   document.getElementById('newAcct')?.addEventListener('click', () => openAcct());
