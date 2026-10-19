@@ -6916,13 +6916,13 @@ function tjHeat(list){
 }
 /* model account: the strategy on a fixed $10,000 account, always 1% risk — win = +2% (TP 2R), loss = −1% (SL), BE = 0 */
 const MODEL_SIZE = 10000;
-const modelize = e => ['W','L','BE'].includes(e.result) ? { ...e, profit: e.result==='W' ? MODEL_SIZE*.02 : e.result==='L' ? -MODEL_SIZE*.01 : 0, r_multiple: e.result==='W' ? 2 : e.result==='L' ? -1 : 0 } : e;
+const modelize = e => ['W','L','BE'].includes(e.result) ? { ...e, profit: e.result==='W' ? MODEL_SIZE*.02 : e.result==='L' ? -MODEL_SIZE*.01 : 0, r_multiple: e.result==='W' ? 2 : e.result==='L' ? -1 : 0 } : { ...e, profit: null };
 function renderTrades(){
   const T = S.tj, list0 = tjFiltered(), model = T.metric==='model', list = model ? list0.map(modelize) : list0, st = tjStats(list), all = tjAll();
   const pairs = [...new Set(all.map(e => e.pair))].sort(), tags = [...new Set(all.flatMap(e => e.tags||[]))].sort(), sess = [...new Set(all.map(e => e.session).filter(Boolean))];
   const sel = (id, v, opts) => `<select class="inp tj-sel" id="${id}">${opts.map(([k,l]) => `<option value="${esc(k)}" ${v===k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
   const seg = (k, opts) => `<div class="seg" role="group">${opts.map(([v,l]) => `<button data-tj="${k}" data-v="${v}" aria-pressed="${T[k]===v}">${l}</button>`).join('')}</div>`;
-  const sorted = [...list0].sort((a,b) => {
+  const sorted = [...list].sort((a,b) => {
     if(T.sort==='profit') return (Number(b.profit)||0) - (Number(a.profit)||0);
     if(T.sort==='pips') return (Number(b.pips)||0) - (Number(a.pips)||0);
     if(T.sort==='old') return a.day.localeCompare(b.day);
@@ -6984,7 +6984,7 @@ function renderTrades(){
           <span class="tj-bt"><i class="${g.v>=0 ? 'p' : 'n'}" style="width:${Math.abs(g.v)/maxAbs*100}%"></i></span><span class="num ${sgn(g.v)}">${tjv(+g.v.toFixed(2))}</span><span class="muted">${g.w}W/${g.l}L</span></button>`).join('')}</div>` : '<p class="muted">No closed trades.</p>'}</div>
     </div>
     <div class="card" style="padding:0;margin-top:16px">
-      <div class="flex flex-wrap items-center gap-3" style="padding:14px 16px 10px"><h3 style="margin:0">All trades <span class="pg-n">${list.length}</span></h3>
+      <div class="flex flex-wrap items-center gap-3" style="padding:14px 16px 10px"><h3 style="margin:0">All trades <span class="pg-n">${list.length}</span>${model ? '<span class="muted" style="font-size:12px;font-weight:600;margin-left:8px">· model account: win +2R / +$200 · loss −1R / −$100</span>' : ''}</h3>
         <span style="margin-left:auto;display:flex;align-items:center;gap:8px"><span class="lbl" style="margin:0">Sort</span>${sel('tjSort', T.sort, [['new','Newest first'],['old','Oldest first'],['profit','Best $ first'],['pips','Best pips first']])}</span></div>
       ${sorted.length ? `<div class="tj-list">${sorted.map(tjRow).join('')}</div>` : '<div class="empty"><div class="orb" aria-hidden="true"></div><p>No trades match these filters.</p></div>'}
     </div>`;
