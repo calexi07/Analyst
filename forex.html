@@ -6400,7 +6400,7 @@ async function liveRefresh(){
     if(n) refreshDock?.();
   } finally { S.liveBusy = false; }
 }
-setInterval(liveRefresh, 30000);
+setInterval(liveRefresh, 120000);   /* every 2 minutes (the server engine runs every 2 minutes too); coming back to the tab refreshes at once */
 document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible' && Date.now() - S.liveAt > 15000) liveRefresh(); });
 setInterval(() => { const el = document.getElementById('suLive'); if(el) el.textContent = liveAgo(); }, 5000);
 function liveAgo(){ const sec = Math.round((Date.now() - (S.liveAt || Date.now()))/1000); return sec < 10 ? 'Updated just now' : sec < 60 ? `Updated ${sec}s ago` : `Updated ${Math.round(sec/60)}m ago`; }
