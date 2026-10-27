@@ -1426,6 +1426,7 @@
   .adj-tr td{ color:var(--muted); font-style:italic; }
   .adj-list{ display:grid; gap:6px; padding-top:8px; border-top:1px dashed var(--line); }
   .adj-row{ display:grid; grid-template-columns:90px 90px 1fr auto; align-items:center; gap:8px; font-size:13px; } .adj-row span{ color:var(--muted); font-weight:600; } .adj-row em{ font-style:normal; color:var(--muted); }
+  .ab-live-src{ font-style:normal; color:var(--pos); letter-spacing:0; }
   .ab-be{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }
   .ab-bv{ display:grid; line-height:1.15; padding:6px 10px; border-radius:11px; background:var(--surface-2); border:1px solid var(--line); min-width:0; }
   .ab-bv span{ font-size:9.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
@@ -3177,12 +3178,15 @@ function acctStats(a){
     .sort((x,y) => exitDay(x).localeCompare(exitDay(y)));
   let bal = size, low = size; const curve = [{ day:a.start_date || (tr[0]?.day ?? ''), bal:size }], byDay = {};
   tr.forEach(t => { bal += Number(t.profit); low = Math.min(low, bal); curve.push({ day:exitDay(t), bal }); byDay[exitDay(t)] = (byDay[exitDay(t)]||0) + Number(t.profit); });
+  /* real balance from Myfxbook (if it updated in the last 3 days) replaces the one estimated from your trades */
+  const live = a.live_balance!=null && a.live_at && Date.now() - Date.parse(a.live_at) < 3*864e5;
+  if(live){ const d = Number(a.live_balance) - bal; bal = Number(a.live_balance); low = Math.min(low, bal); if(Math.abs(d) > .005) curve.push({ day:iso(new Date()), bal }); }
   const pnl = bal - size;
   const target = acctTargetPct(a) ? size*acctTargetPct(a)/100 : null, maxLoss = a.max_loss_pct ? size*a.max_loss_pct/100 : null, dailyLim = a.daily_loss_pct ? size*a.daily_loss_pct/100 : null;
   const floor = maxLoss!=null ? size - maxLoss : null, today = byDay[iso(new Date())] || 0;
   const worstDay = Object.values(byDay).length ? Math.min(...Object.values(byDay)) : 0;
   const tradesR = tr.filter(t => ['W','L','BE'].includes(t.result));
-  return { tr, bal, pnl, target, maxLoss, dailyLim, floor, today, worstDay, curve, low,
+  return { tr, bal, pnl, target, maxLoss, dailyLim, floor, today, worstDay, curve, low, live, liveEq: live && a.live_equity!=null ? Number(a.live_equity) : null, liveAt: live ? a.live_at : null,
     room: floor!=null ? bal - floor : null,
     breachDaily: dailyLim!=null && Object.values(byDay).some(v => -v >= dailyLim),
     breachMax: floor!=null && low <= floor,
@@ -3369,6 +3373,7 @@ function acctFloat(a){   /* running $ on this account from its open trades */
   S.trades.forEach(e => { if(!e.direction || e.result || e.exit_date || !tradeAccts(e).some(x => x.id===a.id)) return; n++; const lv = livePL(e);
     const risk = numOr(e.risk) ?? RISK_PCT, u = lv ? lv.R * risk / 100 * (Number(a.size) || 0) : null; list.push({ e, lv, usd:u });
     if(!lv) return; R += lv.R; usd += u; });
+  if(a.live_equity!=null && a.live_balance!=null && a.live_at && Date.now() - Date.parse(a.live_at) < 3*864e5) usd = Number(a.live_equity) - Number(a.live_balance);   /* real floating from Myfxbook */
   return { n, R, usd, list };
 }
 function acctFlags(a, s){
@@ -3389,7 +3394,7 @@ function boardRow(a){
     <div class="ab-id"><span class="ab-ph">${esc(shortPhase(a.phase))}</span>
       <div class="ab-nm"><b title="${esc(a.name)}">${esc(shortAcc(a.name))}</b><small>${money(size)}${a.start_date ? ' · since ' + a.start_date.slice(5).split('-').reverse().join('.') : ''}${par ? ` · ↳ ${esc(lk || 'from')} of ${esc(shortAcc(par.name))}` : ''}</small></div></div>
     <div class="ab-be">
-      <div class="ab-bv"><span>Balance</span><b>${money(s.bal)}</b><small class="${sgn(s.pnl)}" title="${acctAdj(a).length ? 'includes ' + acctAdj(a).length + ' manual adjustment(s)' : ''}">${s.pnl > 0 ? '+' : ''}${money(s.pnl)} · ${pct > 0 ? '+' : ''}${fmt(pct, 2)}%${acctAdj(a).length ? ` · adj ${(t => `${t > 0 ? '+' : '−'}$${fmt(Math.abs(t), 0)}`)(acctAdj(a).reduce((t, m) => t + Number(m.amount), 0))}` : ''}</small></div>
+      <div class="ab-bv"><span>Balance${s.live ? ` <i class="ab-live-src" title="Real balance from Myfxbook · ${new Date(s.liveAt).toLocaleString('en-GB', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })}">● live</i>` : ''}</span><b>${money(s.bal)}</b><small class="${sgn(s.pnl)}" title="${acctAdj(a).length ? 'includes ' + acctAdj(a).length + ' manual adjustment(s)' : ''}">${s.pnl > 0 ? '+' : ''}${money(s.pnl)} · ${pct > 0 ? '+' : ''}${fmt(pct, 2)}%${acctAdj(a).length ? ` · adj ${(t => `${t > 0 ? '+' : '−'}$${fmt(Math.abs(t), 0)}`)(acctAdj(a).reduce((t, m) => t + Number(m.amount), 0))}` : ''}</small></div>
       <div class="ab-bv eq ${fl.n ? (fl.usd >= 0 ? 'up' : 'dn') : ''}"><span>Equity</span><b>${money(s.bal + fl.usd)}</b><small class="${fl.n ? sgn(fl.usd) : ''}">${fl.n ? `${fl.usd >= 0 ? '+' : '−'}${money(Math.abs(fl.usd))} floating` : 'no open trades'}</small></div>
     </div>
     <div class="ab-rail">${acctRail(a, s, true, fl.n ? s.bal + fl.usd : null)}${tg!=null ? `<div class="ab-tg">${Math.round(tg)}% of target${s.target ? ` · ${money(Math.max(0, s.target - s.pnl))} to go` : ''}</div>` : ''}</div>
@@ -3459,7 +3464,7 @@ function renderKiosk(){
     .sort((x, y) => (x.firm || '').localeCompare(y.firm || '') || (x.name || '').localeCompare(y.name || ''));
   const rows = live.map(a => { const s = acctStats(a), fl = acctFloat(a); return { a, s, fl, eq:s.bal + fl.usd, pd:payDays(a) }; });
   const bal = rows.reduce((t, r) => t + r.s.bal, 0), eq = rows.reduce((t, r) => t + r.eq, 0), flt = eq - bal, paid = [...S.accounts.values()].reduce((t, a) => t + acctPaid(a), 0);
-  const size = rows.reduce((t, r) => t + (Number(r.a.size) || 0), 0), pnl = bal - size, openN = rows.reduce((t, r) => t + r.fl.n, 0);
+  const size = rows.reduce((t, r) => t + (Number(r.a.size) || 0), 0), pnl = bal - size, openN = rows.reduce((t, r) => t + r.fl.n, 0) || (Math.abs(eq - bal) >= .5 ? 1 : 0);
   const next = rows.filter(r => r.pd!=null && r.pd >= 0).sort((x, y) => x.pd - y.pd)[0];
   const n = Math.max(1, rows.length), W = innerWidth, H = innerHeight - 190;
   /* pick the grid that keeps cards close to a 1.5:1 shape with the fewest empty slots */
@@ -3490,13 +3495,13 @@ function renderKiosk(){
       <div class="ks-t ${next && next.pd===0 ? 'today' : ''}"><span>Next payout</span><b>${next ? (next.pd===0 ? 'TODAY' : next.pd===1 ? 'Tomorrow' : `${next.pd} days`) : '—'}</b><small>${next ? esc(shortAcc(next.a.name)) : 'set payout dates'}</small></div>
     </header>
     <div class="ks-grid" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${rowsN},minmax(0,1fr))">
-      ${rows.map(({ a, s, fl, eq, pd }, i) => { const tg = s.target ? s.pnl / s.target * 100 : null, pay = pd===0, f = fl.usd, h = hue(a.firm), today = s.today || 0;
-        return `<article class="ks-c ${pay ? 'pay' : ''} ${fl.n ? (f >= 0 ? 'up' : 'dn') : ''}" style="--h:${h};--i:${i}">
+      ${rows.map(({ a, s, fl, eq, pd }, i) => { const tg = s.target ? s.pnl / s.target * 100 : null, pay = pd===0, f = fl.usd, h = hue(a.firm), today = s.today || 0, hasF = fl.n || Math.abs(f) >= .5;
+        return `<article class="ks-c ${pay ? 'pay' : ''} ${hasF ? (f >= 0 ? 'up' : 'dn') : ''}" style="--h:${h};--i:${i}">
           <div class="ks-h"><span class="ks-mono">${esc(ini(a.firm))}</span><div class="ks-nm"><b>${esc(shortAcc(a.name))}</b><small>${esc(a.firm || '')} · ${money(Number(a.size))}</small></div>
             ${pay ? '<em class="ks-pay">💸 Payout day</em>' : pd!=null && pd > 0 ? `<em class="ks-pd ${pd <= 3 ? 'soon' : ''}"><b>${pd}</b>${pd===1 ? 'day' : 'days'}<i>to payout</i></em>` : ''}</div>
           <div class="ks-body">
             <div class="ks-nums">
-              <div class="ks-v eq"><span>Equity</span><b data-cu="e${a.id}" data-v="${eq}">${money(eq)}</b><small class="${fl.n ? sgn(f) : ''}">${fl.n ? `${sg(f)} floating · ${fl.n} open` : 'no open trades'}</small></div>
+              <div class="ks-v eq"><span>Equity</span><b data-cu="e${a.id}" data-v="${eq}">${money(eq)}</b><small class="${hasF ? sgn(f) : ''}">${hasF ? `${sg(f)} floating${fl.n ? ` · ${fl.n} open` : ''}` : 'no open trades'}</small></div>
               <div class="ks-v"><span>Balance</span><b class="sm" data-cu="b${a.id}" data-v="${s.bal}">${money(s.bal)}</b><small class="${sgn(s.pnl)}">${sg(s.pnl)} · today <em class="${sgn(today)}">${sg(today)}</em></small></div>
             </div>
             ${tg!=null ? `<div class="ks-rw">${ring(tg)}<div class="ks-rl"><b>${Math.max(0, Math.round(tg))}%</b><span>of ${acctTargetPct(a)}%</span></div></div>` : ''}
@@ -3506,7 +3511,7 @@ function renderKiosk(){
     </div>
     <footer class="ks-f">
       <div class="ks-tape"><div class="ks-tape-in">${tape.length ? [...tape, ...tape].map(o => `<span class="${o.lv ? (o.lv.R >= 0 ? 'up' : 'dn') : ''}">${o.e.direction==='Long' ? '▲' : '▼'} <b>${o.e.pair}</b> ${o.lv ? `${o.lv.R >= 0 ? '+' : ''}${fmt(o.lv.R, 2)}R · ${o.usd >= 0 ? '+' : '−'}$${fmt(Math.abs(o.usd), 0)}` : '…'} <i>${esc(shortAcc(o.acc.name))}</i></span>`).join('') : '<span class="flat">No open trades · flat and patient</span><span class="flat">No open trades · flat and patient</span>'}</div></div>
-      <small>Updated ${now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })} · every 2 min${S.wake ? ' · screen on' : ' · tap once to keep the screen on'}</small>
+      <small>${(() => { const ts = rows.map(r => r.s.liveAt).filter(Boolean).map(t => Date.parse(t)); return ts.length ? `Myfxbook ${new Date(Math.max(...ts)).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })} · ` : ''; })()}Updated ${now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })} · every 2 min${S.wake ? ' · screen on' : ' · tap once to keep the screen on'}</small>
     </footer>
   </div>`;
   /* numbers roll from the last value to the new one */
@@ -3691,6 +3696,7 @@ function openAcct(a){
         <div><label class="lbl" for="a_status">Status</label><select id="a_status" class="inp" name="status">${Object.entries(ACC_STATUS).map(([k,l]) => `<option value="${k}" ${(a?.status||'active')===k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
         <div><label class="lbl" for="a_size">Account size ($)</label><input id="a_size" class="inp num" name="size" inputmode="decimal" required value="${v('size')}" placeholder="100000"></div>
         <div><label class="lbl" for="a_start">Start date</label><input id="a_start" class="inp" name="start_date" type="date" value="${v('start_date')}"></div>
+        ${'live_balance' in (a || [...S.accounts.values()][0] || {}) ? `<div><label class="lbl" for="a_mfx">Myfxbook / broker login <span class="muted" style="font-weight:600">(only if not in the name)</span></label><input id="a_mfx" class="inp num" name="mfx_login" value="${esc(a?.mfx_login ?? '')}" placeholder="e.g. 531501498"></div>` : ''}
         ${hasPayCol() ? `<div><label class="lbl" for="a_pay">Payout date <span class="muted" style="font-weight:600">(funded)</span></label><input id="a_pay" class="inp" name="payout_date" type="date" value="${esc(String(a?.payout_date ?? '').slice(0, 10))}"></div>` : ''}
       </div>
       <div class="g3">
@@ -3715,6 +3721,7 @@ function openAcct(a){
       size:parseNum(el.size.value), start_date:el.start_date.value || null, target_pct:parseNum(el.target_pct.value),
       daily_loss_pct:parseNum(el.daily_loss_pct.value), max_loss_pct:parseNum(el.max_loss_pct.value), notes:el.notes.value.trim() || null };
     if(el.payout_date) row.payout_date = el.payout_date.value || null;
+    if(el.mfx_login) row.mfx_login = el.mfx_login.value.trim() || null;
     if(el.parent_id){ row.parent_id = el.parent_id.value || null; row.link_kind = row.parent_id ? el.link_kind.value : null; }
     if(!row.name || row.size==null) return toast('Fill in the account name and size');
     const q = a ? sb.from('do_accounts').update(row).eq('id', a.id).select().single() : sb.from('do_accounts').insert(row).select().single();
