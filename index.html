@@ -821,6 +821,8 @@
   .ks-sp{ display:block; width:calc(100% + 2.8vw); height:clamp(30px,9vh,110px); margin:0 -1.4vw; color:var(--pos); } .ks-sp.dn{ color:var(--neg); }
   .ks.intro .ks-sp{ animation:ksRise 1.6s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i) * 110ms + 500ms); transform-origin:bottom; }
   @keyframes ksRise{ from{ opacity:0; transform:scaleY(.2); } }
+  .ks-grid.lg .ks-v b{ font-size:clamp(28px,6.6vh,80px); } .ks-grid.lg .ks-v b.sm{ font-size:clamp(18px,3.6vh,44px); }
+  .ks-grid.xl .ks-v b{ font-size:clamp(40px,11vh,140px); } .ks-grid.xl .ks-v b.sm{ font-size:clamp(22px,5vh,64px); } .ks-grid.xl .ks-v small{ font-size:clamp(12px,2.2vh,24px); } .ks-grid.xl .ks-rw{ width:clamp(120px,30vh,320px); } .ks-grid.xl .ks-rl b{ font-size:clamp(20px,5vh,56px); }
   .ks-empty{ display:grid; place-items:center; font-size:2.4vh; color:var(--muted); }
   .ks-f{ display:flex; align-items:center; gap:1.2vw; min-width:0; }
   .ks-f > small{ flex:none; font-size:clamp(9px,1.2vh,12px); font-weight:700; color:var(--muted); }
@@ -1426,6 +1428,9 @@
   .adj-tr td{ color:var(--muted); font-style:italic; }
   .adj-list{ display:grid; gap:6px; padding-top:8px; border-top:1px dashed var(--line); }
   .adj-row{ display:grid; grid-template-columns:90px 90px 1fr auto; align-items:center; gap:8px; font-size:13px; } .adj-row span{ color:var(--muted); font-weight:600; } .adj-row em{ font-style:normal; color:var(--muted); }
+  .mfx-p{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px; padding:10px 12px; border-radius:14px; border:1px dashed var(--line); }
+  .mfx-c{ display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:10px; border:1px solid color-mix(in srgb,var(--pos) 40%,var(--line)); background:var(--surface-2); color:var(--ink); font-size:12.5px; }
+  .mfx-c small{ color:var(--muted); font-weight:600; } .mfx-c.off{ opacity:.55; border-style:dashed; border-color:var(--line); } .mfx-c.off b{ text-decoration:line-through; }
   .ab-live-src{ font-style:normal; color:var(--pos); letter-spacing:0; }
   .ab-be{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }
   .ab-bv{ display:grid; line-height:1.15; padding:6px 10px; border-radius:11px; background:var(--surface-2); border:1px solid var(--line); min-width:0; }
@@ -3441,6 +3446,7 @@ function boardHtml(){
     ${kpi('Next payout', nextPay ? (payDays(nextPay)===0 ? 'Today' : `${payDays(nextPay)}d`) : '—', nextPay ? esc(shortAcc(nextPay.name)) : 'set a payout date on funded accounts')}
     ${kpi('Needs you', att.length, att.length ? 'eligible · payout · risk' : 'all calm', att.length ? 'att' : '')}
   </div>
+  ${mfxPanel()}
   ${att.length ? `<div class="ab-att">${att.sort((x, y) => order(x) - order(y)).map(a => fg.get(a.id).map(([k, t]) => `<button class="ab-ac ${k}" data-acc="${a.id}"><b>${esc(shortAcc(a.name))}</b>${t}</button>`).join('')).join('')}</div>` : ''}
   <div class="ab-bar">
     <div class="seg" role="group" aria-label="Filter">${[['all','All', live.length],['funded','Funded', funded.length],['chal','Challenges', chal.length],['trade','In trade', live.filter(a => fl.get(a.id).n).length],['att','Needs you', att.length]].map(([k, l, n]) => `<button data-afl="${k}" aria-pressed="${flt===k}">${l}<em>${n}</em></button>`).join('')}</div>
@@ -3459,12 +3465,34 @@ function boardHtml(){
     </section>`; }).join('') || '<div class="card"><p class="muted" style="margin:0">Nothing matches this filter.</p></div>'}`;
 }
 /* screen mode: one look, no scroll, nothing to tap — totals on top, one card per live account */
+/* Myfxbook snapshot written by the server (do_settings.mfx_accounts) */
+const mfxList = () => { const v = S.settings?.mfx_accounts; return v && Array.isArray(v.list) && Date.now() - Date.parse(v.at) < 3*864e5 ? v.list : []; };
+const mfxAt = () => S.settings?.mfx_accounts?.at || null;
+const mfxHidden = () => Array.isArray(S.settings?.mfx_hidden) ? S.settings.mfx_hidden : [];
+const mfxMatch = m => [...S.accounts.values()].find(a => (a.status || 'active')==='active' && (String(a.mfx_login || '').trim()===m.num || String(a.name || '').replace(/\D+/g, ' ').split(' ').includes(m.num)));
+function mfxPanel(){
+  const list = mfxList(); if(!list.length) return '';
+  const hid = new Set(mfxHidden());
+  return `<div class="mfx-p"><span class="kick">📟 Tablet screen · Myfxbook accounts</span>${list.map(m => { const a = mfxMatch(m), off = hid.has(m.num);
+      return `<button class="mfx-c ${off ? 'off' : ''}" data-mfxt="${esc(m.num)}" title="${off ? 'Hidden on the tablet screen · click to show' : 'Shown on the tablet screen · click to hide'}">${off ? '🙈' : '👁'} <b>${esc(m.name)}</b> <small>#${esc(m.num)}${a ? ' · ' + esc(shortAcc(a.name)) : ' · not on the site'} · ${money(m.equity)}</small></button>`; }).join('')}
+    <span class="muted" style="font-size:11.5px">Synced ${new Date(mfxAt()).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}</span></div>`;
+}
 function renderKiosk(){
   const live = [...S.accounts.values()].filter(a => (a.status || 'active')==='active' && a.phase==='Funded')   /* funded accounts only */
     .sort((x, y) => (x.firm || '').localeCompare(y.firm || '') || (x.name || '').localeCompare(y.name || ''));
-  const rows = live.map(a => { const s = acctStats(a), fl = acctFloat(a); return { a, s, fl, eq:s.bal + fl.usd, pd:payDays(a) }; });
+  let rows = live.map(a => { const s = acctStats(a), fl = acctFloat(a); return { a, s, fl, eq:s.bal + fl.usd, pd:payDays(a) }; });
+  /* Myfxbook connected → the screen shows exactly the Myfxbook accounts (minus the ones you hide), matched to your site accounts where possible */
+  const mfx = mfxList();
+  if(mfx.length){
+    const hid = new Set(mfxHidden());
+    rows = mfx.filter(m => !hid.has(m.num)).map(m => { const a = mfxMatch(m);
+      if(a){ const s = acctStats(a), fl = acctFloat(a); return { a, s, fl, eq:s.bal + fl.usd, pd:payDays(a) }; }
+      const size = (m.deposits > 0 ? m.deposits : m.balance - m.profit) || m.balance;
+      const a2 = { id:'mfx' + m.num, name:`${m.name} #${m.num}`, firm:(m.name.split(/\s[-–|]\s|\s/)[0] || 'Myfxbook'), size, phase:'Funded' };
+      return { a:a2, s:{ bal:m.balance, pnl:m.balance - size, curve:[{ bal:size }, { bal:m.balance }], today:0, target:size * FUNDED_TARGET / 100, liveAt:mfxAt() }, fl:{ n:0, usd:m.equity - m.balance, list:[] }, eq:m.equity, pd:null }; });
+  }
   const bal = rows.reduce((t, r) => t + r.s.bal, 0), eq = rows.reduce((t, r) => t + r.eq, 0), flt = eq - bal, paid = [...S.accounts.values()].reduce((t, a) => t + acctPaid(a), 0);
-  const size = rows.reduce((t, r) => t + (Number(r.a.size) || 0), 0), pnl = bal - size, openN = rows.reduce((t, r) => t + r.fl.n, 0) || (Math.abs(eq - bal) >= .5 ? 1 : 0);
+  const size = rows.reduce((t, r) => t + (Number(r.a.size) || 0), 0), pnl = bal - size, tradesN = rows.reduce((t, r) => t + r.fl.n, 0), openN = tradesN || (Math.abs(eq - bal) >= .5 ? 1 : 0);
   const next = rows.filter(r => r.pd!=null && r.pd >= 0).sort((x, y) => x.pd - y.pd)[0];
   const n = Math.max(1, rows.length), W = innerWidth, H = innerHeight - 190;
   /* pick the grid that keeps cards close to a 1.5:1 shape with the fewest empty slots */
@@ -3488,16 +3516,16 @@ function renderKiosk(){
     <div class="ks-aur" aria-hidden="true"><i></i><i></i><i></i></div>
     <header class="ks-top">
       <div class="ks-time"><span class="ks-live"><i></i>LIVE</span><b id="ksClock">${now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}</b><span>${WD[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]}</span></div>
-      <div class="ks-hero"><span>Total equity · ${rows.length} funded</span><b data-cu="tot" data-v="${eq}">${money(eq)}</b>
+      <div class="ks-hero"><span>Total equity · ${rows.length} account${rows.length===1 ? '' : 's'}${mfx.length ? ' · Myfxbook' : ''}</span><b data-cu="tot" data-v="${eq}">${money(eq)}</b>
         <small><em class="${sgn(pnl)}">${sg(pnl)}</em> since start · balance ${money(bal)}${openN ? ` · <em class="${sgn(flt)}">${sg(flt)}</em> floating` : ''}</small></div>
-      <div class="ks-t"><span>Floating</span><b class="${openN ? sgn(flt) : ''}">${openN ? sg(flt) : 'Flat'}</b><small>${openN ? `${openN} open trade${openN > 1 ? 's' : ''}` : 'no open trades'}</small></div>
+      <div class="ks-t"><span>Floating</span><b class="${openN ? sgn(flt) : ''}">${openN ? sg(flt) : 'Flat'}</b><small>${tradesN ? `${tradesN} open trade${tradesN > 1 ? 's' : ''}` : openN ? 'live from Myfxbook' : 'no open trades'}</small></div>
       <div class="ks-t pay"><span>Paid out</span><b>${money(paid)}</b><small>all time</small></div>
       <div class="ks-t ${next && next.pd===0 ? 'today' : ''}"><span>Next payout</span><b>${next ? (next.pd===0 ? 'TODAY' : next.pd===1 ? 'Tomorrow' : `${next.pd} days`) : '—'}</b><small>${next ? esc(shortAcc(next.a.name)) : 'set payout dates'}</small></div>
     </header>
-    <div class="ks-grid" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${rowsN},minmax(0,1fr))">
+    <div class="ks-grid ${n===1 ? 'xl' : n <= 4 ? 'lg' : ''}" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${rowsN},minmax(0,1fr))">
       ${rows.map(({ a, s, fl, eq, pd }, i) => { const tg = s.target ? s.pnl / s.target * 100 : null, pay = pd===0, f = fl.usd, h = hue(a.firm), today = s.today || 0, hasF = fl.n || Math.abs(f) >= .5;
         return `<article class="ks-c ${pay ? 'pay' : ''} ${hasF ? (f >= 0 ? 'up' : 'dn') : ''}" style="--h:${h};--i:${i}">
-          <div class="ks-h"><span class="ks-mono">${esc(ini(a.firm))}</span><div class="ks-nm"><b>${esc(shortAcc(a.name))}</b><small>${esc(a.firm || '')} · ${money(Number(a.size))}</small></div>
+          <div class="ks-h"><span class="ks-mono">${esc(ini(a.firm))}</span><div class="ks-nm"><b>${esc(shortAcc(a.name))}</b><small>${esc(a.firm || '')} · ${money(Number(a.size))}${String(a.id).startsWith('mfx') ? ' · not on the site' : ''}</small></div>
             ${pay ? '<em class="ks-pay">💸 Payout day</em>' : pd!=null && pd > 0 ? `<em class="ks-pd ${pd <= 3 ? 'soon' : ''}"><b>${pd}</b>${pd===1 ? 'day' : 'days'}<i>to payout</i></em>` : ''}</div>
           <div class="ks-body">
             <div class="ks-nums">
@@ -3511,7 +3539,7 @@ function renderKiosk(){
     </div>
     <footer class="ks-f">
       <div class="ks-tape"><div class="ks-tape-in">${tape.length ? [...tape, ...tape].map(o => `<span class="${o.lv ? (o.lv.R >= 0 ? 'up' : 'dn') : ''}">${o.e.direction==='Long' ? '▲' : '▼'} <b>${o.e.pair}</b> ${o.lv ? `${o.lv.R >= 0 ? '+' : ''}${fmt(o.lv.R, 2)}R · ${o.usd >= 0 ? '+' : '−'}$${fmt(Math.abs(o.usd), 0)}` : '…'} <i>${esc(shortAcc(o.acc.name))}</i></span>`).join('') : '<span class="flat">No open trades · flat and patient</span><span class="flat">No open trades · flat and patient</span>'}</div></div>
-      <small>${(() => { const ts = rows.map(r => r.s.liveAt).filter(Boolean).map(t => Date.parse(t)); return ts.length ? `Myfxbook ${new Date(Math.max(...ts)).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })} · ` : ''; })()}Updated ${now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })} · every 2 min${S.wake ? ' · screen on' : ' · tap once to keep the screen on'}</small>
+      <small>${(() => { const ts = [...rows.map(r => r.s.liveAt), mfxAt()].filter(Boolean).map(t => Date.parse(t)).filter(x => !isNaN(x)); return ts.length ? `Myfxbook ${new Date(Math.max(...ts)).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })} · ` : ''; })()}Updated ${now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })} · every 2 min${S.wake ? ' · screen on' : ' · tap once to keep the screen on'}</small>
     </footer>
   </div>`;
   /* numbers roll from the last value to the new one */
@@ -3552,6 +3580,7 @@ function renderAccounts(){
   document.querySelectorAll('[data-jpass]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openPass(S.accounts.get(b.dataset.jpass)); });
   document.querySelectorAll('[data-jfail]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openFail(S.accounts.get(b.dataset.jfail)); });
   document.querySelectorAll('[data-aview]').forEach(b => b.onclick = () => { S.aView = b.dataset.aview; ls.set('do_aview2', S.aView); renderMain(); });
+  document.querySelectorAll('[data-mfxt]').forEach(b => b.onclick = async () => { const h = new Set(mfxHidden()), k = b.dataset.mfxt; h.has(k) ? h.delete(k) : h.add(k); await saveSettingKey('mfx_hidden', [...h]); renderMain(); toast(h.has(k) ? 'Hidden on the tablet screen' : 'Shown on the tablet screen'); });
   document.querySelectorAll('[data-afl]').forEach(b => b.onclick = () => { S.aFilter = b.dataset.afl; ls.set('do_afilter', S.aFilter); renderMain(); });
   const abq = document.getElementById('abQ'); if(abq){ abq.oninput = () => { S.aQ = abq.value; clearTimeout(abq._t); abq._t = setTimeout(() => { renderMain(); const n = document.getElementById('abQ'); n?.focus(); n?.setSelectionRange(n.value.length, n.value.length); }, 250); }; }
   document.querySelectorAll('[data-abfirm]').forEach(h => h.onclick = () => { const c = new Set(ls.get('do_ab_closed', [])), f = h.dataset.abfirm; c.has(f) ? c.delete(f) : c.add(f); ls.set('do_ab_closed', [...c]); renderMain(); });
@@ -4835,7 +4864,7 @@ async function loadSignals(){
     return;
   }
   if(!S.signalsMissing) await loadCandles();
-  try{ const { data } = await sb.from('do_settings').select('*').range(0, 999); (data || []).forEach(r => { if(['engine','hb_1m','hb_15m','hb_1H','hb_4H','pair_override','bank_hidden'].includes(r.key)) S.settings[r.key] = r.value; }); }catch(e){ /* keep what we have */ }
+  try{ const { data } = await sb.from('do_settings').select('*').range(0, 999); (data || []).forEach(r => { if(['engine','hb_1m','hb_15m','hb_1H','hb_4H','pair_override','bank_hidden','mfx_accounts','mfx_hidden'].includes(r.key)) S.settings[r.key] = r.value; }); }catch(e){ /* keep what we have */ }
 }
 /* the server engine (tv-signal) is running → it does the auto-take / auto-close; the browser only shows */
 const engineOn = () => { const at = S.settings?.engine?.at; return !!at && Date.now() - tms(at) < 40*60e3; };
