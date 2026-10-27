@@ -823,6 +823,8 @@
   @keyframes ksRise{ from{ opacity:0; transform:scaleY(.2); } }
   .ks-grid.lg .ks-v b{ font-size:clamp(28px,6.6vh,80px); } .ks-grid.lg .ks-v b.sm{ font-size:clamp(18px,3.6vh,44px); }
   .ks-grid.xl .ks-v b{ font-size:clamp(40px,11vh,140px); } .ks-grid.xl .ks-v b.sm{ font-size:clamp(22px,5vh,64px); } .ks-grid.xl .ks-v small{ font-size:clamp(12px,2.2vh,24px); } .ks-grid.xl .ks-rw{ width:clamp(120px,30vh,320px); } .ks-grid.xl .ks-rl b{ font-size:clamp(20px,5vh,56px); }
+  .ks-lv{ font-style:normal; color:var(--pos); }
+  .ks-c.ot .ks-sp{ display:none; } .ks-c.ot{ padding-bottom:1.4vh; } .ks-c.ot .ks-body{ overflow:hidden; } .ks-c.ot .ks-nums{ gap:.6vh; }
   .ks-ot{ list-style:none; margin:.6vh 0 0; padding:0; display:grid; gap:.5vh; z-index:1; min-width:0; }
   .ks-ot li{ display:grid; grid-template-columns:auto auto minmax(0,1fr) auto; align-items:center; gap:.6vw; padding:.55vh .8vw; border-radius:12px; background:color-mix(in srgb,var(--ink) 5%,transparent); font-size:clamp(11px,1.65vh,18px); animation:ksOt .5s ease both; animation-delay:calc(var(--i) * 110ms + 500ms); }
   .ks-ot li i{ font-style:normal; font-size:.85em; } .ks-ot li b{ font-weight:800; letter-spacing:.02em; } .ks-ot li span{ color:var(--muted); font-size:.85em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .ks-ot li em{ font-style:normal; font-weight:800; font-variant-numeric:tabular-nums; }
@@ -1438,6 +1440,8 @@
   .adj-row{ display:grid; grid-template-columns:90px 90px 1fr auto; align-items:center; gap:8px; font-size:13px; } .adj-row span{ color:var(--muted); font-weight:600; } .adj-row em{ font-style:normal; color:var(--muted); }
   .mfx-p{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px; padding:10px 12px; border-radius:14px; border:1px dashed var(--line); }
   .mfx-c{ display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:10px; border:1px solid color-mix(in srgb,var(--pos) 40%,var(--line)); background:var(--surface-2); color:var(--ink); font-size:12.5px; }
+  .mfx-clean{ margin-left:auto; font-size:12.5px; padding:6px 12px; color:var(--neg); border-color:color-mix(in srgb,var(--neg) 40%,var(--line)); }
+  .mfx-c.off b{ text-decoration:line-through; }
   .mfx-c small{ color:var(--muted); font-weight:600; } .mfx-c.off{ opacity:.55; border-style:dashed; border-color:var(--line); } .mfx-c.off b{ text-decoration:line-through; }
   .ab-live-src{ font-style:normal; color:var(--pos); letter-spacing:0; }
   .ab-be{ display:grid; grid-template-columns:1fr 1fr; gap:6px; }
@@ -3481,24 +3485,24 @@ const mfxMatch = m => [...S.accounts.values()].find(a => (a.status || 'active')=
 function mfxPanel(){
   const list = mfxList(); if(!list.length) return '';
   const hid = new Set(mfxHidden());
-  return `<div class="mfx-p"><span class="kick">📟 Tablet screen · Myfxbook accounts</span>${list.map(m => { const a = mfxMatch(m), off = hid.has(m.num);
-      return `<button class="mfx-c ${off ? 'off' : ''}" data-mfxt="${esc(m.num)}" title="${off ? 'Hidden on the tablet screen · click to show' : 'Shown on the tablet screen · click to hide'}">${off ? '🙈' : '👁'} <b>${esc(m.name)}</b> <small>#${esc(m.num)}${a ? ' · ' + esc(shortAcc(a.name)) : ' · not on the site'} · ${money(m.equity)}</small></button>`; }).join('')}
+  return `<div class="mfx-p"><span class="kick">📡 Myfxbook · tablet + Accounts</span>${list.map(m => { const a = mfxMatch(m), off = hid.has(m.num);
+      return `<button class="mfx-c ${off ? 'off' : ''}" data-mfxt="${esc(m.num)}" title="${off ? 'Hidden · not on the tablet, not copied to Accounts · click to show' : 'On the tablet and copied to Accounts · click to hide'}">${off ? '🙈' : '👁'} <b>${esc(m.name)}</b> <small>#${esc(m.num)}${off ? ' · hidden' : a ? ' · → ' + esc(shortAcc(a.name)) : ' · copied on the next sync'} · ${money(m.equity)}${(m.open || []).length ? ` · ${m.open.length} open` : ''}</small></button>`; }).join('')}
     <span class="muted" style="font-size:11.5px">Synced ${new Date(mfxAt()).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}</span></div>`;
 }
 function renderKiosk(){
   const live = [...S.accounts.values()].filter(a => (a.status || 'active')==='active' && a.phase==='Funded')   /* funded accounts only */
     .sort((x, y) => (x.firm || '').localeCompare(y.firm || '') || (x.name || '').localeCompare(y.name || ''));
   let rows = live.map(a => { const s = acctStats(a), fl = acctFloat(a); return { a, s, fl, eq:s.bal + fl.usd, pd:payDays(a) }; });
-  /* Myfxbook connected → the screen shows exactly the Myfxbook accounts (minus the ones you hide), matched to your site accounts where possible */
+  /* Myfxbook connected → the tablet shows every Myfxbook account you don't hide; payout date, payouts and target come from its copy in Accounts */
   const mfx = mfxList();
   if(mfx.length){
     const hid = new Set(mfxHidden());
-    rows = mfx.filter(m => !hid.has(m.num)).map(m => { const a = mfxMatch(m);
-      const mo = Array.isArray(m.open) ? m.open : [];
-      if(a){ const s = acctStats(a), fl = acctFloat(a); return { a, s, fl, eq:s.bal + fl.usd, pd:payDays(a), mo }; }
+    rows = mfx.filter(m => !hid.has(m.num)).map(m => { const a = mfxMatch(m), mo = Array.isArray(m.open) ? m.open : [];
+      if(a){ const s = acctStats(a), fl = acctFloat(a); return { a, s, fl, eq:s.bal + fl.usd, pd:payDays(a), mo, mfx:true }; }
+      /* not copied yet (the next sync adds it) */
       const size = (m.deposits > 0 ? m.deposits : m.balance - m.profit) || m.balance;
       const a2 = { id:'mfx' + m.num, name:`${m.name} #${m.num}`, firm:(m.name.split(/\s[-–|]\s|\s/)[0] || 'Myfxbook'), size, phase:'Funded' };
-      return { a:a2, s:{ bal:m.balance, pnl:m.balance - size, curve:[{ bal:size }, { bal:m.balance }], today:0, target:size * FUNDED_TARGET / 100, liveAt:mfxAt() }, fl:{ n:0, usd:m.equity - m.balance, list:[] }, eq:m.equity, pd:null, mo }; });
+      return { a:a2, s:{ bal:m.balance, pnl:m.balance - size, curve:[{ bal:size }, { bal:m.balance }], today:0, target:size * FUNDED_TARGET / 100, liveAt:mfxAt() }, fl:{ n:0, usd:m.equity - m.balance, list:[] }, eq:m.equity, pd:null, mo, mfx:true }; });
   }
   const bal = rows.reduce((t, r) => t + r.s.bal, 0), eq = rows.reduce((t, r) => t + r.eq, 0), flt = eq - bal, paid = [...S.accounts.values()].reduce((t, a) => t + acctPaid(a), 0);
   const size = rows.reduce((t, r) => t + (Number(r.a.size) || 0), 0), pnl = bal - size, tradesN = rows.reduce((t, r) => t + Math.max(r.fl.n, (r.mo || []).length), 0), openN = tradesN || (Math.abs(eq - bal) >= .5 ? 1 : 0);
@@ -3530,7 +3534,7 @@ function renderKiosk(){
     <div class="ks-aur" aria-hidden="true"><i></i><i></i><i></i></div>
     <header class="ks-top">
       <div class="ks-time"><span class="ks-live"><i></i>LIVE</span><b id="ksClock">${now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}</b><span>${WD[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]}</span></div>
-      <div class="ks-hero"><span>Total equity · ${rows.length} account${rows.length===1 ? '' : 's'}${mfx.length ? ' · Myfxbook' : ''}</span><b data-cu="tot" data-v="${eq}">${money(eq)}</b>
+      <div class="ks-hero"><span>Total equity · ${rows.length} account${rows.length===1 ? '' : 's'}${rows.some(r => r.mfx) ? ' · Myfxbook live' : ''}</span><b data-cu="tot" data-v="${eq}">${money(eq)}</b>
         <small><em class="${sgn(pnl)}">${sg(pnl)}</em> since start · balance ${money(bal)}${openN ? ` · <em class="${sgn(flt)}">${sg(flt)}</em> floating` : ''}</small></div>
       <div class="ks-t"><span>Floating</span><b class="${openN ? sgn(flt) : ''}">${openN ? sg(flt) : 'Flat'}</b><small>${tradesN ? `${tradesN} open trade${tradesN > 1 ? 's' : ''}` : openN ? 'live from Myfxbook' : 'no open trades'}</small></div>
       <div class="ks-t pay"><span>Paid out</span><b>${money(paid)}</b><small>all time</small></div>
@@ -3538,8 +3542,8 @@ function renderKiosk(){
     </header>
     <div class="ks-grid ${n===1 ? 'xl' : n <= 4 ? 'lg' : ''}" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${rowsN},minmax(0,1fr))">
       ${rows.map((r, i) => { const { a, s, fl, eq, pd } = r, mo = r.mo || []; const tg = s.target ? s.pnl / s.target * 100 : null, pay = pd===0, f = fl.usd, h = hue(a.firm), today = s.today || 0, hasF = fl.n || mo.length || Math.abs(f) >= .5, nOpen = Math.max(fl.n, mo.length);
-        return `<article class="ks-c ${pay ? 'pay' : ''} ${hasF ? (f >= 0 ? 'up' : 'dn') : ''}" style="--h:${h};--i:${i}">
-          <div class="ks-h"><span class="ks-mono">${esc(ini(a.firm))}</span><div class="ks-nm"><b>${esc(shortAcc(a.name))}</b><small>${esc(a.firm || '')} · ${money(Number(a.size))}${String(a.id).startsWith('mfx') ? ' · not on the site' : ''}</small></div>
+        return `<article class="ks-c ${mo.length ? 'ot' : ''} ${pay ? 'pay' : ''} ${hasF ? (f >= 0 ? 'up' : 'dn') : ''}" style="--h:${h};--i:${i}">
+          <div class="ks-h"><span class="ks-mono">${esc(ini(a.firm))}</span><div class="ks-nm"><b>${esc(shortAcc(a.name))}</b><small>${esc(a.firm || '')} · ${money(Number(a.size))}${r.mfx ? ' · <i class="ks-lv">● live</i>' : ''}</small></div>
             ${pay ? '<em class="ks-pay">💸 Payout day</em>' : pd!=null && pd > 0 ? `<em class="ks-pd ${pd <= 3 ? 'soon' : ''}"><b>${pd}</b>${pd===1 ? 'day' : 'days'}<i>to payout</i></em>` : ''}</div>
           <div class="ks-body">
             <div class="ks-nums">
@@ -3548,7 +3552,7 @@ function renderKiosk(){
             </div>
             ${tg!=null ? `<div class="ks-rw">${ring(tg)}<div class="ks-rl"><b>${Math.max(0, Math.round(tg))}%</b><span>of ${acctTargetPct(a)}%</span></div></div>` : ''}
           </div>
-          ${mo.length ? `<ul class="ks-ot">${mo.slice(0, 3).map(o => pos(o, r)).join('')}${mo.length > 3 ? `<li class="more">+${mo.length - 3} more</li>` : ''}</ul>` : ''}
+          ${mo.length ? `<ul class="ks-ot">${mo.slice(0, n===1 ? 4 : 2).map(o => pos(o, r)).join('')}${mo.length > (n===1 ? 4 : 2) ? `<li class="more">+${mo.length - (n===1 ? 4 : 2)} more</li>` : ''}</ul>` : ''}
           ${spark(s.curve, s.pnl >= 0)}
         </article>`; }).join('') || '<div class="ks-empty">No funded accounts yet.</div>'}
     </div>
@@ -3594,8 +3598,14 @@ function renderAccounts(){
   document.querySelectorAll('[data-payout]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openPayout(S.accounts.get(b.dataset.payout)); });
   document.querySelectorAll('[data-jpass]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openPass(S.accounts.get(b.dataset.jpass)); });
   document.querySelectorAll('[data-jfail]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openFail(S.accounts.get(b.dataset.jfail)); });
+   document.querySelectorAll('[data-mfxt]').forEach(b => b.onclick = async () => { const h = new Set(mfxHidden()), k = b.dataset.mfxt; h.has(k) ? h.delete(k) : h.add(k);
+     await saveSettingKey('mfx_hidden', [...h]);
+     /* hiding also removes its automatic copy from Accounts (only when nothing is attached to it) */
+     let gone = false; const m = mfxList().find(x => x.num===k), a = h.has(k) && m ? mfxMatch(m) : null;
+     if(a && /Added automatically from Myfxbook/.test(a.notes || '') && !S.trades.some(e => e.account_id===a.id || (e.trade_accounts || []).some(x => x.id===a.id)) && !(a.milestones || []).length){
+       const { error } = await sb.from('do_accounts').delete().eq('id', a.id); if(!error){ S.accounts.delete(a.id); if(S.selAcct===a.id) S.selAcct = null; gone = true; } }
+     renderMain(); toast(h.has(k) ? `Hidden from the tablet${gone ? ' and removed from Accounts' : ''}` : 'Shown again · copied to Accounts on the next sync'); });
   document.querySelectorAll('[data-aview]').forEach(b => b.onclick = () => { S.aView = b.dataset.aview; ls.set('do_aview2', S.aView); renderMain(); });
-  document.querySelectorAll('[data-mfxt]').forEach(b => b.onclick = async () => { const h = new Set(mfxHidden()), k = b.dataset.mfxt; h.has(k) ? h.delete(k) : h.add(k); await saveSettingKey('mfx_hidden', [...h]); renderMain(); toast(h.has(k) ? 'Hidden on the tablet screen' : 'Shown on the tablet screen'); });
   document.querySelectorAll('[data-afl]').forEach(b => b.onclick = () => { S.aFilter = b.dataset.afl; ls.set('do_afilter', S.aFilter); renderMain(); });
   const abq = document.getElementById('abQ'); if(abq){ abq.oninput = () => { S.aQ = abq.value; clearTimeout(abq._t); abq._t = setTimeout(() => { renderMain(); const n = document.getElementById('abQ'); n?.focus(); n?.setSelectionRange(n.value.length, n.value.length); }, 250); }; }
   document.querySelectorAll('[data-abfirm]').forEach(h => h.onclick = () => { const c = new Set(ls.get('do_ab_closed', [])), f = h.dataset.abfirm; c.has(f) ? c.delete(f) : c.add(f); ls.set('do_ab_closed', [...c]); renderMain(); });
