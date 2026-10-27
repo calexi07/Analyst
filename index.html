@@ -753,37 +753,84 @@
   body.kiosk [data-aview], body.kiosk #newAcct, body.kiosk .ab-act, body.kiosk .ab-bar .ab-q{ display:none !important; }
   body.kiosk .ab-row{ grid-template-columns:minmax(190px,1.2fr) minmax(230px,1.15fr) minmax(170px,1.2fr) minmax(140px,.9fr) minmax(0,.9fr); }
   body.kiosk .wrap{ padding:0 !important; } body.kiosk #toast{ display:none !important; }
-  .ks{ height:100vh; height:100dvh; display:grid; grid-template-rows:auto minmax(0,1fr) auto; gap:1.4vh; padding:1.8vh 1.6vw; overflow:hidden; }
-  .ks-top{ display:grid; grid-template-columns:1.3fr repeat(5,minmax(0,1fr)); gap:1vw; align-items:stretch; }
-  .ks-time{ display:grid; align-content:center; } .ks-time b{ font-family:'Bricolage Grotesque',sans-serif; font-size:clamp(28px,5.2vh,64px); font-weight:800; line-height:1; font-variant-numeric:tabular-nums; }
-  .ks-time span{ font-size:clamp(11px,1.7vh,18px); font-weight:700; color:var(--muted); }
-  .ks-t{ display:grid; align-content:center; padding:1vh 1vw; border-radius:16px; border:1px solid var(--line); background:var(--surface); min-width:0; }
-  .ks-t span{ font-size:clamp(9px,1.3vh,13px); font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
-  .ks-t b{ font-family:'Bricolage Grotesque',sans-serif; font-size:clamp(18px,3.4vh,38px); font-weight:800; line-height:1.1; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .ks-t small{ font-size:clamp(9px,1.3vh,13px); font-weight:700; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .ks-t b.pos{ color:var(--pos); } .ks-t b.neg{ color:var(--neg); }
-  .ks-t.today{ border-color:var(--pos); background:color-mix(in srgb,var(--pos) 14%,var(--surface)); } .ks-t.today b{ color:var(--pos); }
-  .ks-grid{ display:grid; gap:1.2vh 1vw; min-height:0; }
-  .ks-c{ --c:var(--info); position:relative; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:auto 1fr auto auto; align-content:stretch; gap:.6vh 1vw; min-height:0; overflow:hidden;
-    padding:1.4vh 1.2vw; border-radius:20px; border:1px solid var(--line); background:var(--surface); }
-  .ks-c::before{ content:''; position:absolute; left:0; top:12%; bottom:12%; width:4px; border-radius:0 4px 4px 0; background:var(--c); }
-  .ks-c.up{ border-color:color-mix(in srgb,var(--pos) 40%,var(--line)); } .ks-c.dn{ border-color:color-mix(in srgb,var(--neg) 40%,var(--line)); }
-  .ks-c.pay{ border:2px solid var(--pos); background:radial-gradient(120% 120% at 100% 0%, color-mix(in srgb,var(--pos) 20%,transparent), transparent 60%), var(--surface); animation:ksPay 2.4s ease-in-out infinite; }
-  @keyframes ksPay{ 50%{ box-shadow:0 0 0 6px color-mix(in srgb,var(--pos) 18%,transparent); } }
-  .ks-h{ grid-column:1 / -1; display:flex; align-items:center; gap:.6vw; min-width:0; }
-  .ks-h b{ font-size:clamp(12px,2vh,22px); font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .ks-h em{ margin-left:auto; flex:none; font-style:normal; font-size:clamp(10px,1.5vh,15px); font-weight:800; padding:.3vh .6vw; border-radius:8px; background:var(--surface-2); color:var(--muted); }
-  .ks-h em.soon{ color:var(--amber); background:color-mix(in srgb,var(--amber) 15%,transparent); } .ks-h em.ks-pay{ color:var(--on-accent); background:var(--pos); }
-  .ks-v{ display:grid; align-content:center; min-width:0; }
-  .ks-v span{ font-size:clamp(9px,1.25vh,13px); font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
-  .ks-v b{ font-family:'Bricolage Grotesque',sans-serif; font-size:clamp(18px,3.6vh,44px); font-weight:800; line-height:1.05; font-variant-numeric:tabular-nums; white-space:nowrap; }
-  .ks-v small{ font-size:clamp(10px,1.5vh,16px); font-weight:800; color:var(--muted); } .ks-v small.pos{ color:var(--pos); } .ks-v small.neg{ color:var(--neg); }
+  .ks{ position:relative; height:100vh; height:100dvh; display:grid; grid-template-rows:auto minmax(0,1fr) auto; gap:1.6vh; padding:2vh 1.8vw 1.4vh; overflow:hidden; isolation:isolate; }
+  .ks-aur{ position:absolute; inset:0; z-index:-1; overflow:hidden; background:radial-gradient(120% 90% at 50% 120%, color-mix(in srgb,var(--accent) 6%,transparent), transparent 60%); }
+  .ks-aur i{ position:absolute; width:55vmax; height:55vmax; border-radius:50%; filter:blur(90px); opacity:.22; animation:ksFloat 28s ease-in-out infinite alternate; }
+  .ks-aur i:nth-child(1){ background:var(--violet); left:-15vmax; top:-20vmax; }
+  .ks-aur i:nth-child(2){ background:var(--pos); right:-20vmax; top:10vh; animation-duration:34s; animation-delay:-8s; opacity:.14; }
+  .ks-aur i:nth-child(3){ background:var(--info); left:25vw; bottom:-30vmax; animation-duration:40s; animation-delay:-16s; opacity:.16; }
+  @keyframes ksFloat{ 0%{ transform:translate(0,0) scale(1); } 50%{ transform:translate(6vw,4vh) scale(1.12); } 100%{ transform:translate(-4vw,6vh) scale(.95); } }
+  .ks-top{ display:grid; grid-template-columns:auto minmax(0,1.6fr) repeat(3,minmax(0,1fr)); gap:1.2vw; align-items:stretch; }
+  .ks-time{ display:grid; align-content:center; padding-right:1vw; }
+  .ks-time b{ font-family:'Bricolage Grotesque',sans-serif; font-size:clamp(30px,6.4vh,76px); font-weight:800; line-height:.95; letter-spacing:-.03em; font-variant-numeric:tabular-nums; }
+  .ks-time > span:last-child{ font-size:clamp(11px,1.7vh,18px); font-weight:700; color:var(--muted); }
+  .ks-live{ display:inline-flex; align-items:center; gap:6px; font-size:clamp(9px,1.2vh,12px); font-weight:800; letter-spacing:.14em; color:var(--pos); }
+  .ks-live i{ width:8px; height:8px; border-radius:50%; background:var(--pos); box-shadow:0 0 0 0 var(--pos); animation:ksPing 1.8s ease-out infinite; }
+  @keyframes ksPing{ 0%{ box-shadow:0 0 0 0 color-mix(in srgb,var(--pos) 70%,transparent); } 100%{ box-shadow:0 0 0 10px transparent; } }
+  .ks-hero, .ks-t{ position:relative; display:grid; align-content:center; gap:.2vh; padding:1.4vh 1.3vw; border-radius:22px; min-width:0; overflow:hidden;
+    border:1px solid color-mix(in srgb,var(--ink) 10%,transparent); background:color-mix(in srgb,var(--surface) 72%,transparent); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); }
+  .ks-hero{ background:linear-gradient(120deg, color-mix(in srgb,var(--accent) 16%,transparent), color-mix(in srgb,var(--surface) 70%,transparent) 55%); border-color:color-mix(in srgb,var(--accent) 35%,transparent); }
+  .ks-hero span, .ks-t span{ font-size:clamp(9px,1.25vh,13px); font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+  .ks-hero b{ font-family:'Bricolage Grotesque',sans-serif; font-size:clamp(26px,5.4vh,64px); font-weight:800; line-height:1; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+  .ks-hero small, .ks-t small{ font-size:clamp(9px,1.35vh,14px); font-weight:700; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ks-hero em, .ks-t em, .ks-v small em{ font-style:normal; } em.pos, .ks-t b.pos{ color:var(--pos); } em.neg, .ks-t b.neg{ color:var(--neg); }
+  .ks-t b{ font-family:'Bricolage Grotesque',sans-serif; font-size:clamp(18px,3.4vh,40px); font-weight:800; line-height:1.05; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ks-t.pay b{ color:var(--pos); }
+  .ks-t.today{ border-color:var(--pos); background:linear-gradient(120deg, color-mix(in srgb,var(--pos) 26%,transparent), color-mix(in srgb,var(--surface) 70%,transparent)); } .ks-t.today b{ color:var(--pos); }
+  .ks-grid{ display:grid; gap:1.6vh 1.2vw; min-height:0; }
+  .ks-c{ --h:220; --hc:hsl(var(--h) 85% 66%); position:relative; display:grid; grid-template-rows:auto minmax(0,1fr) auto; min-height:0; overflow:hidden; padding:1.8vh 1.4vw 0; border-radius:26px;
+    border:1px solid color-mix(in srgb,var(--ink) 9%,transparent); background:radial-gradient(130% 100% at 0% 0%, hsl(var(--h) 80% 60% / .14), transparent 55%), color-mix(in srgb,var(--surface) 78%,transparent);
+    backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); box-shadow:0 20px 50px rgba(0,0,0,.28); }
+  .ks.intro .ks-c{ animation:ksIn .8s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i) * 110ms + 150ms); }
+  @keyframes ksIn{ from{ opacity:0; transform:translateY(24px) scale(.97); } to{ opacity:1; transform:none; } }
+  .ks-c.up{ border-color:color-mix(in srgb,var(--pos) 40%,transparent); } .ks-c.dn{ border-color:color-mix(in srgb,var(--neg) 40%,transparent); }
+  .ks-c.pay{ border-color:transparent; }
+  .ks-c.pay::after{ content:''; position:absolute; inset:0; border-radius:inherit; padding:2px; pointer-events:none;
+    background:conic-gradient(from var(--ang,0deg), var(--pos), transparent 30%, var(--accent) 50%, transparent 70%, var(--pos));
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite:xor; mask-composite:exclude; animation:ksSpin 4s linear infinite; }
+  @property --ang{ syntax:'<angle>'; inherits:false; initial-value:0deg; }
+  @keyframes ksSpin{ to{ --ang:360deg; } }
+  .ks-h{ display:flex; align-items:center; gap:.8vw; min-width:0; }
+  .ks-mono{ flex:none; width:clamp(30px,5vh,52px); height:clamp(30px,5vh,52px); display:grid; place-items:center; border-radius:30%; font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:clamp(11px,1.9vh,20px);
+    color:#fff; background:linear-gradient(135deg, hsl(var(--h) 80% 58%), hsl(calc(var(--h) + 40) 80% 45%)); box-shadow:0 8px 20px hsl(var(--h) 80% 40% / .45); }
+  .ks-nm{ display:grid; min-width:0; } .ks-nm b{ font-size:clamp(13px,2.3vh,26px); font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ks-nm small{ font-size:clamp(9px,1.35vh,14px); font-weight:700; color:var(--muted); }
+  .ks-h > em{ margin-left:auto; flex:none; font-style:normal; }
+  .ks-pd{ display:grid; justify-items:center; line-height:1; padding:.6vh .8vw; border-radius:14px; background:color-mix(in srgb,var(--ink) 6%,transparent); color:var(--muted); font-size:clamp(9px,1.2vh,12px); font-weight:700; }
+  .ks-pd b{ font-family:'Bricolage Grotesque',sans-serif; font-size:clamp(16px,2.8vh,32px); font-weight:800; color:var(--ink); } .ks-pd i{ font-style:normal; font-size:.85em; opacity:.8; }
+  .ks-pd.soon{ background:color-mix(in srgb,var(--amber) 16%,transparent); color:var(--amber); } .ks-pd.soon b{ color:var(--amber); }
+  .ks-pay{ padding:.8vh 1vw; border-radius:14px; font-weight:800; font-size:clamp(11px,1.8vh,18px); color:var(--on-accent); background:linear-gradient(90deg, var(--pos), var(--accent), var(--pos)); background-size:200% 100%; animation:ksShine 3s linear infinite; }
+  @keyframes ksShine{ to{ background-position:-200% 0; } }
+  .ks-body{ display:flex; align-items:center; gap:1.2vw; min-height:0; z-index:1; }
+  .ks-nums{ flex:1; display:grid; gap:1.2vh; min-width:0; }
+  .ks-v{ display:grid; min-width:0; } .ks-v span{ font-size:clamp(9px,1.25vh,13px); font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+  .ks-v b{ font-family:'Bricolage Grotesque',sans-serif; font-size:clamp(24px,5.6vh,68px); font-weight:800; line-height:1; letter-spacing:-.02em; font-variant-numeric:tabular-nums; white-space:nowrap; transition:color .4s; }
+  .ks-v b.sm{ font-size:clamp(16px,3vh,36px); }
+  .ks-v small{ font-size:clamp(10px,1.5vh,16px); font-weight:700; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .ks-v small.pos{ color:var(--pos); } .ks-v small.neg{ color:var(--neg); }
   .ks-c.up .ks-v.eq b{ color:var(--pos); } .ks-c.dn .ks-v.eq b{ color:var(--neg); }
-  .ks-grid.lg .ks-v b{ font-size:clamp(24px,5vh,60px); } .ks-grid.lg .ks-v small{ font-size:clamp(12px,2vh,20px); } .ks-grid.lg .ks-h b{ font-size:clamp(14px,2.6vh,28px); }
-  .ks-grid.xl .ks-v b{ font-size:clamp(28px,7.5vh,92px); } .ks-grid.xl .ks-v small{ font-size:clamp(13px,2.6vh,26px); } .ks-grid.xl .ks-h b{ font-size:clamp(16px,3.2vh,34px); } .ks-grid.xl .ks-v span{ font-size:clamp(10px,1.7vh,16px); }
-  .ks-bar2{ grid-column:1 / -1; height:.8vh; min-height:5px; border-radius:99px; background:var(--surface-2); overflow:hidden; } .ks-bar2 i{ display:block; height:100%; background:var(--c); border-radius:99px; }
-  .ks-tg{ grid-column:1 / -1; font-size:clamp(9px,1.25vh,13px); font-weight:700; color:var(--muted); }
-  .ks-f{ text-align:right; font-size:clamp(9px,1.25vh,12px); font-weight:700; color:var(--muted); }
+  .tick-up{ text-shadow:0 0 22px color-mix(in srgb,var(--pos) 70%,transparent); } .tick-dn{ text-shadow:0 0 22px color-mix(in srgb,var(--neg) 70%,transparent); }
+  .ks-rw{ position:relative; flex:none; width:clamp(70px,15vh,170px); aspect-ratio:1; }
+  .ks-ring{ width:100%; height:100%; transform:rotate(-90deg); } .ks-ring circle{ fill:none; stroke-width:9; }
+  .ks-ring .tr{ stroke:color-mix(in srgb,var(--ink) 8%,transparent); }
+  .ks-ring .br{ stroke:var(--hc); stroke-linecap:round; filter:drop-shadow(0 0 6px hsl(var(--h) 80% 60% / .6)); transition:stroke-dashoffset 1.4s cubic-bezier(.2,.8,.2,1); }
+  .ks-ring .br.full{ stroke:var(--pos); filter:drop-shadow(0 0 8px var(--pos)); }
+  .ks.intro .ks-ring .br{ animation:ksRing 1.6s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i) * 110ms + 400ms); }
+  @keyframes ksRing{ from{ stroke-dashoffset:var(--c0); } }
+  .ks-rl{ position:absolute; inset:0; display:grid; place-content:center; text-align:center; line-height:1; }
+  .ks-rl b{ font-family:'Bricolage Grotesque',sans-serif; font-size:clamp(14px,3vh,36px); font-weight:800; } .ks-rl span{ font-size:clamp(8px,1.2vh,12px); font-weight:700; color:var(--muted); }
+  .ks-sp{ display:block; width:calc(100% + 2.8vw); height:clamp(30px,9vh,110px); margin:0 -1.4vw; color:var(--pos); } .ks-sp.dn{ color:var(--neg); }
+  .ks.intro .ks-sp{ animation:ksRise 1.6s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i) * 110ms + 500ms); transform-origin:bottom; }
+  @keyframes ksRise{ from{ opacity:0; transform:scaleY(.2); } }
+  .ks-empty{ display:grid; place-items:center; font-size:2.4vh; color:var(--muted); }
+  .ks-f{ display:flex; align-items:center; gap:1.2vw; min-width:0; }
+  .ks-f > small{ flex:none; font-size:clamp(9px,1.2vh,12px); font-weight:700; color:var(--muted); }
+  .ks-tape{ flex:1; overflow:hidden; mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); -webkit-mask-image:linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+  .ks-tape-in{ display:flex; gap:3vw; width:max-content; animation:ksTape 40s linear infinite; }
+  .ks-tape span{ white-space:nowrap; font-size:clamp(11px,1.7vh,18px); font-weight:700; color:var(--muted); } .ks-tape b{ color:var(--ink); } .ks-tape i{ font-style:normal; font-size:.8em; opacity:.7; }
+  .ks-tape span.up{ color:var(--pos); } .ks-tape span.dn{ color:var(--neg); }
+  @keyframes ksTape{ to{ transform:translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce){ .ks *, .ks *::after{ animation:none !important; } }
+  @media (orientation:portrait){ .ks-top{ grid-template-columns:1fr 1fr 1fr; } .ks-time{ grid-column:1; } .ks-hero{ grid-column:2 / -1; } }
   .ks-bar{ display:flex; align-items:center; gap:14px; margin:0 0 12px; font-weight:700; color:var(--muted); }
   .ks-clock{ font-family:'Bricolage Grotesque',sans-serif; font-size:30px; font-weight:800; color:var(--ink); font-variant-numeric:tabular-nums; }
   .ks-bar .ks-sp{ margin-left:auto; } .ks-wake{ font-size:12px; padding:4px 10px; border-radius:9px; border:1px solid var(--line); }
@@ -3412,31 +3459,62 @@ function renderKiosk(){
     .sort((x, y) => (x.firm || '').localeCompare(y.firm || '') || (x.name || '').localeCompare(y.name || ''));
   const rows = live.map(a => { const s = acctStats(a), fl = acctFloat(a); return { a, s, fl, eq:s.bal + fl.usd, pd:payDays(a) }; });
   const bal = rows.reduce((t, r) => t + r.s.bal, 0), eq = rows.reduce((t, r) => t + r.eq, 0), flt = eq - bal, paid = [...S.accounts.values()].reduce((t, a) => t + acctPaid(a), 0);
+  const size = rows.reduce((t, r) => t + (Number(r.a.size) || 0), 0), pnl = bal - size, openN = rows.reduce((t, r) => t + r.fl.n, 0);
   const next = rows.filter(r => r.pd!=null && r.pd >= 0).sort((x, y) => x.pd - y.pd)[0];
-  const n = Math.max(1, rows.length), W = innerWidth, H = innerHeight - 150;
-  let cols = 1; for(let c = 1; c <= n; c++){ const r = Math.ceil(n / c); if((W / c) / (H / r) <= 2.2){ cols = c; break; } cols = c; }
-  const rowsN = Math.ceil(n / cols), now = new Date();
+  const n = Math.max(1, rows.length), W = innerWidth, H = innerHeight - 190;
+  /* pick the grid that keeps cards close to a 1.5:1 shape with the fewest empty slots */
+  let cols = 1, best = Infinity; for(let c = 1; c <= n; c++){ const r = Math.ceil(n / c), ratio = (W / c) / (H / r), cost = Math.abs(Math.log(ratio / 1.5)) + (c * r - n) * .35; if(cost < best){ best = cost; cols = c; } }
+  const rowsN = Math.ceil(n / cols), now = new Date(), first = !S.ksDone; S.ksDone = true;
   const sg = v => `${v >= 0 ? '+' : '−'}${money(Math.abs(v))}`;
-  document.getElementById('main').innerHTML = `<div class="ks">
+  const hue = f => { let h = 0; for(const ch of String(f || '?')) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
+  const ini = f => { const w = String(f || '?').replace(/[^A-Za-z0-9]/g, ' ').trim().split(/\s+/); return (w.length > 1 ? w.map(x => x[0]).join('') : w[0].slice(0, 2)).slice(0, 2).toUpperCase() || '?'; };
+  /* balance curve as a smooth area line */
+  const spark = (curve, up) => { const v = curve.map(c => c.bal); if(v.length < 2) v.unshift(v[0] ?? 0);
+    const mn = Math.min(...v), mx = Math.max(...v), rg = mx - mn || 1, X = i => i / (v.length - 1) * 100, Y = x => 34 - (x - mn) / rg * 28;
+    const pts = v.map((x, i) => [X(i), Y(x)]); let d = `M${pts[0][0]},${pts[0][1]}`;
+    for(let i = 1; i < pts.length; i++){ const [x0, y0] = pts[i-1], [x1, y1] = pts[i], cx = (x0 + x1) / 2; d += ` C${cx},${y0} ${cx},${y1} ${x1},${y1}`; }
+    const id = 'g' + Math.random().toString(36).slice(2, 8);
+    return `<svg class="ks-sp ${up ? 'up' : 'dn'}" viewBox="0 0 100 36" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="currentColor" stop-opacity=".35"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs>
+      <path d="${d} L100,36 L0,36 Z" fill="url(#${id})"/><path class="ln" d="${d}" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`; };
+  const ring = (pct) => { const r = 42, c = 2 * Math.PI * r, p = Math.max(0, Math.min(100, pct));
+    return `<svg class="ks-ring" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="${r}" class="tr"/><circle cx="50" cy="50" r="${r}" class="br ${p >= 100 ? 'full' : ''}" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - p / 100)}" style="--c0:${c}"/></svg>`; };
+  const tape = rows.flatMap(r => r.fl.list.map(o => ({ ...o, acc:r.a })));
+  document.getElementById('main').innerHTML = `<div class="ks ${first ? 'intro' : ''}">
+    <div class="ks-aur" aria-hidden="true"><i></i><i></i><i></i></div>
     <header class="ks-top">
-      <div class="ks-time"><b id="ksClock">${now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}</b><span>${WD[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]}</span></div>
-      <div class="ks-t"><span>Equity</span><b class="${flt > 0 ? 'pos' : flt < 0 ? 'neg' : ''}">${money(eq)}</b></div>
-      <div class="ks-t"><span>Balance</span><b>${money(bal)}</b></div>
-      <div class="ks-t"><span>Floating</span><b class="${sgn(flt)}">${rows.some(r => r.fl.n) ? sg(flt) : '—'}</b></div>
-      <div class="ks-t"><span>Paid out</span><b class="pos">${money(paid)}</b></div>
-      <div class="ks-t ${next && next.pd===0 ? 'today' : ''}"><span>Next payout</span><b>${next ? (next.pd===0 ? 'TODAY' : `${next.pd}d`) : '—'}</b>${next ? `<small>${esc(shortAcc(next.a.name))}</small>` : ''}</div>
+      <div class="ks-time"><span class="ks-live"><i></i>LIVE</span><b id="ksClock">${now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}</b><span>${WD[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]}</span></div>
+      <div class="ks-hero"><span>Total equity · ${rows.length} funded</span><b data-cu="tot" data-v="${eq}">${money(eq)}</b>
+        <small><em class="${sgn(pnl)}">${sg(pnl)}</em> since start · balance ${money(bal)}${openN ? ` · <em class="${sgn(flt)}">${sg(flt)}</em> floating` : ''}</small></div>
+      <div class="ks-t"><span>Floating</span><b class="${openN ? sgn(flt) : ''}">${openN ? sg(flt) : 'Flat'}</b><small>${openN ? `${openN} open trade${openN > 1 ? 's' : ''}` : 'no open trades'}</small></div>
+      <div class="ks-t pay"><span>Paid out</span><b>${money(paid)}</b><small>all time</small></div>
+      <div class="ks-t ${next && next.pd===0 ? 'today' : ''}"><span>Next payout</span><b>${next ? (next.pd===0 ? 'TODAY' : next.pd===1 ? 'Tomorrow' : `${next.pd} days`) : '—'}</b><small>${next ? esc(shortAcc(next.a.name)) : 'set payout dates'}</small></div>
     </header>
-    <div class="ks-grid ${n <= 2 ? 'xl' : n <= 4 ? 'lg' : ''}" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${rowsN},minmax(0,1fr))">
-      ${rows.map(({ a, s, fl, eq, pd }) => { const tg = s.target ? Math.max(0, Math.min(100, s.pnl / s.target * 100)) : null, pay = pd===0, f = fl.usd;
-        return `<article class="ks-c ph-${phaseKey(a.phase)} ${pay ? 'pay' : ''} ${fl.n ? (f >= 0 ? 'up' : 'dn') : ''}">
-          <div class="ks-h"><span class="ab-ph">${esc(shortPhase(a.phase))}</span><b>${esc(shortAcc(a.name))}</b>${pay ? '<em class="ks-pay">💸 PAYOUT DAY</em>' : pd!=null && pd > 0 ? `<em class="ks-pd ${pd <= 3 ? 'soon' : ''}">💸 ${pd===1 ? 'tomorrow' : pd + 'd'}</em>` : ''}</div>
-          <div class="ks-v"><span>Balance</span><b>${money(s.bal)}</b><small class="${sgn(s.pnl)}">${sg(s.pnl)}</small></div>
-          <div class="ks-v eq"><span>Equity</span><b>${money(eq)}</b><small class="${fl.n ? sgn(f) : ''}">${fl.n ? `${sg(f)} · ${fl.n} open` : 'flat'}</small></div>
-          ${tg!=null ? `<div class="ks-bar2"><i style="width:${tg}%"></i></div><div class="ks-tg">${Math.round(tg)}% of ${acctTargetPct(a)}% target</div>` : ''}
-        </article>`; }).join('') || '<p class="muted">No funded accounts.</p>'}
+    <div class="ks-grid" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${rowsN},minmax(0,1fr))">
+      ${rows.map(({ a, s, fl, eq, pd }, i) => { const tg = s.target ? s.pnl / s.target * 100 : null, pay = pd===0, f = fl.usd, h = hue(a.firm), today = s.today || 0;
+        return `<article class="ks-c ${pay ? 'pay' : ''} ${fl.n ? (f >= 0 ? 'up' : 'dn') : ''}" style="--h:${h};--i:${i}">
+          <div class="ks-h"><span class="ks-mono">${esc(ini(a.firm))}</span><div class="ks-nm"><b>${esc(shortAcc(a.name))}</b><small>${esc(a.firm || '')} · ${money(Number(a.size))}</small></div>
+            ${pay ? '<em class="ks-pay">💸 Payout day</em>' : pd!=null && pd > 0 ? `<em class="ks-pd ${pd <= 3 ? 'soon' : ''}"><b>${pd}</b>${pd===1 ? 'day' : 'days'}<i>to payout</i></em>` : ''}</div>
+          <div class="ks-body">
+            <div class="ks-nums">
+              <div class="ks-v eq"><span>Equity</span><b data-cu="e${a.id}" data-v="${eq}">${money(eq)}</b><small class="${fl.n ? sgn(f) : ''}">${fl.n ? `${sg(f)} floating · ${fl.n} open` : 'no open trades'}</small></div>
+              <div class="ks-v"><span>Balance</span><b class="sm" data-cu="b${a.id}" data-v="${s.bal}">${money(s.bal)}</b><small class="${sgn(s.pnl)}">${sg(s.pnl)} · today <em class="${sgn(today)}">${sg(today)}</em></small></div>
+            </div>
+            ${tg!=null ? `<div class="ks-rw">${ring(tg)}<div class="ks-rl"><b>${Math.max(0, Math.round(tg))}%</b><span>of ${acctTargetPct(a)}%</span></div></div>` : ''}
+          </div>
+          ${spark(s.curve, s.pnl >= 0)}
+        </article>`; }).join('') || '<div class="ks-empty">No funded accounts yet.</div>'}
     </div>
-    <footer class="ks-f">Updated ${now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })} · refreshes every 2 min${S.wake ? ' · screen stays on' : ' · tap once to keep the screen on'}</footer>
+    <footer class="ks-f">
+      <div class="ks-tape"><div class="ks-tape-in">${tape.length ? [...tape, ...tape].map(o => `<span class="${o.lv ? (o.lv.R >= 0 ? 'up' : 'dn') : ''}">${o.e.direction==='Long' ? '▲' : '▼'} <b>${o.e.pair}</b> ${o.lv ? `${o.lv.R >= 0 ? '+' : ''}${fmt(o.lv.R, 2)}R · ${o.usd >= 0 ? '+' : '−'}$${fmt(Math.abs(o.usd), 0)}` : '…'} <i>${esc(shortAcc(o.acc.name))}</i></span>`).join('') : '<span class="flat">No open trades · flat and patient</span><span class="flat">No open trades · flat and patient</span>'}</div></div>
+      <small>Updated ${now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })} · every 2 min${S.wake ? ' · screen on' : ' · tap once to keep the screen on'}</small>
+    </footer>
   </div>`;
+  /* numbers roll from the last value to the new one */
+  S.ksPrev = S.ksPrev || {};
+  document.querySelectorAll('.ks [data-cu]').forEach(el => { const k = el.dataset.cu, to = Number(el.dataset.v), from = S.ksPrev[k] ?? (first ? to * .96 : to); S.ksPrev[k] = to;
+    if(Math.abs(to - from) < .5 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const t0 = performance.now(), dur = 1400, step = t => { const q = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - q, 3); el.textContent = money(from + (to - from) * e); if(q < 1) requestAnimationFrame(step); };
+    el.classList.add(to >= from ? 'tick-up' : 'tick-dn'); requestAnimationFrame(step); setTimeout(() => el.classList.remove('tick-up', 'tick-dn'), 1800); });
 }
 function renderAccounts(){
   const accs = [...S.accounts.values()].sort((a,b) => (a.status==='active' ? 0 : 1) - (b.status==='active' ? 0 : 1) || (a.name||'').localeCompare(b.name||''));
