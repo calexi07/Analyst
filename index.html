@@ -778,7 +778,7 @@
   .ks-t.pay b{ color:var(--pos); }
   .ks-t.today{ border-color:var(--pos); background:linear-gradient(120deg, color-mix(in srgb,var(--pos) 26%,transparent), color-mix(in srgb,var(--surface) 70%,transparent)); } .ks-t.today b{ color:var(--pos); }
   .ks-grid{ display:grid; gap:1.6vh 1.2vw; min-height:0; }
-  .ks-c{ --h:220; --hc:hsl(var(--h) 85% 66%); position:relative; display:grid; grid-template-rows:auto minmax(0,1fr) auto; min-height:0; overflow:hidden; padding:1.8vh 1.4vw 0; border-radius:26px;
+  .ks-c{ --h:220; --hc:hsl(var(--h) 85% 66%); position:relative; display:grid; grid-template-rows:auto minmax(0,1fr) auto auto; min-height:0; overflow:hidden; padding:1.8vh 1.4vw 0; border-radius:26px;
     border:1px solid color-mix(in srgb,var(--ink) 9%,transparent); background:radial-gradient(130% 100% at 0% 0%, hsl(var(--h) 80% 60% / .14), transparent 55%), color-mix(in srgb,var(--surface) 78%,transparent);
     backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); box-shadow:0 20px 50px rgba(0,0,0,.28); }
   .ks.intro .ks-c{ animation:ksIn .8s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i) * 110ms + 150ms); }
@@ -823,6 +823,14 @@
   @keyframes ksRise{ from{ opacity:0; transform:scaleY(.2); } }
   .ks-grid.lg .ks-v b{ font-size:clamp(28px,6.6vh,80px); } .ks-grid.lg .ks-v b.sm{ font-size:clamp(18px,3.6vh,44px); }
   .ks-grid.xl .ks-v b{ font-size:clamp(40px,11vh,140px); } .ks-grid.xl .ks-v b.sm{ font-size:clamp(22px,5vh,64px); } .ks-grid.xl .ks-v small{ font-size:clamp(12px,2.2vh,24px); } .ks-grid.xl .ks-rw{ width:clamp(120px,30vh,320px); } .ks-grid.xl .ks-rl b{ font-size:clamp(20px,5vh,56px); }
+  .ks-ot{ list-style:none; margin:.6vh 0 0; padding:0; display:grid; gap:.5vh; z-index:1; min-width:0; }
+  .ks-ot li{ display:grid; grid-template-columns:auto auto minmax(0,1fr) auto; align-items:center; gap:.6vw; padding:.55vh .8vw; border-radius:12px; background:color-mix(in srgb,var(--ink) 5%,transparent); font-size:clamp(11px,1.65vh,18px); animation:ksOt .5s ease both; animation-delay:calc(var(--i) * 110ms + 500ms); }
+  .ks-ot li i{ font-style:normal; font-size:.85em; } .ks-ot li b{ font-weight:800; letter-spacing:.02em; } .ks-ot li span{ color:var(--muted); font-size:.85em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .ks-ot li em{ font-style:normal; font-weight:800; font-variant-numeric:tabular-nums; }
+  .ks-ot li.up i, .ks-ot li.up em{ color:var(--pos); } .ks-ot li.dn i, .ks-ot li.dn em{ color:var(--neg); }
+  .ks-ot li.up{ box-shadow:inset 3px 0 0 var(--pos); } .ks-ot li.dn{ box-shadow:inset 3px 0 0 var(--neg); }
+  .ks-ot li.more{ display:block; text-align:center; color:var(--muted); font-size:clamp(10px,1.4vh,15px); box-shadow:none; }
+  @keyframes ksOt{ from{ opacity:0; transform:translateY(6px); } }
+  .ks-grid.xl .ks-ot li{ font-size:clamp(13px,2.4vh,26px); padding:1vh 1.2vw; }
   .ks-empty{ display:grid; place-items:center; font-size:2.4vh; color:var(--muted); }
   .ks-f{ display:flex; align-items:center; gap:1.2vw; min-width:0; }
   .ks-f > small{ flex:none; font-size:clamp(9px,1.2vh,12px); font-weight:700; color:var(--muted); }
@@ -3486,13 +3494,14 @@ function renderKiosk(){
   if(mfx.length){
     const hid = new Set(mfxHidden());
     rows = mfx.filter(m => !hid.has(m.num)).map(m => { const a = mfxMatch(m);
-      if(a){ const s = acctStats(a), fl = acctFloat(a); return { a, s, fl, eq:s.bal + fl.usd, pd:payDays(a) }; }
+      const mo = Array.isArray(m.open) ? m.open : [];
+      if(a){ const s = acctStats(a), fl = acctFloat(a); return { a, s, fl, eq:s.bal + fl.usd, pd:payDays(a), mo }; }
       const size = (m.deposits > 0 ? m.deposits : m.balance - m.profit) || m.balance;
       const a2 = { id:'mfx' + m.num, name:`${m.name} #${m.num}`, firm:(m.name.split(/\s[-–|]\s|\s/)[0] || 'Myfxbook'), size, phase:'Funded' };
-      return { a:a2, s:{ bal:m.balance, pnl:m.balance - size, curve:[{ bal:size }, { bal:m.balance }], today:0, target:size * FUNDED_TARGET / 100, liveAt:mfxAt() }, fl:{ n:0, usd:m.equity - m.balance, list:[] }, eq:m.equity, pd:null }; });
+      return { a:a2, s:{ bal:m.balance, pnl:m.balance - size, curve:[{ bal:size }, { bal:m.balance }], today:0, target:size * FUNDED_TARGET / 100, liveAt:mfxAt() }, fl:{ n:0, usd:m.equity - m.balance, list:[] }, eq:m.equity, pd:null, mo }; });
   }
   const bal = rows.reduce((t, r) => t + r.s.bal, 0), eq = rows.reduce((t, r) => t + r.eq, 0), flt = eq - bal, paid = [...S.accounts.values()].reduce((t, a) => t + acctPaid(a), 0);
-  const size = rows.reduce((t, r) => t + (Number(r.a.size) || 0), 0), pnl = bal - size, tradesN = rows.reduce((t, r) => t + r.fl.n, 0), openN = tradesN || (Math.abs(eq - bal) >= .5 ? 1 : 0);
+  const size = rows.reduce((t, r) => t + (Number(r.a.size) || 0), 0), pnl = bal - size, tradesN = rows.reduce((t, r) => t + Math.max(r.fl.n, (r.mo || []).length), 0), openN = tradesN || (Math.abs(eq - bal) >= .5 ? 1 : 0);
   const next = rows.filter(r => r.pd!=null && r.pd >= 0).sort((x, y) => x.pd - y.pd)[0];
   const n = Math.max(1, rows.length), W = innerWidth, H = innerHeight - 190;
   /* pick the grid that keeps cards close to a 1.5:1 shape with the fewest empty slots */
@@ -3511,7 +3520,12 @@ function renderKiosk(){
       <path d="${d} L100,36 L0,36 Z" fill="url(#${id})"/><path class="ln" d="${d}" fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`; };
   const ring = (pct) => { const r = 42, c = 2 * Math.PI * r, p = Math.max(0, Math.min(100, pct));
     return `<svg class="ks-ring" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="${r}" class="tr"/><circle cx="50" cy="50" r="${r}" class="br ${p >= 100 ? 'full' : ''}" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - p / 100)}" style="--c0:${c}"/></svg>`; };
-  const tape = rows.flatMap(r => r.fl.list.map(o => ({ ...o, acc:r.a })));
+  /* R from the site trade on the same pair (when the account is linked), so live positions still read in R */
+  const siteR = (r, sym) => { const o = r.fl.list.find(x => x.lv && String(x.e.pair).toUpperCase()===String(sym).toUpperCase().replace(/[^A-Z]/g, '').slice(0, 6)); return o ? o.lv.R : null; };
+  const tape = rows.flatMap(r => r.mo && r.mo.length
+    ? r.mo.map(o => ({ mfx:true, sym:o.sym, side:o.side, usd:o.profit, lots:o.lots, R:siteR(r, o.sym), acc:r.a }))
+    : r.fl.list.map(o => ({ sym:o.e.pair, side:o.e.direction, usd:o.usd, R:o.lv ? o.lv.R : null, wait:!o.lv, acc:r.a })));
+  const pos = (o, r) => `<li class="${o.profit >= 0 ? 'up' : 'dn'}"><i>${o.side==='Short' ? '▼' : '▲'}</i><b>${esc(o.sym)}</b><span>${fmt(o.lots, 2)} lot${o.pips ? ` · ${o.pips >= 0 ? '+' : ''}${fmt(o.pips, 1)} pips` : ''}${(() => { const R = siteR(r, o.sym); return R!=null ? ` · ${R >= 0 ? '+' : ''}${fmt(R, 2)}R` : ''; })()}</span><em>${sg(o.profit)}</em></li>`;
   document.getElementById('main').innerHTML = `<div class="ks ${first ? 'intro' : ''}">
     <div class="ks-aur" aria-hidden="true"><i></i><i></i><i></i></div>
     <header class="ks-top">
@@ -3523,22 +3537,23 @@ function renderKiosk(){
       <div class="ks-t ${next && next.pd===0 ? 'today' : ''}"><span>Next payout</span><b>${next ? (next.pd===0 ? 'TODAY' : next.pd===1 ? 'Tomorrow' : `${next.pd} days`) : '—'}</b><small>${next ? esc(shortAcc(next.a.name)) : 'set payout dates'}</small></div>
     </header>
     <div class="ks-grid ${n===1 ? 'xl' : n <= 4 ? 'lg' : ''}" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${rowsN},minmax(0,1fr))">
-      ${rows.map(({ a, s, fl, eq, pd }, i) => { const tg = s.target ? s.pnl / s.target * 100 : null, pay = pd===0, f = fl.usd, h = hue(a.firm), today = s.today || 0, hasF = fl.n || Math.abs(f) >= .5;
+      ${rows.map((r, i) => { const { a, s, fl, eq, pd } = r, mo = r.mo || []; const tg = s.target ? s.pnl / s.target * 100 : null, pay = pd===0, f = fl.usd, h = hue(a.firm), today = s.today || 0, hasF = fl.n || mo.length || Math.abs(f) >= .5, nOpen = Math.max(fl.n, mo.length);
         return `<article class="ks-c ${pay ? 'pay' : ''} ${hasF ? (f >= 0 ? 'up' : 'dn') : ''}" style="--h:${h};--i:${i}">
           <div class="ks-h"><span class="ks-mono">${esc(ini(a.firm))}</span><div class="ks-nm"><b>${esc(shortAcc(a.name))}</b><small>${esc(a.firm || '')} · ${money(Number(a.size))}${String(a.id).startsWith('mfx') ? ' · not on the site' : ''}</small></div>
             ${pay ? '<em class="ks-pay">💸 Payout day</em>' : pd!=null && pd > 0 ? `<em class="ks-pd ${pd <= 3 ? 'soon' : ''}"><b>${pd}</b>${pd===1 ? 'day' : 'days'}<i>to payout</i></em>` : ''}</div>
           <div class="ks-body">
             <div class="ks-nums">
-              <div class="ks-v eq"><span>Equity</span><b data-cu="e${a.id}" data-v="${eq}">${money(eq)}</b><small class="${hasF ? sgn(f) : ''}">${hasF ? `${sg(f)} floating${fl.n ? ` · ${fl.n} open` : ''}` : 'no open trades'}</small></div>
+              <div class="ks-v eq"><span>Equity</span><b data-cu="e${a.id}" data-v="${eq}">${money(eq)}</b><small class="${hasF ? sgn(f) : ''}">${hasF ? `${sg(f)} floating${nOpen ? ` · ${nOpen} open` : ''}` : 'no open trades'}</small></div>
               <div class="ks-v"><span>Balance</span><b class="sm" data-cu="b${a.id}" data-v="${s.bal}">${money(s.bal)}</b><small class="${sgn(s.pnl)}">${sg(s.pnl)} · today <em class="${sgn(today)}">${sg(today)}</em></small></div>
             </div>
             ${tg!=null ? `<div class="ks-rw">${ring(tg)}<div class="ks-rl"><b>${Math.max(0, Math.round(tg))}%</b><span>of ${acctTargetPct(a)}%</span></div></div>` : ''}
           </div>
+          ${mo.length ? `<ul class="ks-ot">${mo.slice(0, 3).map(o => pos(o, r)).join('')}${mo.length > 3 ? `<li class="more">+${mo.length - 3} more</li>` : ''}</ul>` : ''}
           ${spark(s.curve, s.pnl >= 0)}
         </article>`; }).join('') || '<div class="ks-empty">No funded accounts yet.</div>'}
     </div>
     <footer class="ks-f">
-      <div class="ks-tape"><div class="ks-tape-in">${tape.length ? [...tape, ...tape].map(o => `<span class="${o.lv ? (o.lv.R >= 0 ? 'up' : 'dn') : ''}">${o.e.direction==='Long' ? '▲' : '▼'} <b>${o.e.pair}</b> ${o.lv ? `${o.lv.R >= 0 ? '+' : ''}${fmt(o.lv.R, 2)}R · ${o.usd >= 0 ? '+' : '−'}$${fmt(Math.abs(o.usd), 0)}` : '…'} <i>${esc(shortAcc(o.acc.name))}</i></span>`).join('') : '<span class="flat">No open trades · flat and patient</span><span class="flat">No open trades · flat and patient</span>'}</div></div>
+      <div class="ks-tape"><div class="ks-tape-in">${tape.length ? [...tape, ...tape].map(o => `<span class="${o.wait ? '' : (o.usd >= 0 ? 'up' : 'dn')}">${o.side==='Short' ? '▼' : '▲'} <b>${esc(o.sym)}</b> ${o.wait ? '…' : `${o.R!=null ? `${o.R >= 0 ? '+' : ''}${fmt(o.R, 2)}R · ` : ''}${o.usd >= 0 ? '+' : '−'}$${fmt(Math.abs(o.usd), 0)}${o.mfx ? ` · ${fmt(o.lots, 2)} lot` : ''}`} <i>${esc(shortAcc(o.acc.name))}</i></span>`).join('') : '<span class="flat">No open trades · flat and patient</span><span class="flat">No open trades · flat and patient</span>'}</div></div>
       <small>${(() => { const ts = [...rows.map(r => r.s.liveAt), mfxAt()].filter(Boolean).map(t => Date.parse(t)).filter(x => !isNaN(x)); return ts.length ? `Myfxbook ${new Date(Math.max(...ts)).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })} · ` : ''; })()}Updated ${now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })} · every 2 min${S.wake ? ' · screen on' : ' · tap once to keep the screen on'}</small>
     </footer>
   </div>`;
