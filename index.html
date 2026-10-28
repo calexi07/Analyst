@@ -829,6 +829,15 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .ks-grid.xl .ks-v b{ font-size:clamp(40px,11vh,140px); } .ks-grid.xl .ks-v b.sm{ font-size:clamp(22px,5vh,64px); } .ks-grid.xl .ks-v small{ font-size:clamp(12px,2.2vh,24px); } .ks-grid.xl .ks-rw{ width:clamp(120px,30vh,320px); } .ks-grid.xl .ks-rl b{ font-size:clamp(20px,5vh,56px); }
   .ks-lv{ font-style:normal; color:var(--pos); }
   .ks-c.ot .ks-sp{ display:none; } .ks-c.ot{ padding-bottom:1.4vh; } .ks-c.ot .ks-body{ overflow:hidden; } .ks-c.ot .ks-nums{ gap:.6vh; }
+  .ks.pg{ grid-template-rows:auto auto minmax(0,1fr) auto; }
+  .ks-pg{ display:flex; align-items:center; justify-content:center; gap:10px; margin:-.4vh 0 -.2vh; }
+  .ks-pg button{ display:inline-flex; align-items:center; gap:7px; padding:5px 14px; border-radius:999px; border:1px solid var(--line); background:transparent; color:var(--muted); font-weight:800; font-size:clamp(11px,1.5vh,16px); transition:all .3s; }
+  .ks-pg button i{ width:8px; height:8px; border-radius:50%; background:currentColor; opacity:.5; }
+  .ks-pg button.on{ color:var(--ink); background:color-mix(in srgb,var(--ink) 8%,transparent); border-color:color-mix(in srgb,var(--ink) 25%,transparent); } .ks-pg button.on i{ opacity:1; background:var(--pos); box-shadow:0 0 10px var(--pos); }
+  .ks-pg button small{ opacity:.6; } .ks-pg span{ font-size:clamp(10px,1.3vh,13px); color:var(--muted); opacity:.6; }
+  .ks-grid.sw-l .ks-c{ animation:ksSwL .5s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i) * 50ms); } .ks-grid.sw-r .ks-c{ animation:ksSwR .5s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i) * 50ms); }
+  @keyframes ksSwL{ from{ opacity:0; transform:translateX(60px); } } @keyframes ksSwR{ from{ opacity:0; transform:translateX(-60px); } }
+  .ks-pd.ch{ background:color-mix(in srgb,#7aa2ff 18%,transparent); color:#a9c1ff; }
   .ks-ot{ list-style:none; margin:.6vh 0 0; padding:0; display:grid; gap:.5vh; z-index:1; min-width:0; }
   .ks-ot li{ display:grid; grid-template-columns:auto auto minmax(0,1fr) auto; align-items:center; gap:.6vw; padding:.55vh .8vw; border-radius:12px; background:color-mix(in srgb,var(--ink) 5%,transparent); font-size:clamp(11px,1.65vh,18px); animation:ksOt .5s ease both; animation-delay:calc(var(--i) * 110ms + 500ms); }
   .ks-ot li i{ font-style:normal; font-size:.85em; } .ks-ot li b{ font-weight:800; letter-spacing:.02em; } .ks-ot li span{ color:var(--muted); font-size:.85em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } .ks-ot li em{ font-style:normal; font-weight:800; font-variant-numeric:tabular-nums; }
@@ -3496,6 +3505,8 @@ function mfxPanel(){
       return `<button class="mfx-c ${off ? 'off' : ''}" data-mfxt="${esc(m.num)}" title="${off ? 'Hidden · not on the tablet, not copied to Accounts · click to show' : 'On the tablet and copied to Accounts · click to hide'}">${off ? '🙈' : '👁'} <b>${esc(m.name)}</b> <small>#${esc(m.num)}${off ? ' · hidden' : a ? ' · → ' + esc(shortAcc(a.name)) : ' · copied on the next sync'} · ${money(m.equity)}${(m.open || []).length ? ` · ${m.open.length} open` : ''}</small></button>`; }).join('')}
     <span class="muted ${mfxAge() > 60 ? 'mfx-old' : ''}" style="font-size:11.5px">${mfxAge() > 60 ? '⚠ last sync ' : 'Synced '}${new Date(mfxAt()).toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' })}${mfxAge() > 60 ? ' — the function is not running (Supabase restricted or not deployed)' : ''}</span></div>`;
 }
+function ksGo(i){ const n = S.ksPages || 1; if(n < 2) return; const to = (i + n) % n; if(to===(S.ksPage || 0)) return;
+  S.ksDir = to > (S.ksPage || 0) ? 'sw-l' : 'sw-r'; S.ksPage = to; renderMain(); }
 function renderKiosk(){
   const live = [...S.accounts.values()].filter(a => (a.status || 'active')==='active' && a.phase==='Funded')   /* funded accounts only */
     .sort((x, y) => (x.firm || '').localeCompare(y.firm || '') || (x.name || '').localeCompare(y.name || ''));
@@ -3511,10 +3522,21 @@ function renderKiosk(){
       const a2 = { id:'mfx' + m.num, name:`${m.name} #${m.num}`, firm:(m.name.split(/\s[-–|]\s|\s/)[0] || 'Myfxbook'), size, phase:'Funded' };
       return { a:a2, s:{ bal:m.balance, pnl:m.balance - size, curve:[{ bal:size }, { bal:m.balance }], today:0, target:size * FUNDED_TARGET / 100, liveAt:mfxAt() }, fl:{ n:0, usd:m.equity - m.balance, list:[] }, eq:m.equity, pd:null, mo, mfx:true, upd:m.updated }; });
   }
+  /* page 2: challenge accounts (Accounts page + any Myfxbook account whose copy is a challenge) — swipe left / right */
+  const isCh = a => /^Challenge/.test(a.phase || '');
+  const seenIds = new Set(rows.map(r => r.a.id));
+  const chSite = [...S.accounts.values()].filter(a => (a.status || 'active')==='active' && isCh(a) && !seenIds.has(a.id))
+    .sort((x, y) => (x.firm || '').localeCompare(y.firm || '') || (x.name || '').localeCompare(y.name || ''))
+    .map(a => { const m = mfx.find(x => mfxMatch(x)?.id===a.id), s = acctStats(a), fl = acctFloat(a); return { a, s, fl, eq:s.bal + fl.usd, pd:null, mo:m && Array.isArray(m.open) ? m.open : [], mfx:!!m, upd:m?.updated }; });
+  const fundedRows = rows.filter(r => !isCh(r.a)), chRows = [...rows.filter(r => isCh(r.a)), ...chSite];
+  const pages = chRows.length ? [['Funded', fundedRows], ['Challenges', chRows]] : [['Funded', fundedRows]];
+  S.ksPage = Math.min(S.ksPage || 0, pages.length - 1); S.ksPages = pages.length;
+  const pageName = pages[S.ksPage][0]; rows = pages[S.ksPage][1];
+  const swDir = S.ksDir || ''; S.ksDir = '';
   const bal = rows.reduce((t, r) => t + r.s.bal, 0), eq = rows.reduce((t, r) => t + r.eq, 0), flt = eq - bal, paid = [...S.accounts.values()].reduce((t, a) => t + acctPaid(a), 0);
   const size = rows.reduce((t, r) => t + (Number(r.a.size) || 0), 0), pnl = bal - size, tradesN = rows.reduce((t, r) => t + Math.max(r.fl.n, (r.mo || []).length), 0), openN = tradesN || (Math.abs(eq - bal) >= .5 ? 1 : 0);
-  const next = rows.filter(r => r.pd!=null && r.pd >= 0).sort((x, y) => x.pd - y.pd)[0];
-  const n = Math.max(1, rows.length), W = innerWidth, H = innerHeight - 190;
+  const next = fundedRows.filter(r => r.pd!=null && r.pd >= 0).sort((x, y) => x.pd - y.pd)[0];
+  const n = Math.max(1, rows.length), W = innerWidth, H = innerHeight - (pages.length > 1 ? 230 : 190);
   /* pick the grid that keeps cards close to a 1.5:1 shape with the fewest empty slots */
   let cols = 1, best = Infinity; for(let c = 1; c <= n; c++){ const r = Math.ceil(n / c), ratio = (W / c) / (H / r), cost = Math.abs(Math.log(ratio / 1.5)) + (c * r - n) * .35; if(cost < best){ best = cost; cols = c; } }
   const rowsN = Math.ceil(n / cols), now = new Date(), first = !S.ksDone; S.ksDone = true;
@@ -3537,21 +3559,22 @@ function renderKiosk(){
     ? r.mo.map(o => ({ mfx:true, sym:o.sym, side:o.side, usd:o.profit, lots:o.lots, R:siteR(r, o.sym), acc:r.a }))
     : r.fl.list.map(o => ({ sym:o.e.pair, side:o.e.direction, usd:o.usd, R:o.lv ? o.lv.R : null, wait:!o.lv, acc:r.a })));
   const pos = (o, r) => `<li class="${o.profit >= 0 ? 'up' : 'dn'}"><i>${o.side==='Short' ? '▼' : '▲'}</i><b>${esc(o.sym)}</b><span>${fmt(o.lots, 2)} lot${o.pips ? ` · ${o.pips >= 0 ? '+' : ''}${fmt(o.pips, 1)} pips` : ''}${(() => { const R = siteR(r, o.sym); return R!=null ? ` · ${R >= 0 ? '+' : ''}${fmt(R, 2)}R` : ''; })()}</span><em>${sg(o.profit)}</em></li>`;
-  document.getElementById('main').innerHTML = `<div class="ks ${first ? 'intro' : ''}">
+  document.getElementById('main').innerHTML = `<div class="ks ${first ? 'intro' : ''} ${pages.length > 1 ? 'pg' : ''}">
     <div class="ks-aur" aria-hidden="true"><i></i><i></i><i></i></div>
     <header class="ks-top">
       <div class="ks-time"><span class="ks-live"><i></i>LIVE</span><b id="ksClock">${now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}</b><span>${WD[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]}</span></div>
-      <div class="ks-hero"><span>Total equity · ${rows.length} account${rows.length===1 ? '' : 's'}${rows.some(r => r.mfx) ? ' · Myfxbook live' : ''}</span><b data-cu="tot" data-v="${eq}">${money(eq)}</b>
+      <div class="ks-hero"><span>${pageName==='Funded' ? 'Total equity' : 'Challenges equity'} · ${rows.length} account${rows.length===1 ? '' : 's'}${rows.some(r => r.mfx) ? ' · Myfxbook live' : ''}</span><b data-cu="tot" data-v="${eq}">${money(eq)}</b>
         <small><em class="${sgn(pnl)}">${sg(pnl)}</em> since start · balance ${money(bal)}${openN ? ` · <em class="${sgn(flt)}">${sg(flt)}</em> floating` : ''}</small></div>
       <div class="ks-t"><span>Floating</span><b class="${openN ? sgn(flt) : ''}">${openN ? sg(flt) : 'Flat'}</b><small>${tradesN ? `${tradesN} open trade${tradesN > 1 ? 's' : ''}` : openN ? 'live from Myfxbook' : 'no open trades'}</small></div>
       <div class="ks-t pay"><span>Paid out</span><b>${money(paid)}</b><small>all time</small></div>
       <div class="ks-t ${next && next.pd===0 ? 'today' : ''}"><span>Next payout</span><b>${next ? (next.pd===0 ? 'TODAY' : next.pd===1 ? 'Tomorrow' : `${next.pd} days`) : '—'}</b><small>${next ? esc(shortAcc(next.a.name)) : 'set payout dates'}</small></div>
     </header>
-    <div class="ks-grid ${n===1 ? 'xl' : n <= 4 ? 'lg' : ''}" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${rowsN},minmax(0,1fr))">
+    ${pages.length > 1 ? `<nav class="ks-pg" aria-label="Pages">${pages.map(([nm, L], i) => `<button data-kspg="${i}" class="${i===S.ksPage ? 'on' : ''}"><i></i>${nm} <small>${L.length}</small></button>`).join('')}<span>swipe ← →</span></nav>` : ''}
+    <div class="ks-grid ${n===1 ? 'xl' : n <= 4 ? 'lg' : ''} ${swDir}" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${rowsN},minmax(0,1fr))">
       ${rows.map((r, i) => { const { a, s, fl, eq, pd } = r, mo = r.mo || []; const tg = s.target ? s.pnl / s.target * 100 : null, pay = pd===0, f = fl.usd, h = hue(a.firm), today = s.today || 0, hasF = fl.n || mo.length || Math.abs(f) >= .5, nOpen = Math.max(fl.n, mo.length);
         return `<article class="ks-c ${mo.length ? 'ot' : ''} ${pay ? 'pay' : ''} ${hasF ? (f >= 0 ? 'up' : 'dn') : ''}" style="--h:${h};--i:${i}">
           <div class="ks-h"><span class="ks-mono">${esc(ini(a.firm))}</span><div class="ks-nm"><b>${esc(shortAcc(a.name))}</b><small>${esc(a.firm || '')} · ${money(Number(a.size))}${r.mfx ? ` · <i class="ks-lv">● live${r.upd ? ` · broker data ${esc(String(r.upd).replace(/^.*\s(\d{1,2}:\d{2}).*$/, '$1'))}` : ''}</i>` : ''}</small></div>
-            ${pay ? '<em class="ks-pay">💸 Payout day</em>' : pd!=null && pd > 0 ? `<em class="ks-pd ${pd <= 3 ? 'soon' : ''}"><b>${pd}</b>${pd===1 ? 'day' : 'days'}<i>to payout</i></em>` : ''}</div>
+            ${isCh(a) ? `<em class="ks-pd ch"><b>${esc(shortPhase(a.phase).replace('Phase ', 'P'))}</b><i>${esc(shortPhase(a.phase))}</i></em>` : pay ? '<em class="ks-pay">💸 Payout day</em>' : pd!=null && pd > 0 ? `<em class="ks-pd ${pd <= 3 ? 'soon' : ''}"><b>${pd}</b>${pd===1 ? 'day' : 'days'}<i>to payout</i></em>` : ''}</div>
           <div class="ks-body">
             <div class="ks-nums">
               <div class="ks-v eq"><span>Equity</span><b data-cu="e${a.id}" data-v="${eq}">${money(eq)}</b><small class="${hasF ? sgn(f) : ''}">${hasF ? `${sg(f)} floating${nOpen ? ` · ${nOpen} open` : ''}` : 'no open trades'}</small></div>
@@ -3561,7 +3584,7 @@ function renderKiosk(){
           </div>
           ${mo.length ? `<ul class="ks-ot">${mo.slice(0, n===1 ? 4 : 2).map(o => pos(o, r)).join('')}${mo.length > (n===1 ? 4 : 2) ? `<li class="more">+${mo.length - (n===1 ? 4 : 2)} more</li>` : ''}</ul>` : ''}
           ${spark(s.curve, s.pnl >= 0)}
-        </article>`; }).join('') || '<div class="ks-empty">No funded accounts yet.</div>'}
+        </article>`; }).join('') || `<div class="ks-empty">No ${pageName.toLowerCase()} accounts yet.</div>`}
     </div>
     <footer class="ks-f">
       <div class="ks-tape"><div class="ks-tape-in">${tape.length ? [...tape, ...tape].map(o => `<span class="${o.wait ? '' : (o.usd >= 0 ? 'up' : 'dn')}">${o.side==='Short' ? '▼' : '▲'} <b>${esc(o.sym)}</b> ${o.wait ? '…' : `${o.R!=null ? `${o.R >= 0 ? '+' : ''}${fmt(o.R, 2)}R · ` : ''}${o.usd >= 0 ? '+' : '−'}$${fmt(Math.abs(o.usd), 0)}${o.mfx ? ` · ${fmt(o.lots, 2)} lot` : ''}`} <i>${esc(shortAcc(o.acc.name))}</i></span>`).join('') : '<span class="flat">No open trades · flat and patient</span><span class="flat">No open trades · flat and patient</span>'}</div></div>
@@ -3570,6 +3593,14 @@ function renderKiosk(){
         return `Myfxbook checked ${new Date(t).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}${up ? ` · oldest broker data ${esc(up)}` : ''} · `; })()}${!mfx.length ? '⚠ Myfxbook not synced yet · showing funded accounts from the site · ' : mfxAge() > 60 ? '⚠ Myfxbook sync stopped · ' : ''}Updated ${now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })} · every 2 min${S.wake ? ' · screen on' : ' · tap once to keep the screen on'}</small>
     </footer>
   </div>`;
+  document.querySelectorAll('[data-kspg]').forEach(b => b.onclick = ev => { ev.stopPropagation(); ksGo(Number(b.dataset.kspg)); });
+  if(!S.ksSwipe){ S.ksSwipe = true;
+    let x0 = null, y0 = 0;
+    addEventListener('touchstart', e => { if(e.touches.length===1){ x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; } }, { passive:true });
+    addEventListener('touchend', e => { if(x0==null) return; const t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0; x0 = null;
+      if(Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) ksGo((S.ksPage || 0) + (dx < 0 ? 1 : -1)); }, { passive:true });
+    addEventListener('keydown', e => { if(e.key==='ArrowRight') ksGo((S.ksPage || 0) + 1); if(e.key==='ArrowLeft') ksGo((S.ksPage || 0) - 1); });
+  }
   /* numbers roll from the last value to the new one */
   S.ksPrev = S.ksPrev || {};
   document.querySelectorAll('.ks [data-cu]').forEach(el => { const k = el.dataset.cu, to = Number(el.dataset.v), from = S.ksPrev[k] ?? (first ? to * .96 : to); S.ksPrev[k] = to;
