@@ -12,7 +12,7 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦅</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Manrope:wght@400..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Big+Shoulders+Display:wght@200;800&family=Manrope:wght@400..800&display=swap" rel="stylesheet">
 <script>try{document.documentElement.dataset.theme=JSON.parse(localStorage.getItem("do_theme"))||"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -834,6 +834,41 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .ks-lv{ font-style:normal; color:var(--pos); }
   .ks-c.ot .ks-sp{ display:none; } .ks-c.ot{ padding-bottom:1.4vh; } .ks-c.ot .ks-body{ overflow:hidden; } .ks-c.ot .ks-nums{ gap:.6vh; }
   .ks.pg{ grid-template-rows:auto auto minmax(0,1fr) auto; }
+  /* Ambient tablet layout */
+  .ks.amb{ display:flex; flex-direction:column; gap:1.6vh; padding:3.6vh 3.4vw 2.6vh; font-family:'Manrope',sans-serif;
+    background:radial-gradient(120% 90% at 85% 10%, color-mix(in srgb,#7a2f1e calc(var(--warm) * 100%),#2a1d3a) 0%, #120d14 55%, #08070a 100%); transition:background 2s; }
+  .amb-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:2vw; }
+  .amb-date{ font-size:clamp(16px,2.9vh,34px); font-weight:800; letter-spacing:.01em; }
+  .amb-kpis{ display:flex; gap:3vw; text-align:right; } .amb-kpis span{ display:block; font-size:clamp(10px,1.6vh,16px); font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:#b7a69c; }
+  .amb-kpis b{ font-size:clamp(18px,3.4vh,40px); font-weight:800; font-variant-numeric:tabular-nums; }
+  .amb-mid{ flex:1; min-height:0; display:flex; align-items:center; gap:3.4vw; }
+  .amb-clock{ font-family:'Big Shoulders Display',sans-serif; font-weight:200; font-size:clamp(120px,46vh,560px); line-height:.8; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+  .amb-sum{ display:flex; flex-direction:column; gap:1.2vh; min-width:0; }
+  .amb-sum > span{ font-size:clamp(11px,1.9vh,20px); font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#b7a69c; }
+  .amb-sum > b{ font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:clamp(56px,15vh,180px); line-height:.85; font-variant-numeric:tabular-nums; }
+  .amb-sum > small{ font-size:clamp(13px,2.2vh,24px); font-weight:800; }
+  .amb .pos{ color:#7ef0b4; } .amb .neg{ color:#ff8a9a; } .amb em{ font-style:normal; }
+  .amb-pill{ align-self:flex-start; display:inline-flex; align-items:center; gap:10px; padding:1.2vh 1.6vw; border-radius:999px; background:rgba(255,185,138,.14); border:1.5px solid #ffb98a; color:#ffb98a; font-size:clamp(13px,2.3vh,26px); font-weight:800; }
+  .amb-pill{ white-space:nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis; } .amb-sum > span{ white-space:nowrap; }
+  .amb-pill i{ width:10px; height:10px; border-radius:50%; background:#ffb98a; }
+  .amb-pill.hot i{ animation:ambPing 1.6s ease-out infinite; }
+  @keyframes ambPing{ 0%{ box-shadow:0 0 0 0 rgba(255,185,138,.7); } 100%{ box-shadow:0 0 0 14px rgba(255,185,138,0); } }
+  .amb-tiles{ display:grid; gap:1.4vh 1vw; }
+  .amb-t{ display:flex; justify-content:space-between; align-items:center; gap:1vw; padding:1.8vh 1.4vw; border-radius:22px; background:rgba(255,255,255,.05); min-width:0; }
+  .ks.intro .amb-t{ animation:ksIn .8s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i) * 90ms + 200ms); }
+  .amb-tiles.sw-l .amb-t{ animation:ksSwL .5s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i) * 50ms); } .amb-tiles.sw-r .amb-t{ animation:ksSwR .5s cubic-bezier(.2,.8,.2,1) both; animation-delay:calc(var(--i) * 50ms); }
+  .amb-t.hot{ box-shadow:inset 0 0 0 1.5px #ffb98a; }
+  .amb-tl{ display:grid; min-width:0; } .amb-tl span{ font-size:clamp(11px,1.7vh,18px); font-weight:700; color:#b7a69c; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .amb-tl b{ font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:clamp(30px,6.2vh,76px); line-height:1; font-variant-numeric:tabular-nums; }
+  .amb-tl small{ font-size:clamp(10px,1.5vh,16px); font-weight:700; color:#b7a69c; }
+  .amb-d{ display:grid; justify-items:center; line-height:.9; } .amb-d b{ font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:clamp(28px,5.6vh,68px); }
+  .amb-d i{ font-style:normal; font-size:clamp(9px,1.4vh,14px); font-weight:800; color:#b7a69c; letter-spacing:.06em; }
+  .amb-d.soon, .amb-d.soon i{ color:#ffb98a; } .amb-d.ch b{ font-size:clamp(22px,4.4vh,52px); }
+  .amb-tiles.many .amb-tl b{ font-size:clamp(24px,4.4vh,54px); } .amb-tiles.many .amb-d b{ font-size:clamp(22px,4vh,48px); } .amb-tiles.many .amb-t{ padding:1.2vh 1.1vw; }
+  .amb-f{ display:flex; justify-content:space-between; align-items:center; gap:1vw; font-size:clamp(10px,1.5vh,14px); color:#b7a69c; }
+  .amb-pg{ display:flex; gap:8px; } .amb-pg button{ min-height:44px; padding:0 18px; border-radius:999px; border:1px solid rgba(246,238,232,.3); background:transparent; color:#f6eee8; font:700 clamp(12px,1.7vh,16px) 'Manrope',sans-serif; }
+  .amb-pg button.on{ background:#f6eee8; color:#120d14; border-color:#f6eee8; }
+  @media (orientation:portrait){ .amb-mid{ flex-direction:column; align-items:flex-start; justify-content:center; } .amb-clock{ font-size:clamp(100px,22vh,300px); } }
   .ks-pg{ display:flex; align-items:center; justify-content:center; gap:10px; margin:-.4vh 0 -.2vh; }
   .ks-pg button{ display:inline-flex; align-items:center; gap:7px; padding:5px 14px; border-radius:999px; border:1px solid var(--line); background:transparent; color:var(--muted); font-weight:800; font-size:clamp(11px,1.5vh,16px); transition:all .3s; }
   .ks-pg button i{ width:8px; height:8px; border-radius:50%; background:currentColor; opacity:.5; }
@@ -3563,35 +3598,48 @@ function renderKiosk(){
     ? r.mo.map(o => ({ mfx:true, sym:o.sym, side:o.side, usd:o.profit, lots:o.lots, R:siteR(r, o.sym), acc:r.a }))
     : r.fl.list.map(o => ({ sym:o.e.pair, side:o.e.direction, usd:o.usd, R:o.lv ? o.lv.R : null, wait:!o.lv, acc:r.a })));
   const pos = (o, r) => `<li class="${o.profit >= 0 ? 'up' : 'dn'}"><i>${o.side==='Short' ? '▼' : '▲'}</i><b>${esc(o.sym)}</b><span>${fmt(o.lots, 2)} lot${o.pips ? ` · ${o.pips >= 0 ? '+' : ''}${fmt(o.pips, 1)} pips` : ''}${(() => { const R = siteR(r, o.sym); return R!=null ? ` · ${R >= 0 ? '+' : ''}${fmt(R, 2)}R` : ''; })()}</span><em>${sg(o.profit)}</em></li>`;
-  document.getElementById('main').innerHTML = `<div class="ks ${first ? 'intro' : ''} ${pages.length > 1 ? 'pg' : ''}">
-    <div class="ks-aur" aria-hidden="true"><i></i><i></i><i></i></div>
-    <header class="ks-top">
-      <div class="ks-time"><span class="ks-live"><i></i>LIVE</span><b id="ksClock">${now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}</b><span>${WD[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]}</span></div>
-      <div class="ks-t bal"><span>${pageName==='Funded' ? 'Total balance' : 'Challenges balance'} · ${rows.length}</span><b data-cu="tot" data-v="${bal}">${money(bal)}</b><small><em class="${sgn(pnl)}">${sg(pnl)}</em> profit${openN ? ` · <em class="${sgn(flt)}">${sg(flt)}</em> open` : ''}</small></div>
-      <div class="ks-t pay"><span>Paid out</span><b>${money(paid)}</b><small>all time</small></div>
+  /* Ambient layout: a big clock first, money at a glance */
+  const funded = rows.reduce((t, r) => t + (Number(r.a.size) || 0), 0);
+  const isChPage = pageName!=='Funded';
+  const lbl = a => { const num = (String(a.name || '').match(/\d{5,}/) || [''])[0], base = String(a.name || '').replace(/#?\s*\d{5,}/, '').replace(/\s*[-–]\s*funded(\s+account)?\s*\d*\s*$/i, '').replace(/[\s#·–-]+$/, '').trim() || a.firm || 'Account';
+    return num ? `${base} · ${num.slice(-4)}` : base; };
+  const pdTxt = pd => pd===0 ? 'Payout today' : pd===1 ? 'Payout tomorrow' : `Next payout in ${pd} days`;
+  const bestCh = isChPage ? rows.filter(r => r.s.target).map(r => ({ r, p:r.s.pnl / r.s.target * 100 })).sort((x, y) => y.p - x.p)[0] : null;
+  const pill = isChPage ? (bestCh ? `Closest · ${esc(lbl(bestCh.r.a))} · ${Math.max(0, Math.round(bestCh.p))}%` : '')
+    : next ? `${pdTxt(next.pd)} · ${esc(lbl(next.a))}` : '';
+  const warm = isChPage ? .15 : !next ? .1 : next.pd <= 0 ? 1 : next.pd===1 ? .85 : next.pd <= 3 ? .6 : next.pd <= 7 ? .3 : .12;
+  const many = rows.length > 5, tcols = Math.min(Math.max(rows.length, 1), 5);
+  const syncTxt = (() => { const t = Date.parse(mfxAt() || ''); return isNaN(t) ? 'Myfxbook not synced' : `Myfxbook ${new Date(t).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}`; })();
+  document.getElementById('main').innerHTML = `<div class="ks amb ${first ? 'intro' : ''}" style="--warm:${warm}">
+    <header class="amb-top">
+      <div class="amb-date">${WD[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]}</div>
+      <div class="amb-kpis">
+        <div><span>${isChPage ? 'Challenge capital' : 'Funded'}</span><b data-cu="fund" data-v="${funded}">${money(funded)}</b></div>
+        <div><span>Paid out</span><b>${money(paid)}</b></div>
+      </div>
     </header>
-    ${pages.length > 1 ? `<nav class="ks-pg" aria-label="Pages">${pages.map(([nm, L], i) => `<button data-kspg="${i}" class="${i===S.ksPage ? 'on' : ''}"><i></i>${nm} <small>${L.length}</small></button>`).join('')}<span>swipe ← →</span></nav>` : ''}
-    <div class="ks-grid ${n===1 ? 'xl' : n <= 4 ? 'lg' : ''} ${swDir}" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${rowsN},minmax(0,1fr))">
-      ${rows.map((r, i) => { const { a, s, fl, eq, pd } = r, mo = r.mo || []; const tg = s.target ? s.pnl / s.target * 100 : null, pay = pd===0, f = fl.usd, h = hue(a.firm), today = s.today || 0, hasF = fl.n || mo.length || Math.abs(f) >= .5, nOpen = Math.max(fl.n, mo.length);
-        return `<article class="ks-c ${mo.length ? 'ot' : ''} ${pay ? 'pay' : ''} ${hasF ? (f >= 0 ? 'up' : 'dn') : ''}" style="--h:${h};--i:${i}">
-          <div class="ks-h"><span class="ks-mono">${esc(ini(a.firm))}</span><div class="ks-nm"><b>${esc(shortAcc(a.name))}</b><small>${esc(a.firm || '')} · ${money(Number(a.size))}${r.mfx ? ` · <i class="ks-lv">● live${r.upd ? ` · broker data ${esc(String(r.upd).replace(/^.*\s(\d{1,2}:\d{2}).*$/, '$1'))}` : ''}</i>` : ''}</small></div>
-            ${isCh(a) ? `<em class="ks-pd ch"><b>${esc(shortPhase(a.phase).replace('Phase ', 'P'))}</b><i>${esc(shortPhase(a.phase))}</i></em>` : pay ? '<em class="ks-pay">💸 Payout day</em>' : pd!=null && pd > 0 ? `<em class="ks-pd ${pd <= 3 ? 'soon' : ''}"><i>payout in</i><b>${pd}</b>${pd===1 ? 'day' : 'days'}</em>` : ''}</div>
-          <div class="ks-body">
-            <div class="ks-nums">
-              <div class="ks-v pf ${sgn(s.pnl)}"><span>Profit</span><b data-cu="p${a.id}" data-v="${s.pnl}" data-sg="1">${sg(s.pnl)}</b><small>today <em class="${sgn(today)}">${sg(today)}</em>${hasF ? ` · <em class="${sgn(f)}">${sg(f)}</em> open${nOpen ? ` (${nOpen})` : ''}` : ''}</small></div>
-              <div class="ks-eb"><span>Balance <b>${money(s.bal)}</b></span><span>Equity <b class="${hasF ? sgn(f) : ''}">${money(eq)}</b></span></div>
-            </div>
-            ${tg!=null ? `<div class="ks-rw">${ring(tg)}<div class="ks-rl"><b>${Math.max(0, Math.round(tg))}%</b><span>of ${acctTargetPct(a)}%</span></div></div>` : ''}
-          </div>
-          ${mo.length ? `<ul class="ks-ot">${mo.slice(0, n===1 ? 4 : 2).map(o => pos(o, r)).join('')}${mo.length > (n===1 ? 4 : 2) ? `<li class="more">+${mo.length - (n===1 ? 4 : 2)} more</li>` : ''}</ul>` : ''}
-          ${spark(s.curve, s.pnl >= 0)}
+    <section class="amb-mid">
+      <div class="amb-clock" id="ksClock">${now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}</div>
+      <div class="amb-sum">
+        <span>Profit across ${rows.length} ${isChPage ? 'challenge' : 'account'}${rows.length===1 ? '' : 's'}</span>
+        <b class="${sgn(pnl)}" data-cu="pnl" data-v="${pnl}" data-sg="1">${sg(pnl)}</b>
+        ${openN ? `<small class="${sgn(flt)}">${sg(flt)} open now${tradesN ? ` · ${tradesN} trade${tradesN > 1 ? 's' : ''}` : ''}</small>` : ''}
+        ${pill ? `<em class="amb-pill ${!isChPage && next && next.pd <= 1 ? 'hot' : ''}"><i></i>${pill}</em>` : ''}
+      </div>
+    </section>
+    <div class="amb-tiles ${many ? 'many' : ''} ${swDir}" style="grid-template-columns:repeat(${tcols},minmax(0,1fr))">
+      ${rows.map((r, i) => { const { a, s, pd } = r, mo = r.mo || [], f = r.fl.usd, nOpen = Math.max(r.fl.n, mo.length), hasF = nOpen || Math.abs(f) >= .5, tg = s.target ? s.pnl / s.target * 100 : null;
+        const right = isCh(a) ? `<div class="amb-d ch"><b>${tg!=null ? Math.max(0, Math.round(tg)) + '%' : '—'}</b><i>${esc(shortPhase(a.phase))}</i></div>`
+          : `<div class="amb-d ${pd!=null && pd <= 3 ? 'soon' : ''}"><b>${pd==null ? '—' : pd===0 ? '!' : pd}</b><i>${pd==null ? 'no date' : pd===0 ? 'TODAY' : pd===1 ? 'DAY' : 'DAYS'}</i></div>`;
+        return `<article class="amb-t ${!isCh(a) && pd!=null && pd <= 1 ? 'hot' : ''}" style="--i:${i}">
+          <div class="amb-tl"><span>${esc(lbl(a))}</span><b class="${sgn(s.pnl)}" data-cu="p${a.id}" data-v="${s.pnl}" data-sg="1">${sg(s.pnl)}</b>
+            <small>${hasF ? `<em class="${sgn(f)}">${sg(f)}</em> open${nOpen ? ` · ${nOpen}` : ''}` : `bal ${money(s.bal)}`}</small></div>
+          ${right}
         </article>`; }).join('') || `<div class="ks-empty">No ${pageName.toLowerCase()} accounts yet.</div>`}
     </div>
-    <footer class="ks-f">
-      <div class="ks-tape"><div class="ks-tape-in">${tape.length ? [...tape, ...tape].map(o => `<span class="${o.wait ? '' : (o.usd >= 0 ? 'up' : 'dn')}">${o.side==='Short' ? '▼' : '▲'} <b>${esc(o.sym)}</b> ${o.wait ? '…' : `${o.R!=null ? `${o.R >= 0 ? '+' : ''}${fmt(o.R, 2)}R · ` : ''}${o.usd >= 0 ? '+' : '−'}$${fmt(Math.abs(o.usd), 0)}${o.mfx ? ` · ${fmt(o.lots, 2)} lot` : ''}`} <i>${esc(shortAcc(o.acc.name))}</i></span>`).join('') : '<span class="flat">No open trades · flat and patient</span><span class="flat">No open trades · flat and patient</span>'}</div></div>
-      <small>${(() => { const t = Date.parse(mfxAt() || ''); if(isNaN(t)) return '';
-        const up = rows.map(r => r.upd).filter(Boolean).map(u => String(u).replace(/^.*\s(\d{1,2}:\d{2}).*$/, '$1')).sort()[0];
-        return `Myfxbook checked ${new Date(t).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}${up ? ` · oldest broker data ${esc(up)}` : ''} · `; })()}${!mfx.length ? '⚠ Myfxbook not synced yet · showing funded accounts from the site · ' : mfxAge() > 60 ? '⚠ Myfxbook sync stopped · ' : ''}Updated ${now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })} · every 2 min${S.wake ? ' · screen on' : ' · tap once to keep the screen on'}</small>
+    <footer class="amb-f">
+      <span>${syncTxt} · updated ${now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}${S.wake ? '' : ' · tap once to keep the screen on'}</span>
+      ${pages.length > 1 ? `<nav class="amb-pg" aria-label="Pages">${pages.map(([nm, L], i) => `<button data-kspg="${i}" class="${i===S.ksPage ? 'on' : ''}">${nm} ${L.length}</button>`).join('')}</nav>` : ''}
     </footer>
   </div>`;
   document.querySelectorAll('[data-kspg]').forEach(b => b.onclick = ev => { ev.stopPropagation(); ksGo(Number(b.dataset.kspg)); });
