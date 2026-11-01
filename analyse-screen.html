@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bias Screen | EaglePips</title>
+<meta name="theme-color" content="#0d0b10">
+<link rel="manifest" href="manifest-analyse.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@300;800&family=Manrope:wght@400..800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d0b10; --panel:rgba(255,255,255,.045); --panel2:rgba(255,255,255,.08); --line:rgba(255,255,255,.09);
+  --ink:#f4eee9; --muted:#b2a59c; --bull:#7ef0b4; --bull-bg:rgba(126,240,180,.13); --bear:#ff8a9a; --bear-bg:rgba(255,138,154,.13);
+  --neu:#e9cf7a; --neu-bg:rgba(233,207,122,.12); --acc:#ffb98a;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:radial-gradient(110% 80% at 90% 0%,#2a1d3a 0%,#120d14 55%,#08070a 100%) fixed;color:var(--ink);font:16px/1.5 'Manrope',system-ui,sans-serif;overflow:hidden}
+.app{height:100vh;height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr);gap:1.6vh;padding:2.4vh 2vw}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:2vw}
+.brand span{display:block;font-size:13px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.brand b{font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:clamp(30px,5vh,56px);line-height:1}
+.clock{display:flex;align-items:baseline;gap:1.2vw}
+.clock b{font-family:'Big Shoulders Display',sans-serif;font-weight:300;font-size:clamp(40px,8vh,96px);line-height:.85;font-variant-numeric:tabular-nums}
+.clock span{font-weight:800;font-size:clamp(14px,2.2vh,22px);color:var(--muted)}
+.cols{display:grid;grid-template-columns:minmax(260px,.9fr) minmax(0,1.5fr) minmax(0,1.6fr);gap:1.4vw;min-height:0}
+.col{display:flex;flex-direction:column;gap:1vh;min-height:0}
+.col h2{margin:0;font-size:13px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between}
+.scroll{overflow:auto;min-height:0;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.15) transparent}
+/* currencies */
+.ccys{display:flex;flex-direction:column;gap:.8vh}
+.ccy{all:unset;cursor:pointer;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:1.1vh 14px;border-radius:16px;background:var(--panel);border:1.5px solid transparent;transition:background .2s,border-color .2s}
+.ccy:hover{background:var(--panel2)} .ccy.on{border-color:var(--acc);background:var(--panel2)}
+.ccy:focus-visible,.pair:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.ccy .c{min-width:2.4em;font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:clamp(24px,3.6vh,38px);line-height:1}
+.ccy .mid{display:block;min-width:0} .ccy .n{display:block;font-size:13px;color:var(--muted);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ccy .bar{display:block;position:relative;height:6px;border-radius:3px;background:rgba(255,255,255,.07);margin-top:6px}
+.ccy .bar i{position:absolute;top:0;bottom:0;border-radius:3px} .ccy .bar em{position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:var(--muted);opacity:.5}
+.ccy .s{font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:clamp(28px,4.4vh,46px);line-height:1;font-variant-numeric:tabular-nums;min-width:48px;text-align:right}
+.bull{color:var(--bull)} .bear{color:var(--bear)} .neu{color:var(--neu)}
+i.bull{background:var(--bull)} i.bear{background:var(--bear)} i.neu{background:var(--neu)}
+/* pairs */
+.grp{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:1.2vh 0 .6vh}
+.grp:first-child{margin-top:0}
+.pairs{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:.8vh .6vw}
+.pair{all:unset;cursor:pointer;display:grid;gap:2px;padding:.7vh 12px;border-radius:14px;background:var(--panel);border:1.5px solid transparent;transition:opacity .25s,background .2s,border-color .2s}
+.pair:hover{background:var(--panel2)} .pair.on{border-color:var(--acc);background:var(--panel2)}
+.pair b{font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:clamp(18px,2.6vh,28px);line-height:1;letter-spacing:.01em}
+.pair .m{display:flex;justify-content:space-between;align-items:center;gap:6px;white-space:nowrap;font-size:12px;font-weight:700;color:var(--muted)}
+.pair.dim{opacity:.28}
+.pair.bull{box-shadow:inset 4px 0 0 var(--bull)} .pair.bear{box-shadow:inset 4px 0 0 var(--bear)} .pair.neu{box-shadow:inset 4px 0 0 rgba(233,207,122,.5)}
+.tag{display:inline-block;font-size:12px;font-weight:800;padding:2px 10px;border-radius:999px;background:var(--neu-bg);color:var(--neu);white-space:nowrap}
+.tag.bull{background:var(--bull-bg);color:var(--bull)} .tag.bear{background:var(--bear-bg);color:var(--bear)} .tag.crit{background:var(--bear);color:#160b0d} .tag.hi{background:var(--bear-bg);color:var(--bear)}
+/* detail */
+.detail{background:var(--panel);border-radius:24px;padding:2.4vh 1.8vw;display:flex;flex-direction:column;gap:1.2vh;min-height:0}
+.dhead{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.dhead b{font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:clamp(40px,7vh,84px);line-height:.9}
+.dhead .sc{font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:clamp(36px,6vh,72px);line-height:.9}
+.dhead small{color:var(--muted);font-weight:700;font-size:15px}
+.body{font-size:clamp(14px,1.85vh,18px);line-height:1.55}
+.body p{margin:.6em 0} .body ul{margin:.4em 0;padding-left:1.2em} .body li{margin:.25em 0} .body h3{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:1.2em 0 .4em}
+.body .small{font-size:.86em;color:var(--muted)}
+.body .card{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:16px;padding:12px 16px;margin:12px 0}
+.body .help{border-left:4px solid var(--bull);padding:6px 0 6px 12px;margin:8px 0;background:linear-gradient(90deg,rgba(126,240,180,.08),transparent 70%);border-radius:0 10px 10px 0}
+.body .hurt{border-left:4px solid var(--bear);padding:6px 0 6px 12px;margin:8px 0;background:linear-gradient(90deg,rgba(255,138,154,.08),transparent 70%);border-radius:0 10px 10px 0}
+.body .chip{display:inline-block;min-width:28px;text-align:center;font-weight:800;font-size:.85em;padding:1px 6px;border-radius:6px;background:var(--neu-bg);color:var(--neu)}
+.body .chip.bull{background:var(--bull-bg);color:var(--bull)} .body .chip.bear{background:var(--bear-bg);color:var(--bear)}
+.body a{color:var(--acc)}
+.foot{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:1vw}
+.msg{margin:auto;max-width:560px;text-align:center;color:var(--muted);font-size:18px}
+@media (max-width:1100px){ body{overflow:auto} .app{height:auto} .cols{grid-template-columns:1fr} .scroll{overflow:visible} }
+@media (prefers-reduced-motion:reduce){ *{transition:none!important} }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><span id="sub">Bias Engine</span><b id="title">Loading the report…</b></div>
+    <div class="clock"><b id="clk">--:--</b><span id="day"></span></div>
+  </header>
+  <main class="cols" id="cols"><div class="msg">Reading analyse.html…</div></main>
+</div>
+<script>
+/* Desktop screen for the weekly Bias Engine report.
+   It reads analyse.html from the same folder and shows only
+   "4 · Each currency explained" and "9 · All 29 pairs in plain words".
+   Upload a new analyse.html each week — this page needs no changes. */
+const SRC = new URLSearchParams(location.search).get('src') || 'analyse.html';
+const st = { sel: null, focus: null, data: null, at: null };
+const WD = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'], MO = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const cls = el => !el ? 'neu' : el.classList.contains('bull') ? 'bull' : el.classList.contains('bear') ? 'bear' : 'neu';
+
+function tick(){ const d = new Date(); document.getElementById('clk').textContent = d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+  document.getElementById('day').textContent = `${WD[d.getDay()]}, ${d.getDate()} ${MO[d.getMonth()]}`; }
+tick(); setInterval(tick, 15000);
+
+/* everything between one <h2> and the next */
+function section(doc, id){ const h = doc.getElementById(id); if(!h) return []; const out = []; let n = h.nextElementSibling;
+  while(n && n.tagName!=='H2'){ out.push(n); n = n.nextElementSibling; } return out; }
+function clean(node){ node.querySelectorAll('script,iframe,object,embed').forEach(x => x.remove());
+  node.querySelectorAll('*').forEach(x => [...x.attributes].forEach(a => { if(/^on/i.test(a.name)) x.removeAttribute(a.name); })); return node.innerHTML; }
+
+function parse(html){
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const title = (doc.querySelector('title')?.textContent || 'Bias Engine').trim();
+  const week = (title.match(/W\s?\d{1,2}/i) || [''])[0].toUpperCase().replace(/\s/, '');
+  const ccys = section(doc, 's4').filter(n => n.tagName==='DETAILS').map(d => { const sm = d.querySelector('summary');
+    const code = sm.querySelector('.ccy')?.textContent.trim() || '', scEl = sm.querySelector('.score');
+    return { kind:'ccy', id:code, code, score:Number((scEl?.textContent || '0').replace('−', '-')) || 0, scoreTxt:scEl?.textContent.trim() || '0', b:cls(scEl),
+      tag:sm.querySelector('.tag')?.textContent.trim() || '', name:sm.querySelector('.small')?.textContent.trim() || '', html:clean(d.querySelector('.in') || d) }; });
+  const groups = []; let g = null;
+  section(doc, 's9').forEach(n => { if(n.tagName==='H3'){ g = { name:n.textContent.trim(), pairs:[] }; groups.push(g); }
+    else if(n.tagName==='DETAILS'){ if(!g){ g = { name:'Pairs', pairs:[] }; groups.push(g); }
+      const sm = n.querySelector('summary'), pair = sm.querySelector('b')?.textContent.trim() || '', tagEl = sm.querySelector('.tag'), meta = sm.querySelector('.small')?.textContent.trim() || '';
+      g.pairs.push({ kind:'pair', id:pair, pair, b:cls(tagEl), tag:tagEl?.textContent.trim() || '', meta, html:clean(n.querySelector('.in') || n) }); } });
+  const intro4 = section(doc, 's4').find(n => n.tagName==='P')?.textContent.trim() || '';
+  const intro9 = section(doc, 's9').find(n => n.tagName==='P')?.textContent.trim() || '';
+  return { title, week, ccys, groups, intro4, intro9 };
+}
+
+function render(){
+  const D = st.data, cols = document.getElementById('cols');
+  document.getElementById('title').textContent = D.week ? `Week ${D.week.replace('W', '')} · bias` : D.title;
+  document.getElementById('sub').textContent = D.title;
+  if(!D.ccys.length && !D.groups.length){ cols.innerHTML = `<div class="msg">Sections 4 and 9 were not found in ${esc(SRC)}.</div>`; return; }
+  const ccys = [...D.ccys].sort((x, y) => y.score - x.score), maxAbs = Math.max(5, ...ccys.map(c => Math.abs(c.score)));
+  const all = [...ccys, ...D.groups.flatMap(g => g.pairs)];
+  if(!st.sel || !all.some(x => x.kind + x.id===st.sel)) st.sel = ccys[0] ? 'ccy' + ccys[0].id : 'pair' + all[0].id;
+  const cur = all.find(x => x.kind + x.id===st.sel);
+  const focus = cur.kind==='ccy' ? cur.code : null;
+  const npairs = D.groups.reduce((t, g) => t + g.pairs.length, 0);
+  cols.innerHTML = `
+    <section class="col"><h2><span>Currencies</span><span>${ccys.length}</span></h2>
+      <div class="ccys scroll">${ccys.map(c => { const w = Math.abs(c.score) / maxAbs * 50;
+        return `<button class="ccy ${st.sel==='ccy' + c.id ? 'on' : ''}" data-k="ccy${esc(c.id)}" title="${esc(c.tag)}">
+          <span class="c">${esc(c.code)}</span>
+          <span class="mid"><span class="n">${esc(c.name)} · ${esc(c.tag)}</span><span class="bar"><em></em><i class="${c.b}" style="${c.score >= 0 ? 'left:50%' : `right:50%`};width:${w}%"></i></span></span>
+          <span class="s ${c.b}">${esc(c.scoreTxt)}</span></button>`; }).join('')}</div></section>
+    <section class="col"><h2><span>${npairs} pairs</span><span>${focus ? `showing ${esc(focus)} pairs` : 'tap a pair'}</span></h2>
+      <div class="scroll">${D.groups.map(g => `<div class="grp">${esc(g.name)} · ${g.pairs.length}</div><div class="pairs">${g.pairs.map(p => { const dim = focus && !p.pair.includes(focus);
+        return `<button class="pair ${p.b} ${st.sel==='pair' + p.id ? 'on' : ''} ${dim ? 'dim' : ''}" data-k="pair${esc(p.id)}"><b>${esc(p.pair)}</b><span class="m"><span class="tag ${p.b}">${esc(p.tag)}</span><span>${esc(p.meta)}</span></span></button>`; }).join('')}</div>`).join('')}</div></section>
+    <section class="col detail">
+      <div class="dhead">${cur.kind==='ccy'
+        ? `<b>${esc(cur.code)}</b><span class="sc ${cur.b}">${esc(cur.scoreTxt)}</span><span class="tag ${cur.b}">${esc(cur.tag)}</span><small>${esc(cur.name)}</small>`
+        : `<b>${esc(cur.pair)}</b><span class="tag ${cur.b}">${esc(cur.tag)}</span><small>${esc(cur.meta)}</small>`}</div>
+      <div class="body scroll">${cur.html}</div>
+      <div class="foot"><span>${esc(cur.kind==='ccy' ? D.intro4 : D.intro9)}</span><span>${st.at ? 'read ' + st.at.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' }) : ''}</span></div>
+    </section>`;
+  cols.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { st.sel = b.dataset.k; render(); });
+}
+
+async function load(){
+  try{
+    const r = await fetch(SRC + (SRC.includes('?') ? '&' : '?') + 't=' + Date.now(), { cache:'no-store' });
+    if(!r.ok) throw new Error(r.status + ' ' + r.statusText);
+    st.data = parse(await r.text()); st.at = new Date(); render();
+  }catch(e){
+    if(!st.data) document.getElementById('cols').innerHTML = `<div class="msg">Could not read ${esc(SRC)} (${esc(e.message)}). It has to be in the same folder as this page.</div>`;
+  }
+}
+load(); setInterval(load, 30 * 60 * 1000);   /* picks up a new weekly report on its own */
+addEventListener('keydown', e => { if(e.key==='r') load(); });
+/* keep the screen on while it is open (supported browsers) */
+let lock = null; const wake = async () => { try{ if('wakeLock' in navigator && !lock){ lock = await navigator.wakeLock.request('screen'); lock.addEventListener('release', () => lock = null); } }catch(e){} };
+document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible') wake(); }); addEventListener('click', wake, { once:true }); wake();
+if('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>
