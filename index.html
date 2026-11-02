@@ -3598,7 +3598,7 @@ function renderKiosk(){
     .map(a => { const m = mfx.find(x => mfxMatch(x)?.id===a.id), s = acctStats(a), fl = acctFloat(a); return { a, s, fl, eq:s.bal + fl.usd, pd:null, mo:m && Array.isArray(m.open) ? m.open : [], mfx:!!m, upd:m?.updated }; });
   const fundedRows = rows.filter(r => !isCh(r.a)), chRows = [...rows.filter(r => isCh(r.a)), ...chSite];
   const pages = chRows.length ? [['Funded', fundedRows], ['Challenges', chRows]] : [['Funded', fundedRows]];
-  if(pfHas()) pages.push(['Portfolio', []]);
+  pages.push(['Portfolio', []]);   /* always there, so it can be reached by swiping */
   S.ksPage = Math.min(S.ksPage || 0, pages.length - 1); S.ksPages = pages.length;
   const pageName = pages[S.ksPage][0]; rows = pages[S.ksPage][1];
   const swDir = S.ksDir || ''; S.ksDir = '';
@@ -4892,6 +4892,12 @@ function openHolding(h, pre){
 /* tablet: portfolio page */
 function kioskPf(o){
   const P = pfCalc(), now = o.now, sg = (usd) => pfM(usd, 1);
+  if(!P.G.length){
+    const msg = !S.holdOK ? 'Portfolio is not set up yet: run migration-portfolio.sql in Supabase, then reload this screen.' : 'No holdings yet. Add your purchases on the site (Money → Portfolio) and they appear here within 2 minutes.';
+    return `<div class="ks amb ${o.first ? 'intro' : ''}" style="--warm:.15"><header class="amb-top"><div class="amb-date">${WD[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]}</div></header>
+      <section class="amb-mid"><div class="amb-clock" id="ksClock">${now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}</div><div class="amb-sum"><span>Portfolio</span><small style="max-width:30vw;line-height:1.4">${msg}</small></div></section>
+      <footer class="amb-f"><span></span><nav class="amb-pg" aria-label="Pages">${o.pages.map(([nm, L], i) => `<button data-kspg="${i}" class="${i===S.ksPage ? 'on' : ''}">${nm}${nm==='Portfolio' ? '' : ' ' + L.length}</button>`).join('')}</nav></footer></div>`;
+  }
   const top = [...P.G].sort((a, b) => (b.dayPct ?? -1e9) - (a.dayPct ?? -1e9))[0];
   return `<div class="ks amb ${o.first ? 'intro' : ''}" style="--warm:.15">
     <header class="amb-top">
@@ -6902,6 +6908,9 @@ async function liveRefresh(){
     /* trades opened / closed by the server engine */
     if(!S.legacyTrades){ try{ const tr = await fetchAll('do_trades'); const sig = m => [...m.values()].map(t => t.id + (t.updated_at || '') + (t.result || '')).sort().join();
       const fresh = new Map(tr.map(t => [t.id, t])); if(sig(fresh)!==sig(S.trades)){ S.trades = fresh; S.liveTrades = true; } }catch(e){ /* keep what we have */ } }
+    /* portfolio purchases added on another device */
+    try{ const hd = await fetchAll('do_holdings'); const sigH = m => [...m.values()].map(h => h.id + h.qty + h.price + h.buy_date).sort().join(); const fh = new Map(hd.map(r => [r.id, r]));
+      if(sigH(fh)!==sigH(S.hold)){ S.hold = fh; S.holdOK = true; S.liveTrades = true; } }catch(e){ /* table missing or offline */ }
     /* accounts: live balance / equity written by the Myfxbook sync, and accounts it adds */
     try{ const ac = await fetchAll('do_accounts'); const sigA = m => [...m.values()].map(a => a.id + (a.live_at || '') + (a.live_balance ?? '') + (a.live_equity ?? '') + (a.payout_date || '') + (a.status || '')).sort().join();
       const freshA = new Map(ac.map(r => [r.id, r])); if(sigA(freshA)!==sigA(S.accounts)){ S.accounts = freshA; S.liveTrades = true; } }catch(e){ /* keep what we have */ }
