@@ -845,7 +845,8 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .amb-clock{ font-family:'Big Shoulders Display',sans-serif; font-weight:200; font-size:clamp(120px,46vh,560px); line-height:.8; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
   .amb-sum{ display:flex; flex-direction:column; gap:1.2vh; min-width:0; }
   .amb-sum > span{ font-size:clamp(11px,1.9vh,20px); font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#b7a69c; }
-  .amb-sum > b{ font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:clamp(56px,15vh,180px); line-height:.85; font-variant-numeric:tabular-nums; }
+  .amb-tiles.pf .amb-tl b{ font-size:clamp(26px,5.2vh,62px); } .amb-tiles.pf .amb-d b{ font-size:clamp(14px,2.4vh,28px); } .amb-tiles.pf .amb-t{ align-items:flex-end; }
+  .amb-sum > b{ white-space:nowrap; font-family:'Big Shoulders Display',sans-serif; font-weight:800; font-size:clamp(48px,min(15vh,8.5vw),180px); line-height:.85; font-variant-numeric:tabular-nums; }
   .amb-sum > small{ font-size:clamp(13px,2.2vh,24px); font-weight:800; }
   .amb .pos{ color:#7ef0b4; } .amb .neg{ color:#ff8a9a; } .amb em{ font-style:normal; }
   .amb-pill{ align-self:flex-start; display:inline-flex; align-items:center; gap:10px; padding:1.2vh 1.6vw; border-radius:999px; background:rgba(255,185,138,.14); border:1.5px solid #ffb98a; color:#ffb98a; font-size:clamp(13px,2.3vh,26px); font-weight:800; }
@@ -1451,6 +1452,15 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .bk-io{ display:flex; flex-wrap:wrap; gap:6px 16px; font-size:13px; font-weight:600; color:var(--muted); }
   .bk-io span{ display:inline-flex; align-items:center; gap:6px; } .bk-io i{ width:8px; height:8px; border-radius:50%; } .bk-io i.p{ background:var(--pos); } .bk-io i.n{ background:var(--neg); }
   .bk-io b{ font-weight:800; }
+  .pf-t{ width:100%; min-width:760px; border-collapse:collapse; font-size:14px; }
+  .pf-t th{ text-align:left; font-size:11.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); padding:12px 14px; border-bottom:1px solid var(--line); }
+  .pf-t td{ padding:12px 14px; border-bottom:1px solid var(--line); vertical-align:middle; } .pf-t .r{ text-align:right; }
+  .pf-t td small{ display:block; font-size:12px; color:var(--muted); font-weight:600; } .pf-t td b{ font-weight:800; }
+  .pf-r{ cursor:pointer; transition:background .15s; } .pf-r:hover, .pf-r.on{ background:color-mix(in srgb,var(--ink) 5%,transparent); }
+  .pf-w{ display:block; height:6px; border-radius:3px; background:color-mix(in srgb,var(--ink) 8%,transparent); } .pf-w i{ display:block; height:6px; border-radius:3px; background:var(--accent); }
+  .pf-lots td{ background:color-mix(in srgb,var(--ink) 3%,transparent); }
+  .pf-lot{ display:grid; grid-template-columns:110px minmax(0,1.4fr) minmax(0,1fr) 80px 36px; gap:12px; align-items:center; padding:6px 0; font-size:13.5px; }
+  @media (max-width:640px){ .pf-lot{ grid-template-columns:1fr 1fr; } }
   .bk-side{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; } .bk-side .ab-k{ align-content:center; }
   @media (max-width:640px){ .bk-side{ grid-template-columns:1fr 1fr; } .bk-big{ font-size:40px; } }
   .bk-date{ flex:none; width:40px; display:grid; place-items:center; line-height:1.05; } .bk-date b{ font-family:'Bricolage Grotesque',sans-serif; font-size:18px; font-weight:800; } .bk-date small{ font-size:10px; font-weight:800; text-transform:uppercase; color:var(--muted); }
@@ -2014,6 +2024,7 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
 
 <!-- Data dialog -->
 <script type="application/json" id="promptData">[{"id": "phase1", "group": "weekly", "step": 1, "title": "Phase 1 — Weekly research", "when": "Saturday / Sunday · attach last week's report", "desc": "The AI rebuilds last week from its own research (scheduled + unscheduled news), re-scores every currency and writes the full report for the coming week, including the Section 12 import block.", "text": "WEEKLY FUNDAMENTAL UPDATE — PHASE 1 (research only)\n\nAttached: your report from last week.\n\nUpdate the full analysis for the coming week using only your own research.\nDo NOT ask for or use price action yet — I will send it after you finish.\n\n1. Rebuild last week (search, do not rely on memory). For USD, EUR, GBP, JPY, CHF, CAD,\n   AUD, NZD and XAU, find everything that happened Mon–Fri plus the weekend:\n   - scheduled data and central-bank decisions/speakers\n   - UNSCHEDULED events: political and fiscal crises (governments, budgets, bond spreads —\n     including big euro-area states like France, Italy, Germany), geopolitics, trade policy,\n     commodity shocks, interventions, haven flows, credit stress\n   Cite a source for every event you use.\n2. Re-score every currency from the evidence. Do not anchor on last week's numbers; every\n   change must be justified.\n3. Produce the complete report in the usual structure, valid for the coming week, including\n   Section 12 \"Daily Observer Import\" with \"valid_week\" set to the NEXT ISO week.\n   Bias rule: if the weekly label is Neutral/Two-sided but the horizon or main driver clearly\n   leans one way, set \"bias\" to that direction with conviction \"low\" and keep the original\n   wording in \"summary\".\n4. State the data cut-off (Friday close plus any weekend news) at the top.\n\nWhen you are done, write: \"PHASE 1 COMPLETE — send the price action.\"\n\n----- Section 12 specification -----\nAt the very end of the report, after the Trader Handoff section, add one more section:\n\"12. Daily Observer Import\".\n\nIt must contain:\n- a short line: \"Copy this block and paste it into Daily Observer → Import / export.\"\n- a \"Copy\" button that copies the block below to the clipboard (navigator.clipboard.writeText)\n- a <pre id=\"dobs-import\"> block containing ONE valid JSON object and nothing else\n\nThe JSON must be strictly valid: double quotes only, no comments, no trailing commas, escape inner quotes.\nIt must only restate what is already in the report — do not add new analysis.\n\nSchema:\n{\n  \"format\": \"daily-observer-fundamentals\",\n  \"version\": 1,\n  \"report_date\": \"YYYY-MM-DD\",\n  \"report_title\": \"Forex Fundamental Bias Engine — Week NN\",\n  \"valid_week\": { \"year\": 2026, \"week\": NN },          // ISO week the analysis is FOR (the trading week that starts the Monday after the report)\n  \"currencies\": {\n    \"USD\": { \"score\": 4, \"state\": \"Strong\", \"note\": \"one-line thesis state\" }\n    // same for EUR, GBP, JPY, CHF, CAD, AUD, NZD, XAU\n  },\n  \"pairs\": [                                            // ALL pairs in the 28-pair matrix + XAUUSD\n    {\n      \"pair\": \"EURUSD\",                                 // 6 letters, no slash\n      \"bias\": \"bearish\",                                // bullish | bearish | two-sided | neutral\n      \"conviction\": \"medium\",                           // low | medium | high\n      \"summary\": \"Bearish (EUR -1 vs USD +4)\",          // same wording as the weekly bias history\n      \"base_state\": \"Weak\",                             // Strong | Improving | Neutral | Weakening | Weak\n      \"base_score\": -1,                                 // number from the scorecard\n      \"quote_state\": \"Strong\",\n      \"quote_score\": 4,\n      \"main_driver\": \"one or two sentences\",\n      \"drivers\": [\"secondary driver 1\", \"secondary driver 2\"],      // [] if none\n      \"catalysts\": [ { \"date\": \"28 Oct\", \"event\": \"FOMC decision\", \"imp\": \"CRITICAL\" } ],  // imp: LOW | MEDIUM | HIGH | CRITICAL\n      \"priced\": \"what is already priced in\",\n      \"invalidation\": \"what would invalidate the thesis\",\n      \"horizon\": \"Swing: mild bearish\",\n      \"alignment\": \"Aligned\",                           // Aligned | Partial conflict | Conflicting | Neutral\n      \"alignment_note\": \"short explanation\",\n      \"changed\": \"what changed vs last week for this pair (both currencies)\"\n    }\n  ],\n  \"news\": [                                             // every dated event from the Catalyst Calendar\n    { \"date\": \"2026-10-28\", \"currency\": \"USD\", \"event\": \"FOMC decision\", \"importance\": \"CRITICAL\" }\n    // ISO dates only; one entry per currency (an event for \"USD, XAU\" becomes one USD entry); skip \"Ongoing\"/undated items\n  ]\n}"}, {"id": "export", "group": "weekly", "step": 2, "title": "Export price action", "when": "after the AI says “PHASE 1 COMPLETE”", "action": "export", "desc": "Copy the daily-close export for the week that just ended. Nothing to paste here — use the button."}, {"id": "phase2", "group": "weekly", "step": 3, "title": "Phase 2 — Price-action confirmation", "when": "send together with the price-action export", "desc": "The AI checks its analysis against what price actually did and re-checks only real anomalies. Price can never flip a bias on its own — only a news item it missed or misweighted can change the analysis.", "text": "WEEKLY FUNDAMENTAL UPDATE — PHASE 2 (price-action confirmation)\n\nAttached: my price-action export for last week (\"daily-observer-price-action\" JSON:\ndaily close % per pair). Use it only to CONFIRM your Phase 1 analysis, not to rebuild it.\nFundamentals describe direction over several weeks — a single week of price against the\nbias is normal and is NOT, by itself, evidence that the analysis is wrong.\n\n1. Treat my logged closes as ground truth; fetch real daily closes for every pair in\n   \"pairs_not_logged\". If closes are not available, use ECB reference rates (state the\n   fixing time) and derive the crosses from them; say clearly which days are missing.\n   Build the realized currency-strength ranking (use the crosses, not only the USD pairs,\n   to isolate each currency).\n2. Flag ANOMALIES only:\n   - a pair whose weekly move against the bias you gave it is larger than ~1.5x its normal\n     weekly range (roughly: >0.8% for EURGBP/EURCHF, >1.2% for majors, >1.8% for GBPJPY/XAU)\n   - a currency whose realized rank differs from its score rank by 3 or more places\n   - a currency that moved against its score consistently on the crosses for 2+ sessions\n3. For each anomaly, run a TARGETED re-check for a concrete fundamental cause, with a source\n   (the country's politics, fiscal news, central-bank speakers, interventions, flows,\n   commodities). Then classify:\n   MISSED NEWS · MISWEIGHTED KNOWN NEWS · ALREADY PRICED · FLOWS/POSITIONING ·\n   TECHNICAL RETRACEMENT · NOISE\n   - Only MISSED NEWS or MISWEIGHTED KNOWN NEWS may change a score or a bias.\n   - ALREADY PRICED, FLOWS/POSITIONING, TECHNICAL RETRACEMENT and NOISE never change the bias.\n   - A single week against the bias with no fundamental cause changes nothing.\n     After 2–3 consecutive weeks against the bias with no cause, lower conviction by ONE\n     level only.\n   - Price alone never flips a bias. Never invent a cause to fit the chart.\n   - For each anomaly, state whether it looks like a retracement inside an intact\n     fundamental trend or an early sign the market is pricing something new — and what\n     would confirm it next week.\n4. Output:\n   - \"0a. Price-Action Check\": hit-rate table (last week's bias vs realized move, every pair)\n     and the realized currency ranking vs scores\n   - \"0b. Self-Correction Log\": each anomaly, what you re-checked, the cause and\n     classification, and what changed (or why nothing changed)\n   - the final report, where only MISSED NEWS / MISWEIGHTED KNOWN NEWS corrections are\n     applied; in every affected pair's \"changed\" field, note that the change came from the\n     Phase 2 check\n   - a NEW Section 12 \"Daily Observer Import\" block reflecting the corrections (same format,\n     same \"valid_week\")\n5. Section 12 quality rules (apply even if nothing was corrected):\n   - Rewrite \"alignment\" and \"alignment_note\" for EVERY pair from the realized price data —\n     never leave Phase 1 \"provisional\" wording in the final block.\n   - \"priced\" must be pair-specific text in every pair — no placeholders and no references\n     to other sections of the report.\n   - Any currency score change of 3 points or more versus last week (from Phase 1 or\n     Phase 2) must be listed in 0b with its source.\nIf nothing needed correcting, say so — but still output Section 12 with the rules above applied."}, {"id": "import", "group": "weekly", "step": 4, "title": "Import into Daily Observer", "when": "copy Section 12 from the Phase 2 answer", "action": "import", "desc": "Paste the Section 12 block, choose the next week, the pairs and the sections."}]</script>
+<dialog id="pfDlg" class="panel" aria-label="Purchase" style="width:min(560px,96vw)"></dialog>
 <dialog id="bankDlg" class="panel" aria-label="Bank entry" style="width:min(560px,96vw)"></dialog>
 <dialog id="qaDlg" class="panel" aria-label="Quick add trade" style="width:min(520px,94vw)"></dialog>
 <dialog id="trDlg" class="panel" aria-label="Trade" style="width:min(760px,96vw)"></dialog>
@@ -2215,6 +2226,7 @@ async function loadAll(){
   S.hasPips = d.length ? d.some(r => 'daily_pips' in r) : await sb.from('do_daily').select('daily_pips').limit(1).then(r => !r.error, () => false);
   S.settings = Object.fromEntries(st.map(r => [r.key, r.value]));
   S.bank.rows = new Map(bk.map(r => [r.id, r]));
+  { const hd = await fetchAll('do_holdings').catch(() => null); S.hold = new Map((hd || []).map(r => [r.id, r])); S.holdOK = hd!==null; }
   S.goals = new Map(g.map(r => [r.id, r]));
   /* trades: own table; until migration-trades.sql has run, read the old one-trade-per-day columns (read-only) */
   let tr = null;
@@ -2259,6 +2271,7 @@ const ICONS = {
   moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
   more:'<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
   collapse:'<path d="M15 18l-6-6 6-6"/>',
+  pie:'<path d="M21 12a9 9 0 1 1-9-9v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/>',
   bank:'<path d="M3 10l9-6 9 6"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/><path d="M3 21h18"/>',
   radar:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6-6"/><circle cx="12" cy="12" r="1.2"/>',
   spark:'<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
@@ -2268,7 +2281,7 @@ const NAV = [
   [null, [['today','Today','home']]],
   ['Work', [['journal','Journal','calendar'],['trades','Trades','list'],['setups','Setups','radar']]],
   ['Insights', [['history','History','trend']]],
-  ['Money', [['accounts','Accounts','wallet'],['bank','Bank','bank'],['goals','Goals','target']]],
+  ['Money', [['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target']]],
   ['Tools', [['prompts','Prompts','spark']]],
 ];
 const navActive = v => S.view===v || (v==='history' && ['overview','analysis'].includes(S.view));
@@ -2302,7 +2315,7 @@ function render(){
       </div>
       <nav class="bnav" aria-label="Main navigation">
         ${[['today','Today','home'],['journal','Journal','calendar'],['setups','Setups','radar'],['trades','Trades','list']].map(([v,l,i]) => `<button data-view="${v}" aria-current="${navActive(v) ? 'page' : 'false'}">${ico(i, 20)}<span>${l}</span></button>`).join('')}
-        <button id="bnMore" aria-current="${['analysis','history','overview','accounts','bank','goals','prompts'].includes(S.view) ? 'page' : 'false'}">${ico('more', 20)}<span>More</span></button>
+        <button id="bnMore" aria-current="${['analysis','history','overview','accounts','portfolio','bank','goals','prompts'].includes(S.view) ? 'page' : 'false'}">${ico('more', 20)}<span>More</span></button>
       </nav>
     </div>`;
   app.querySelectorAll('[data-view]').forEach(b => b.onclick = () => goView(b.dataset.view));
@@ -2320,7 +2333,7 @@ function render(){
 function openMore(){
   const d = document.getElementById('moreDlg'), light = document.documentElement.dataset.theme === 'light';
   d.innerHTML = `<div class="dlg-head"><h2>More</h2></div><div class="dlg-body more-g">
-    ${[['history','History','trend'],['accounts','Accounts','wallet'],['bank','Bank','bank'],['goals','Goals','target'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
+    ${[['history','History','trend'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
     <button class="more-i" data-ma="share">${ico('share', 22)}<span>Share</span></button>
     <button class="more-i" data-ma="data">${ico('swap', 22)}<span>Import / export</span></button>
     <button class="more-i" data-ma="theme">${ico(light ? 'moon' : 'sun', 22)}<span>${light ? 'Dark' : 'Light'} theme</span></button></div>`;
@@ -2406,6 +2419,7 @@ function renderMain(){
   else if(S.view === 'today') renderToday();
   else if(S.view === 'prompts') renderPrompts();
   else if(S.view === 'bank') renderBank();
+  else if(S.view === 'portfolio') renderPortfolio();
   else if(S.view === 'trades') renderTrades();
   else if(S.view === 'setups') renderSetups();
   else renderJournal();
@@ -3584,6 +3598,7 @@ function renderKiosk(){
     .map(a => { const m = mfx.find(x => mfxMatch(x)?.id===a.id), s = acctStats(a), fl = acctFloat(a); return { a, s, fl, eq:s.bal + fl.usd, pd:null, mo:m && Array.isArray(m.open) ? m.open : [], mfx:!!m, upd:m?.updated }; });
   const fundedRows = rows.filter(r => !isCh(r.a)), chRows = [...rows.filter(r => isCh(r.a)), ...chSite];
   const pages = chRows.length ? [['Funded', fundedRows], ['Challenges', chRows]] : [['Funded', fundedRows]];
+  if(pfHas()) pages.push(['Portfolio', []]);
   S.ksPage = Math.min(S.ksPage || 0, pages.length - 1); S.ksPages = pages.length;
   const pageName = pages[S.ksPage][0]; rows = pages[S.ksPage][1];
   const swDir = S.ksDir || ''; S.ksDir = '';
@@ -3625,7 +3640,7 @@ function renderKiosk(){
   const warm = isChPage ? .15 : !next ? .1 : next.pd <= 0 ? 1 : next.pd===1 ? .85 : next.pd <= 3 ? .6 : next.pd <= 7 ? .3 : .12;
   const many = rows.length > 5, tcols = Math.min(Math.max(rows.length, 1), 5);
   const syncTxt = (() => { const t = Date.parse(mfxAt() || ''); return isNaN(t) ? 'Myfxbook not synced' : `Myfxbook ${new Date(t).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}`; })();
-  document.getElementById('main').innerHTML = `<div class="ks amb ${first ? 'intro' : ''}" style="--warm:${warm}">
+  document.getElementById('main').innerHTML = pageName==='Portfolio' ? kioskPf({ now, first, pages, swDir }) : `<div class="ks amb ${first ? 'intro' : ''}" style="--warm:${warm}">
     <header class="amb-top">
       <div class="amb-date">${WD[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]}</div>
       <div class="amb-kpis">
@@ -3668,7 +3683,7 @@ function renderKiosk(){
     })()}
     <footer class="amb-f">
       <span>${syncTxt} · updated ${now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}${S.wake ? '' : ' · tap once to keep the screen on'}</span>
-      ${pages.length > 1 ? `<nav class="amb-pg" aria-label="Pages">${pages.map(([nm, L], i) => `<button data-kspg="${i}" class="${i===S.ksPage ? 'on' : ''}">${nm} ${L.length}</button>`).join('')}</nav>` : ''}
+      ${pages.length > 1 ? `<nav class="amb-pg" aria-label="Pages">${pages.map(([nm, L], i) => `<button data-kspg="${i}" class="${i===S.ksPage ? 'on' : ''}">${nm}${nm==='Portfolio' ? '' : ' ' + L.length}</button>`).join('')}</nav>` : ''}
     </footer>
   </div>`;
   document.querySelectorAll('[data-kspg]').forEach(b => b.onclick = ev => { ev.stopPropagation(); ksGo(Number(b.dataset.kspg)); });
@@ -4740,6 +4755,170 @@ function bankFrom(){
   if(p==='ytd') return `${now.getFullYear()}-01-01`;
   return '0000';
 }
+
+/* ---------- Portfolio (stocks / ETFs / crypto) ---------- */
+S.hold = S.hold || new Map();
+const pfQ = () => S.settings?.stk_quotes || null;
+const pfFx = c => { c = String(c || 'USD').toUpperCase(); if(c==='USD') return 1; const f = pfQ()?.fx?.[c]; return f ? Number(f) : null; };
+const pfCur = () => { const c = ls.get('do_pf_cur', 'USD'); return c==='USD' || pfFx(c) ? c : 'USD'; };
+const pfOut = usd => usd==null ? null : usd / (pfFx(pfCur()) || 1);
+const pfM = (usd, sign) => { if(usd==null) return '–'; const v = pfOut(usd), c = pfCur(), n = Math.abs(v).toLocaleString('en-US', { maximumFractionDigits: Math.abs(v) < 100 ? 2 : 0 });
+  return `${sign ? (v >= 0 ? '+' : '−') : v < 0 ? '−' : ''}${c==='RON' ? n + ' lei' : (CUR_SYM[c] || c + ' ') + n}`; };
+const pfPct = v => v==null ? '–' : `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(Math.abs(v) < 10 ? 2 : 1)}%`;
+const pfHas = () => S.holdOK && [...S.hold.values()].some(h => Number(h.qty) > 0);
+function pfCalc(){
+  const Q = pfQ()?.q || {}, by = new Map();
+  [...S.hold.values()].filter(h => Number(h.qty) > 0).forEach(h => { const sym = String(h.symbol || '').toUpperCase(), q = Q[sym], fxL = pfFx(h.currency) ?? 1, qty = Number(h.qty);
+    const g = by.get(sym) || { sym, name: q?.name || h.name || sym, q, lots:[], qty:0, cost:0, nat:0, cur: q?.cur || h.currency || 'USD' };
+    g.lots.push(h); g.qty += qty; g.cost += (qty * Number(h.price) + Number(h.fees || 0)) * fxL; g.nat += qty * Number(h.price); by.set(sym, g); });
+  const G = [...by.values()].map(g => { const fx = g.q ? pfFx(g.q.cur) : null;
+    g.value = g.q && fx!=null ? g.qty * g.q.p * fx : null; g.day = g.value!=null && g.q.pc ? g.qty * (g.q.p - g.q.pc) * fx : 0;
+    g.dayPct = g.q?.pc ? (g.q.p / g.q.pc - 1) * 100 : null; g.pnl = g.value!=null ? g.value - g.cost : null; g.pct = g.pnl!=null && g.cost ? g.pnl / g.cost * 100 : null;
+    g.avg = g.qty ? g.nat / g.qty : 0; g.lots.sort((a, b) => String(a.buy_date).localeCompare(String(b.buy_date))); return g; })
+    .sort((a, b) => (b.value ?? b.cost) - (a.value ?? a.cost));
+  const cost = G.reduce((t, g) => t + g.cost, 0), value = G.reduce((t, g) => t + (g.value ?? g.cost), 0), day = G.reduce((t, g) => t + (g.day || 0), 0), pnl = value - cost;
+  return { G, cost, value, pnl, pct: cost ? pnl / cost * 100 : 0, day, dayPct: value - day ? day / (value - day) * 100 : 0, missing: G.filter(g => g.value==null).length };
+}
+/* value of what you held on each day vs what you had put in by then */
+function pfSeries(from){
+  const Q = pfQ()?.q || {}, lots = [...S.hold.values()].filter(h => Number(h.qty) > 0 && h.buy_date);
+  if(!lots.length) return [];
+  const first = lots.map(h => String(h.buy_date)).sort()[0], start = from && from > first ? from : first;
+  const idx = {}, dates = new Set(); Object.entries(Q).forEach(([sym, q]) => { idx[sym] = new Map(q.c || []); (q.c || []).forEach(([d]) => { if(d >= first) dates.add(d); }); });
+  const D = [...dates].sort(), lastC = {}, out = [];
+  D.forEach(d => { Object.keys(idx).forEach(sym => { const c = idx[sym].get(d); if(c!=null) lastC[sym] = c; });
+    if(d < start) return; let v = 0, inv = 0;
+    lots.forEach(h => { if(String(h.buy_date) > d) return; const sym = String(h.symbol).toUpperCase(), q = Q[sym], fxL = pfFx(h.currency) ?? 1, qty = Number(h.qty);
+      inv += (qty * Number(h.price) + Number(h.fees || 0)) * fxL; v += qty * (lastC[sym] ?? Number(h.price)) * (q ? (pfFx(q.cur) ?? fxL) : fxL); });
+    out.push({ d, v, inv }); });
+  return out;
+}
+function renderPortfolio(){
+  const m = document.getElementById('main');
+  if(!S.holdOK){ m.innerHTML = `<div class="pairtitle">Portfolio</div><div class="card" style="margin-top:14px"><p>Run <b>migration-portfolio.sql</b> in Supabase → SQL Editor, then reload.</p></div>`; return; }
+  const P = pfCalc(), qs = pfQ(), cur = pfCur(), range = ls.get('do_pf_range', 'all');
+  const fromD = range==='all' ? null : (() => { const d = new Date(); d.setMonth(d.getMonth() - ({ '1m':1, '3m':3, '6m':6, '1y':12 }[range] || 0)); return iso(d); })();
+  const ser = pfSeries(fromD), best = [...P.G].filter(g => g.pct!=null).sort((a, b) => b.pct - a.pct)[0];
+  const open = S.pfOpen || null, curOpts = ['USD', ...Object.keys(qs?.fx || {})].filter((c, i, a) => a.indexOf(c)===i);
+  const seg = (opts, val, attr) => `<div class="seg" role="group">${opts.map(([v, l]) => `<button ${attr}="${v}" aria-pressed="${val===v}">${l}</button>`).join('')}</div>`;
+  m.innerHTML = `
+    <div class="flex flex-wrap items-end gap-4 mb-4">
+      <div><div class="pairtitle">Portfolio</div><div class="muted mt-1" style="font-weight:600">Stocks, ETFs and crypto you bought · prices from Yahoo Finance, every 15 min${qs?.at ? ` · last ${new Date(qs.at).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}` : ''}</div></div>
+      <div class="flex flex-wrap items-center gap-2 ml-auto">
+        ${curOpts.length > 1 ? seg(curOpts.map(c => [c, c]), cur, 'data-pfc') : ''}
+        <button class="btn btn-primary" id="pfAdd">+ Add purchase</button>
+      </div>
+    </div>
+    ${!P.G.length ? `<div class="empty"><div class="orb" aria-hidden="true"></div><p>No holdings yet. Add what you bought: when, what, how much and at what price.</p><button class="btn btn-primary" id="pfAdd2">+ Add purchase</button></div>` : `
+    <section class="bk-hero">
+      <div class="bk-main">
+        <span class="kick">Portfolio value</span>
+        <b class="bk-big">${pfM(P.value)}</b>
+        <div class="bk-io"><span>P/L <b class="${sgn(P.pnl)}">${pfM(P.pnl, 1)} · ${pfPct(P.pct)}</b></span><span>Today <b class="${sgn(P.day)}">${pfM(P.day, 1)} · ${pfPct(P.dayPct)}</b></span>${P.missing ? `<span class="muted">${P.missing} waiting for a price</span>` : ''}</div>
+      </div>
+      <div class="bk-side">
+        <div class="ab-k"><span>Invested</span><b>${pfM(P.cost)}</b><small>${P.G.reduce((t, g) => t + g.lots.length, 0)} purchases</small></div>
+        <div class="ab-k ${P.pnl >= 0 ? 'up' : 'dn'}"><span>Return</span><b>${pfPct(P.pct)}</b><small>${pfM(P.pnl, 1)}</small></div>
+        <div class="ab-k ${best && best.pct >= 0 ? 'up' : 'dn'}"><span>Best holding</span><b>${best ? esc(best.sym) : '–'}</b><small>${best ? pfPct(best.pct) : 'no prices yet'}</small></div>
+      </div>
+    </section>
+    <div class="card"><div class="flex flex-wrap items-center gap-2"><h3 style="margin:0">Evolution</h3><span class="muted" style="font-size:12.5px">value vs money put in</span>
+      <span style="margin-left:auto">${seg([['1m','1M'],['3m','3M'],['6m','6M'],['1y','1Y'],['all','All']], range, 'data-pfr')}</span></div>
+      ${ser.length > 1 ? '<div class="chartbox" style="height:260px;margin-top:10px"><canvas id="pfChart"></canvas></div>' : '<p class="muted" style="margin-top:10px">The chart appears after the first price sync.</p>'}</div>
+    <div class="card" style="padding:0;margin-top:16px;overflow-x:auto">
+      <table class="pf-t"><thead><tr><th>Holding</th><th class="r">Qty</th><th class="r">Avg cost</th><th class="r">Price</th><th class="r">Today</th><th class="r">Value</th><th class="r">P/L</th><th style="width:16%">Weight</th></tr></thead>
+      <tbody>${P.G.map(g => { const w = P.value ? (g.value ?? g.cost) / P.value * 100 : 0;
+        return `<tr class="pf-r ${open===g.sym ? 'on' : ''}" data-pfo="${esc(g.sym)}"><td><b>${esc(g.sym)}</b><small>${esc(g.name)}</small></td>
+          <td class="r num">${+g.qty.toFixed(6)}</td><td class="r num">${fmtCur(g.avg, g.cur)}</td>
+          <td class="r num">${g.q ? fmtCur(g.q.p, g.q.cur) : '<span class="muted">waiting</span>'}</td>
+          <td class="r num ${sgn(g.dayPct || 0)}">${g.dayPct!=null ? pfPct(g.dayPct) : '–'}</td>
+          <td class="r num"><b>${pfM(g.value ?? g.cost)}</b></td>
+          <td class="r num ${sgn(g.pnl || 0)}"><b>${g.pnl!=null ? pfM(g.pnl, 1) : '–'}</b><small>${pfPct(g.pct)}</small></td>
+          <td><span class="pf-w"><i style="width:${w.toFixed(1)}%"></i></span><small>${w.toFixed(1)}%</small></td></tr>
+          ${open===g.sym ? `<tr class="pf-lots"><td colspan="8">${g.lots.map(h => `<div class="pf-lot"><span>${h.buy_date ? fmtDayShort(String(h.buy_date)) : '–'}</span><span>${+Number(h.qty).toFixed(6)} × ${fmtCur(Number(h.price), h.currency || g.cur)}${Number(h.fees) ? ` + ${fmtCur(Number(h.fees), h.currency || g.cur)} fees` : ''}</span>
+            <span class="muted">${esc(h.note || '')}</span>${g.q ? `<span class="${sgn(g.q.p - h.price)}">${pfPct((g.q.p / h.price - 1) * 100)}</span>` : '<span></span>'}<button class="ib sm" data-pfe="${h.id}" aria-label="Edit purchase">✎</button></div>`).join('')}
+            <button class="bt" data-pfadd="${esc(g.sym)}" style="margin-top:6px">+ Buy more ${esc(g.sym)}</button></td></tr>` : ''}`; }).join('')}</tbody></table></div>`}`;
+  m.querySelectorAll('[data-pfc]').forEach(b => b.onclick = () => { ls.set('do_pf_cur', b.dataset.pfc); renderMain(); });
+  m.querySelectorAll('[data-pfr]').forEach(b => b.onclick = () => { ls.set('do_pf_range', b.dataset.pfr); renderMain(); });
+  m.querySelectorAll('[data-pfo]').forEach(r => r.onclick = () => { S.pfOpen = S.pfOpen===r.dataset.pfo ? null : r.dataset.pfo; renderMain(); });
+  m.querySelectorAll('[data-pfe]').forEach(b => b.onclick = ev => { ev.stopPropagation(); openHolding(S.hold.get(b.dataset.pfe)); });
+  m.querySelectorAll('[data-pfadd]').forEach(b => b.onclick = () => { const g = P.G.find(x => x.sym===b.dataset.pfadd); openHolding(null, { symbol:g.sym, currency:g.cur, name:g.name }); });
+  ['pfAdd','pfAdd2'].forEach(id => m.querySelector('#' + id)?.addEventListener('click', () => openHolding()));
+  if(ser.length > 1){ const lab = ser.map(x => x.d.slice(5)), up = ser.at(-1).v >= ser.at(-1).inv;
+    mkChart('pfChart', 'line', lab, [
+      { label:'Value', data: ser.map(x => +pfOut(x.v).toFixed(2)), borderColor: cssv(up ? '--pos' : '--neg'), backgroundColor: cssv(up ? '--pos' : '--neg') + '22', fill:true, tension:.25, pointRadius:0, borderWidth:2 },
+      { label:'Invested', data: ser.map(x => +pfOut(x.inv).toFixed(2)), borderColor: cssv('--muted'), borderDash:[5, 5], pointRadius:0, borderWidth:1.5, stepped:true }
+    ], { tooltip:{ mode:'index', intersect:false } }); }
+}
+function openHolding(h, pre){
+  const dlg = document.getElementById('pfDlg'), r = h || pre || {};
+  dlg.innerHTML = `<form id="pfForm" method="dialog">
+    <div class="dlg-head"><h2>${h ? 'Edit purchase' : 'New purchase'}</h2></div>
+    <div class="dlg-body" style="display:grid;gap:14px">
+      <div><label class="lbl" for="pf_sym">Symbol (as on Yahoo Finance)</label><input id="pf_sym" class="inp" name="symbol" required value="${esc(r.symbol || '')}" placeholder="AAPL · VWCE.DE · SXR8.DE · TLV.RO · BTC-USD" autocapitalize="characters" style="text-transform:uppercase">
+        <p class="hint">US stocks: the ticker (AAPL, MSFT). Xetra: add .DE (VWCE.DE). Bucharest: .RO (TLV.RO). London: .L. Crypto: BTC-USD.</p></div>
+      <div><label class="lbl" for="pf_name">Name (optional)</label><input id="pf_name" class="inp" name="name" value="${esc(r.name || '')}" placeholder="e.g. Vanguard FTSE All-World"></div>
+      <div class="g3">
+        <div><label class="lbl" for="pf_date">Bought on</label><input id="pf_date" class="inp" name="buy_date" type="date" required value="${r.buy_date || iso(new Date())}"></div>
+        <div><label class="lbl" for="pf_qty">Quantity</label><input id="pf_qty" class="inp num" name="qty" inputmode="decimal" required value="${r.qty ?? ''}" placeholder="10"></div>
+        <div><label class="lbl" for="pf_price">Price per unit</label><input id="pf_price" class="inp num" name="price" inputmode="decimal" required value="${r.price ?? ''}" placeholder="0.00"></div>
+      </div>
+      <div class="g3">
+        <div><label class="lbl" for="pf_cur">Currency</label><select id="pf_cur" class="inp" name="currency">${['USD','EUR','RON','GBP','CHF'].map(c => `<option ${(r.currency || 'USD')===c ? 'selected' : ''}>${c}</option>`).join('')}</select></div>
+        <div><label class="lbl" for="pf_fees">Fees</label><input id="pf_fees" class="inp num" name="fees" inputmode="decimal" value="${r.fees ?? ''}" placeholder="0"></div>
+        <div><span class="lbl">Total</span><b id="pfTot" class="num" style="display:block;padding-top:10px">–</b></div>
+      </div>
+      <div><label class="lbl" for="pf_note">Note</label><input id="pf_note" class="inp" name="note" value="${esc(r.note || '')}" placeholder="e.g. XTB, monthly buy"></div>
+    </div>
+    <div class="dlg-foot">${h ? '<button type="button" class="btn btn-danger" id="pfDel" style="margin-right:auto">Delete</button>' : ''}<button type="button" class="btn" id="pfCancel">Cancel</button><button type="submit" class="btn btn-primary">${h ? 'Save' : 'Add'}</button></div>
+  </form>`;
+  const f = dlg.querySelector('#pfForm'), tot = () => { const q = parseNum(f.elements.qty.value), p = parseNum(f.elements.price.value), fe = parseNum(f.elements.fees.value) || 0;
+    dlg.querySelector('#pfTot').textContent = q!=null && p!=null ? fmtCur(q * p + fe, f.elements.currency.value) : '–'; };
+  ['qty','price','fees','currency'].forEach(k => f.elements[k].addEventListener('input', tot)); f.elements.currency.onchange = tot; tot();
+  dlg.querySelector('#pfCancel').onclick = () => dlg.close();
+  dlg.querySelector('#pfDel')?.addEventListener('click', async () => { if(!confirm('Delete this purchase?')) return;
+    const { error } = await sb.from('do_holdings').delete().eq('id', h.id); if(error) return toast(error.message);
+    S.hold.delete(h.id); dlg.close(); renderMain(); toast('Purchase deleted'); });
+  f.onsubmit = async ev => { ev.preventDefault(); const el = f.elements;
+    const row = { symbol: el.symbol.value.trim().toUpperCase(), name: el.name.value.trim() || null, buy_date: el.buy_date.value, qty: parseNum(el.qty.value), price: parseNum(el.price.value),
+      currency: el.currency.value, fees: parseNum(el.fees.value) || 0, note: el.note.value.trim() || null };
+    if(!row.symbol) return toast('Enter a symbol'); if(!row.qty || row.qty <= 0) return toast('Enter the quantity'); if(row.price==null || row.price < 0) return toast('Enter the price');
+    const q = h ? sb.from('do_holdings').update(row).eq('id', h.id).select().single() : sb.from('do_holdings').insert(row).select().single();
+    const { data, error } = await q; if(error) return toast(error.message);
+    S.hold.set(data.id, data); dlg.close(); renderMain();
+    toast(pfQ()?.q?.[row.symbol] ? 'Saved' : 'Saved · the price comes with the next sync (up to 15 min)'); };
+  dlg.showModal();
+}
+/* tablet: portfolio page */
+function kioskPf(o){
+  const P = pfCalc(), now = o.now, sg = (usd) => pfM(usd, 1);
+  const top = [...P.G].sort((a, b) => (b.dayPct ?? -1e9) - (a.dayPct ?? -1e9))[0];
+  return `<div class="ks amb ${o.first ? 'intro' : ''}" style="--warm:.15">
+    <header class="amb-top">
+      <div class="amb-date">${WD[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]}</div>
+      <div class="amb-kpis"><div><span>Invested</span><b>${pfM(P.cost)}</b></div><div><span>Value</span><b data-cu="pfv" data-v="${pfOut(P.value)}">${pfM(P.value)}</b></div></div>
+    </header>
+    <section class="amb-mid">
+      <div class="amb-clock" id="ksClock">${now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}</div>
+      <div class="amb-sum">
+        <span>Portfolio · ${P.G.length} holding${P.G.length===1 ? '' : 's'}</span>
+        <b class="${sgn(P.pnl)}">${sg(P.pnl)}</b>
+        <small class="${sgn(P.pct)}">${pfPct(P.pct)} since you bought</small>
+        <em class="amb-pill"><i></i>Today ${sg(P.day)} · ${pfPct(P.dayPct)}${top && top.dayPct!=null ? ` · best ${esc(top.sym)} ${pfPct(top.dayPct)}` : ''}</em>
+      </div>
+    </section>
+    <div class="amb-groups"><section class="amb-g trd" style="flex:1 1 0"><h3>Holdings <b>${P.G.length}</b></h3>
+      <div class="amb-tiles pf ${P.G.length > 5 ? 'many' : ''} ${o.swDir}" style="grid-template-columns:repeat(${Math.min(Math.max(P.G.length, 1), 5)},minmax(0,1fr))">
+      ${P.G.map((g, i) => `<article class="amb-t" style="--i:${i}"><div class="amb-tl"><span>${esc(g.sym)} · ${esc(String(g.name).slice(0, 22))}</span>
+        <b class="${sgn(g.pct ?? 0)}">${pfPct(g.pct)}</b><small>${pfM(g.value ?? g.cost)} · ${g.pnl!=null ? sg(g.pnl) : 'waiting for price'}</small></div>
+        <div class="amb-d ${g.dayPct!=null && g.dayPct < 0 ? '' : 'soon'}" style="color:${g.dayPct==null ? '' : g.dayPct >= 0 ? '#7ef0b4' : '#ff8a9a'}"><b>${g.dayPct!=null ? pfPct(g.dayPct) : '–'}</b><i>TODAY</i></div></article>`).join('')}
+      </div></section></div>
+    <footer class="amb-f">
+      <span>Prices ${pfQ()?.at ? new Date(pfQ().at).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' }) : 'not synced yet'} · Yahoo Finance · in ${pfCur()}</span>
+      ${o.pages.length > 1 ? `<nav class="amb-pg" aria-label="Pages">${o.pages.map(([nm, L], i) => `<button data-kspg="${i}" class="${i===S.ksPage ? 'on' : ''}">${nm}${nm==='Portfolio' ? '' : ' ' + L.length}</button>`).join('')}</nav>` : ''}
+    </footer>
+  </div>`;
+}
 function renderBank(){
   const B = S.bank, from = bankFrom(), all = bankEntries();
   const inP = all.filter(e => (e.date||'') >= from);
@@ -5007,7 +5186,7 @@ async function loadSignals(){
     return;
   }
   if(!S.signalsMissing) await loadCandles();
-  try{ const { data } = await sb.from('do_settings').select('*').range(0, 999); (data || []).forEach(r => { if(['engine','hb_1m','hb_15m','hb_1H','hb_4H','pair_override','bank_hidden','mfx_accounts','mfx_hidden'].includes(r.key)) S.settings[r.key] = r.value; }); }catch(e){ /* keep what we have */ }
+  try{ const { data } = await sb.from('do_settings').select('*').range(0, 999); (data || []).forEach(r => { if(['engine','hb_1m','hb_15m','hb_1H','hb_4H','pair_override','bank_hidden','mfx_accounts','mfx_hidden','stk_quotes'].includes(r.key)) S.settings[r.key] = r.value; }); }catch(e){ /* keep what we have */ }
 }
 /* the server engine (tv-signal) is running → it does the auto-take / auto-close; the browser only shows */
 const engineOn = () => { const at = S.settings?.engine?.at; return !!at && Date.now() - tms(at) < 40*60e3; };
@@ -6734,7 +6913,7 @@ async function liveRefresh(){
     if(!vis) return;
     const n = await autoRun(), busy = document.querySelector('dialog[open]') || document.querySelector('.su-skip') || document.querySelector('.sx-val.dirty') || S.drawerOpen || document.activeElement?.matches?.('input,textarea,select');
     S.liveAt = Date.now();
-    if(!busy && (S.view==='setups' || S.view==='accounts' || ((n || S.liveTrades) && ['trades','today'].includes(S.view)))){ S.liveTrades = false; renderMain(); }
+    if(!busy && (S.view==='setups' || S.view==='accounts' || S.view==='portfolio' || ((n || S.liveTrades) && ['trades','today'].includes(S.view)))){ S.liveTrades = false; renderMain(); }
     if(n) refreshDock?.();
   } finally { S.liveBusy = false; }
 }
