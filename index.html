@@ -5342,6 +5342,7 @@ function deriveSetups(){
     const k = g.pair, t = tms(g.at), list = (open.get(k) || []);   /* per pair: the break may come on a lower timeframe than the sweep */
     list.forEach(s => close(s, t));
     const live = list.filter(s => ['forming','validate','wickwait','wickfail','formed','retest','watch'].includes(s.stage)); open.set(k, live);
+    if(g.kind==='liq' && TF_MS[g.tf] && g.tf!=='1H') continue;   /* setups are 1H only: 4H (and other) sweeps are ignored */
     if(g.kind==='liq'){
       const side = liqSide(g), dir = side==='sell' ? 'Long' : side==='buy' ? 'Short' : null, wr = biasAt(g.pair, g.at), bias = wr?.bias || null;
       const man = !!g.raw?.manual;   /* added by you: its own setup, kept even against the bias */
@@ -5900,7 +5901,7 @@ function openAddSetup(step0 = 'forming'){
         <div><span class="lbl">Start at</span><div class="asd-steps chips">${STEPS.map(([k, l]) => `<button class="ch" data-ast="${k}" aria-pressed="${A.step===k}">${l}</button>`).join('')}</div></div>
         <div class="asd-g">
           <label>Pair<select class="inp" id="asPair">${[...new Set([...allPairs(), "XAUUSD"])].map(p => `<option ${p===A.pair ? 'selected' : ''}>${p}</option>`).join('')}</select></label>
-          <label>Timeframe<div class="seg">${['1H','4H'].map(f => `<button data-astf="${f}" aria-pressed="${A.tf===f}">${f}</button>`).join('')}</div></label>
+          <label>Timeframe<div class="seg">${['1H'].map(f => `<button data-astf="${f}" aria-pressed="${A.tf===f}">${f}</button>`).join('')}</div></label>
           <label>Direction<div class="seg">${['Long','Short'].map(d => `<button data-asdir="${d}" aria-pressed="${A.dir===d}">${d==='Long' ? '▲ Long' : '▼ Short'}</button>`).join('')}</div></label>
         </div>
         <p class="asd-bias ${against ? 'neg' : 'pos'}">${b ? `Weekly bias ${BIAS_LBL[b] || b}${wr?.conviction ? ', '+esc(wr.conviction) : ''}${against ? ' — this one is against the bias (it is kept, marked counter-bias)' : ' — in the bias direction'}` : 'No weekly bias set for this pair yet.'}</p>
@@ -6201,7 +6202,7 @@ function lvRow(s){
     ${id}<div class="lvr-mid">${mid}</div><div class="lvr-act">${act}</div>${extra}</article>`;
 }
 const TF_RANK = { '1M':9, '1W':8, '1D':7, 'D1':7, '8H':6, '4H':5, '2H':4, '1H':3, '30m':2, '15m':1, '5m':0, '3m':-1, '1m':-2 };
-function suTfs(all){ return [...new Set(['4H', '1H', ...all.map(x => x.tf)])].sort((a,b) => (TF_RANK[b] ?? -1) - (TF_RANK[a] ?? -1)); }
+function suTfs(all){ return [...new Set(['1H', ...all.map(x => x.tf).filter(f => f==='1H' || !TF_MS[f])])].sort((a,b) => (TF_RANK[b] ?? -1) - (TF_RANK[a] ?? -1)); }
 const SX_COLS = [['forming','Forming','Liquidity taken, waiting for the fractal break'],['validate','Validation','Break alert in. Check the liquidity and the fractal line'],['formed','Formed','Validated, waiting for price to come to the line'],['trade','Trades','Price hit the line, trade running live']];
 function renderSetups(){
   const m = document.getElementById('main');
