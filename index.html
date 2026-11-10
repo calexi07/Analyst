@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Daily Observer | EaglePips</title>
-<script>(function(){var k=/[?&]screen=accounts/.test(location.search),l=document.createElement('link');l.rel='manifest';l.href=k?'manifest-screen.json':'manifest.json';document.head.appendChild(l);
+<script>(function(){var k=/[?&]screen=accounts/.test(location.search),u=/[?&]app=setups/.test(location.search),l=document.createElement('link');l.rel='manifest';l.href=k?'manifest-screen.json':u?'manifest-setups.json':'manifest.json';document.head.appendChild(l);
 var t=document.createElement('link');t.rel='apple-touch-icon';t.href=k?'icon-screen-192.png':'icon-192.png';document.head.appendChild(t);
 if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})});})();</script>
 <meta name="theme-color" content="#0e1020">
@@ -13,7 +13,7 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Big+Shoulders+Display:wght@200;800&family=Manrope:wght@400..800&display=swap" rel="stylesheet">
-<script>try{document.documentElement.dataset.theme=JSON.parse(localStorage.getItem("do_theme"))||"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<script>try{document.documentElement.dataset.theme=/[?&]app=setups/.test(location.search)?"dark":JSON.parse(localStorage.getItem("do_theme"))||"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
@@ -752,6 +752,82 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   /* ===== app shell ===== */
   .shell{ display:grid; grid-template-columns:236px minmax(0,1fr); min-height:100vh; }
   /* screen mode (?screen=accounts): only the accounts board, nothing to click by mistake */
+  /* Setups app (?app=setups, installed on the phone): only the Setups page + the notifications switch */
+  body.suapp .side, body.suapp .bnav, body.suapp .qa-dock, body.suapp #pairs, body.suapp #searchBtnM{ display:none !important; }
+  body.suapp .shell{ grid-template-columns:minmax(0,1fr); }
+  body.suapp .mtop{ display:flex !important; align-items:center; gap:8px; padding:10px 14px; padding-top:calc(10px + env(safe-area-inset-top,0px)); position:sticky; top:0; z-index:15;
+    background:color-mix(in srgb,var(--bg) 88%,transparent); backdrop-filter:blur(12px); border-bottom:1px solid var(--line); }
+  body.suapp .mtop .brand{ font-size:17px; margin-right:auto; }
+  body.suapp .wrap{ padding-bottom:calc(24px + env(safe-area-inset-bottom,0px)) !important; }
+  /* ===== Setups app — Aurora Pipeline ===== */
+  body.suapp{ background:linear-gradient(180deg,#10294A 0%,#04060F 420px) fixed, #04060F; }
+  body.suapp.su-home .mtop{ display:none !important; }
+  body.suapp .shell, body.suapp .shell-main, body.suapp #main{ background:transparent !important; border:0 !important; box-shadow:none !important; }
+  body.suapp .wrap{ max-width:640px; margin:0 auto; padding:0 !important; }
+  .sa{ --sa-liq:#7B8CFF; --sa-val:#FF7AD9; --sa-for:#FFF1A8; --sa-tr:#5CF0E0; --sa-done:#B79CFF; --sa-mut:#9DB0D3; --sa-ink:#EAF2FF;
+    --surface-2:rgba(255,255,255,.045); --line:rgba(255,255,255,.10); --muted:#9DB0D3; --ink:#EAF2FF;
+    min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; color:var(--sa-ink); padding-bottom:calc(76px + env(safe-area-inset-bottom,0px)); }
+  .sa-top{ display:flex; align-items:center; gap:10px; padding:calc(18px + env(safe-area-inset-top,0px)) 18px 14px; }
+  .sa-ttl{ flex:1; min-width:0; } .sa-ttl h1{ margin:0; font-family:'Bricolage Grotesque',sans-serif; font-size:28px; font-weight:800; letter-spacing:-.02em; line-height:1.05; }
+  .sa-ttl p{ margin:2px 0 0; font-size:12px; font-weight:600; color:var(--sa-mut); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sa-open{ display:grid; justify-items:end; padding:6px 12px; border-radius:14px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12); }
+  .sa-open span{ font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--sa-mut); }
+  .sa-open b{ font-family:'JetBrains Mono',monospace; font-size:17px; } .sa-open.up{ background:rgba(92,240,224,.10); border-color:rgba(92,240,224,.38); } .sa-open.up b{ color:var(--sa-tr); }
+  .sa-open.dn{ background:rgba(255,122,217,.10); border-color:rgba(255,122,217,.38); } .sa-open.dn b{ color:var(--sa-val); }
+  .sa-ib{ position:relative; flex:none; width:44px; height:44px; border-radius:14px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); color:var(--sa-ink); display:grid; place-items:center; cursor:pointer; }
+  .sa-bell i{ position:absolute; top:9px; right:9px; width:8px; height:8px; border-radius:50%; background:#5d6a85; box-shadow:0 0 0 2px #0b1426; }
+  .sa-bell.on i{ background:var(--sa-tr); } .sa-bell.off i, .sa-bell.blocked i{ background:#FFB45C; }
+  .sa-push{ display:flex; align-items:center; gap:12px; margin:0 18px 14px; padding:12px 14px; border-radius:18px; background:rgba(255,180,92,.08); border:1px solid rgba(255,180,92,.4); }
+  .sa-push > div{ color:#FFB45C; display:grid; } .sa-push p{ flex:1; margin:0; display:grid; gap:2px; } .sa-push b{ font-size:14px; } .sa-push span{ font-size:12px; color:var(--sa-mut); line-height:1.35; }
+  .sa-push button{ height:44px; padding:0 16px; border:0; border-radius:12px; background:#FFB45C; color:#241400; font:inherit; font-weight:800; cursor:pointer; }
+  .sa-st{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; padding:0 18px 14px; }
+  .sa-st button{ --c:var(--sa-liq); height:56px; border-radius:14px; border:1px solid color-mix(in srgb,var(--c) 38%,transparent); background:color-mix(in srgb,var(--c) 10%,transparent);
+    color:color-mix(in srgb,var(--c) 70%,#fff); font:600 11px Inter,system-ui,sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; cursor:pointer; }
+  .sa-st button b{ font-family:'Bricolage Grotesque',sans-serif; font-size:19px; font-weight:800; line-height:1.1; }
+  .sa-st .t-validate{ --c:var(--sa-val); } .sa-st .t-formed{ --c:var(--sa-for); } .sa-st .t-trade{ --c:var(--sa-tr); }
+  .sa-st button[aria-pressed="true"]{ border-color:var(--c); background:color-mix(in srgb,var(--c) 22%,transparent); color:#fff; }
+  .sa-st .hot{ border-color:var(--c); box-shadow:0 0 0 1px var(--c), 0 0 22px color-mix(in srgb,var(--c) 35%,transparent); }
+  .sa-all{ margin:-4px 18px 10px; align-self:flex-start; height:36px; padding:0 12px; border-radius:10px; border:0; background:transparent; color:var(--sa-mut); font:inherit; font-weight:700; cursor:pointer; }
+  .sa-main{ flex:1; display:flex; flex-direction:column; gap:16px; padding:0 18px 18px; }
+  .sa-sec h2{ display:flex; align-items:center; gap:8px; margin:0 0 8px 2px; font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--sa-mut); }
+  .sa-sec h2 em{ font-style:normal; padding:1px 7px; border-radius:99px; background:rgba(255,255,255,.08); }
+  .sa-list{ display:flex; flex-direction:column; gap:10px; }
+  .sa .lvr{ --c:var(--sa-liq); display:flex; flex-direction:column; align-items:stretch; gap:12px; padding:16px; border-radius:20px;
+    border:1px solid color-mix(in srgb,var(--c) 32%,transparent); background:color-mix(in srgb,var(--c) 6%,rgba(255,255,255,.02)); }
+  .sa .lvr::before{ display:none; }
+  .sa .lvr.c-validate{ --c:var(--sa-val); border-color:color-mix(in srgb,var(--c) 55%,transparent); background:color-mix(in srgb,var(--c) 9%,transparent); }
+  .sa .lvr.c-formed, .sa .lvr.c-watch{ --c:var(--sa-for); } .sa .lvr.c-trade{ --c:var(--sa-tr); } .sa .lvr.c-done{ --c:var(--sa-done); }
+  .sa .lvr.is-new{ box-shadow:0 0 0 1px var(--c), 0 0 24px color-mix(in srgb,var(--c) 25%,transparent); }
+  .sa .lvr-p{ font-size:19px; } .sa .lvr-p em{ opacity:.5; }
+  .sa .lvr-d.pos{ color:var(--sa-tr); } .sa .lvr-d.neg{ color:var(--sa-val); }
+  .sa .lvr-mid{ gap:10px 18px; } .sa .lvr-kv b{ font-size:15px; } .sa .lvr-kv.sl b{ color:#FF9BB0; } .sa .lvr-kv.tp b{ color:var(--sa-tr); }
+  .sa .lvr-note{ flex-basis:100%; font-size:13px; line-height:1.45; color:#C8D4EE; }
+  .sa .lvr-act{ justify-content:stretch; gap:8px; } .sa .lvr-act > *{ flex:1 1 auto; min-height:44px; display:inline-flex; align-items:center; justify-content:center; border-radius:12px; font-size:13.5px; }
+  .sa .lvr-act .btn-primary{ background:var(--c); border-color:var(--c); color:#0b0f1d; font-weight:800; }
+  .sa .lvr-val{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; width:100%; }
+  .sa .lvr-val .lvr-when, .sa .lvr-val .lvr-type, .sa .lvr-val .sx-val-msg, .sa .lvr-val .btn{ grid-column:1 / -1; }
+  .sa .lvr-val label{ display:grid; gap:4px; font-size:11px; font-weight:700; color:var(--sa-mut); } .sa .lvr-val .inp{ height:44px; font-size:16px; }
+  .sa .lvr-val .btn{ min-height:48px; background:var(--c); border-color:var(--c); color:#0b0f1d; font-weight:800; border-radius:12px; }
+  .sa .lvr-live b{ font-size:24px; }
+  .sa-steps{ display:flex; gap:4px; } .sa-steps i{ flex:1; height:4px; border-radius:4px; background:rgba(255,255,255,.12); }
+  .sa-steps i.done{ background:var(--sa-liq); } .sa-steps i.now{ background:var(--c); }
+  .sa-rng{ display:grid; gap:6px; } .sa-rng-t{ position:relative; height:8px; border-radius:8px; background:rgba(255,255,255,.08); }
+  .sa-rng-f{ position:absolute; top:0; height:8px; border-radius:8px; } .sa-rng-f.up{ background:var(--sa-tr); } .sa-rng-f.dn{ background:var(--sa-val); }
+  .sa-rng-e{ position:absolute; left:33.33%; top:-4px; width:2px; height:16px; background:#fff; }
+  .sa-rng-p{ position:absolute; top:-3px; width:14px; height:14px; margin-left:-7px; border-radius:50%; background:#fff; box-shadow:0 0 12px rgba(255,255,255,.6); }
+  .sa-rng-l{ display:flex; justify-content:space-between; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--sa-mut); }
+  .sa-empty{ padding:22px 18px; border-radius:18px; border:1px dashed rgba(255,255,255,.16); color:var(--sa-mut); font-size:14px; line-height:1.5; }
+  .sa-add{ min-height:48px; border-radius:14px; border:1px dashed rgba(255,255,255,.2); background:transparent; color:var(--sa-mut); font:inherit; font-weight:700; cursor:pointer; }
+  .sa-tool{ gap:14px; } .sa-tool .card, .sa-tool details{ background:rgba(255,255,255,.04); }
+  .sa-set{ display:grid; gap:14px; padding:16px; border-radius:18px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); }
+  .sa-tab{ position:fixed; left:0; right:0; bottom:0; z-index:30; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); padding:6px 18px calc(8px + env(safe-area-inset-bottom,0px));
+    background:rgba(4,6,15,.82); backdrop-filter:blur(14px); border-top:1px solid rgba(255,255,255,.08); }
+  .sa-tab button{ height:52px; border:0; background:transparent; color:var(--sa-mut); font:700 13px Inter,system-ui,sans-serif; cursor:pointer; }
+  .sa-tab button[aria-current="page"]{ color:var(--sa-tr); }
+  .pushbtn{ display:inline-flex; align-items:center; gap:6px; height:34px; padding:0 12px; border-radius:999px; border:1px solid var(--line); background:var(--card,transparent); color:inherit; font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+  .pushbtn.on{ border-color:color-mix(in srgb,var(--pos) 55%,transparent); color:var(--pos); }
+  .pushbtn.off{ border-color:color-mix(in srgb,var(--warn,#f5b84a) 60%,transparent); color:var(--warn,#f5b84a); }
+  .pushbtn i{ width:8px; height:8px; border-radius:50%; background:currentColor; }
   body.kiosk .side, body.kiosk .mtop, body.kiosk .bnav, body.kiosk .qa-dock, body.kiosk #pairs{ display:none !important; }
   body.kiosk .shell{ grid-template-columns:minmax(0,1fr); } body.kiosk .wrap{ max-width:none; padding:18px 22px 24px; }
   body.kiosk [data-aview], body.kiosk #newAcct, body.kiosk .ab-act, body.kiosk .ab-bar .ab-q{ display:none !important; }
@@ -2164,8 +2240,12 @@ const ls = {
 const KIOSK = new URLSearchParams(location.search).get('screen')==='accounts';
 if(KIOSK) document.body?.classList.add('kiosk');
 document.addEventListener('DOMContentLoaded', () => { if(KIOSK) document.body.classList.add('kiosk'); });
+/* Setups app for the phone: index.html?app=setups — installs on its own (manifest-setups.json) and receives the alerts as notifications */
+const SUAPP = !KIOSK && new URLSearchParams(location.search).get('app')==='setups';
+if(SUAPP) document.body?.classList.add('suapp');
+document.addEventListener('DOMContentLoaded', () => { if(SUAPP) document.body.classList.add('suapp'); });
 const S = {
-  view: KIOSK ? 'accounts' : ((v) => v==='desk' ? 'today' : v)(new URLSearchParams(location.search).get('view') || ls.get('do_view','today')), pair: ls.get('do_pair','EURUSD'),
+  view: KIOSK ? 'accounts' : SUAPP ? 'setups' : ((v) => v==='desk' ? 'today' : v)(new URLSearchParams(location.search).get('view') || ls.get('do_view','today')), pair: ls.get('do_pair','EURUSD'),
   month: firstOfMonth(new Date()), scope: ls.get('do_scope','pair'), period: ls.get('do_period','all'), metric:'pips',
   daily:new Map(), weekly:new Map(), news:new Map(), charts:[], extra: ls.get('do_extra_pairs', []),
   sel:null, goals:new Map(), gw:null, accounts:new Map(), selAcct:null, acct: ls.get('do_acct','all')
@@ -2285,7 +2365,118 @@ const NAV = [
   ['Tools', [['prompts','Prompts','spark']]],
 ];
 const navActive = v => S.view===v || (v==='history' && ['overview','analysis'].includes(S.view));
-async function goView(v){ await flushSave(); S.drawerOpen = false; S.view = v; ls.set('do_view', v); render(); window.scrollTo({ top:0 }); }
+/* ===== notifications in the Setups app (Web Push) — the server sends every alert here instead of Telegram ===== */
+const VAPID_PUBLIC = 'BAOgsdSJNvxen175cWjqvGRMSR9Hk-iBm7cyNcxtDF0ZgxW445gRNcaVvXKfQDqQfUD6kqK_k7MGaEUmJa2yWuw';
+const PUSH = { st: 'checking' };   /* on · off · blocked · unsupported · checking · busy */
+const pushOk = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+async function pushReg(){ return navigator.serviceWorker.getRegistration() .then(r => r || navigator.serviceWorker.register('sw.js')).then(() => navigator.serviceWorker.ready); }
+async function pushCheck(){
+  if(!pushOk()){ PUSH.st = 'unsupported'; return; }
+  if(Notification.permission === 'denied'){ PUSH.st = 'blocked'; return; }
+  try{ const r = await pushReg(), sub = await r.pushManager.getSubscription();
+    PUSH.st = sub && Notification.permission === 'granted' ? 'on' : 'off';
+    if(sub && PUSH.st === 'on') pushSave(sub);   /* keeps the server's copy fresh (phones rotate it now and then) */
+  }catch(e){ PUSH.st = 'off'; }
+}
+async function pushSave(sub){
+  const j = sub.toJSON();
+  const { error } = await sb.from('do_push_subs').upsert({ endpoint: j.endpoint, sub: j, ua: navigator.userAgent.slice(0, 200), seen_at: new Date().toISOString() }, { onConflict: 'endpoint' });
+  if(error){ toast(/relation|does not exist|schema cache/i.test(error.message) ? 'Run migration-push.sql in Supabase first' : 'Could not save: ' + error.message); return false; }
+  return true;
+}
+const BELL = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
+const PUSH_TXT = { on:'Notifications on', off:'Turn on notifications', blocked:'Notifications blocked', unsupported:'Install the app first', checking:'Checking…', busy:'…' };
+function pushBtnHtml(){
+  return `<button class="sa-ib sa-bell ${PUSH.st}" data-pushbtn aria-label="${PUSH_TXT[PUSH.st] || ''}" title="${PUSH_TXT[PUSH.st] || ''}">${BELL}<i></i></button>`;
+}
+/* shown on the Setups app until notifications are on */
+function pushBanner(){
+  if(!['off','blocked','unsupported'].includes(PUSH.st)) return '';
+  const tip = { off:'Alerts for setups, entries and TP / SL come to this phone, not to Telegram.', blocked:'Allow them: long-press the app icon → App info → Notifications.', unsupported:'Open it in Chrome and install it: ⋮ → Add to Home screen.' }[PUSH.st];
+  return `<div class="sa-push"><div>${BELL}</div><p><b>${PUSH_TXT[PUSH.st]}</b><span>${tip}</span></p>${PUSH.st==='off' ? '<button data-pushbtn>Turn on</button>' : ''}</div>`;
+}
+function pushPaint(){ if(SUAPP) renderMain(); }
+function pushWire(){
+  if(PUSH.st === 'checking' && !PUSH.p) PUSH.p = pushCheck().then(pushPaint);
+  document.querySelectorAll('[data-pushbtn]').forEach(b => b.onclick = pushToggle);
+}
+async function pushToggle(){
+  if(PUSH.st === 'busy' || PUSH.st === 'checking') return;
+  if(PUSH.st === 'unsupported') return toast('Open this page in Chrome and install it: ⋮ → Add to Home screen');
+  if(PUSH.st === 'blocked') return toast('Notifications are blocked: long-press the app icon → App info → Notifications → Allow');
+  if(PUSH.st === 'on'){
+    PUSH.st = 'busy'; pushPaint();
+    try{ const r = await pushReg(), sub = await r.pushManager.getSubscription();
+      if(sub){ await sb.from('do_push_subs').delete().eq('endpoint', sub.endpoint); await sub.unsubscribe(); } }catch(e){}
+    PUSH.st = 'off'; pushPaint(); return toast('Notifications off on this phone');
+  }
+  PUSH.st = 'busy'; pushPaint();
+  try{
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted'){ PUSH.st = perm === 'denied' ? 'blocked' : 'off'; pushPaint(); return toast('Notifications were not allowed'); }
+    const r = await pushReg(), key = Uint8Array.from(atob(VAPID_PUBLIC.replace(/-/g,'+').replace(/_/g,'/') + '='.repeat((4 - VAPID_PUBLIC.length % 4) % 4)), c => c.charCodeAt(0));
+    let sub = await r.pushManager.getSubscription();
+    if(!sub) sub = await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+    PUSH.st = (await pushSave(sub)) ? 'on' : 'off'; pushPaint();
+    if(PUSH.st === 'on'){ toast('Notifications on — alerts now come here'); r.showNotification('Daily Observer · Setups', { body: 'Notifications are on. Setup alerts, entries and TP / SL will arrive here.', icon: 'icon-setups-192.png', badge: 'badge-setups.png', tag: 'do-on' }); }
+  }catch(e){ PUSH.st = 'off'; pushPaint(); toast('Could not turn on: ' + (e?.message || e)); }
+}
+/* ===== Setups app (phone) — "Aurora Pipeline" layout; the cards and their buttons are the same as on the site ===== */
+const SA_ST = [['forming','Liquidity'],['validate','Validate'],['formed','Formed'],['trade','In trade']];
+const SA_SEC = { validate:'Needs you', trade:'In trade', formed:'Formed', watch:'Watchlist', forming:'Liquidity', done:'Finished' };
+function suAppBar(s, col){
+  if(col==='trade'){
+    const t = suOpenTrade(s), lv = t ? livePL(t) : null; if(!lv) return '';
+    const pos = Math.max(0, Math.min(100, (lv.R + 1) / 3 * 100)), a = Math.min(pos, 33.33), b = Math.max(pos, 33.33);
+    return `<div class="sa-rng"><div class="sa-rng-t"><span class="sa-rng-f ${lv.R >= 0 ? 'up' : 'dn'}" style="left:${a}%;width:${b - a}%"></span><span class="sa-rng-e"></span><span class="sa-rng-p" style="left:${pos}%"></span></div>
+      <div class="sa-rng-l"><span>SL ${sxPx(t.sl)}</span><span>Entry ${sxPx(t.entry_price)}</span><span>TP ${sxPx(t.tp)}</span></div></div>`;
+  }
+  const n = { forming:1, validate:2, formed:3, watch:3, done:4 }[col] || 0;
+  return `<div class="sa-steps" aria-label="Step ${n} of 4">${[1,2,3,4].map(i => `<i class="${i < n ? 'done' : i===n ? 'now' : ''}"></i>`).join('')}</div>`;
+}
+function suAppCard(s){
+  const col = sxCol(s), html = lvRow(s), bar = suAppBar(s, col);
+  return bar ? html.replace(/(<div class="lvr-mid">)/, bar + '$1') : html;
+}
+function suAppHtml(o){
+  const { all, cols, act, toVal, live, liveR } = o, pg = S.su.app || 'live', st = S.su.appSt || 'all';
+  const wk = (() => { try{ const w = isoWeek(new Date()); return w?.week ?? w; }catch(e){ return ''; } })();
+  const pairs = new Set(act.map(x => x.pair)).size, hm = new Date(S.liveAt || Date.now()).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+  const order = st==='all' ? ['validate','trade','formed','watch','forming','done'] : st==='formed' ? ['formed','watch'] : [st];
+  const sec = k => cols[k]?.length ? `<section class="sa-sec s-${k}">${st==='all' ? `<h2>${SA_SEC[k]}<em>${cols[k].length}</em></h2>` : ''}<div class="sa-list">${cols[k].map(suAppCard).join('')}</div></section>` : '';
+  const body = order.map(sec).join('');
+  const empty = st==='all' ? 'Nothing live right now. Sweeps in the bias direction show up here as soon as the liquidity alert fires.' : (LV_LBL[st] || [])[2] || 'Nothing here.';
+  const R = live.length ? `${liveR >= 0 ? '+' : '−'}${fmt(Math.abs(liveR), 1)}R` : '—';
+  return `<div class="sa">
+    <header class="sa-top">
+      <div class="sa-ttl"><h1>Setups</h1><p>W${wk} · ${pairs} pair${pairs===1 ? '' : 's'} active · live ${hm}</p></div>
+      <div class="sa-open ${live.length ? (liveR >= 0 ? 'up' : 'dn') : ''}"><span>Open</span><b>${R}</b></div>
+      <button class="sa-ib" id="suRefresh" aria-label="Refresh"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></button>
+      ${pushBtnHtml()}
+    </header>
+    ${pushBanner()}
+    ${pg==='live' ? `
+    <nav class="sa-st" aria-label="Stages">${SA_ST.map(([k, l]) => { const n = cols[k].length + (k==='formed' ? cols.watch.length : 0);
+      return `<button class="t-${k}${k==='validate' && toVal ? ' hot' : ''}" data-sast="${k}" aria-pressed="${st===k}"><b>${n}</b>${l}</button>`; }).join('')}</nav>
+    ${st!=='all' ? `<button class="sa-all" data-sast="all">‹ All stages</button>` : ''}
+    <main class="sa-main">${body || `<div class="sa-empty">${empty}</div>`}
+      <button class="sa-add" data-suadd="${st==='all' || st==='trade' ? 'forming' : st}">＋ Add a setup by hand</button></main>`
+    : pg==='history' ? `<main class="sa-main sa-tool">${sxHistory(all)}</main>`
+    : `<main class="sa-main sa-tool">
+        <div class="sa-set">
+          <label class="sx-sw"><input type="checkbox" id="suAuto" ${suAuto() ? 'checked' : ''}><i></i>Auto-take at retest</label>
+          <label class="sx-sw"><input type="checkbox" id="suAutoClose" ${suAutoClose() ? 'checked' : ''}><i></i>Auto-close at TP / SL</label>
+          <label class="sx-sw"><input type="checkbox" id="suSound" ${sndOn() ? 'checked' : ''}><i></i>Sounds while the app is open</label>
+        </div>${pairPanel()}</main>`}
+    <nav class="sa-tab" aria-label="Setups app">${[['live','Live'],['history','History'],['pairs','Pairs']].map(([k, l]) => `<button data-sapg="${k}" aria-current="${pg===k ? 'page' : 'false'}">${l}</button>`).join('')}</nav>
+  </div>`;
+}
+function suAppBind(m){
+  m.querySelectorAll('[data-sast]').forEach(b => b.onclick = () => { const k = b.dataset.sast; S.su.appSt = S.su.appSt===k ? 'all' : k; renderMain(); window.scrollTo({ top:0 }); });
+  m.querySelectorAll('[data-sapg]').forEach(b => b.onclick = () => { S.su.app = b.dataset.sapg; renderMain(); window.scrollTo({ top:0 }); });
+  pushWire();
+}
+async function goView(v){ await flushSave(); S.drawerOpen = false; S.view = v; if(!SUAPP) ls.set('do_view', v); render(); window.scrollTo({ top:0 }); }
 function render(){
   const app = document.getElementById('app');
   if(!CONFIGURED){ app.innerHTML = setupScreen(); return; }
@@ -2308,8 +2499,8 @@ function render(){
         </div>
       </aside>
       <div class="shell-main">
-        <header class="mtop"><div class="brand"><span class="mark" aria-hidden="true"></span>${cur ? cur[1] : 'Daily Observer'}</div>
-          <button class="iconbtn" id="searchBtnM" aria-label="Search">${ico('search', 18)}</button></header>
+        <header class="mtop">${SUAPP && S.view!=='setups' ? `<button class="pushbtn" data-view="setups">‹ Setups</button>` : ''}<div class="brand"><span class="mark" aria-hidden="true"></span>${SUAPP ? (S.view==='setups' ? 'Setups' : cur ? cur[1] : 'Setups') : cur ? cur[1] : 'Daily Observer'}</div>
+          ${SUAPP ? pushBtnHtml() : ''}<button class="iconbtn" id="searchBtnM" aria-label="Search">${ico('search', 18)}</button></header>
         ${board ? '<nav class="pairs" id="pairs" aria-label="Pairs by this week\'s bias"></nav>' : ''}
         <main id="main" class="wrap"></main>
       </div>
@@ -2423,6 +2614,7 @@ function renderMain(){
   else if(S.view === 'trades') renderTrades();
   else if(S.view === 'setups') renderSetups();
   else renderJournal();
+  if(SUAPP){ document.body.classList.toggle('su-home', S.view==='setups'); pushWire(); }
   syncDrawer();
 }
 function setupScreen(){
@@ -6224,6 +6416,7 @@ function renderSetups(){
   const lvt = S.su.lvt==='watch' ? 'formed' : S.su.lvt || 'all', VALS = suValid();
   const page = S.su.page || 'live', takenN = all.filter(x => x.stage==='taken' && !suOpenTrade(x) && !suFinished(x)).length;
   const tool = page==='live' ? null : page;
+  if(SUAPP){ m.innerHTML = suAppHtml({ all, cols, act, toVal, live, liveR }); bindSetups(m, all); suAppBind(m); suWatchChanges(true); return; }
   m.innerHTML = `
     <header class="sx-top">
       <div><h1 class="pairtitle">Setups <span class="beta">beta</span></h1>
