@@ -12,10 +12,9 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦅</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Big+Shoulders+Display:wght@200;800&family=Manrope:wght@400..800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Big+Shoulders+Display:wght@200;800&family=Manrope:wght@400..800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <script>try{document.documentElement.dataset.theme=/[?&]app=setups/.test(location.search)?"dark":JSON.parse(localStorage.getItem("do_theme"))||"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
   :root{
     --bg:#0E0F1F; --bg-2:#131430; --surface:#171933; --surface-2:#1F2145; --field:#111230; --line:#2B2E5A; --ink:#EEEDFF; --muted:#9C9EC8;
@@ -2092,6 +2091,48 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
 </style>
 </head>
 <body>
+<div id="splash" role="status" aria-live="polite">
+<style>
+  #splash{ position:fixed; inset:0; z-index:9999; display:grid; place-items:center; background:radial-gradient(120% 80% at 50% 0%, #10294A 0%, #070B18 55%, #04060F 100%); color:#EAF2FF;
+    font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; transition:opacity .45s ease, visibility .45s; }
+  #splash.out{ opacity:0; visibility:hidden; }
+  #splash .sp-c{ display:grid; justify-items:center; gap:26px; }
+  #splash .sp-r{ position:relative; width:168px; height:168px; }
+  #splash .sp-r i{ position:absolute; inset:0; border-radius:50%; border:1.5px solid rgba(123,140,255,.35); }
+  #splash .sp-r i:nth-child(2){ inset:28px; border-color:rgba(255,122,217,.4); }
+  #splash .sp-r i:nth-child(3){ inset:56px; border-color:rgba(92,240,224,.55); }
+  #splash .sp-r i.p{ inset:0; border:0; background:radial-gradient(circle, rgba(92,240,224,.0) 30%, rgba(92,240,224,.28) 60%, rgba(92,240,224,0) 70%); animation:spPulse 2.2s ease-out infinite; }
+  #splash .sp-s{ position:absolute; inset:0; border-radius:50%; background:conic-gradient(from 0deg, rgba(92,240,224,.55), rgba(92,240,224,0) 70deg, transparent 360deg); animation:spSweep 1.6s linear infinite;
+    -webkit-mask:radial-gradient(circle, transparent 0, #000 1px); mask:radial-gradient(circle, transparent 0, #000 1px); }
+  #splash .sp-d{ position:absolute; width:10px; height:10px; margin:-5px; border-radius:50%; opacity:0; animation:spBlip 3.2s ease-in-out infinite; }
+  #splash .sp-d.a{ left:70%; top:28%; background:#5CF0E0; box-shadow:0 0 14px #5CF0E0; }
+  #splash .sp-d.b{ left:26%; top:62%; background:#FF7AD9; box-shadow:0 0 14px #FF7AD9; animation-delay:1.1s; }
+  #splash .sp-d.c{ left:62%; top:76%; background:#FFF1A8; box-shadow:0 0 14px #FFF1A8; animation-delay:2.1s; }
+  #splash .sp-o{ position:absolute; left:50%; top:50%; width:14px; height:14px; margin:-7px; border-radius:50%; background:#fff; box-shadow:0 0 20px rgba(255,255,255,.8); }
+  #splash h1{ margin:0; font-size:30px; font-weight:800; letter-spacing:-.02em; text-align:center; }
+  #splash p{ margin:6px 0 0; font-size:13px; font-weight:600; color:#9DB0D3; text-align:center; min-height:18px; }
+  #splash .sp-b{ width:180px; height:4px; border-radius:4px; background:rgba(255,255,255,.08); overflow:hidden; }
+  #splash .sp-b b{ display:block; height:100%; width:8%; border-radius:4px; background:linear-gradient(90deg,#7B8CFF,#FF7AD9,#5CF0E0); transition:width .5s cubic-bezier(.2,.8,.2,1); }
+  @keyframes spSweep{ to{ transform:rotate(360deg); } }
+  @keyframes spPulse{ 0%{ transform:scale(.35); opacity:1; } 100%{ transform:scale(1.15); opacity:0; } }
+  @keyframes spBlip{ 0%,100%{ opacity:0; transform:scale(.4); } 15%,45%{ opacity:1; transform:scale(1); } 70%{ opacity:0; } }
+  @media (prefers-reduced-motion: reduce){ #splash *{ animation:none !important; } }
+  body.sa-snap #app{ pointer-events:none; }
+  #saUpd{ position:fixed; bottom:calc(84px + env(safe-area-inset-bottom,0px)); left:50%; transform:translateX(-50%); z-index:60; display:flex; align-items:center; gap:8px; padding:6px 12px; border-radius:99px;
+    background:rgba(16,41,74,.92); border:1px solid rgba(92,240,224,.35); color:#EAF2FF; font:700 12px system-ui,sans-serif; }
+  #saUpd i{ width:12px; height:12px; border-radius:50%; border:2px solid #5CF0E0; border-right-color:transparent; animation:spSweep .8s linear infinite; }
+</style>
+<div class="sp-c">
+  <div class="sp-r" aria-hidden="true"><i></i><i></i><i></i><i class="p"></i><span class="sp-s"></span><span class="sp-d a"></span><span class="sp-d b"></span><span class="sp-d c"></span><span class="sp-o"></span></div>
+  <div><h1 id="spT">Daily Observer</h1><p id="spM">Connecting…</p></div>
+  <div class="sp-b"><b id="spB"></b></div>
+</div>
+</div>
+<script>(function(){var u=/[?&]app=setups/.test(location.search);if(u)document.getElementById('spT').textContent='Setups';
+/* Setups app: show the last screen right away (read-only) while fresh data loads */
+if(u){try{var h=localStorage.getItem('do_sa_snap');if(h){document.body.classList.add('sa-snap','suapp','su-home');document.write('<div id="saSnap">'+h+'</div>');
+setTimeout(function(){var sp=document.getElementById('splash');if(!sp||!document.getElementById('saSnap'))return;sp.classList.add('out');var d=document.createElement('div');d.id='saUpd';d.innerHTML='<i></i>Updating…';document.body.appendChild(d);},650);}}catch(e){}}})();</script>
+<script src="https://cdn.tailwindcss.com"></script>
 <div id="app"></div>
 <div id="toast" class="toast" hidden></div>
 
@@ -2284,6 +2325,16 @@ function toast(msg){ const t = document.getElementById('toast'); t.textContent =
 function currentWeekBias(p){ const w = isoWeek(planDate()); return S.weekly.get(wk(p,w.year,w.week))?.bias || ''; }
 
 /* ---------- data ---------- */
+/* loading screen */
+function splash(msg, pct){ const m = document.getElementById('spM'), b = document.getElementById('spB'); if(m && msg) m.textContent = msg; if(b && pct!=null) b.style.width = pct + '%'; }
+function splashDone(){
+  document.getElementById('saSnap')?.remove(); document.getElementById('saUpd')?.remove(); document.body.classList.remove('sa-snap');
+  const sp = document.getElementById('splash'); if(!sp) return;
+  splash('Ready', 100);
+  setTimeout(() => { sp.classList.add('out'); setTimeout(() => sp.remove(), 500); }, sp.classList.contains('out') ? 0 : 120);
+}
+/* Setups app with a saved screen: the splash steps aside quickly and a small "Updating" pill stays until the data is in */
+function SUAPP_EARLY(){ return /[?&]app=setups/.test(location.search) && !/[?&]screen=accounts/.test(location.search); }
 async function fetchAll(table){
   const out = []; const size = 1000;
   for(let from = 0; ; from += size){
@@ -2294,28 +2345,36 @@ async function fetchAll(table){
   return out;
 }
 async function loadAll(){
-  const [d, w, n, a] = await Promise.all([fetchAll('do_daily'), fetchAll('do_weekly'), fetchAll('do_news'), fetchAll('do_accounts').catch(e => { console.warn(e); return []; })]);
+  /* everything at once (was one table after another); the Setups app skips what it never shows */
+  const lite = SUAPP_EARLY(), none = () => Promise.resolve([]), soft = t => fetchAll(t).catch(e => { console.warn(e); return []; });
+  splash('Loading your data…', 18);
+  const P = { d: lite ? none() : fetchAll('do_daily'), w: fetchAll('do_weekly'), n: lite ? none() : fetchAll('do_news'), a: soft('do_accounts'),
+    g: lite ? none() : soft('do_goals'), bk: lite ? none() : soft('do_bank'), st: soft('do_settings'), hd: lite ? Promise.resolve([]) : fetchAll('do_holdings').catch(() => null),
+    tr: fetchAll('do_trades').then(x => x, e => ({ err:e })) };
+  const [d, w, n, a] = await Promise.all([P.d, P.w, P.n, P.a]);
+  splash('Bias, accounts, trades…', 38);
   S.accounts = new Map(a.map(r => [r.id, r]));
-  const g = await fetchAll('do_goals').catch(e => { console.warn(e); return []; });
+  const g = await P.g;
   if(g.length){ S.goalDueCol = 'due_date' in g[0]; S.goalRepCol = 'repeat_mode' in g[0]; }
   else { try{ const { error } = await sb.from('do_goals').select('due_date').limit(1); S.goalDueCol = !error; }catch(e){ S.goalDueCol = false; }
     try{ const { error } = await sb.from('do_goals').select('repeat_mode').limit(1); S.goalRepCol = !error; }catch(e){ S.goalRepCol = false; } }
-  const bk = await fetchAll('do_bank').catch(e => { console.warn(e); return []; });
-  const st = await fetchAll('do_settings').catch(e => { console.warn(e); return []; });
+  const bk = await P.bk;
+  const st = await P.st;
   /* daily_pips exists only after migration-daily-pips.sql — never send it before that */
-  S.hasPips = d.length ? d.some(r => 'daily_pips' in r) : await sb.from('do_daily').select('daily_pips').limit(1).then(r => !r.error, () => false);
+  S.hasPips = d.length ? d.some(r => 'daily_pips' in r) : lite ? false : await sb.from('do_daily').select('daily_pips').limit(1).then(r => !r.error, () => false);
   S.settings = Object.fromEntries(st.map(r => [r.key, r.value]));
   S.bank.rows = new Map(bk.map(r => [r.id, r]));
-  { const hd = await fetchAll('do_holdings').catch(() => null); S.hold = new Map((hd || []).map(r => [r.id, r])); S.holdOK = hd!==null; }
+  { const hd = await P.hd; S.hold = new Map((hd || []).map(r => [r.id, r])); S.holdOK = hd!==null; }
   S.goals = new Map(g.map(r => [r.id, r]));
   /* trades: own table; until migration-trades.sql has run, read the old one-trade-per-day columns (read-only) */
-  let tr = null;
-  try{ tr = await fetchAll('do_trades'); S.legacyTrades = false; }
-  catch(e){ console.warn('do_trades missing — legacy trades', e); S.legacyTrades = true; }
+  let tr = await P.tr;
+  if(tr && !Array.isArray(tr)){ console.warn('do_trades missing — legacy trades', tr.err); tr = null; S.legacyTrades = true; } else S.legacyTrades = false;
   if(S.legacyTrades) tr = d.filter(r => r.direction).map(r => { const t = { id:'L:'+dk(r.pair, r.day), pair:r.pair, day:r.day }; TR_ALL_F.forEach(f => t[f] = r[f] ?? null); return t; });
   S.trades = new Map(tr.map(t => [t.id, t]));
   d.forEach(r => { TR_ALL_F.forEach(f => delete r[f]); });   /* day rows carry observations only */
+  splash('Signals and candles…', 58);
   await loadSignals();
+  splash('Building setups…', 90);
   S.daily = new Map(d.map(r => [dk(r.pair, r.day), r]));
   S.weekly = new Map(w.map(r => [wk(r.pair, r.year, r.week), r]));
   S.news = new Map(n.map(r => [nk(r.currency, r.day), r]));
@@ -5401,13 +5460,18 @@ async function loadCandles(){
   const since = new Date(S.candleMax && !fresh.length ? S.candleMax - 8*36e5 : from0).toISOString(), size = 1000;
   S.candlePairs = new Set(pairs);
   try{
-    for(let from = 0; ; from += size){
-      /* 1m candles stay on the server (the engine uses them); the page works from 15m and up */
-      const { data, error } = await sb.from('do_candles').select('*').in('pair', pairs).neq('tf', '1m').gte('t', since).order('t').range(from, from + size - 1);
-      if(error) throw error;
-      for(const r of data){ const c = { pair:r.pair, tf:r.tf, t:tms(r.t), o:numOr(r.o), h:numOr(r.h), l:numOr(r.l), c:numOr(r.c), fh:numOr(r.fh), fl:numOr(r.fl) };
-        S.candles.set(`${c.pair}|${c.tf}|${c.t}`, c); if(c.t > S.candleMax) S.candleMax = c.t; }
-      if(data.length < size) break;
+    /* 1m candles stay on the server (the engine uses them); the page works from 15m and up.
+       First page tells how many there are, the rest come in parallel (was one page after another). */
+    const q = (from) => sb.from('do_candles').select('pair,tf,t,o,h,l,c,fh,fl', from===0 ? { count:'exact' } : undefined).in('pair', pairs).neq('tf', '1m').gte('t', since).order('t').order('pair').order('tf').range(from, from + size - 1);
+    const eat = data => { for(const r of data){ const c = { pair:r.pair, tf:r.tf, t:tms(r.t), o:numOr(r.o), h:numOr(r.h), l:numOr(r.l), c:numOr(r.c), fh:numOr(r.fh), fl:numOr(r.fl) };
+        S.candles.set(`${c.pair}|${c.tf}|${c.t}`, c); if(c.t > S.candleMax) S.candleMax = c.t; } };
+    const first = await q(0); if(first.error) throw first.error; eat(first.data);
+    const total = first.count ?? first.data.length, starts = []; for(let f = size; f < total; f += size) starts.push(f);
+    let doneN = 0;
+    for(let i = 0; i < starts.length; i += 6){
+      const res = await Promise.all(starts.slice(i, i + 6).map(q));
+      for(const r of res){ if(r.error) throw r.error; eat(r.data); }
+      doneN += res.length; if(starts.length > 2) splash(`Candles ${Math.round((doneN + 1) / (starts.length + 1) * 100)}%…`, 58 + Math.round(doneN / starts.length * 30));
     }
     S.candlesMissing = false;
     /* 1m candles only for the pairs of open setup trades (live P/L to the minute), from the entry, last 24h at most */
@@ -6416,7 +6480,9 @@ function renderSetups(){
   const lvt = S.su.lvt==='watch' ? 'formed' : S.su.lvt || 'all', VALS = suValid();
   const page = S.su.page || 'live', takenN = all.filter(x => x.stage==='taken' && !suOpenTrade(x) && !suFinished(x)).length;
   const tool = page==='live' ? null : page;
-  if(SUAPP){ m.innerHTML = suAppHtml({ all, cols, act, toVal, live, liveR }); bindSetups(m, all); suAppBind(m); suWatchChanges(true); return; }
+  if(SUAPP){ m.innerHTML = suAppHtml({ all, cols, act, toVal, live, liveR }); bindSetups(m, all); suAppBind(m); suWatchChanges(true);
+    if((S.su.app || 'live')==='live') try{ localStorage.setItem('do_sa_snap', m.innerHTML); }catch(e){}
+    return; }
   m.innerHTML = `
     <header class="sx-top">
       <div><h1 class="pairtitle">Setups <span class="beta">beta</span></h1>
@@ -8242,10 +8308,9 @@ document.getElementById('csvFile').onchange = async ev => {
 /* ---------- boot ---------- */
 (async () => {
   if(CONFIGURED){
-    document.getElementById('app').innerHTML = '<p class="muted" style="padding:24px">Loading data…</p>';
     try{ await loadAll(); }catch(e){ console.error(e); toast('Could not load data: ' + e.message); }
   }
-  render();
+  render(); splashDone();
   if(CONFIGURED){ const tz = Intl.DateTimeFormat().resolvedOptions().timeZone; if(tz && S.settings && S.settings.tz!==tz) saveSettingKey('tz', tz);
     /* address of this site, for the "Setups" button in phone notifications */
     const site = location.origin + location.pathname; if(location.protocol.startsWith('http') && S.settings && S.settings.site_url!==site) saveSettingKey('site_url', site);
