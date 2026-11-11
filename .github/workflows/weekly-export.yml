@@ -1,0 +1,35 @@
+name: Weekly price-action export (Bias Engine Phase 3)
+
+on:
+  schedule:
+    - cron: '30 4 * * 6'   # Saturday 04:30 UTC (06:30 Bucharest in winter, 07:30 in summer)
+  workflow_dispatch:
+    inputs:
+      week:
+        description: 'ISO week to export, e.g. 2026-W46 (empty = last completed week)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Build export from Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          WEEK: ${{ github.event.inputs.week }}
+        run: node scripts/weekly-export.mjs
+      - name: Commit export
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add exports/
+          git diff --cached --quiet && echo "No change" || (git commit -m "Weekly price-action export" && git push)
