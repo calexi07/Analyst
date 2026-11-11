@@ -758,6 +758,40 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
     background:color-mix(in srgb,var(--bg) 88%,transparent); backdrop-filter:blur(12px); border-bottom:1px solid var(--line); }
   body.suapp .mtop .brand{ font-size:17px; margin-right:auto; }
   body.suapp .wrap{ padding-bottom:calc(24px + env(safe-area-inset-bottom,0px)) !important; }
+  /* ===== Backtest ===== */
+  .bt-bar0{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:16px; } .bt-bar0 select.inp{ width:auto; min-width:150px; }
+  .bt-kpi{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-bottom:14px; } .bt-kpi .ab-k b{ font-size:26px; }
+  @media (max-width:900px){ .bt-kpi{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  .bt-eq{ margin-bottom:14px; }
+  .bt-ins{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; margin-bottom:14px; }
+  .bt-ins article{ padding:14px 16px; border-radius:16px; border:1px solid color-mix(in srgb,var(--c) 45%,var(--line)); background:color-mix(in srgb,var(--c) 8%,var(--surface)); --c:var(--pos); }
+  .bt-ins article.dn{ --c:var(--neg); } .bt-ins span{ font-size:10.5px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--c); }
+  .bt-ins b{ display:block; margin:4px 0; font-size:15px; } .bt-ins p{ margin:0; font-size:12.5px; color:var(--muted); font-weight:600; }
+  .bt-warn{ margin:0 0 14px; padding:10px 14px; border-radius:12px; border:1px dashed color-mix(in srgb,var(--amber) 50%,var(--line)); color:var(--amber); font-size:12.5px; font-weight:700; }
+  .bt-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:12px; margin-bottom:14px; }
+  .bt-card{ padding:14px 16px; border-radius:18px; border:1px solid var(--line); background:var(--surface); }
+  .bt-card h3{ margin:0 0 10px; font-family:'Bricolage Grotesque',sans-serif; font-size:15px; }
+  .bt-rows{ display:grid; gap:6px; }
+  .bt-row{ display:grid; grid-template-columns:minmax(92px,1.5fr) 24px minmax(36px,1fr) 58px 34px 44px; align-items:center; gap:7px; font-size:12.5px; font-weight:700; }
+  .bt-row.few{ opacity:.5; } .bt-l{ line-height:1.2; } .bt-n, .bt-w{ color:var(--muted); text-align:right; }
+  .bt-bar{ position:relative; height:8px; border-radius:8px; background:var(--surface-2); } .bt-bar::after{ content:''; position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background:var(--line); }
+  .bt-bar i{ position:absolute; top:0; bottom:0; border-radius:8px; } .bt-bar i.up{ background:var(--pos); } .bt-bar i.dn{ background:var(--neg); }
+  .bt-e, .bt-tot{ font-family:'JetBrains Mono',ui-monospace,monospace; text-align:right; } .bt-tot{ font-size:11.5px; color:var(--muted); }
+  .bt-mx table{ width:100%; border-collapse:separate; border-spacing:4px; } .bt-mx th{ font-size:11px; color:var(--muted); font-weight:800; text-align:left; }
+  .bt-mx td{ text-align:center; padding:10px 4px; border-radius:10px; background:hsl(var(--h) 80% 55% / var(--a)); } .bt-mx td.few{ opacity:.55; } .bt-mx td.bt-mx-e{ background:var(--surface-2); color:var(--muted); }
+  .bt-mx td b{ display:block; font-family:'JetBrains Mono',monospace; font-size:14px; } .bt-mx td small{ font-size:10.5px; color:var(--muted); font-weight:700; }
+  .bt-tw{ overflow-x:auto; margin-top:10px; } .bt-t{ width:100%; min-width:720px; border-collapse:collapse; font-size:13px; }
+  .bt-t th{ text-align:left; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); padding:8px 10px; border-bottom:1px solid var(--line); }
+  .bt-t td{ padding:9px 10px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; } .bt-t tbody tr{ cursor:pointer; } .bt-t tbody tr:hover{ background:var(--hover); }
+  .bt-form{ display:grid; gap:14px; } .bt-form label{ display:grid; gap:4px; } .bt-form label.sx-sw{ display:flex; } .bt-two{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  @media (max-width:560px){ .bt-two{ grid-template-columns:1fr; } }
+  .bt-ch{ flex-wrap:wrap; justify-self:start; } .bt-ch button{ min-height:36px; }
+  .bt-cx{ padding:14px; border-radius:16px; border:1px solid var(--line); background:var(--surface-2); display:grid; gap:10px; }
+  .bt-cx-h{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; font-size:13px; } .bt-cx-h span{ font-size:12px; font-weight:700; }
+  .bt-lnk{ margin-left:auto; border:0; background:none; color:var(--accent); font:inherit; font-weight:800; cursor:pointer; padding:6px 0; }
+  .bt-cx-g{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 14px; } .bt-cx-g span{ display:block; font-size:10.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+  .bt-cx-g b{ font-size:13px; } .bt-cx-f{ display:grid; gap:10px; }
+  .bt-cx-v{ font-size:13px; font-weight:800; padding:8px 12px; border-radius:10px; background:var(--surface); } .bt-cx-v.with{ color:var(--pos); } .bt-cx-v.against{ color:var(--neg); } .bt-cx-v.none{ color:var(--muted); }
   /* ===== Setups app — Aurora Pipeline ===== */
   body.suapp{ background:linear-gradient(180deg,#10294A 0%,#04060F 420px) fixed, #04060F; }
   body.suapp.su-home .mtop{ display:none !important; }
@@ -2142,6 +2176,7 @@ setTimeout(function(){var sp=document.getElementById('splash');if(!sp||!document
 <!-- Data dialog -->
 <script type="application/json" id="promptData">[{"id": "phase1", "group": "weekly", "step": 1, "title": "Phase 1 — Weekly research", "when": "Saturday / Sunday · attach last week's report", "desc": "The AI rebuilds last week from its own research (scheduled + unscheduled news), re-scores every currency and writes the full report for the coming week, including the Section 12 import block.", "text": "WEEKLY FUNDAMENTAL UPDATE — PHASE 1 (research only)\n\nAttached: your report from last week.\n\nUpdate the full analysis for the coming week using only your own research.\nDo NOT ask for or use price action yet — I will send it after you finish.\n\n1. Rebuild last week (search, do not rely on memory). For USD, EUR, GBP, JPY, CHF, CAD,\n   AUD, NZD and XAU, find everything that happened Mon–Fri plus the weekend:\n   - scheduled data and central-bank decisions/speakers\n   - UNSCHEDULED events: political and fiscal crises (governments, budgets, bond spreads —\n     including big euro-area states like France, Italy, Germany), geopolitics, trade policy,\n     commodity shocks, interventions, haven flows, credit stress\n   Cite a source for every event you use.\n2. Re-score every currency from the evidence. Do not anchor on last week's numbers; every\n   change must be justified.\n3. Produce the complete report in the usual structure, valid for the coming week, including\n   Section 12 \"Daily Observer Import\" with \"valid_week\" set to the NEXT ISO week.\n   Bias rule: if the weekly label is Neutral/Two-sided but the horizon or main driver clearly\n   leans one way, set \"bias\" to that direction with conviction \"low\" and keep the original\n   wording in \"summary\".\n4. State the data cut-off (Friday close plus any weekend news) at the top.\n\nWhen you are done, write: \"PHASE 1 COMPLETE — send the price action.\"\n\n----- Section 12 specification -----\nAt the very end of the report, after the Trader Handoff section, add one more section:\n\"12. Daily Observer Import\".\n\nIt must contain:\n- a short line: \"Copy this block and paste it into Daily Observer → Import / export.\"\n- a \"Copy\" button that copies the block below to the clipboard (navigator.clipboard.writeText)\n- a <pre id=\"dobs-import\"> block containing ONE valid JSON object and nothing else\n\nThe JSON must be strictly valid: double quotes only, no comments, no trailing commas, escape inner quotes.\nIt must only restate what is already in the report — do not add new analysis.\n\nSchema:\n{\n  \"format\": \"daily-observer-fundamentals\",\n  \"version\": 1,\n  \"report_date\": \"YYYY-MM-DD\",\n  \"report_title\": \"Forex Fundamental Bias Engine — Week NN\",\n  \"valid_week\": { \"year\": 2026, \"week\": NN },          // ISO week the analysis is FOR (the trading week that starts the Monday after the report)\n  \"currencies\": {\n    \"USD\": { \"score\": 4, \"state\": \"Strong\", \"note\": \"one-line thesis state\" }\n    // same for EUR, GBP, JPY, CHF, CAD, AUD, NZD, XAU\n  },\n  \"pairs\": [                                            // ALL pairs in the 28-pair matrix + XAUUSD\n    {\n      \"pair\": \"EURUSD\",                                 // 6 letters, no slash\n      \"bias\": \"bearish\",                                // bullish | bearish | two-sided | neutral\n      \"conviction\": \"medium\",                           // low | medium | high\n      \"summary\": \"Bearish (EUR -1 vs USD +4)\",          // same wording as the weekly bias history\n      \"base_state\": \"Weak\",                             // Strong | Improving | Neutral | Weakening | Weak\n      \"base_score\": -1,                                 // number from the scorecard\n      \"quote_state\": \"Strong\",\n      \"quote_score\": 4,\n      \"main_driver\": \"one or two sentences\",\n      \"drivers\": [\"secondary driver 1\", \"secondary driver 2\"],      // [] if none\n      \"catalysts\": [ { \"date\": \"28 Oct\", \"event\": \"FOMC decision\", \"imp\": \"CRITICAL\" } ],  // imp: LOW | MEDIUM | HIGH | CRITICAL\n      \"priced\": \"what is already priced in\",\n      \"invalidation\": \"what would invalidate the thesis\",\n      \"horizon\": \"Swing: mild bearish\",\n      \"alignment\": \"Aligned\",                           // Aligned | Partial conflict | Conflicting | Neutral\n      \"alignment_note\": \"short explanation\",\n      \"changed\": \"what changed vs last week for this pair (both currencies)\"\n    }\n  ],\n  \"news\": [                                             // every dated event from the Catalyst Calendar\n    { \"date\": \"2026-10-28\", \"currency\": \"USD\", \"event\": \"FOMC decision\", \"importance\": \"CRITICAL\" }\n    // ISO dates only; one entry per currency (an event for \"USD, XAU\" becomes one USD entry); skip \"Ongoing\"/undated items\n  ]\n}"}, {"id": "export", "group": "weekly", "step": 2, "title": "Export price action", "when": "after the AI says “PHASE 1 COMPLETE”", "action": "export", "desc": "Copy the daily-close export for the week that just ended. Nothing to paste here — use the button."}, {"id": "phase2", "group": "weekly", "step": 3, "title": "Phase 2 — Price-action confirmation", "when": "send together with the price-action export", "desc": "The AI checks its analysis against what price actually did and re-checks only real anomalies. Price can never flip a bias on its own — only a news item it missed or misweighted can change the analysis.", "text": "WEEKLY FUNDAMENTAL UPDATE — PHASE 2 (price-action confirmation)\n\nAttached: my price-action export for last week (\"daily-observer-price-action\" JSON:\ndaily close % per pair). Use it only to CONFIRM your Phase 1 analysis, not to rebuild it.\nFundamentals describe direction over several weeks — a single week of price against the\nbias is normal and is NOT, by itself, evidence that the analysis is wrong.\n\n1. Treat my logged closes as ground truth; fetch real daily closes for every pair in\n   \"pairs_not_logged\". If closes are not available, use ECB reference rates (state the\n   fixing time) and derive the crosses from them; say clearly which days are missing.\n   Build the realized currency-strength ranking (use the crosses, not only the USD pairs,\n   to isolate each currency).\n2. Flag ANOMALIES only:\n   - a pair whose weekly move against the bias you gave it is larger than ~1.5x its normal\n     weekly range (roughly: >0.8% for EURGBP/EURCHF, >1.2% for majors, >1.8% for GBPJPY/XAU)\n   - a currency whose realized rank differs from its score rank by 3 or more places\n   - a currency that moved against its score consistently on the crosses for 2+ sessions\n3. For each anomaly, run a TARGETED re-check for a concrete fundamental cause, with a source\n   (the country's politics, fiscal news, central-bank speakers, interventions, flows,\n   commodities). Then classify:\n   MISSED NEWS · MISWEIGHTED KNOWN NEWS · ALREADY PRICED · FLOWS/POSITIONING ·\n   TECHNICAL RETRACEMENT · NOISE\n   - Only MISSED NEWS or MISWEIGHTED KNOWN NEWS may change a score or a bias.\n   - ALREADY PRICED, FLOWS/POSITIONING, TECHNICAL RETRACEMENT and NOISE never change the bias.\n   - A single week against the bias with no fundamental cause changes nothing.\n     After 2–3 consecutive weeks against the bias with no cause, lower conviction by ONE\n     level only.\n   - Price alone never flips a bias. Never invent a cause to fit the chart.\n   - For each anomaly, state whether it looks like a retracement inside an intact\n     fundamental trend or an early sign the market is pricing something new — and what\n     would confirm it next week.\n4. Output:\n   - \"0a. Price-Action Check\": hit-rate table (last week's bias vs realized move, every pair)\n     and the realized currency ranking vs scores\n   - \"0b. Self-Correction Log\": each anomaly, what you re-checked, the cause and\n     classification, and what changed (or why nothing changed)\n   - the final report, where only MISSED NEWS / MISWEIGHTED KNOWN NEWS corrections are\n     applied; in every affected pair's \"changed\" field, note that the change came from the\n     Phase 2 check\n   - a NEW Section 12 \"Daily Observer Import\" block reflecting the corrections (same format,\n     same \"valid_week\")\n5. Section 12 quality rules (apply even if nothing was corrected):\n   - Rewrite \"alignment\" and \"alignment_note\" for EVERY pair from the realized price data —\n     never leave Phase 1 \"provisional\" wording in the final block.\n   - \"priced\" must be pair-specific text in every pair — no placeholders and no references\n     to other sections of the report.\n   - Any currency score change of 3 points or more versus last week (from Phase 1 or\n     Phase 2) must be listed in 0b with its source.\nIf nothing needed correcting, say so — but still output Section 12 with the rules above applied."}, {"id": "import", "group": "weekly", "step": 4, "title": "Import into Daily Observer", "when": "copy Section 12 from the Phase 2 answer", "action": "import", "desc": "Paste the Section 12 block, choose the next week, the pairs and the sections."}]</script>
 <dialog id="pfDlg" class="panel" aria-label="Purchase" style="width:min(560px,96vw)"></dialog>
+<dialog id="btDlg" class="panel" aria-label="Backtest trade" style="width:min(680px,96vw)"></dialog>
 <dialog id="bankDlg" class="panel" aria-label="Bank entry" style="width:min(560px,96vw)"></dialog>
 <dialog id="qaDlg" class="panel" aria-label="Quick add trade" style="width:min(520px,94vw)"></dialog>
 <dialog id="trDlg" class="panel" aria-label="Trade" style="width:min(760px,96vw)"></dialog>
@@ -2344,13 +2379,14 @@ async function fetchAll(table){
   }
   return out;
 }
+S.bt = { rows:new Map(), missing:false, run:'all', pair:'all' };
 async function loadAll(){
   /* everything at once (was one table after another); the Setups app skips what it never shows */
   const lite = SUAPP_EARLY(), none = () => Promise.resolve([]), soft = t => fetchAll(t).catch(e => { console.warn(e); return []; });
   splash('Loading your data…', 18);
   const P = { d: lite ? none() : fetchAll('do_daily'), w: fetchAll('do_weekly'), n: lite ? none() : fetchAll('do_news'), a: soft('do_accounts'),
     g: lite ? none() : soft('do_goals'), bk: lite ? none() : soft('do_bank'), st: soft('do_settings'), hd: lite ? Promise.resolve([]) : fetchAll('do_holdings').catch(() => null),
-    tr: fetchAll('do_trades').then(x => x, e => ({ err:e })) };
+    tr: fetchAll('do_trades').then(x => x, e => ({ err:e })), bt: lite ? Promise.resolve([]) : fetchAll('do_backtests').catch(e => ({ err:e })) };
   const [d, w, n, a] = await Promise.all([P.d, P.w, P.n, P.a]);
   splash('Bias, accounts, trades…', 38);
   S.accounts = new Map(a.map(r => [r.id, r]));
@@ -2366,6 +2402,7 @@ async function loadAll(){
   S.bank.rows = new Map(bk.map(r => [r.id, r]));
   { const hd = await P.hd; S.hold = new Map((hd || []).map(r => [r.id, r])); S.holdOK = hd!==null; }
   S.goals = new Map(g.map(r => [r.id, r]));
+  { const b = await P.bt; if(Array.isArray(b)){ S.bt.rows = new Map(b.map(r => [r.id, r])); S.bt.missing = false; } else S.bt.missing = /relation|does not exist|schema cache|PGRST205|42P01/i.test(String(b?.err?.message || b?.err?.code || '')); }
   /* trades: own table; until migration-trades.sql has run, read the old one-trade-per-day columns (read-only) */
   let tr = await P.tr;
   if(tr && !Array.isArray(tr)){ console.warn('do_trades missing — legacy trades', tr.err); tr = null; S.legacyTrades = true; } else S.legacyTrades = false;
@@ -2410,6 +2447,7 @@ const ICONS = {
   moon:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
   more:'<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
   collapse:'<path d="M15 18l-6-6 6-6"/>',
+  flask:'<path d="M9 3h6"/><path d="M10 3v6L4.5 18.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3"/><path d="M7.5 15h9"/>',
   pie:'<path d="M21 12a9 9 0 1 1-9-9v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/>',
   bank:'<path d="M3 10l9-6 9 6"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/><path d="M3 21h18"/>',
   radar:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6-6"/><circle cx="12" cy="12" r="1.2"/>',
@@ -2419,7 +2457,7 @@ const ico = (k, s = 18) => `<svg class="ico" width="${s}" height="${s}" viewBox=
 const NAV = [
   [null, [['today','Today','home']]],
   ['Work', [['journal','Journal','calendar'],['trades','Trades','list'],['setups','Setups','radar']]],
-  ['Insights', [['history','History','trend']]],
+  ['Insights', [['history','History','trend'],['backtest','Backtest','flask']]],
   ['Money', [['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target']]],
   ['Tools', [['prompts','Prompts','spark']]],
 ];
@@ -2565,7 +2603,7 @@ function render(){
       </div>
       <nav class="bnav" aria-label="Main navigation">
         ${[['today','Today','home'],['journal','Journal','calendar'],['setups','Setups','radar'],['trades','Trades','list']].map(([v,l,i]) => `<button data-view="${v}" aria-current="${navActive(v) ? 'page' : 'false'}">${ico(i, 20)}<span>${l}</span></button>`).join('')}
-        <button id="bnMore" aria-current="${['analysis','history','overview','accounts','portfolio','bank','goals','prompts'].includes(S.view) ? 'page' : 'false'}">${ico('more', 20)}<span>More</span></button>
+        <button id="bnMore" aria-current="${['analysis','history','overview','accounts','portfolio','bank','goals','prompts','backtest'].includes(S.view) ? 'page' : 'false'}">${ico('more', 20)}<span>More</span></button>
       </nav>
     </div>`;
   app.querySelectorAll('[data-view]').forEach(b => b.onclick = () => goView(b.dataset.view));
@@ -2583,7 +2621,7 @@ function render(){
 function openMore(){
   const d = document.getElementById('moreDlg'), light = document.documentElement.dataset.theme === 'light';
   d.innerHTML = `<div class="dlg-head"><h2>More</h2></div><div class="dlg-body more-g">
-    ${[['history','History','trend'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
+    ${[['history','History','trend'],['backtest','Backtest','flask'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
     <button class="more-i" data-ma="share">${ico('share', 22)}<span>Share</span></button>
     <button class="more-i" data-ma="data">${ico('swap', 22)}<span>Import / export</span></button>
     <button class="more-i" data-ma="theme">${ico(light ? 'moon' : 'sun', 22)}<span>${light ? 'Dark' : 'Light'} theme</span></button></div>`;
@@ -2670,6 +2708,7 @@ function renderMain(){
   else if(S.view === 'prompts') renderPrompts();
   else if(S.view === 'bank') renderBank();
   else if(S.view === 'portfolio') renderPortfolio();
+  else if(S.view === 'backtest') renderBacktest();
   else if(S.view === 'trades') renderTrades();
   else if(S.view === 'setups') renderSetups();
   else renderJournal();
@@ -5043,6 +5082,274 @@ function pfSeries(from){
       inv += (qty * Number(h.price) + Number(h.fees || 0)) * fxL; v += qty * (lastC[sym] ?? Number(h.price)) * (q ? (pfFx(q.cur) ?? fxL) : fxL); });
     out.push({ d, v, inv }); });
   return out;
+}
+/* ===================== BACKTEST — replayed setups tagged with that week's fundamentals ===================== */
+/* Every trade (replayed on TradingView, or a real one from Trades) gets the fundamental context of its week:
+   bias and conviction, the two currency scores, fundamental / technical alignment, and whether a high-impact event hit that day.
+   The page then shows where the edge is: which contexts pay, which don't. */
+const BT_RUNS_KEY = 'do_bt_last';
+const btWeekRec = (pair, day) => { if(!pair || !day) return null; const w = isoWeek(new Date(day + 'T12:00:00')); return S.weekly.get(wk(pair, w.year, w.week)) || null; };
+function btNewsHi(pair, day){
+  const hits = [];
+  for(const c of [base(pair), quote(pair)]){
+    const ev = S.news.get(nk(c, day))?.events || '';
+    ev.split('\n').filter(l => /\[(HIGH|CRITICAL)\]/i.test(l)).forEach(l => hits.push(`${c} ${l.replace(/\s*\[(HIGH|CRITICAL)\]/i, '').trim()}`));
+  }
+  const r = btWeekRec(pair, day), cat = det(r).catalysts || [];
+  cat.filter(x => String(x.date || '').slice(0, 10)===day && /HIGH|CRITICAL/i.test(x.imp || '')).forEach(x => hits.push(x.event));
+  return [...new Set(hits)].slice(0, 6);
+}
+/* the context the page would put on a trade of `pair` in `dir` on `day` (from your weekly fundamentals) */
+function btAutoCtx(pair, day, dir){
+  const r = btWeekRec(pair, day), d = det(r);
+  const bs = d.base_score!=null ? Number(d.base_score) : null, qs = d.quote_score!=null ? Number(d.quote_score) : null;
+  return { bias: r?.bias || null, conviction: r?.conviction || null, base_score: bs, quote_score: qs, alignment: d.alignment || null,
+    main_driver: d.main_driver || null, news: btNewsHi(pair, day), found: !!r };
+}
+/* derived fields used by the breakdowns */
+function btDerive(t){
+  const L = t.direction==='Long', b = t.bias;
+  const withB = !b || ['two-sided','neutral'].includes(b) ? 'none' : ((b==='bullish') === L ? 'with' : 'against');
+  const edge = t.base_score!=null && t.quote_score!=null ? (L ? 1 : -1) * (t.base_score - t.quote_score) : null;
+  const d = t.day ? new Date(t.day + 'T12:00:00') : null;
+  return { ...t, withB, edge, dow: d ? WD_SHORT[d.getDay()] : null, sess: t.session || sessionName(t.entry_time) || 'Off-session',
+    newsDay: t.news_day ?? !!(t.news && t.news.length) };
+}
+/* a real trade from Trades → the same shape, context taken from its week */
+function btFromLive(t){
+  const c = btAutoCtx(t.pair, t.day, t.direction);
+  return btDerive({ id:'live:' + t.id, live:true, src:t, pair:t.pair, day:t.day, entry_time:t.entry_time, direction:t.direction, session:t.session,
+    result:t.result, r:t.r_multiple!=null ? Number(t.r_multiple) : t.result==='W' ? 2 : t.result==='L' ? -1 : 0, break_type:null, run:'Live trades',
+    rules_ok:null, bias:c.bias, conviction:c.conviction, base_score:c.base_score, quote_score:c.quote_score, alignment:c.alignment, news:c.news, news_day:c.news.length > 0 });
+}
+function btRows(){
+  const src = ls.get('do_bt_src', 'bt'), run = S.bt.run || 'all', pair = S.bt.pair || 'all', per = ls.get('do_bt_per', 'all');
+  const cut = per==='all' ? '' : iso(new Date(Date.now() - Number(per) * 864e5));
+  let rows = [];
+  if(src!=='live') rows.push(...[...S.bt.rows.values()].map(btDerive).filter(x => run==='all' || (x.run || 'No run')===run));
+  if(src!=='bt' && run==='all') rows.push(...[...S.trades.values()].filter(t => ['W','L','BE'].includes(t.result) && t.direction).map(btFromLive));
+  return rows.filter(x => (pair==='all' || x.pair===pair) && (!cut || x.day >= cut) && ['W','L','BE'].includes(x.result))
+    .sort((a, b) => a.day.localeCompare(b.day) || String(a.entry_time || '').localeCompare(String(b.entry_time || '')));
+}
+function btStats(list){
+  const n = list.length, w = list.filter(x => x.result==='W').length, l = list.filter(x => x.result==='L').length;
+  const rs = list.map(x => Number(x.r) || 0), tot = rs.reduce((a, b) => a + b, 0);
+  const gp = rs.filter(x => x > 0).reduce((a, b) => a + b, 0), gl = -rs.filter(x => x < 0).reduce((a, b) => a + b, 0);
+  let eq = 0, peak = 0, dd = 0; const curve = rs.map(x => { eq += x; peak = Math.max(peak, eq); dd = Math.max(dd, peak - eq); return +eq.toFixed(2); });
+  let streak = 0, worst = 0; list.forEach(x => { streak = x.result==='L' ? streak + 1 : 0; worst = Math.max(worst, streak); });
+  return { n, w, l, be:n - w - l, wr: w + l ? w / (w + l) * 100 : null, exp: n ? tot / n : null, tot, pf: gl ? gp / gl : gp ? Infinity : null, dd, curve, worstL:worst };
+}
+const BT_DIMS = [
+  ['withB', 'Weekly bias', x => x.withB, [['with','With the bias'],['against','Against the bias'],['none','No clear bias']]],
+  ['conv', 'Conviction', x => x.conviction || 'none', [['high','High'],['medium','Medium'],['low','Low'],['none','Not set']]],
+  ['edge', 'Score edge (your direction)', x => x.edge==null ? 'na' : x.edge >= 5 ? 's' : x.edge >= 2 ? 'm' : x.edge > -2 ? 'f' : 'o',
+    [['s','Strong · +5 or more'],['m','Mild · +2 to +4'],['f','Flat · −1 to +1'],['o','Opposing · −2 or less'],['na','No scores']]],
+  ['align', 'Fundamental vs technical', x => x.alignment || 'na', [['Aligned','Aligned'],['Partial conflict','Partial conflict'],['Conflicting','Conflicting'],['Neutral','Neutral'],['na','Not set']]],
+  ['news', 'High-impact news that day', x => x.newsDay ? 'y' : 'n', [['n','Quiet day'],['y','News day']]],
+  ['sess', 'Session', x => x.sess, [['Asia','Asia'],['London','London'],['London / New York','London / New York'],['New York','New York'],['Off-session','Off-session']]],
+  ['dow', 'Day of the week', x => x.dow, [['Mon','Monday'],['Tue','Tuesday'],['Wed','Wednesday'],['Thu','Thursday'],['Fri','Friday']]],
+  ['brk', 'Fractal break', x => x.break_type || 'na', [['wick','Wick'],['body','Body'],['na','Not set']]],
+  ['rules', 'Rules followed', x => x.rules_ok==null ? 'na' : x.rules_ok ? 'y' : 'n', [['y','Yes'],['n','No'],['na','—']]],
+];
+function btGroups(list, dim){
+  const [, , fn, order] = dim, g = new Map(order.map(([k]) => [k, []]));
+  list.forEach(x => { const k = fn(x); if(!g.has(k)) g.set(k, []); g.get(k).push(x); });
+  return [...g.entries()].filter(([, a]) => a.length).map(([k, a]) => ({ k, label:(order.find(o => o[0]===k) || [k, k])[1], ...btStats(a) }));
+}
+const btR = (v, d = 2) => v==null ? '–' : `${v > 0 ? '+' : v < 0 ? '−' : ''}${fmt(Math.abs(v), d)}R`;
+const BT_MIN = 10;   /* fewer trades than this in a group → shown, but marked as "too few to trust" */
+/* plain-language findings: the contexts that pay and the ones that cost, with enough trades behind them */
+function btInsights(list, all){
+  if(list.length < 8) return [];
+  const base0 = all.exp ?? 0, out = [];
+  for(const dim of BT_DIMS.slice(0, 6)){
+    for(const g of btGroups(list, dim)){
+      if(g.n < Math.max(6, Math.round(list.length * 0.08)) || g.exp==null || ['na','none'].includes(g.k) && dim[0]!=='withB') continue;
+      out.push({ dim:dim[1], label:g.label, n:g.n, exp:g.exp, wr:g.wr, d:g.exp - base0 });
+    }
+  }
+  out.sort((a, b) => b.d - a.d);
+  const best = out.filter(x => x.d > 0.15).slice(0, 3), worst = out.filter(x => x.d < -0.15).slice(-3).reverse();
+  return [...best.map(x => ({ ...x, up:true })), ...worst.map(x => ({ ...x, up:false }))];
+}
+function btTable(list, dim){
+  const gs = btGroups(list, dim); if(!gs.length) return '';
+  const mx = Math.max(0.5, ...gs.map(g => Math.abs(g.exp || 0)));
+  return `<section class="bt-card"><h3>${dim[1]}</h3><div class="bt-rows">${gs.map(g => `
+    <div class="bt-row${g.n < BT_MIN ? ' few' : ''}" title="${g.n < BT_MIN ? 'Fewer than ' + BT_MIN + ' trades — not enough to trust yet' : ''}">
+      <span class="bt-l">${esc(g.label)}</span><span class="bt-n">${g.n}</span>
+      <span class="bt-bar"><i class="${(g.exp || 0) >= 0 ? 'up' : 'dn'}" style="width:${Math.abs(g.exp || 0) / mx * 50}%;${(g.exp || 0) >= 0 ? 'left:50%' : 'right:50%'}"></i></span>
+      <b class="bt-e ${sgn(g.exp)}">${btR(g.exp)}</b><span class="bt-w">${g.wr==null ? '–' : fmt(g.wr, 0) + '%'}</span><span class="bt-tot ${sgn(g.tot)}">${btR(g.tot, 1)}</span>
+    </div>`).join('')}</div></section>`;
+}
+/* conviction × bias direction: average R per cell */
+function btMatrix(list){
+  const rows = [['high','High'],['medium','Medium'],['low','Low']], cols = [['with','With bias'],['against','Against'],['none','No bias']];
+  if(!list.some(x => x.conviction)) return '';
+  const cell = (c, b) => { const a = list.filter(x => (x.conviction || '')===c && x.withB===b); if(!a.length) return '<td class="bt-mx-e">·</td>';
+    const s = btStats(a), v = Math.max(-1, Math.min(1, (s.exp || 0) / 1.5));
+    return `<td style="--h:${v >= 0 ? 170 : 330};--a:${Math.round(Math.abs(v) * 55 + 6)}%" class="${a.length < BT_MIN ? 'few' : ''}"><b>${btR(s.exp)}</b><small>${a.length} · ${s.wr==null ? '–' : fmt(s.wr, 0) + '%'}</small></td>`; };
+  return `<section class="bt-card bt-mx"><h3>Conviction × direction</h3><table><thead><tr><th></th>${cols.map(c => `<th>${c[1]}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(([k, l]) => `<tr><th>${l}</th>${cols.map(([b]) => cell(k, b)).join('')}</tr>`).join('')}</tbody></table>
+    <p class="hint">Average R per trade · number of trades · win rate. Faded cells have fewer than ${BT_MIN} trades.</p></section>`;
+}
+function renderBacktest(){
+  const m = document.getElementById('main');
+  if(S.bt.missing){ m.innerHTML = `<div class="pairtitle">Backtest</div><div class="card" style="margin-top:14px"><p>Run <b>migration-backtest.sql</b> in Supabase → SQL Editor, then reload.</p></div>`; return; }
+  const src = ls.get('do_bt_src', 'bt'), per = ls.get('do_bt_per', 'all'), list = btRows(), st = btStats(list);
+  const runs = [...new Set([...S.bt.rows.values()].map(x => x.run || 'No run'))].sort();
+  const pairs = [...new Set([...S.bt.rows.values()].map(x => x.pair).concat(src!=='bt' ? [...S.trades.values()].map(t => t.pair) : []))].filter(Boolean).sort();
+  const seg = (opts, val, attr) => `<div class="seg" role="group">${opts.map(([v, l]) => `<button ${attr}="${v}" aria-pressed="${val===v}">${l}</button>`).join('')}</div>`;
+  const ins = btInsights(list, st), noCtx = list.filter(x => !x.bias && x.base_score==null).length;
+  const recent = [...list].reverse().slice(0, S.bt.more ? 400 : 40);
+  m.innerHTML = `
+    <div class="flex flex-wrap items-end gap-4 mb-4">
+      <div><div class="pairtitle">Backtest</div><div class="muted mt-1" style="font-weight:600;max-width:640px">Replay setups on TradingView and log them here. Each trade is tagged with that week's fundamentals, so you can see in which context your edge is real.</div></div>
+      <div class="flex flex-wrap items-center gap-2 ml-auto"><button class="btn" id="btCsv">⇩ CSV</button><button class="btn btn-primary" id="btAdd">+ Log a trade</button></div>
+    </div>
+    <div class="bt-bar0">
+      ${seg([['bt','Backtest'],['live','Live trades'],['both','Both']], src, 'data-btsrc')}
+      ${src!=='live' ? `<select class="inp" id="btRun" aria-label="Backtest run"><option value="all">All runs</option>${runs.map(r => `<option ${S.bt.run===r ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select>` : ''}
+      <select class="inp" id="btPair" aria-label="Pair"><option value="all">All pairs</option>${pairs.map(p => `<option ${S.bt.pair===p ? 'selected' : ''}>${p}</option>`).join('')}</select>
+      ${seg([['all','All'],['365','1Y'],['180','6M'],['90','3M']], per, 'data-btper')}
+    </div>
+    ${!list.length ? `<div class="empty"><div class="orb" aria-hidden="true"></div><p>${src==='live' ? 'No closed trades in this filter.' : 'No backtest trades yet. Open TradingView in replay mode, find your setups (liquidity → fractal change → retest) and log each one here.'}</p>${src!=='live' ? '<button class="btn btn-primary" id="btAdd2">+ Log the first trade</button>' : ''}</div>` : `
+    <section class="bt-kpi">
+      <div class="ab-k"><span>Trades</span><b>${st.n}</b><small>${st.w} W · ${st.l} L · ${st.be} BE</small></div>
+      <div class="ab-k"><span>Win rate</span><b>${st.wr==null ? '–' : fmt(st.wr, 0) + '%'}</b><small>without break-evens</small></div>
+      <div class="ab-k ${st.exp >= 0 ? 'up' : 'dn'}"><span>Expectancy</span><b>${btR(st.exp)}</b><small>average per trade</small></div>
+      <div class="ab-k ${st.tot >= 0 ? 'up' : 'dn'}"><span>Total</span><b>${btR(st.tot, 1)}</b><small>profit factor ${st.pf==null ? '–' : st.pf===Infinity ? '∞' : fmt(st.pf, 2)}</small></div>
+      <div class="ab-k dn"><span>Max drawdown</span><b>${btR(-st.dd, 1)}</b><small>worst losing streak ${st.worstL}</small></div>
+    </section>
+    <div class="card bt-eq"><div class="flex items-center gap-2"><h3 style="margin:0">Equity curve</h3><span class="muted" style="font-size:12.5px">cumulative R, trade by trade</span></div><div style="height:220px;margin-top:10px"><canvas id="btEq"></canvas></div></div>
+    ${ins.length ? `<section class="bt-ins">${ins.map(x => `<article class="${x.up ? 'up' : 'dn'}"><span>${x.up ? 'Where you earn' : 'Where you lose'}</span>
+      <b>${esc(x.dim)}: ${esc(x.label)}</b><p>${btR(x.exp)} per trade over ${x.n} trades (${x.wr==null ? '–' : fmt(x.wr, 0) + '% win'}), ${x.d >= 0 ? '+' : '−'}${fmt(Math.abs(x.d), 2)}R vs your average.${x.n < BT_MIN ? ' Few trades: keep logging before acting on it.' : ''}</p></article>`).join('')}</section>`
+      : `<p class="hint" style="margin:0 0 14px">Findings appear after about 8 trades with fundamentals.</p>`}
+    ${noCtx ? `<p class="bt-warn">${noCtx} trade${noCtx > 1 ? 's have' : ' has'} no fundamentals (no weekly analysis for that week and none set by hand). They count only as "No clear bias" / "No scores".</p>` : ''}
+    <p class="hint" style="margin:0 0 8px">Each row: trades · average R per trade (bar) · win rate · total R. Faded rows have fewer than ${BT_MIN} trades.</p>
+    <div class="bt-grid">${btMatrix(list)}${BT_DIMS.map(d => btTable(list, d)).join('')}</div>
+    <section class="card bt-list"><div class="flex items-center gap-2"><h3 style="margin:0">Trades</h3><span class="muted" style="font-size:12.5px">newest first · click to edit</span></div>
+      <div class="bt-tw"><table class="bt-t"><thead><tr><th>Date</th><th>Pair</th><th>Dir</th><th>Result</th><th>Bias</th><th>Conv.</th><th>Edge</th><th>News</th><th>Session</th><th>Run</th></tr></thead><tbody>
+      ${recent.map(x => `<tr ${x.live ? `data-btlive="${x.src.id}"` : `data-btid="${x.id}"`}><td>${x.day.slice(5)} ${esc(x.entry_time || '')}</td><td><b>${x.pair}</b></td><td class="${x.direction==='Long' ? 'pos' : 'neg'}">${x.direction==='Long' ? '▲' : '▼'}</td>
+        <td class="${sgn(x.r)}"><b>${btR(x.r, 1)}</b></td><td>${x.withB==='with' ? '✓ with' : x.withB==='against' ? '✗ against' : '–'}</td><td>${esc(x.conviction || '–')}</td>
+        <td class="${sgn(x.edge)}">${x.edge==null ? '–' : (x.edge > 0 ? '+' : '') + fmt(x.edge, 1)}</td><td>${x.newsDay ? '⚡' : ''}</td><td>${esc(x.sess)}</td><td class="muted">${esc(x.run || '')}</td></tr>`).join('')}
+      </tbody></table></div>${list.length > 40 ? `<button class="btn" id="btMore" style="margin-top:10px">${S.bt.more ? 'Show less' : `Show all ${list.length}`}</button>` : ''}</section>`}`;
+  if(list.length) mkChart('btEq', 'line', st.curve.map((_, i) => i + 1), [{ data:st.curve, borderColor:cssv('--accent'), backgroundColor:'transparent', borderWidth:2, pointRadius:0, tension:.2 }], { y:{ ticks:{ color:cssv('--muted'), callback:v => v + 'R' } } });
+  m.querySelectorAll('[data-btsrc]').forEach(b => b.onclick = () => { ls.set('do_bt_src', b.dataset.btsrc); renderMain(); });
+  m.querySelectorAll('[data-btper]').forEach(b => b.onclick = () => { ls.set('do_bt_per', b.dataset.btper); renderMain(); });
+  m.querySelector('#btRun')?.addEventListener('change', e => { S.bt.run = e.target.value; renderMain(); });
+  m.querySelector('#btPair')?.addEventListener('change', e => { S.bt.pair = e.target.value; renderMain(); });
+  m.querySelector('#btMore')?.addEventListener('click', () => { S.bt.more = !S.bt.more; renderMain(); });
+  [m.querySelector('#btAdd'), m.querySelector('#btAdd2')].forEach(b => b && (b.onclick = () => openBacktest(null)));
+  m.querySelectorAll('[data-btid]').forEach(r => r.onclick = () => openBacktest(S.bt.rows.get(r.dataset.btid)));
+  m.querySelectorAll('[data-btlive]').forEach(r => r.onclick = () => toast('Live trade — edit it in Trades. Its fundamentals come from that week\'s analysis.'));
+  m.querySelector('#btCsv').onclick = () => btCsv(list);
+}
+function btCsv(list){
+  const cols = ['day','entry_time','pair','direction','result','r','run','bias','conviction','withB','base_score','quote_score','edge','alignment','newsDay','sess','dow','break_type','rules_ok','notes'];
+  const q = v => v==null ? '' : /[",\n;]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v);
+  const csv = [cols.join(','), ...list.map(x => cols.map(c => q(Array.isArray(x[c]) ? x[c].join(' | ') : x[c])).join(','))].join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' })); a.download = `backtest-${iso(new Date())}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+/* the form: what happened on the chart + the fundamentals of that week (filled in for you, you can correct them) */
+function openBacktest(row, keep){
+  const dlg = document.getElementById('btDlg'), last = ls.get(BT_RUNS_KEY, {}), r = row || { ...keep, pair:keep?.pair || last.pair || S.pair || 'EURUSD', run:keep?.run || last.run || '', direction:'Long', result:null, break_type:null, rules_ok:true };
+  const runs = [...new Set([...S.bt.rows.values()].map(x => x.run).filter(Boolean))];
+  const F = { pair:r.pair, day:r.day || iso(new Date()), direction:r.direction || 'Long', result:r.result || null, break_type:r.break_type || null, rules_ok:r.rules_ok!==false,
+    ctxEdit: !!row?.ctx_manual, bias:r.bias ?? null, conviction:r.conviction ?? null, base_score:r.base_score ?? null, quote_score:r.quote_score ?? null, alignment:r.alignment ?? null, news:r.news || null };
+  const chips = (name, opts, val) => `<div class="seg bt-ch" role="group">${opts.map(([v, l]) => `<button type="button" data-${name}="${v}" aria-pressed="${String(val)===String(v)}">${l}</button>`).join('')}</div>`;
+  const ctxNow = () => { if(F.ctxEdit) return F; const c = btAutoCtx(F.pair, F.day, F.direction); return { ...c }; };
+  const draw = () => {
+    const c = ctxNow(), dv = btDerive({ ...c, direction:F.direction, day:F.day, news_day:c.news?.length > 0 });
+    const autoC = btAutoCtx(F.pair, F.day, F.direction);
+    dlg.querySelector('#btCtx').innerHTML = `
+      <div class="bt-cx-h"><b>Fundamentals for ${F.pair} · W${isoWeek(new Date(F.day + 'T12:00:00')).week}</b>
+        <span class="${autoC.found ? 'pos' : 'muted'}">${F.ctxEdit ? 'set by hand' : autoC.found ? 'from your weekly analysis' : 'no analysis that week — set it by hand'}</span>
+        <button type="button" class="bt-lnk" id="btCtxEd">${F.ctxEdit ? 'Use the weekly analysis' : 'Edit'}</button></div>
+      ${F.ctxEdit ? `<div class="bt-cx-f">
+        <label><span class="lbl">Bias</span>${chips('bcb', [['bullish','Bullish'],['bearish','Bearish'],['two-sided','Two-sided'],['neutral','Neutral']], F.bias)}</label>
+        <label><span class="lbl">Conviction</span>${chips('bcc', [['high','High'],['medium','Medium'],['low','Low']], F.conviction)}</label>
+        <div class="g3"><label><span class="lbl">${base(F.pair)} score</span><input class="inp num" id="btBs" inputmode="decimal" value="${F.base_score ?? ''}" placeholder="−10…+10"></label>
+          <label><span class="lbl">${quote(F.pair)} score</span><input class="inp num" id="btQs" inputmode="decimal" value="${F.quote_score ?? ''}" placeholder="−10…+10"></label>
+          <label><span class="lbl">News day</span>${chips('bcn', [['1','Yes'],['0','No']], F.news?.length ? '1' : '0')}</label></div>
+        <label><span class="lbl">Fundamental vs technical</span>${chips('bca', ALIGNS.map(a => [a, a]), F.alignment)}</label></div>`
+      : `<div class="bt-cx-g">
+        <div><span>Bias</span><b>${c.bias ? BIAS_LBL[c.bias] : '—'}${c.conviction ? ` · ${c.conviction}` : ''}</b></div>
+        <div><span>Scores</span><b>${c.base_score!=null ? `${base(F.pair)} ${c.base_score > 0 ? '+' : ''}${c.base_score} · ${quote(F.pair)} ${c.quote_score > 0 ? '+' : ''}${c.quote_score}` : '—'}</b></div>
+        <div><span>Alignment</span><b>${esc(c.alignment || '—')}</b></div>
+        <div><span>News that day</span><b>${c.news?.length ? '⚡ ' + esc(c.news.slice(0, 2).join(' · ')) : 'quiet'}</b></div></div>`}
+      <div class="bt-cx-v ${dv.withB}">${dv.withB==='with' ? '✓ With the weekly bias' : dv.withB==='against' ? '✗ Against the weekly bias' : '– No clear bias'}${dv.edge!=null ? ` · score edge ${dv.edge > 0 ? '+' : ''}${fmt(dv.edge, 1)}` : ''}</div>`;
+    dlg.querySelector('#btCtxEd').onclick = () => { if(!F.ctxEdit){ Object.assign(F, ctxNow()); F.ctxEdit = true; } else F.ctxEdit = false; draw(); };
+    dlg.querySelectorAll('[data-bcb]').forEach(b => b.onclick = () => { F.bias = b.dataset.bcb; draw(); });
+    dlg.querySelectorAll('[data-bcc]').forEach(b => b.onclick = () => { F.conviction = b.dataset.bcc; draw(); });
+    dlg.querySelectorAll('[data-bca]').forEach(b => b.onclick = () => { F.alignment = b.dataset.bca; draw(); });
+    dlg.querySelectorAll('[data-bcn]').forEach(b => b.onclick = () => { F.news = b.dataset.bcn==='1' ? ['marked by hand'] : []; draw(); });
+    dlg.querySelector('#btBs')?.addEventListener('change', e => { F.base_score = parseNum(e.target.value); draw(); });
+    dlg.querySelector('#btQs')?.addEventListener('change', e => { F.quote_score = parseNum(e.target.value); draw(); });
+    ['dir','res','brk'].forEach(k => dlg.querySelectorAll(`[data-${k}]`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset[k]===String({ dir:F.direction, res:F.result, brk:F.break_type }[k])))));
+    const rIn = dlg.querySelector('#btR'); if(rIn && !rIn.dataset.touched && F.result) rIn.value = { W:2, L:-1, BE:0 }[F.result];
+  };
+  dlg.innerHTML = `<form id="btForm" method="dialog">
+    <div class="dlg-head"><h2>${row ? 'Edit backtest trade' : 'Log a backtest trade'}</h2></div>
+    <div class="dlg-body bt-form">
+      <div class="g3">
+        <label><span class="lbl">Pair</span><select class="inp" id="btP">${[...new Set([...allPairs(), F.pair])].map(p => `<option ${p===F.pair ? 'selected' : ''}>${p}</option>`).join('')}</select></label>
+        <label><span class="lbl">Entry day</span><input class="inp" type="date" id="btD" value="${F.day}" required></label>
+        <label><span class="lbl">Entry time (RO)</span><input class="inp" type="time" id="btT" value="${esc(r.entry_time || '')}"></label>
+      </div>
+      <div class="bt-two">
+        <label><span class="lbl">Direction</span>${chips('dir', [['Long','▲ Long'],['Short','▼ Short']], F.direction)}</label>
+        <label><span class="lbl">Fractal break</span>${chips('brk', [['wick','Wick'],['body','Body']], F.break_type)}</label>
+      </div>
+      <div class="bt-two">
+        <label><span class="lbl">Result</span>${chips('res', [['W','Win (TP)'],['L','Loss (SL)'],['BE','Break-even']], F.result)}</label>
+        <label><span class="lbl">R</span><input class="inp num" id="btR" inputmode="decimal" value="${r.r ?? ''}" placeholder="+2 / −1"></label>
+      </div>
+      <div class="g3">
+        <label><span class="lbl">Entry</span><input class="inp num" id="btE" inputmode="decimal" value="${r.entry ?? ''}" placeholder="optional"></label>
+        <label><span class="lbl">Stop loss</span><input class="inp num" id="btS" inputmode="decimal" value="${r.sl ?? ''}" placeholder="optional"></label>
+        <label><span class="lbl">Max favourable (R)</span><input class="inp num" id="btM" inputmode="decimal" value="${r.mfe_r ?? ''}" placeholder="how far it went"></label>
+      </div>
+      <div id="btCtx" class="bt-cx"></div>
+      <div class="bt-two">
+        <label><span class="lbl">Run (group of backtests)</span><input class="inp" id="btRunIn" list="btRunsL" value="${esc(r.run || '')}" placeholder="e.g. EURUSD Q3 2026"><datalist id="btRunsL">${runs.map(x => `<option>${esc(x)}</option>`).join('')}</datalist></label>
+        <label><span class="lbl">Chart link</span><input class="inp" id="btU" value="${esc(r.chart_url || '')}" placeholder="TradingView snapshot"></label>
+      </div>
+      <label class="sx-sw"><input type="checkbox" id="btOk" ${F.rules_ok ? 'checked' : ''}><i></i>I followed my rules on this one</label>
+      <label><span class="lbl">Notes</span><textarea class="inp" id="btN" rows="2" placeholder="What did you see? What would you do differently?">${esc(r.notes || '')}</textarea></label>
+    </div>
+    <div class="dlg-foot">${row ? '<button type="button" class="btn btn-danger" id="btDel" style="margin-right:auto">Delete</button>' : ''}<button type="button" class="btn" id="btCancel">Cancel</button>
+      ${row ? '' : '<button type="button" class="btn" id="btNext">Save + next</button>'}<button type="submit" class="btn btn-primary">Save</button></div>
+  </form>`;
+  const $ = s => dlg.querySelector(s);
+  $('#btP').onchange = e => { F.pair = e.target.value; draw(); };
+  $('#btD').onchange = e => { F.day = e.target.value; draw(); };
+  $('#btR').oninput = e => { e.target.dataset.touched = '1'; };
+  dlg.querySelectorAll('[data-dir]').forEach(b => b.onclick = () => { F.direction = b.dataset.dir; draw(); });
+  dlg.querySelectorAll('[data-res]').forEach(b => b.onclick = () => { F.result = b.dataset.res; draw(); });
+  dlg.querySelectorAll('[data-brk]').forEach(b => b.onclick = () => { F.break_type = F.break_type===b.dataset.brk ? null : b.dataset.brk; draw(); });
+  $('#btCancel').onclick = () => dlg.close();
+  $('#btDel')?.addEventListener('click', async () => { if(!confirm('Delete this backtest trade?')) return;
+    const { error } = await sb.from('do_backtests').delete().eq('id', row.id); if(error) return toast(error.message);
+    S.bt.rows.delete(row.id); dlg.close(); renderMain(); toast('Deleted'); });
+  const save = async next => {
+    if(!F.result) return toast('Pick the result');
+    const R = parseNum($('#btR').value) ?? { W:2, L:-1, BE:0 }[F.result], tm = $('#btT').value || null, c = ctxNow();
+    const rec = { pair:F.pair, day:F.day, entry_time:tm, direction:F.direction, session:sessionName(tm), break_type:F.break_type, result:F.result, r:R,
+      entry:parseNum($('#btE').value), sl:parseNum($('#btS').value), mfe_r:parseNum($('#btM').value), run:$('#btRunIn').value.trim() || null, chart_url:$('#btU').value.trim() || null,
+      rules_ok:$('#btOk').checked, notes:$('#btN').value.trim() || null,
+      bias:c.bias || null, conviction:c.conviction || null, base_score:c.base_score ?? null, quote_score:c.quote_score ?? null, alignment:c.alignment || null,
+      news:c.news || [], news_day:!!(c.news && c.news.length), ctx_manual:F.ctxEdit };
+    const q = row ? sb.from('do_backtests').update(rec).eq('id', row.id).select().single() : sb.from('do_backtests').insert(rec).select().single();
+    const { data, error } = await q; if(error) return toast(/relation|does not exist|schema cache/i.test(error.message) ? 'Run migration-backtest.sql in Supabase first' : error.message);
+    S.bt.rows.set(data.id, data); ls.set(BT_RUNS_KEY, { pair:F.pair, run:rec.run || '' });
+    if(next){ toast('Saved · next one'); openBacktest(null, { pair:F.pair, run:rec.run, day:F.day }); renderMain(); return; }
+    dlg.close(); renderMain(); toast('Saved');
+  };
+  $('#btForm').onsubmit = ev => { ev.preventDefault(); save(false); };
+  $('#btNext')?.addEventListener('click', () => save(true));
+  draw();
+  if(!dlg.open) dlg.showModal();
 }
 function renderPortfolio(){
   const m = document.getElementById('main');
