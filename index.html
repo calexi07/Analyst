@@ -2500,8 +2500,8 @@ const ICONS = {
 const ico = (k, s = 18) => `<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]||''}</svg>`;
 const NAV = [
   [null, [['today','Today','home']]],
-  ['Work', [['journal','Journal','calendar']]],
-  ['Insights', [['history','Fundamental check','trend'],['backtest','Backtest','flask']]],
+  ['Work', [['journal','Calendar','calendar']]],
+  ['Fundamental Analyse', [['history','Check','trend'],['backtest','Trades','flask']]],
   ['Money', [['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target']]],
   ['Tools', [['prompts','Prompts','spark']]],
 ];
@@ -2647,7 +2647,7 @@ function render(){
         <main id="main" class="wrap"></main>
       </div>
       <nav class="bnav" aria-label="Main navigation">
-        ${[['today','Today','home'],['journal','Journal','calendar'],['history','Checks','trend'],['backtest','Backtest','flask']].map(([v,l,i]) => `<button data-view="${v}" aria-current="${navActive(v) ? 'page' : 'false'}">${ico(i, 20)}<span>${l}</span></button>`).join('')}
+        ${[['today','Today','home'],['journal','Calendar','calendar'],['history','Check','trend'],['backtest','Trades','flask']].map(([v,l,i]) => `<button data-view="${v}" aria-current="${navActive(v) ? 'page' : 'false'}">${ico(i, 20)}<span>${l}</span></button>`).join('')}
         <button id="bnMore" aria-current="${['accounts','portfolio','bank','goals','prompts'].includes(S.view) ? 'page' : 'false'}">${ico('more', 20)}<span>More</span></button>
       </nav>
     </div>`;
@@ -4886,7 +4886,7 @@ function spark(vals, w = 120, h = 30){
 /* History = one page, three tabs: your trading results, the fundamentals over time, this week's picture */
 function histTabsInto(tab){
   const m = document.getElementById('main'); if(!m) return;
-  m.insertAdjacentHTML('afterbegin', `<header class="hp-top"><div><div class="pairtitle">Fundamental check</div></div>
+  m.insertAdjacentHTML('afterbegin', `<header class="hp-top"><div><div class="pairtitle">Check</div><div class="muted" style="font-weight:600;font-size:12px">Fundamental Analyse</div></div>
     <nav class="hp-tabs" role="tablist">${[['checks','📍 Daily checks','morning and evening checks, imported day by day'],['stories','📖 Stories','the weekly story of every pair'],['fund','🧭 Bias history','bias & scores week by week'],['week','🗓️ This week','every pair at a glance']].map(([k, l, t]) => `<button role="tab" data-htab="${k}" aria-selected="${tab===k}" title="${t}">${l}</button>`).join('')}</nav></header>`);
   m.querySelectorAll('[data-htab]').forEach(b => b.onclick = () => { const k = b.dataset.htab; if(k!=='week') ls.set('do_hist_tab', k);
     S.view = k==='week' ? 'overview' : 'history'; ls.set('do_view', 'history'); renderMain(); });
@@ -4901,10 +4901,10 @@ const btCls = x => x.result==='W' ? 'w' : x.result==='L' ? 'l' : 'be';
 function btChips(p, ds){ const a = btDay(p, ds); if(!a.length) return '';
   return a.slice(0, 2).map(x => `<div class="cd-bt ${btCls(x)}" title="Backtest${x.run ? ' · ' + esc(x.run) : ''}">🧪 ${btLbl(x)}</div>`).join('') + (a.length > 2 ? `<div class="cd-bt more">🧪 +${a.length - 2} more</div>` : ''); }
 function btDayHtml(p, ds){ const a = btDay(p, ds); if(!a.length) return '';
-  return `<div class="vsec"><h4>🧪 Backtest</h4><div class="fc-chk">${a.map(x => `<button class="fc-ckb" data-btopen="${x.id}"><b class="${x.result==='W' ? 'pos' : x.result==='L' ? 'neg' : ''}">${btLbl(x)}</b>${x.entry_time ? `<span class="muted" style="font-size:12px">${esc(x.entry_time)}</span>` : ''}${x.run ? `<span class="muted" style="font-size:12px">${esc(x.run)}</span>` : ''}</button>`).join('')}</div></div>`; }
+  return `<div class="vsec"><h4>🧪 Trades</h4><div class="fc-chk">${a.map(x => `<button class="fc-ckb" data-btopen="${x.id}"><b class="${x.result==='W' ? 'pos' : x.result==='L' ? 'neg' : ''}">${btLbl(x)}</b>${x.entry_time ? `<span class="muted" style="font-size:12px">${esc(x.entry_time)}</span>` : ''}${x.run ? `<span class="muted" style="font-size:12px">${esc(x.run)}</span>` : ''}</button>`).join('')}</div></div>`; }
 function btWeekHtml(p, days){ const a = (days||[]).flatMap(d => btDay(p, iso(d))); if(!a.length) return '';
   const R = a.reduce((t, x) => t + (Number(x.r) || 0), 0), W = a.filter(x => x.result==='W').length, L = a.filter(x => x.result==='L').length;
-  return `<div class="vsec"><h4>🧪 Backtest <span class="muted" style="font-weight:600;font-size:12px">· ${a.length} trade${a.length===1 ? '' : 's'} · ${W}W / ${L}L · ${R >= 0 ? '+' : ''}${fmt(R, 1)}R</span></h4><div class="fc-chk">${a.map(x => `<button class="fc-ckb" data-btopen="${x.id}"><b>${fmtDayShort(x.day)}</b><span class="${x.result==='W' ? 'pos' : x.result==='L' ? 'neg' : ''}" style="font-weight:700">${btLbl(x)}</span>${x.run ? `<span class="muted" style="font-size:12px">${esc(x.run)}</span>` : ''}</button>`).join('')}</div></div>`; }
+  return `<div class="vsec"><h4>🧪 Trades <span class="muted" style="font-weight:600;font-size:12px">· ${a.length} trade${a.length===1 ? '' : 's'} · ${W}W / ${L}L · ${R >= 0 ? '+' : ''}${fmt(R, 1)}R</span></h4><div class="fc-chk">${a.map(x => `<button class="fc-ckb" data-btopen="${x.id}"><b>${fmtDayShort(x.day)}</b><span class="${x.result==='W' ? 'pos' : x.result==='L' ? 'neg' : ''}" style="font-weight:700">${btLbl(x)}</span>${x.run ? `<span class="muted" style="font-size:12px">${esc(x.run)}</span>` : ''}</button>`).join('')}</div></div>`; }
 document.addEventListener('click', ev => { const b = ev.target.closest('[data-btopen]'); if(!b) return; ev.preventDefault(); ev.stopPropagation(); const r = S.bt.rows.get(b.dataset.btopen) || S.bt.rows.get(Number(b.dataset.btopen)); if(r) openBacktest(r); }, true);
 /* story/check blocks inside the journal: day page and week panel */
 function fcClean(t){ return String(t||'').split('\n').filter(l => !/^\$[A-Z]+:/.test(l) && !l.startsWith('📸') && !/^━+$/.test(l.trim()) && !/^\[b\]📍 DAILY CHECK/.test(l)).join('\n').replace(/\n{3,}/g, '\n\n').trim(); }
@@ -4913,7 +4913,7 @@ function fcDayHtml(p, ds){
   const k = isoWeek(parseISO(ds)), st = det(S.weekly.get(wk(p, k.year, k.week))).story;
   if(!cks.length && !st?.text) return '';
   return `<div class="fc-day">
-    <div class="vw-mh"><h4>📍 Fundamental check</h4>${st?.text ? `<button class="btn" data-fcopen="story|${p}|${k.year}|${k.week}">📖 Week ${k.week} story</button>` : ''}</div>
+    <div class="vw-mh"><h4>📍 Check</h4>${st?.text ? `<button class="btn" data-fcopen="story|${p}|${k.year}|${k.week}">📖 Week ${k.week} story</button>` : ''}</div>
     ${cks.length ? cks.map(({ sl, x }) => `<article class="fc-note"><div class="fc-h"><span class="tfl">${sl==='morning' ? '🌅 Morning' : '🌙 Evening'}</span><span class="fc-tag ${stCls(x.status)}">${esc(x.status)}</span>${x.flag ? `<span class="muted" style="font-size:12px;font-weight:700">🚩 ${esc(x.flag)}</span>` : ''}
         <button class="btn" style="margin-left:auto" data-fcopen="check|${ds}|${sl}|${p}">Copy note</button></div>
       <div class="fc-post">${bb2html(fcClean(x.note))}</div></article>`).join('')
@@ -5399,7 +5399,7 @@ function btMatrix(list){
 }
 function renderBacktest(){
   const m = document.getElementById('main');
-  if(S.bt.missing){ m.innerHTML = `<div class="pairtitle">Backtest</div><div class="card" style="margin-top:14px"><p>Run <b>migration-backtest.sql</b> in Supabase → SQL Editor, then reload.</p></div>`; return; }
+  if(S.bt.missing){ m.innerHTML = `<div class="pairtitle">Trades</div><div class="card" style="margin-top:14px"><p>Run <b>migration-backtest.sql</b> in Supabase → SQL Editor, then reload.</p></div>`; return; }
   const src = ls.get('do_bt_src', 'bt'), per = ls.get('do_bt_per', 'all'), list = btRows(), st = btStats(list);
   const runs = [...new Set([...S.bt.rows.values()].map(x => x.run || 'No run'))].sort();
   const pairs = [...new Set([...S.bt.rows.values()].map(x => x.pair).concat(src!=='bt' ? [...S.trades.values()].map(t => t.pair) : []))].filter(Boolean).sort();
@@ -5408,7 +5408,7 @@ function renderBacktest(){
   const recent = [...list].reverse().slice(0, S.bt.more ? 400 : 40);
   m.innerHTML = `
     <div class="flex flex-wrap items-end gap-4 mb-4">
-      <div><div class="pairtitle">Backtest</div><div class="muted mt-1" style="font-weight:600;max-width:640px">Replay setups on TradingView and log them here. Each trade is tagged with that week's fundamentals, so you can see in which context your edge is real.</div></div>
+      <div><div class="pairtitle">Trades</div><div class="muted mt-1" style="font-weight:600;max-width:640px">Replay setups on TradingView and log them here. Each trade is tagged with that week's fundamentals, so you can see in which context your edge is real.</div></div>
       <div class="flex flex-wrap items-center gap-2 ml-auto"><button class="btn" id="btCsv">⇩ CSV</button><button class="btn btn-primary" id="btAdd">+ Log a trade</button></div>
     </div>
     <div class="bt-bar0">
