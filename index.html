@@ -4997,7 +4997,7 @@ function renderStories(){
   const all = storyWeeks(), cur = isoWeek(new Date());
   if(S.fc.y==null){ const last = all.filter(k => k.year*100+k.week <= cur.year*100+cur.week + 1).at(-1) || all.at(-1) || cur; S.fc.y = last.year; S.fc.w = last.week; }
   const y = S.fc.y, w = S.fc.w, i = all.findIndex(k => k.year===y && k.week===w);
-  const rows0 = allPairs().filter(fcPairOk).map(p => ({ p, r:S.weekly.get(wk(p, y, w)) })).filter(x => x.r && det(x.r).story?.text).map(x => ({ ...x, ...storyWhy(x.r) }));
+  const rows0 = [...new Set([...allPairs(), 'XAUUSD'])].filter(fcPairOk).map(p => ({ p, r:S.weekly.get(wk(p, y, w)) })).filter(x => x.r && det(x.r).story?.text).map(x => ({ ...x, ...storyWhy(x.r) }));
   const nb = rows0.filter(x => x.best).length, rows = rows0.filter(x => fcShow(x.best)).sort((a,b) => (b.pts||0) - (a.pts||0));
   document.getElementById('main').innerHTML = `
     <div class="fc-bar"><button class="btn" id="fcPrev" ${i<=0 ? 'disabled' : ''}>‹</button><b style="font-size:16px">Week ${w} · ${y}</b><button class="btn" id="fcNext" ${i<0 || i>=all.length-1 ? 'disabled' : ''}>›</button>
