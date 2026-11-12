@@ -8790,12 +8790,47 @@ document.getElementById('csvFile').onchange = async ev => {
   }catch(e){ console.error(e); toast('CSV import failed: ' + e.message); }
 };
 
+
+/* ---------- automatic imports from the repo's imports/ folder (written by the Bias Engine runs) ---------- */
+/* imports/index.json = { "files": [ { "id": "...", "file": "imports/....json", "kind": "fundamentals" | "check" } ] }
+   each file is imported once; the list of imported ids is kept in do_settings.auto_imports (shared by all devices) */
+let autoImpBusy = false;
+async function autoImports(){
+  if(autoImpBusy || !location.protocol.startsWith('http')) return; autoImpBusy = true;
+  try{
+    const res = await fetch('imports/index.json?t=' + Date.now(), { cache:'no-store' }); if(!res.ok) return;
+    const list = (await res.json()).files || [];
+    const done = new Set(Array.isArray(S.settings?.auto_imports) ? S.settings.auto_imports : []);
+    const todo = list.filter(f => f && f.id && f.file && !done.has(f.id)); if(!todo.length) return;
+    const got = [];
+    for(const f of todo){
+      try{
+        const j = await fetch(f.file + '?t=' + Date.now(), { cache:'no-store' }).then(r => { if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+        if(j.format==='daily-observer-check'){
+          if(!/^\d{4}-\d{2}-\d{2}$/.test(j.date||'') || !['morning','evening'].includes(j.slot)) throw new Error('bad date/slot');
+          const key = `fcheck:${j.date}:${j.slot}`, { error } = await sb.from('do_settings').upsert({ key, value:j }, { onConflict:'key' }); if(error) throw error;
+          S.settings[key] = j; got.push(`${fmtDayShort(j.date)} ${j.slot} check`);
+        } else if(j.format==='daily-observer-fundamentals'){
+          j.pairs = (j.pairs||[]).map(p => ({ ...p, pair: normPair(p.pair) })).filter(p => p.pair.length===6);
+          const vw = j.valid_week; if(!vw?.year || !vw?.week) throw new Error('no valid_week');
+          const secs = new Set(FUND_SECTIONS.map(x => x[0]));
+          await runFundImport(j, { y:vw.year, w:vw.week }, j.pairs.map(p => p.pair), secs, 'overwrite');
+          got.push(`week ${vw.week} analysis`);
+        } else continue;
+        done.add(f.id);
+      }catch(e){ console.warn('auto-import failed', f, e); }
+    }
+    if(got.length){ await saveSettingKey('auto_imports', [...done].slice(-400)); toast('Imported automatically: ' + got.join(' · ')); if(S.mode!=='edit' && !document.querySelector('dialog[open]')) render(); }
+  }catch(e){ console.warn('auto-import', e); }
+  finally{ autoImpBusy = false; }
+}
 /* ---------- boot ---------- */
 (async () => {
   if(CONFIGURED){
     try{ await loadAll(); }catch(e){ console.error(e); toast('Could not load data: ' + e.message); }
   }
   render(); splashDone();
+  if(CONFIGURED && !SUAPP){ autoImports(); setInterval(autoImports, 10*60*1000); document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible') autoImports(); }); }
   if(CONFIGURED){ const tz = Intl.DateTimeFormat().resolvedOptions().timeZone; if(tz && S.settings && S.settings.tz!==tz) saveSettingKey('tz', tz);
     /* address of this site, for the "Setups" button in phone notifications */
     const site = location.origin + location.pathname; if(location.protocol.startsWith('http') && S.settings && S.settings.site_url!==site) saveSettingKey('site_url', site);
