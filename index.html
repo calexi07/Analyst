@@ -2149,6 +2149,17 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .fc-days{ display:flex; gap:6px; flex-wrap:wrap; }
   .fc-empty{ padding:22px; text-align:center; }
   .fc-day{ margin-bottom:18px; }
+  /* journal day/week: full-screen popup instead of the narrow side drawer (Nov 2026) */
+  .panel-side, .panel-side.wide{ top:3vh !important; bottom:3vh !important; left:50% !important; right:auto !important; width:min(1240px, 94vw) !important; height:auto !important;
+    border:1px solid var(--line) !important; border-radius:20px !important; box-shadow:0 30px 80px rgba(0,0,0,.45) !important; transform:translateX(-50%) scale(.97) !important; opacity:0; transition:transform .22s ease, opacity .18s ease !important; }
+  .panel-side.open, .panel-side.wide.open{ transform:translateX(-50%) scale(1) !important; opacity:1; }
+  .panel-side .ps{ border-radius:20px; }
+  .panel-side .ps-head{ border-radius:20px 20px 0 0; }
+  @media (max-width:900px){ .panel-side, .panel-side.wide{ top:0 !important; bottom:0 !important; width:100vw !important; border-radius:0 !important; } .panel-side .ps, .panel-side .ps-head{ border-radius:0; } }
+  .cd-bt{ font-size:11px; font-weight:700; border-radius:6px; padding:1px 5px; margin-top:3px; text-align:left; border:1px dashed var(--line); }
+  .cd-bt.w{ color:var(--pos); border-color:color-mix(in srgb,var(--pos) 45%,transparent); }
+  .cd-bt.l{ color:var(--neg); border-color:color-mix(in srgb,var(--neg) 45%,transparent); }
+  .cd-bt.be, .cd-bt.more{ color:var(--muted); }
   .fc-note{ border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:10px; background:color-mix(in srgb,var(--surface) 70%,transparent); }
   .fc-note .fc-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
   .fc-chk{ display:grid; gap:6px; }
@@ -2892,7 +2903,7 @@ function renderCalendar(){
           aria-label="${WD[dt.getDay()]} ${dt.getDate()} ${MONTHS[dt.getMonth()]}${e.trade_status ? ', '+esc(e.trade_status) : ''}" aria-pressed="${sel}">
         <div class="cd-top"><span class="cd-n">${dt.getDate()}</span>${e.daily_change!=null ? `<span class="cd-c ${sgn(e.daily_change)}">${pct(e.daily_change)}</span>` : ''}</div>
         ${stBadge(e.trade_status)}
-        ${trade}
+        ${trade}${btChips(p, ds)}
         ${!trs.length && hold[ds] ? `<div class="cd-hold ${hold[ds].t.direction.toLowerCase()} ${hold[ds].exit && hold[ds].t.result ? 'hx-'+hold[ds].t.result : ''}">${hold[ds].exit ? `⇥ Exit${hold[ds].t.result ? ' · '+hold[ds].t.result : ''}${hold[ds].t.pips!=null ? `<span class="t-full"> · ${hold[ds].t.pips>0?'+':''}${fmt(hold[ds].t.pips,1)}p</span>` : ''}` : `⋯ Holding <span class="t-full">${hold[ds].t.direction}</span>`}</div>` : ''}
         ${e.action && !trs.length ? `<div class="cd-act">→ ${esc(e.action)}</div>` : ''}
         <div class="cd-foot">${news.map(([c,n]) => `<span class="nchip" title="${esc(n.events)}">${c}</span>`).join('')}
@@ -3058,12 +3069,12 @@ function tradeTicket(e){
 function dayView(panel, ctx){
   const { p, ds, e, b, q } = ctx;
   const bn = S.news.get(nk(b,ds))?.events, qn = S.news.get(nk(q,ds))?.events;
-  const held = holdingMap(p)[ds], empty = !e.id && !bn && !qn && !held && !dayTrades(p, ds).length;
+  const held = holdingMap(p)[ds], empty = !e.id && !bn && !qn && !held && !dayTrades(p, ds).length && !btDay(p, ds).length;
   const tfs = [['Daily','daily_obs','tv_daily'],['4H','h4_obs','tv_4h'],['1H','h1_obs','tv_1h']].filter(([,o,t]) => e[o] || e[t]);
   const trs = dayTrades(p, ds);
   panel.innerHTML = `<div class="ps">
     ${panelHead(dayTitle(ctx), `${p} · ${ctx.dt.getFullYear()}`)}
-    ${empty ? `${wkBanner(ctx)}${fcDayHtml(p, ds)}<div class="empty"><div class="orb" aria-hidden="true"></div><p>No observations for this day yet.</p><button class="btn btn-primary" id="startEdit">Start observing</button></div>` : `
+    ${empty ? `${wkBanner(ctx)}${fcDayHtml(p, ds)}${btDayHtml(p, ds)}<div class="empty"><div class="orb" aria-hidden="true"></div><p>No observations for this day yet.</p><button class="btn btn-primary" id="startEdit">Start observing</button></div>` : `
     <div class="vw">
      <aside class="vw-side">
       ${wkBanner(ctx)}
@@ -3079,6 +3090,7 @@ function dayView(panel, ctx){
         <b>${held.t.direction==='Long' ? '▲' : '▼'} ${held.t.direction}${held.t.setup_tf ? ' · '+esc(held.t.setup_tf)+' setup' : ''}</b>
         <span class="muted">entered ${fmtDayShort(held.t.day)}${held.exit && held.t.result ? ` · <span class="${held.t.result==='W' ? 'pos' : held.t.result==='L' ? 'neg' : ''}">${held.t.result}</span>` : ''} — view entry ›</span></button>` : ''}
       ${trs.map(tradeTicket).join('')}
+      ${btDayHtml(p, ds)}
       ${bn || qn ? `<div class="vsec"><h4>News</h4><div class="news2">
         ${[[b,bn],[q,qn]].map(([c,t]) => `<div><span class="ncur">${c}</span>${t ? `<ul class="nl">${newsList(t)}</ul>` : '<p class="muted" style="font-size:13px">—</p>'}</div>`).join('')}
       </div></div>` : ''}
@@ -3423,6 +3435,7 @@ function weekView(panel){
         ${mini.map(([l,v]) => `<div class="mini ${l==='Horizon' ? '' : 'wide'}"><span class="kick">${l}</span><p>${esc(v)}</p></div>`).join('')}
       </div></div>` : ''}
       ${d.changed ? `<div class="vsec"><h4>Ce s-a schimbat</h4><p style="white-space:pre-line">${esc(d.changed)}</p></div>` : ''}`}
+    ${btWeekHtml(p, days)}
     ${fcWeekHtml(p, y, w, days)}
     <div class="vsec"><h4>Days of the week ${tr.length ? `<span class="muted" style="font-weight:600;font-size:12px">· ${tr.filter(t=>t.result==='W').length}W / ${tr.filter(t=>t.result==='L').length}L</span>` : ''}</h4>${weekDays(p, days)}</div>
     ${r.review ? `<div class="vsec"><h4>Review</h4><p style="white-space:pre-line">${esc(r.review)}</p></div>` : ''}
@@ -4880,6 +4893,19 @@ function histTabsInto(tab){
 }
 
 
+
+/* backtest trades inside the journal (calendar cells, day page, week panel) */
+function btDay(p, ds){ return [...(S.bt?.rows?.values() || [])].filter(x => x.pair===p && x.day===ds).sort((a, b) => String(a.entry_time||'').localeCompare(String(b.entry_time||''))); }
+const btLbl = x => `${x.direction==='Long' ? '▲' : '▼'} ${x.result || 'open'}${x.r!=null && x.r!=='' ? ` · ${Number(x.r) > 0 ? '+' : ''}${fmt(Number(x.r), 1)}R` : ''}`;
+const btCls = x => x.result==='W' ? 'w' : x.result==='L' ? 'l' : 'be';
+function btChips(p, ds){ const a = btDay(p, ds); if(!a.length) return '';
+  return a.slice(0, 2).map(x => `<div class="cd-bt ${btCls(x)}" title="Backtest${x.run ? ' · ' + esc(x.run) : ''}">🧪 ${btLbl(x)}</div>`).join('') + (a.length > 2 ? `<div class="cd-bt more">🧪 +${a.length - 2} more</div>` : ''); }
+function btDayHtml(p, ds){ const a = btDay(p, ds); if(!a.length) return '';
+  return `<div class="vsec"><h4>🧪 Backtest</h4><div class="fc-chk">${a.map(x => `<button class="fc-ckb" data-btopen="${x.id}"><b class="${x.result==='W' ? 'pos' : x.result==='L' ? 'neg' : ''}">${btLbl(x)}</b>${x.entry_time ? `<span class="muted" style="font-size:12px">${esc(x.entry_time)}</span>` : ''}${x.run ? `<span class="muted" style="font-size:12px">${esc(x.run)}</span>` : ''}</button>`).join('')}</div></div>`; }
+function btWeekHtml(p, days){ const a = (days||[]).flatMap(d => btDay(p, iso(d))); if(!a.length) return '';
+  const R = a.reduce((t, x) => t + (Number(x.r) || 0), 0), W = a.filter(x => x.result==='W').length, L = a.filter(x => x.result==='L').length;
+  return `<div class="vsec"><h4>🧪 Backtest <span class="muted" style="font-weight:600;font-size:12px">· ${a.length} trade${a.length===1 ? '' : 's'} · ${W}W / ${L}L · ${R >= 0 ? '+' : ''}${fmt(R, 1)}R</span></h4><div class="fc-chk">${a.map(x => `<button class="fc-ckb" data-btopen="${x.id}"><b>${fmtDayShort(x.day)}</b><span class="${x.result==='W' ? 'pos' : x.result==='L' ? 'neg' : ''}" style="font-weight:700">${btLbl(x)}</span>${x.run ? `<span class="muted" style="font-size:12px">${esc(x.run)}</span>` : ''}</button>`).join('')}</div></div>`; }
+document.addEventListener('click', ev => { const b = ev.target.closest('[data-btopen]'); if(!b) return; ev.preventDefault(); ev.stopPropagation(); const r = S.bt.rows.get(b.dataset.btopen) || S.bt.rows.get(Number(b.dataset.btopen)); if(r) openBacktest(r); }, true);
 /* story/check blocks inside the journal: day page and week panel */
 function fcClean(t){ return String(t||'').split('\n').filter(l => !/^\$[A-Z]+:/.test(l) && !l.startsWith('📸') && !/^━+$/.test(l.trim()) && !/^\[b\]📍 DAILY CHECK/.test(l)).join('\n').replace(/\n{3,}/g, '\n\n').trim(); }
 function fcDayHtml(p, ds){
