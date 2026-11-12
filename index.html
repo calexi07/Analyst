@@ -2129,6 +2129,8 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .kit-t{ width:100%; border-collapse:collapse; margin:6px 0; } .kit-t th{ font-size:11.5px; text-align:left; opacity:.7; padding:3px 4px; }
   .kit-t td{ padding:5px 4px; border-bottom:1px solid var(--line); vertical-align:middle; } .kit-t td:nth-child(2), .kit-t td:nth-child(3){ font-variant-numeric:tabular-nums; font-weight:700; white-space:nowrap; } .kit-t td:last-child{ font-size:12px; opacity:.8; }
   .kit .sw{ display:inline-block; width:14px; height:10px; margin-right:6px; vertical-align:middle; border-radius:2px; } .kit-p{ margin:2px 0; padding-left:18px; list-style:disc; } .kit-n{ font-style:italic; opacity:.9; } .kit-b{ display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 4px; }
+  .lu-bar{ display:flex; flex-wrap:wrap; gap:6px 18px; align-items:center; padding:9px 14px; margin:0 0 14px; font-size:12.5px; }
+  .lu-t{ font-weight:800; }
   .fc-best{ border-color:color-mix(in srgb, var(--amber) 55%, var(--line)); box-shadow:inset 3px 0 0 var(--amber); }
   .fc-why{ font-size:11.5px; font-weight:700; color:var(--amber); }
   .fc-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px; }
@@ -4751,6 +4753,7 @@ function openFundImport(j){
     ev.preventDefault(); const wk2 = getWeek(); if(!wk2) return;
     const btn = f.querySelector('#fGo'); btn.disabled = true; btn.textContent = 'Importing…';
     try{ const r = await runFundImport(j, wk2, [...selPairs], selSecs, mode); fundDlg.close();
+      logImport({ kind:'fundamentals', id:'manual', phase:'Manual import', year:wk2.y, week:wk2.w, report_date:j.report_date || '' });
       toast(`Imported ${r.pairs} pair${r.pairs===1?'':'s'} into week ${wk2.w}${r.news ? ` · ${r.news} news days` : ''}${r.added ? ` · ${r.added} new pair${r.added===1?'':'s'} added` : ''}`);
       render();
     }catch(e){ console.error(e); toast('Import failed: ' + e.message); btn.disabled = false; refresh(); }
@@ -4890,10 +4893,27 @@ function spark(vals, w = 120, h = 30){
     <circle cx="${x(last[0])}" cy="${y(last[1])}" r="3" fill="${last[1]>0 ? 'var(--pos)' : last[1]<0 ? 'var(--neg)' : 'var(--muted)'}"/></svg>`;
 }
 /* History = one page, three tabs: your trading results, the fundamentals over time, this week's picture */
+/* "Last updated" bar: what the Bias Engine last delivered (weekly phase + daily check). Log kept in do_settings.import_log */
+function impPhase(id, j){ const t = String(id||''); let ph = /phase1/i.test(t) ? 'Phase 1' : /final/i.test(t) ? 'Phase 2 · FINAL' : /phase3/i.test(t) ? 'Phase 3' : 'Manual import';
+  if(/kit/i.test(t)) ph += ' + TV kit'; return ph; }
+async function logImport(e){ const old = Array.isArray(S.settings?.import_log) ? S.settings.import_log : []; const v = [{ ...e, at:new Date().toISOString() }, ...old].slice(0, 60);
+  S.settings.import_log = v; try{ await saveSettingKey('import_log', v); }catch(_){} }
+function wkSpan(y, w){ const m = mondayOf(+y, +w), f = new Date(m); f.setDate(m.getDate()+4); return `${fmtDayShort(iso(m))} – ${fmtDayShort(iso(f))}`; }
+function lastUpdHtml(){
+  const log = Array.isArray(S.settings?.import_log) ? S.settings.import_log : [], f = log.find(x => x.kind==='fundamentals'), c = log.find(x => x.kind==='check');
+  const at = x => x?.at ? new Date(x.at).toLocaleString('en-GB', { weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+  let wkTxt = '', ckTxt = '';
+  if(f){ wkTxt = `<b>${esc(f.phase)}</b> · Week ${f.week} (${wkSpan(f.year, f.week)})${f.report_date ? ' · report ' + fmtDayShort(f.report_date) : ''}${f.at ? ' · imported ' + at(f) : ''}`; }
+  else { const ids = (Array.isArray(S.settings?.auto_imports) ? S.settings.auto_imports : []).filter(x => /^\d{4}-W\d{2}/.test(x)), id = ids.at(-1);
+    if(id){ const [, y, w] = id.match(/^(\d{4})-W(\d{2})/); wkTxt = `<b>${impPhase(id)}</b> · Week ${+w} (${wkSpan(y, w)})`; } }
+  if(c){ ckTxt = `<b>${c.slot==='morning' ? '🌅 Morning' : '🌙 Evening'} check${c.check ? ' #' + esc(c.check) : ''}</b> · ${fmtDayShort(c.date)}${c.time ? ' ' + esc(c.time) : ''}${c.at ? ' · imported ' + at(c) : ''}`; }
+  else { const k = checkKeys().at(-1); if(k){ const [, d, sl] = k.split(':'), j = S.settings[k] || {}; ckTxt = `<b>${sl==='morning' ? '🌅 Morning' : '🌙 Evening'} check${j.check ? ' #' + esc(j.check) : ''}</b> · ${fmtDayShort(d)}${j.time ? ' ' + esc(j.time) : ''}`; } }
+  if(!wkTxt && !ckTxt) return '';
+  return `<div class="card lu-bar"><span class="lu-t">🕒 Last updated</span>${wkTxt ? `<span>📖 Weekly: ${wkTxt}</span>` : ''}${ckTxt ? `<span>📍 Daily: ${ckTxt}</span>` : ''}</div>`; }
 function histTabsInto(tab){
   const m = document.getElementById('main'); if(!m) return;
   m.insertAdjacentHTML('afterbegin', `<header class="hp-top"><div><div class="pairtitle">Check</div><div class="muted" style="font-weight:600;font-size:12px">Fundamental Analyse</div></div>
-    <nav class="hp-tabs" role="tablist">${[['checks','📍 Daily checks','morning and evening checks, imported day by day'],['stories','📖 Stories','the weekly story of every pair'],['fund','🧭 Bias history','bias & scores week by week'],['week','🗓️ This week','every pair at a glance']].map(([k, l, t]) => `<button role="tab" data-htab="${k}" aria-selected="${tab===k}" title="${t}">${l}</button>`).join('')}</nav></header>`);
+    <nav class="hp-tabs" role="tablist">${[['checks','📍 Daily checks','morning and evening checks, imported day by day'],['stories','📖 Stories','the weekly story of every pair'],['fund','🧭 Bias history','bias & scores week by week'],['week','🗓️ This week','every pair at a glance']].map(([k, l, t]) => `<button role="tab" data-htab="${k}" aria-selected="${tab===k}" title="${t}">${l}</button>`).join('')}</nav></header>${lastUpdHtml()}`);
   m.querySelectorAll('[data-htab]').forEach(b => b.onclick = () => { const k = b.dataset.htab; if(k!=='week') ls.set('do_hist_tab', k);
     S.view = k==='week' ? 'overview' : 'history'; ls.set('do_view', 'history'); renderMain(); });
 }
@@ -5109,6 +5129,7 @@ function openCheckImport(j){
     const key = `fcheck:${day}:${sl}`, btn = f.querySelector('#ckGo'); btn.disabled = true; btn.textContent = 'Importing…';
     try{ const { error } = await sb.from('do_settings').upsert({ key, value:j }, { onConflict:'key' }); if(error) throw error;
       S.settings[key] = j; fundDlg.close(); toast(`Check imported for ${fmtDayShort(day)} (${sl})`);
+      logImport({ kind:'check', id:'manual', date:day, slot:sl, check:j.check ?? null, time:j.time || '' });
       S.fc.day = day; ls.set('do_hist_tab', 'checks'); goView('history');
     }catch(e){ console.error(e); toast('Import failed: ' + e.message); btn.disabled = false; btn.textContent = 'Import'; } };
   fundDlg.showModal();
@@ -8908,12 +8929,14 @@ async function autoImports(){
           if(!/^\d{4}-\d{2}-\d{2}$/.test(j.date||'') || !['morning','evening'].includes(j.slot)) throw new Error('bad date/slot');
           const key = `fcheck:${j.date}:${j.slot}`, { error } = await sb.from('do_settings').upsert({ key, value:j }, { onConflict:'key' }); if(error) throw error;
           S.settings[key] = j; got.push(`${fmtDayShort(j.date)} ${j.slot} check`);
+          await logImport({ kind:'check', id:f.id, date:j.date, slot:j.slot, check:j.check ?? null, time:j.time || '' });
         } else if(j.format==='daily-observer-fundamentals'){
           j.pairs = (j.pairs||[]).map(p => ({ ...p, pair: normPair(p.pair) })).filter(p => p.pair.length===6);
           const vw = j.valid_week; if(!vw?.year || !vw?.week) throw new Error('no valid_week');
           const secs = new Set(FUND_SECTIONS.map(x => x[0]));
           await runFundImport(j, { y:vw.year, w:vw.week }, j.pairs.map(p => p.pair), secs, 'overwrite');
           got.push(`week ${vw.week} analysis`);
+          await logImport({ kind:'fundamentals', id:f.id, phase:impPhase(f.id, j), year:vw.year, week:vw.week, report_date:j.report_date || '' });
         } else continue;
         done.add(f.id);
       }catch(e){ console.warn('auto-import failed', f, e); }
