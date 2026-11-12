@@ -2131,8 +2131,6 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .kit .sw{ display:inline-block; width:14px; height:10px; margin-right:6px; vertical-align:middle; border-radius:2px; } .kit-p{ margin:2px 0; padding-left:18px; list-style:disc; } .kit-n{ font-style:italic; opacity:.9; } .kit-b{ display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 4px; }
   .lu-bar{ display:flex; flex-wrap:wrap; gap:6px 18px; align-items:center; padding:9px 14px; margin:0 0 14px; font-size:12.5px; }
   .lu-t{ font-weight:800; }
-  .fc-best{ border-color:color-mix(in srgb, var(--amber) 55%, var(--line)); box-shadow:inset 3px 0 0 var(--amber); }
-  .fc-why{ font-size:11.5px; font-weight:700; color:var(--amber); }
   .fc-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px; }
   .fc-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px; }
   .fc-card{ text-align:left; border:1px solid var(--line); border-radius:14px; padding:12px 14px; background:var(--surface); color:var(--ink); cursor:pointer; display:grid; gap:6px; }
@@ -4986,34 +4984,6 @@ function openStory({ title, sub, tag, tagCls, body, copies = [], kit = null }){
   d.onclick = ev => { if(ev.target===d) d.close(); };
   d.showModal();
 }
-/* Best vs normal: computed from the imported data only (an explicit "highlight": "best" | "normal" in the JSON wins) */
-S.fcGrp = ls.get('do_fc_grp', 'best');
-function fcGrpSeg(nb, nn){ return `<div class="seg" role="group">${[['best',`🔥 Best (${nb})`],['normal',`📄 Normal (${nn})`],['all',`All (${nb+nn})`]].map(([v,l]) => `<button type="button" data-fcg="${v}" aria-pressed="${S.fcGrp===v}">${l}</button>`).join('')}</div>`; }
-function fcBindGrp(){ document.querySelectorAll('[data-fcg]').forEach(b => b.onclick = () => { S.fcGrp = b.dataset.fcg; ls.set('do_fc_grp', S.fcGrp); renderMain(); }); }
-const fcShow = best => S.fcGrp==='all' || (S.fcGrp==='best') === !!best;
-const fcNum = v => Number(String(v).replace('−','-'));
-function storyWhy(r){ const d = det(r), st = d.story || {}, why = [];
-  if(st.highlight==='normal') return { why, best:false };
-  if(st.highlight==='best') return { why:[st.highlight_reason || 'Marked best'], best:true };
-  let pts = 0;
-  const c = String(d.changed || ''), m = c.match(/^\s*([\w-]+)\s*→\s*([\w-]+)/), g = c.match(/gap\s*([+−-]?\d+)\s*→\s*([+−-]?\d+)/);
-  /* points: high conviction 2 · delta-check correction 1 · bias flip into a direction (medium/high) 1 · gap move ≥ 8 → 1, ≥ 12 → 2. Best = 2+ points */
-  if(r.conviction==='high'){ why.push('High conviction'); pts += 2; }
-  if(/delta check:/i.test(c) && !/delta check:\s*no correction/i.test(c)){ why.push('Corrected in the delta check'); pts += 1; }
-  if(m && m[1]!==m[2] && r.bias!=='two-sided' && ['medium','high'].includes(r.conviction)){ why.push(`Bias flip: ${m[1]} → ${m[2]}`); pts += 1; }
-  const gm = g ? Math.abs(fcNum(g[2]) - fcNum(g[1])) : 0;
-  if(gm >= 8){ why.push(`Big gap move ${g[1]} → ${g[2]}`); pts += gm >= 12 ? 2 : 1; }
-  return { why, best:pts >= 2, pts }; }
-function checkWhy(x){ const why = [];
-  if(x.highlight==='normal') return [];
-  if(x.highlight==='best') why.push(x.highlight_reason || 'Marked best');
-  const st = String(x.status||'');
-  if(st.startsWith('❌')) why.push('Thesis broken');
-  else if(st.startsWith('⚠')) why.push('Under pressure');
-  else if(st.startsWith('👀')) why.push('Under watch');
-  if(x.published_gap!=null && x.today_gap!=null && x.published_gap!==x.today_gap) why.push(`Gap moved ${x.published_gap>0?'+':''}${x.published_gap} → ${x.today_gap>0?'+':''}${x.today_gap}`);
-  if(/✗/.test(String(x.flag||''))) why.push('Chart flag ✗');
-  return [...new Set(why)]; }
 /* TradingView chart kit carried by the weekly story (stories[PAIR].kit): levels = close·e^(±σ), close·e^(±2σ) */
 function kitLv(k, c){ const s = (+k.sigma_pct||0)/100, d = k.dec ?? 5, f = n => (c*Math.exp(n*s)).toFixed(d); return { c:(+c).toFixed(d), t1:f(-1), t2:f(1), b1:f(-2), b2:f(2) }; }
 const KITREG = [];
@@ -5053,21 +5023,18 @@ function renderStories(){
   const all = storyWeeks(), cur = isoWeek(new Date());
   if(S.fc.y==null){ const last = all.filter(k => k.year*100+k.week <= cur.year*100+cur.week + 1).at(-1) || all.at(-1) || cur; S.fc.y = last.year; S.fc.w = last.week; }
   const y = S.fc.y, w = S.fc.w, i = all.findIndex(k => k.year===y && k.week===w);
-  const rows0 = [...new Set([...allPairs(), 'XAUUSD'])].filter(fcPairOk).map(p => ({ p, r:S.weekly.get(wk(p, y, w)) })).filter(x => x.r && det(x.r).story?.text).map(x => ({ ...x, ...storyWhy(x.r) }));
-  const nb = rows0.filter(x => x.best).length, rows = rows0.filter(x => fcShow(x.best)).sort((a,b) => (b.pts||0) - (a.pts||0));
+  const rows0 = [...new Set([...allPairs(), 'XAUUSD'])].filter(fcPairOk).map(p => ({ p, r:S.weekly.get(wk(p, y, w)) })).filter(x => x.r && det(x.r).story?.text);
+  const rows = rows0;
   document.getElementById('main').innerHTML = `
     <div class="fc-bar"><button class="btn" id="fcPrev" ${i<=0 ? 'disabled' : ''}>‹</button><b style="font-size:16px">Week ${w} · ${y}</b><button class="btn" id="fcNext" ${i<0 || i>=all.length-1 ? 'disabled' : ''}>›</button>
       <span class="muted" style="font-size:12.5px;font-weight:600">${rows.length} stor${rows.length===1 ? 'y' : 'ies'} · tap a pair to read it</span></div>
-    <div class="fc-bar">${fcGrpSeg(nb, rows0.length - nb)}</div>
     <div class="fc-bar">${fcCcyChips()}</div>
-    ${rows.length ? `<div class="fc-grid">${rows.map(({ p, r, why, best }) => { const d = det(r), st = d.story, [tl, tc] = BIAS_TAG(r.bias);
-      return `<button class="fc-card ${best ? 'fc-best' : ''}" data-st="${p}"><div class="fc-h"><b>${p}</b><span class="fc-tag ${tc}">${tl}${r.conviction ? ' · '+esc(r.conviction) : ''}</span></div>
-        ${why.length ? `<div class="${best ? 'fc-why' : 'muted'}" style="font-size:11.5px;font-weight:700">${best ? '🔥' : '·'} ${esc(why.join(' · '))}</div>` : ''}
+    ${rows.length ? `<div class="fc-grid">${rows.map(({ p, r }) => { const d = det(r), st = d.story, [tl, tc] = BIAS_TAG(r.bias);
+      return `<button class="fc-card" data-st="${p}"><div class="fc-h"><b>${p}</b><span class="fc-tag ${tc}">${tl}${r.conviction ? ' · '+esc(r.conviction) : ''}</span></div>
         <div class="fc-t">${esc(st.title || r.fundamentals || '')}</div>
         ${d.base_score!=null ? `<div class="fc-gap muted">${base(p)} ${d.base_score>0?'+':''}${d.base_score} vs ${quote(p)} ${d.quote_score>0?'+':''}${d.quote_score}</div>` : ''}</button>`; }).join('')}</div>`
-      : rows0.length ? `<div class="card fc-empty"><p>${S.fcGrp==='best' ? 'No best story this week — nothing game-changing, all stories are normal reads.' : 'No normal story — every pair this week had something big.'}</p></div>`
       : `<div class="card fc-empty"><p>No stories for this week yet. They come with the Phase 1 / Phase 2 import (Import / export → paste the block).</p></div>`}`;
-  fcBindCcy(); fcBindGrp();
+  fcBindCcy();
   document.getElementById('fcPrev').onclick = () => { if(i>0){ S.fc.y = all[i-1].year; S.fc.w = all[i-1].week; renderMain(); } };
   document.getElementById('fcNext').onclick = () => { if(i>=0 && i<all.length-1){ S.fc.y = all[i+1].year; S.fc.w = all[i+1].week; renderMain(); } };
   document.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { const p = b.dataset.st, r = S.weekly.get(wk(p, y, w)), st = det(r).story, [tl, tc] = BIAS_TAG(r.bias);
@@ -5085,24 +5052,21 @@ function renderChecks(){
   document.getElementById('main').innerHTML = `
     <div class="fc-bar"><button class="btn" id="fcdPrev" ${di<=0 ? 'disabled' : ''}>‹</button><input class="inp" type="date" id="fcDay" value="${day}" style="width:auto"><button class="btn" id="fcdNext" ${di<0 || di>=days.length-1 ? 'disabled' : ''}>›</button>
       <div class="fc-days">${wkDays.map(x => `<button class="ch" data-fcd="${x}" aria-pressed="${x===day}">${fmtDayShort(x)}</button>`).join('')}</div></div>
-    ${list.length ? (() => { const all = list.flatMap(({ j }) => (j.pairs||[]).filter(x => fcPairOk(normPair(x.pair)))), nb = all.filter(x => checkWhy(x).length).length; return `<div class="fc-bar">${fcGrpSeg(nb, all.length - nb)}</div>`; })() : ''}
     <div class="fc-bar">${fcCcyChips()}</div>
     ${list.length ? list.map(({ sl, j }) => {
-      const pairs0 = (j.pairs||[]).filter(x => fcPairOk(normPair(x.pair))).map(x => ({ ...x, _why:checkWhy(x) })), pairs = pairs0.filter(x => fcShow(x._why.length)).sort((a,b) => b._why.length - a._why.length);
+      const pairs0 = (j.pairs||[]).filter(x => fcPairOk(normPair(x.pair))), pairs = pairs0;
       const groups = {}; pairs.forEach(x => (groups[stCls(x.status)] ||= 0, groups[stCls(x.status)]++));
       const ccys = Object.entries(j.currencies||{}).filter(([c]) => S.fc.ccy==='ALL' || c===S.fc.ccy);
       return `<div class="fc-sec"><h3>${sl==='morning' ? '🌅 Morning' : '🌙 Evening'} check${j.check ? ' · #' + esc(j.check) : ''}</h3><span class="muted" style="font-weight:600;font-size:12.5px">${esc(j.title||'')}${j.time ? ' · ' + esc(j.time) : ''}</span></div>
         ${j.summary ? `<div class="card" style="margin-bottom:10px"><div class="fc-post">${bb2html(j.summary)}</div></div>` : ''}
         ${ccys.length ? `<div class="card" style="overflow:auto;margin-bottom:10px"><table class="fc-ccy"><thead><tr><th>Currency</th><th>Score</th><th>Today's read</th><th>Status</th><th>What changed</th></tr></thead><tbody>
           ${ccys.map(([c, v]) => `<tr><td><b>${c}</b></td><td class="n">${v.score>0?'+':''}${v.score ?? ''}</td><td class="n">${v.shadow!=null ? (v.shadow>0?'+':'') + v.shadow : ''}</td><td><span class="fc-tag ${stCls(v.status)}">${esc(v.status||'')}</span></td><td style="min-width:220px">${esc(v.note||'')}</td></tr>`).join('')}</tbody></table></div>` : ''}
-        ${pairs.length ? '' : `<div class="card fc-empty" style="margin-bottom:10px"><p>${S.fcGrp==='best' ? 'Nothing game-changing in this check — every pair is a normal read.' : 'Every pair in this check had something notable.'}</p></div>`}
         <div class="fc-grid">${pairs.map(x => { const p = normPair(x.pair);
-          return `<button class="fc-card ${x._why.length ? 'fc-best' : ''}" data-ck="${sl}|${p}"><div class="fc-h"><b>${p}</b><span class="fc-tag ${stCls(x.status)}">${esc(x.status||'')}</span></div>
-            ${x._why.length ? `<div class="fc-why">🔥 ${esc(x._why.join(' · '))}</div>` : ''}
+          return `<button class="fc-card" data-ck="${sl}|${p}"><div class="fc-h"><b>${p}</b><span class="fc-tag ${stCls(x.status)}">${esc(x.status||'')}</span></div>
             <div class="fc-gap">${x.published_gap!=null ? `gap ${x.published_gap>0?'+':''}${x.published_gap} → ${x.read ? esc(x.read) : (x.today_gap>0?'+':'') + (x.today_gap ?? '?')}` : ''}${x.flag ? ` · 🚩 ${esc(x.flag)}` : ''}</div>
             ${x.hook ? `<div class="fc-t">${esc(x.hook)}</div>` : ''}</button>`; }).join('')}</div>`; }).join('')
       : `<div class="card fc-empty"><p>No check imported for ${fmtDayShort(day)}. After each morning or evening check, paste its JSON in Import / export.</p></div>`}`;
-  fcBindCcy(); fcBindGrp();
+  fcBindCcy();
   const go = d => { if(d){ S.fc.day = d; renderMain(); } };
   document.getElementById('fcDay').onchange = e => go(e.target.value);
   document.getElementById('fcdPrev').onclick = () => go(days[di-1]);
