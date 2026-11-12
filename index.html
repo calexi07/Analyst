@@ -4931,7 +4931,7 @@ function fcWeekHtml(p, y, w, days){
   if(!st?.text && !cks.length) return '';
   return `${cks.length ? `<div class="vsec"><h4>📍 Daily checks</h4><div class="fc-chk">${cks.map(c => `<button class="fc-ckb" data-fcopen="check|${c.ds}|${c.sl}|${p}"><b>${fmtDayShort(c.ds)} ${c.sl==='morning' ? '🌅' : '🌙'}</b><span class="fc-tag ${stCls(c.x.status)}">${esc(c.x.status)}</span>${c.x.read ? `<span class="muted" style="font-size:12px">${esc(c.x.read)}</span>` : ''}</button>`).join('')}</div></div>` : ''}
     ${st?.text ? `<div class="vsec"><div class="flex items-center gap-2" style="justify-content:space-between"><h4 style="margin:0">📖 Story</h4><button class="btn" data-fcopen="story|${p}|${y}|${w}">Open · copy</button></div>
-      ${st.title ? `<p style="font-weight:700;margin:8px 0 4px">${esc(st.title)}</p>` : ''}<div class="fc-post">${bb2html(fcClean(st.text))}</div></div>` : ''}`;
+      ${st.title ? `<p style="font-weight:700;margin:8px 0 4px">${esc(st.title)}</p>` : ''}${st.kit ? kitHtml(st.kit) : ''}<div class="fc-post">${bb2html(fcClean(st.text))}</div></div>` : ''}`;
 }
 document.addEventListener('click', ev => {
   const b = ev.target.closest('[data-fcopen]'); if(!b) return; ev.preventDefault(); ev.stopPropagation();
@@ -4995,13 +4995,15 @@ function checkWhy(x){ const why = [];
   return [...new Set(why)]; }
 /* TradingView chart kit carried by the weekly story (stories[PAIR].kit): levels = close·e^(±σ), close·e^(±2σ) */
 function kitLv(k, c){ const s = (+k.sigma_pct||0)/100, d = k.dec ?? 5, f = n => (c*Math.exp(n*s)).toFixed(d); return { c:(+c).toFixed(d), t1:f(-1), t2:f(1), b1:f(-2), b2:f(2) }; }
+const KITREG = [];
 function kitHtml(k){
+  const kid = KITREG.push(k) - 1;
   if(k.close==null || k.sigma_pct==null) return `<div class="kit"><div class="kit-l">🗺️ Chart kit</div><p class="muted">Volatility data unavailable for this week — no levels.</p></div>`;
   const v = kitLv(k, k.close), mk = { bearish:['#E53935','Bearish','Red'], bullish:['#43A047','Bullish','Green'] }[k.bias] || ['#9E9E9E','Two-sided','Grey'];
   const side = k.bias==='bearish' ? `<tr><td><span class="sw" style="background:#E53935;opacity:.55"></span>Bias side</td><td data-kv="b1">${v.b1}</td><td data-kv="c">${v.c}</td><td>Red-pink fill, red label</td></tr>`
     : k.bias==='bullish' ? `<tr><td><span class="sw" style="background:#43A047;opacity:.55"></span>Bias side</td><td data-kv="c">${v.c}</td><td data-kv="b2">${v.b2}</td><td>Green fill, green label</td></tr>`
     : `<tr><td colspan="4" class="muted">Two-sided pair: no bias side to shade.</td></tr>`;
-  return `<div class="kit"><div class="kit-l">🗺️ Chart kit · draw these on TradingView</div>
+  return `<div class="kit" data-kid="${kid}"><div class="kit-l">🗺️ Chart kit · draw these on TradingView</div>
     <div class="kit-r">Friday close <input class="inp kit-c" type="number" step="any" value="${v.c}"> <span class="muted">reference${k.close_date ? ' (' + esc(k.close_date) + ')' : ''}; type your chart's Friday close</span></div>
     <div class="muted kit-h">Rectangle → double-click → <b>Coordinates</b>: #1 = bottom price, #2 = top price.${k.bars ? ' Bars: ' + esc(k.bars) + '.' : ''}</div>
     <div style="overflow:auto"><table class="kit-t"><tr><th>Drawing</th><th>#1 (bottom)</th><th>#2 (top)</th><th>Style</th></tr>
@@ -5014,12 +5016,12 @@ function kitHtml(k){
     ${k.twist ? `<div class="kit-l">💡 Plot-twist note</div><div class="kit-n">${esc(k.twist).replace(/\n/g,'<br>')}</div>` : ''}
     <div class="kit-b">${(k.legend||[]).length ? '<button class="btn" data-kcp="leg">Copy legend (article)</button><button class="btn" data-kcp="legp">Copy legend (chart text)</button>' : ''}${k.twist ? '<button class="btn" data-kcp="note">Copy note text</button>' : ''}</div>
     <div class="muted kit-h">Typical week = the move the pair stayed within in about 2 of 3 weeks over the last 26 weeks (±${esc(k.sigma_pct)}% from Friday's close); big-news week = twice that. Not a target and not a signal.</div></div>`; }
-function kitBind(d, k){
-  const inp = d.querySelector('.kit-c');
-  if(inp) inp.oninput = () => { const c = parseFloat(inp.value); if(!isFinite(c)) return; const v = kitLv(k, c); d.querySelectorAll('[data-kv]').forEach(n => n.textContent = v[n.dataset.kv]); };
-  const head = k.legend_head || '🗺️ HOW TO READ THE CHART', L = k.legend || [];
-  d.querySelectorAll('[data-kcp]').forEach(b => b.onclick = () => { const t = b.dataset.kcp;
-    copyTxt(t==='note' ? k.twist : t==='legp' ? head + '\n\n' + L.join('\n') : '[b]' + head + '[/b]\n[list]\n' + L.map(x => '[*]' + x).join('\n') + '\n[/list]', b); }); }
+function kitBind(){}
+document.addEventListener('input', ev => { const inp = ev.target.closest?.('.kit-c'); if(!inp) return; const box = inp.closest('.kit'), k = KITREG[+box.dataset.kid], c = parseFloat(inp.value); if(!k || !isFinite(c)) return;
+  const v = kitLv(k, c); box.querySelectorAll('[data-kv]').forEach(n => n.textContent = v[n.dataset.kv]); });
+document.addEventListener('click', ev => { const b = ev.target.closest?.('[data-kcp]'); if(!b) return; ev.preventDefault(); ev.stopPropagation();
+  const k = KITREG[+b.closest('.kit').dataset.kid]; if(!k) return; const t = b.dataset.kcp, head = k.legend_head || '🗺️ HOW TO READ THE CHART', L = k.legend || [];
+  copyTxt(t==='note' ? k.twist : t==='legp' ? head + '\n\n' + L.join('\n') : '[b]' + head + '[/b]\n[list]\n' + L.map(x => '[*]' + x).join('\n') + '\n[/list]', b); }, true);
 const BIAS_TAG = b => b==='bullish' ? ['▲ Bullish','bullish'] : b==='bearish' ? ['▼ Bearish','bearish'] : ['◆ Two-sided','two-sided'];
 S.fc = { y:null, w:null, ccy: ls.get('do_fc_ccy','ALL'), day:null };
 function fcCcyChips(){ return `<div class="chips">${['ALL', ...CCYS].map(c => `<button class="ch" data-fcc="${c}" aria-pressed="${S.fc.ccy===c}">${c==='ALL' ? 'All' : c}</button>`).join('')}</div>`; }
