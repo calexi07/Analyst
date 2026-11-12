@@ -2122,6 +2122,38 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .tv-in{ margin-top:8px; font-size:12.5px; }
   .g2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   @media (max-width:520px){ .g2{ grid-template-columns:1fr; } }
+
+  /* ===== Fundamental check: stories + daily checks ===== */
+  .fc-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px; }
+  .fc-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px; }
+  .fc-card{ text-align:left; border:1px solid var(--line); border-radius:14px; padding:12px 14px; background:var(--surface); color:var(--ink); cursor:pointer; display:grid; gap:6px; }
+  .fc-card:hover{ border-color:var(--ink); }
+  .fc-card .fc-h{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .fc-card b{ font-size:16px; }
+  .fc-card .fc-t{ font-size:13px; color:var(--muted); line-height:1.35; }
+  .fc-tag{ font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:10px; white-space:nowrap; }
+  .fc-tag.bullish,.fc-tag.ok{ background:color-mix(in srgb,var(--pos) 18%,transparent); color:var(--pos); }
+  .fc-tag.bearish,.fc-tag.bad{ background:color-mix(in srgb,var(--neg) 18%,transparent); color:var(--neg); }
+  .fc-tag.two-sided,.fc-tag.neu{ background:color-mix(in srgb,var(--muted) 20%,transparent); color:var(--muted); }
+  .fc-tag.warn{ background:color-mix(in srgb,#f0a020 22%,transparent); color:#c27c00; }
+  .fc-gap{ font-size:12.5px; font-weight:700; }
+  .fc-sec{ margin:18px 0 8px; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .fc-sec h3{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:18px; }
+  .fc-ccy{ width:100%; border-collapse:collapse; font-size:13px; }
+  .fc-ccy th,.fc-ccy td{ padding:6px 8px; border-bottom:1px solid var(--line); text-align:left; }
+  .fc-ccy td.n{ font-variant-numeric:tabular-nums; font-weight:700; }
+  .fc-post{ font-size:14.5px; line-height:1.6; }
+  .fc-post blockquote{ border-left:3px solid var(--line); margin:8px 0; padding:6px 12px; background:color-mix(in srgb,var(--muted) 8%,transparent); border-radius:0 10px 10px 0; }
+  .fc-post ul,.fc-post ol{ margin:6px 0; padding-left:22px; list-style:revert; }
+  .fc-post b{ font-weight:700; }
+  .fc-days{ display:flex; gap:6px; flex-wrap:wrap; }
+  .fc-empty{ padding:22px; text-align:center; }
+  .fc-day{ margin-bottom:18px; }
+  .fc-note{ border:1px solid var(--line); border-radius:14px; padding:12px 14px; margin-bottom:10px; background:color-mix(in srgb,var(--surface) 70%,transparent); }
+  .fc-note .fc-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
+  .fc-chk{ display:grid; gap:6px; }
+  .fc-ckb{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; text-align:left; border:1px solid var(--line); border-radius:10px; padding:8px 10px; background:transparent; color:var(--ink); cursor:pointer; }
+  .fc-ckb:hover{ border-color:var(--ink); }
 </style>
 </head>
 <body>
@@ -2187,13 +2219,14 @@ setTimeout(function(){var sp=document.getElementById('splash');if(!sp||!document
 <dialog id="lbDlg" class="lb" aria-label="Image viewer"></dialog>
 <dialog id="shareDlg" class="panel" aria-label="Share to Discord" style="width:min(760px,96vw)"></dialog>
 <dialog id="fundDlg" class="panel" aria-label="Import fundamental analysis" style="width:min(780px,96vw)"></dialog>
+<dialog id="storyDlg" class="panel" aria-label="Story" style="width:min(760px,96vw)"></dialog>
 <dialog id="dataDlg" class="panel" aria-labelledby="dataTitle" style="width:min(620px,96vw)">
   <div class="dlg-head"><h2 id="dataTitle" class="cond" style="font-size:20px;font-weight:600">Import & export</h2></div>
   <div class="dlg-body" style="display:grid;gap:14px">
     <div class="fundbox">
-      <h3 class="cond" style="font-weight:600;font-size:16px">📥 Import fundamental analysis</h3>
-      <p class="muted" style="font-size:13px">Paste the <b>Daily Observer import</b> block from the bottom of your Fundamental Bias Engine report. Next you choose the week, the pairs and the sections.</p>
-      <textarea id="fundPaste" class="inp" rows="4" placeholder='{ "format": "daily-observer-fundamentals", "valid_week": { … }, "pairs": [ … ] }' style="margin-top:8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;resize:vertical"></textarea>
+      <h3 class="cond" style="font-weight:600;font-size:16px">📥 Import fundamental analysis or daily check</h3>
+      <p class="muted" style="font-size:13px">Paste the <b>Daily Observer import</b> block from a Phase 1 / Phase 2 report (weekly analysis + stories), or the <b>daily check</b> JSON from a morning or evening check. The app recognises which one it is.</p>
+      <textarea id="fundPaste" class="inp" rows="4" placeholder='{ "format": "daily-observer-fundamentals" … }  or  { "format": "daily-observer-check" … }' style="margin-top:8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;resize:vertical"></textarea>
       <div class="flex items-center gap-3" style="margin-top:8px"><button class="btn btn-primary" id="fundGo">Continue →</button><span id="fundMsg" class="neg" style="font-size:12.5px;font-weight:600"></span></div>
     </div>
     <div class="fundbox exp">
@@ -2456,12 +2489,13 @@ const ICONS = {
 const ico = (k, s = 18) => `<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]||''}</svg>`;
 const NAV = [
   [null, [['today','Today','home']]],
-  ['Work', [['journal','Journal','calendar'],['trades','Trades','list'],['setups','Setups','radar']]],
-  ['Insights', [['history','History','trend'],['backtest','Backtest','flask']]],
+  ['Work', [['journal','Journal','calendar']]],
+  ['Insights', [['history','Fundamental check','trend'],['backtest','Backtest','flask']]],
   ['Money', [['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target']]],
   ['Tools', [['prompts','Prompts','spark']]],
 ];
 const navActive = v => S.view===v || (v==='history' && ['overview','analysis'].includes(S.view));
+const GONE_VIEWS = ['trades','setups','analysis'];   /* Trades and Setups were removed from the app (Nov 2026); Backtest replaces trades */
 /* ===== notifications in the Setups app (Web Push) — the server sends every alert here instead of Telegram ===== */
 const VAPID_PUBLIC = 'BAOgsdSJNvxen175cWjqvGRMSR9Hk-iBm7cyNcxtDF0ZgxW445gRNcaVvXKfQDqQfUD6kqK_k7MGaEUmJa2yWuw';
 const PUSH = { st: 'checking' };   /* on · off · blocked · unsupported · checking · busy */
@@ -2602,8 +2636,8 @@ function render(){
         <main id="main" class="wrap"></main>
       </div>
       <nav class="bnav" aria-label="Main navigation">
-        ${[['today','Today','home'],['journal','Journal','calendar'],['setups','Setups','radar'],['trades','Trades','list']].map(([v,l,i]) => `<button data-view="${v}" aria-current="${navActive(v) ? 'page' : 'false'}">${ico(i, 20)}<span>${l}</span></button>`).join('')}
-        <button id="bnMore" aria-current="${['analysis','history','overview','accounts','portfolio','bank','goals','prompts','backtest'].includes(S.view) ? 'page' : 'false'}">${ico('more', 20)}<span>More</span></button>
+        ${[['today','Today','home'],['journal','Journal','calendar'],['history','Checks','trend'],['backtest','Backtest','flask']].map(([v,l,i]) => `<button data-view="${v}" aria-current="${navActive(v) ? 'page' : 'false'}">${ico(i, 20)}<span>${l}</span></button>`).join('')}
+        <button id="bnMore" aria-current="${['accounts','portfolio','bank','goals','prompts'].includes(S.view) ? 'page' : 'false'}">${ico('more', 20)}<span>More</span></button>
       </nav>
     </div>`;
   app.querySelectorAll('[data-view]').forEach(b => b.onclick = () => goView(b.dataset.view));
@@ -2621,7 +2655,7 @@ function render(){
 function openMore(){
   const d = document.getElementById('moreDlg'), light = document.documentElement.dataset.theme === 'light';
   d.innerHTML = `<div class="dlg-head"><h2>More</h2></div><div class="dlg-body more-g">
-    ${[['history','History','trend'],['backtest','Backtest','flask'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
+    ${[['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
     <button class="more-i" data-ma="share">${ico('share', 22)}<span>Share</span></button>
     <button class="more-i" data-ma="data">${ico('swap', 22)}<span>Import / export</span></button>
     <button class="more-i" data-ma="theme">${ico(light ? 'moon' : 'sun', 22)}<span>${light ? 'Dark' : 'Light'} theme</span></button></div>`;
@@ -2698,11 +2732,13 @@ function renderStrip(){
 function tierIdx(x){ return ['high','medium','low',''].indexOf(x.conv); }
 function renderMain(){
   S.charts.forEach(c => c.destroy()); S.charts = [];
+  if(!SUAPP && GONE_VIEWS.includes(S.view)){ S.view = 'history'; ls.set('do_view', 'history'); }
   if(S.view === 'analysis'){ renderAnalysis(); histTabsInto('perf'); }
   else if(S.view === 'overview'){ renderOverview(); histTabsInto('week'); }
   else if(S.view === 'accounts') (KIOSK ? renderKiosk : renderAccounts)();
   else if(S.view === 'goals') renderGoals();
-  else if(S.view === 'history'){ if(ls.get('do_hist_tab', 'perf')==='perf'){ S.view = 'analysis'; renderAnalysis(); histTabsInto('perf'); } else { renderHistory(); histTabsInto('fund'); } }
+  else if(S.view === 'history'){ let t = ls.get('do_hist_tab', 'checks'); if(!['checks','stories','fund'].includes(t)) t = 'checks';
+    if(t==='checks') renderChecks(); else if(t==='stories') renderStories(); else renderHistory(); histTabsInto(t); }
   else if(S.view === 'desk'){ S.view = 'today'; ls.set('do_view', 'today'); renderToday(); }   /* Desk was removed */
   else if(S.view === 'today') renderToday();
   else if(S.view === 'prompts') renderPrompts();
@@ -3027,7 +3063,7 @@ function dayView(panel, ctx){
   const trs = dayTrades(p, ds);
   panel.innerHTML = `<div class="ps">
     ${panelHead(dayTitle(ctx), `${p} · ${ctx.dt.getFullYear()}`)}
-    ${empty ? `${wkBanner(ctx)}<div class="empty"><div class="orb" aria-hidden="true"></div><p>No observations for this day yet.</p><button class="btn btn-primary" id="startEdit">Start observing</button></div>` : `
+    ${empty ? `${wkBanner(ctx)}${fcDayHtml(p, ds)}<div class="empty"><div class="orb" aria-hidden="true"></div><p>No observations for this day yet.</p><button class="btn btn-primary" id="startEdit">Start observing</button></div>` : `
     <div class="vw">
      <aside class="vw-side">
       ${wkBanner(ctx)}
@@ -3048,6 +3084,7 @@ function dayView(panel, ctx){
       </div></div>` : ''}
      </aside>
      <section class="vw-main">
+      ${fcDayHtml(p, ds)}
       <div class="vw-mh"><h4>Top-down</h4>${tfs.length > 1 ? `<div class="vw-jump">${tfs.map(([l]) => `<button data-jump="${l}">${l}</button>`).join('')}</div>` : ''}</div>
         ${tfs.length ? tfs.map(([l,o,t]) => {
           const links = [...new Set([e[t], ...((e[o]||'').match(TVRX) || [])].filter(Boolean))];
@@ -3386,6 +3423,7 @@ function weekView(panel){
         ${mini.map(([l,v]) => `<div class="mini ${l==='Horizon' ? '' : 'wide'}"><span class="kick">${l}</span><p>${esc(v)}</p></div>`).join('')}
       </div></div>` : ''}
       ${d.changed ? `<div class="vsec"><h4>Ce s-a schimbat</h4><p style="white-space:pre-line">${esc(d.changed)}</p></div>` : ''}`}
+    ${fcWeekHtml(p, y, w, days)}
     <div class="vsec"><h4>Days of the week ${tr.length ? `<span class="muted" style="font-weight:600;font-size:12px">· ${tr.filter(t=>t.result==='W').length}W / ${tr.filter(t=>t.result==='L').length}L</span>` : ''}</h4>${weekDays(p, days)}</div>
     ${r.review ? `<div class="vsec"><h4>Review</h4><p style="white-space:pre-line">${esc(r.review)}</p></div>` : ''}
   </div>`;
@@ -4619,7 +4657,7 @@ function bindGoals(){
 /* ---------- fundamental analysis import (paste from the Bias Engine report) ---------- */
 const FUND_SECTIONS = [
   ['bias','Bias & conviction'], ['summary','Summary line'], ['scores','Currency states & scores'], ['drivers','Drivers'],
-  ['catalysts','Catalysts'], ['assessment','Assessment (priced · invalidation · horizon · alignment)'], ['changed','What changed'], ['news','Calendar → daily news'] ];
+  ['catalysts','Catalysts'], ['assessment','Assessment (priced · invalidation · horizon · alignment)'], ['changed','What changed'], ['story','Story (TV article)'], ['news','Calendar → daily news'] ];
 const normPair = p => String(p||'').replace(/[^A-Za-z]/g,'').toUpperCase();
 const normBias = b => { b = String(b||'').toLowerCase(); return /two/.test(b) ? 'two-sided' : /bull/.test(b) ? 'bullish' : /bear/.test(b) ? 'bearish' : /neutral/.test(b) ? 'neutral' : null; };
 const normConv = c => { c = String(c||'').toLowerCase(); return /high/.test(c) ? 'high' : /med/.test(c) ? 'medium' : /low|mild/.test(c) ? 'low' : null; };
@@ -4641,7 +4679,9 @@ function openFundImport(j){
   const cur = isoWeek(new Date()), nxt = isoWeek(new Date(Date.now() + 7*864e5));
   const vw = j.valid_week && j.valid_week.year && j.valid_week.week ? j.valid_week : cur;
   const wkVal = (y, w) => `${y}-W${String(w).padStart(2,'0')}`;
-  let selPairs = new Set(j.pairs.map(p => p.pair)), selSecs = new Set(FUND_SECTIONS.map(s => s[0]).filter(k => k!=='news' || j.news?.length));
+  const hasStory = !!(j.stories && Object.keys(j.stories).length) || j.pairs.some(p => p.story);
+  const secOk = k => (k!=='news' || j.news?.length) && (k!=='story' || hasStory);
+  let selPairs = new Set(j.pairs.map(p => p.pair)), selSecs = new Set(FUND_SECTIONS.map(s => s[0]).filter(secOk));
   fundDlg.innerHTML = `<form id="fundForm" method="dialog">
     <div class="dlg-head"><h2>Import fundamental analysis</h2>
       <p class="muted" style="margin-top:4px;font-weight:600">${esc(j.report_title || 'Fundamental report')}${j.report_date ? ' · ' + esc(j.report_date) : ''} · ${j.pairs.length} pairs${j.news?.length ? ` · ${j.news.length} calendar events` : ''}</p></div>
@@ -4659,7 +4699,7 @@ function openFundImport(j){
         <div class="chips" id="fPairs">${j.pairs.map(p => { const bi = normBias(p.bias); return `<button type="button" class="ch fpair" data-fp="${p.pair}" aria-pressed="true"><i class="fdot ${bi || ''}"></i>${p.pair}<span class="fhas" data-has="${p.pair}"></span></button>`; }).join('')}</div></div>
       <div><div class="flex items-center gap-2" style="margin-bottom:6px"><span class="lbl" style="margin:0">Sections</span>
           <button type="button" class="ch" id="fAllS">All</button><button type="button" class="ch" id="fNoS">None</button></div>
-        <div class="chips" id="fSecs">${FUND_SECTIONS.filter(([k]) => k!=='news' || j.news?.length).map(([k,l]) => `<button type="button" class="ch" data-fs="${k}" aria-pressed="true">${l}</button>`).join('')}</div></div>
+        <div class="chips" id="fSecs">${FUND_SECTIONS.filter(([k]) => secOk(k)).map(([k,l]) => `<button type="button" class="ch" data-fs="${k}" aria-pressed="true">${l}</button>`).join('')}</div></div>
       <div><span class="lbl">If the week already has data for a pair</span>
         <div class="seg" role="group" id="fMode"><button type="button" data-m="overwrite" aria-pressed="true">Overwrite the selected sections</button><button type="button" data-m="fill" aria-pressed="false">Only fill empty fields</button></div>
         <p class="hint">Your own review and any section you don't select are always kept.</p></div>
@@ -4718,6 +4758,7 @@ async function runFundImport(j, { y, w }, pairs, secs, mode){
     if(secs.has('catalysts')) put(d, 'catalysts', (s.catalysts||[]).map(c => typeof c==='string' ? { date:'', event:c, imp:'' } : { date:c.date||'', event:c.event||'', imp:normImp(c.imp || c.importance) }).filter(c => c.date || c.event));
     if(secs.has('assessment')){ put(d, 'priced', s.priced); put(d, 'invalidation', s.invalidation); put(d, 'horizon', s.horizon); put(d, 'alignment', normAlign(s.alignment)); put(d, 'alignment_note', s.alignment_note); }
     if(secs.has('changed')) put(d, 'changed', s.changed);
+    if(secs.has('story')){ const st = j.stories?.[p] || s.story; if(st && st.text) put(d, 'story', { title:String(st.title||''), text:String(st.text), tags:st.tags||'', report:j.report_title||'', date:j.report_date||'' }); }
     row.details = d;
     return row;
   });
@@ -4747,7 +4788,7 @@ async function runFundImport(j, { y, w }, pairs, secs, mode){
 }
 document.getElementById('fundGo').onclick = () => {
   const box = document.getElementById('fundPaste'), msg = document.getElementById('fundMsg');
-  try{ const j = parseFundPaste(box.value); msg.textContent = ''; dataDlg.close(); openFundImport(j); box.value = ''; }
+  try{ const j = parseFundPaste(box.value); msg.textContent = ''; dataDlg.close(); (j.format==='daily-observer-check' ? openCheckImport : openFundImport)(j); box.value = ''; }
   catch(e){ msg.textContent = 'Could not read it: ' + e.message + '. Copy the whole block from the report\'s "Daily Observer import" section.'; }
 };
 
@@ -4832,10 +4873,147 @@ function spark(vals, w = 120, h = 30){
 /* History = one page, three tabs: your trading results, the fundamentals over time, this week's picture */
 function histTabsInto(tab){
   const m = document.getElementById('main'); if(!m) return;
-  m.insertAdjacentHTML('afterbegin', `<header class="hp-top"><div><div class="pairtitle">History</div></div>
-    <nav class="hp-tabs" role="tablist">${[['perf','📈 Performance','your trades: win rate, R, sessions, setups'],['fund','🧭 Fundamentals','bias & scores week by week'],['week','🗓️ This week','every pair at a glance']].map(([k, l, t]) => `<button role="tab" data-htab="${k}" aria-selected="${tab===k}" title="${t}">${l}</button>`).join('')}</nav></header>`);
+  m.insertAdjacentHTML('afterbegin', `<header class="hp-top"><div><div class="pairtitle">Fundamental check</div></div>
+    <nav class="hp-tabs" role="tablist">${[['checks','📍 Daily checks','morning and evening checks, imported day by day'],['stories','📖 Stories','the weekly story of every pair'],['fund','🧭 Bias history','bias & scores week by week'],['week','🗓️ This week','every pair at a glance']].map(([k, l, t]) => `<button role="tab" data-htab="${k}" aria-selected="${tab===k}" title="${t}">${l}</button>`).join('')}</nav></header>`);
   m.querySelectorAll('[data-htab]').forEach(b => b.onclick = () => { const k = b.dataset.htab; if(k!=='week') ls.set('do_hist_tab', k);
-    S.view = k==='perf' ? 'analysis' : k==='week' ? 'overview' : 'history'; ls.set('do_view', 'history'); if(k==='fund') ls.set('do_hist_tab', 'fund'); renderMain(); });
+    S.view = k==='week' ? 'overview' : 'history'; ls.set('do_view', 'history'); renderMain(); });
+}
+
+
+/* story/check blocks inside the journal: day page and week panel */
+function fcClean(t){ return String(t||'').split('\n').filter(l => !/^\$[A-Z]+:/.test(l) && !l.startsWith('📸') && !/^━+$/.test(l.trim()) && !/^\[b\]📍 DAILY CHECK/.test(l)).join('\n').replace(/\n{3,}/g, '\n\n').trim(); }
+function fcDayHtml(p, ds){
+  const cks = checksOn(ds).map(({ sl, j }) => ({ sl, x:(j.pairs||[]).find(v => normPair(v.pair)===p) })).filter(c => c.x);
+  const k = isoWeek(parseISO(ds)), st = det(S.weekly.get(wk(p, k.year, k.week))).story;
+  if(!cks.length && !st?.text) return '';
+  return `<div class="fc-day">
+    <div class="vw-mh"><h4>📍 Fundamental check</h4>${st?.text ? `<button class="btn" data-fcopen="story|${p}|${k.year}|${k.week}">📖 Week ${k.week} story</button>` : ''}</div>
+    ${cks.length ? cks.map(({ sl, x }) => `<article class="fc-note"><div class="fc-h"><span class="tfl">${sl==='morning' ? '🌅 Morning' : '🌙 Evening'}</span><span class="fc-tag ${stCls(x.status)}">${esc(x.status)}</span>${x.flag ? `<span class="muted" style="font-size:12px;font-weight:700">🚩 ${esc(x.flag)}</span>` : ''}
+        <button class="btn" style="margin-left:auto" data-fcopen="check|${ds}|${sl}|${p}">Copy note</button></div>
+      <div class="fc-post">${bb2html(fcClean(x.note))}</div></article>`).join('')
+      : `<p class="muted" style="font-size:13px;margin:0 0 12px">No daily check imported for this day.</p>`}</div>`;
+}
+function fcWeekHtml(p, y, w, days){
+  const st = det(S.weekly.get(wk(p, y, w))).story;
+  const cks = (days||[]).flatMap(dd => { const ds = iso(dd); return checksOn(ds).map(({ sl, j }) => ({ ds, sl, x:(j.pairs||[]).find(v => normPair(v.pair)===p) })).filter(c => c.x); });
+  if(!st?.text && !cks.length) return '';
+  return `${cks.length ? `<div class="vsec"><h4>📍 Daily checks</h4><div class="fc-chk">${cks.map(c => `<button class="fc-ckb" data-fcopen="check|${c.ds}|${c.sl}|${p}"><b>${fmtDayShort(c.ds)} ${c.sl==='morning' ? '🌅' : '🌙'}</b><span class="fc-tag ${stCls(c.x.status)}">${esc(c.x.status)}</span>${c.x.read ? `<span class="muted" style="font-size:12px">${esc(c.x.read)}</span>` : ''}</button>`).join('')}</div></div>` : ''}
+    ${st?.text ? `<div class="vsec"><div class="flex items-center gap-2" style="justify-content:space-between"><h4 style="margin:0">📖 Story</h4><button class="btn" data-fcopen="story|${p}|${y}|${w}">Open · copy</button></div>
+      ${st.title ? `<p style="font-weight:700;margin:8px 0 4px">${esc(st.title)}</p>` : ''}<div class="fc-post">${bb2html(fcClean(st.text))}</div></div>` : ''}`;
+}
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-fcopen]'); if(!b) return; ev.preventDefault(); ev.stopPropagation();
+  const a = b.dataset.fcopen.split('|');
+  if(a[0]==='story'){ const [, p, y, w] = a, r = S.weekly.get(wk(p, +y, +w)), st = det(r).story; if(!st) return; const [tl, tc] = BIAS_TAG(r.bias);
+    openStory({ title:p, sub:`${st.title || ''}${st.report ? ' · ' + st.report : ''}`, tag:tl, tagCls:tc, body:fcClean(st.text), copies:[['Copy title', st.title||p], ['Copy post', st.text]] }); }
+  else { const [, ds, sl, p] = a, j = S.settings[`fcheck:${ds}:${sl}`], x = (j?.pairs||[]).find(v => normPair(v.pair)===p); if(!x) return;
+    openStory({ title:p, sub:`${sl==='morning' ? 'Morning' : 'Evening'} check · ${fmtDayShort(ds)}${x.flag ? ' · chart flag ' + x.flag : ''}`, tag:x.status, tagCls:stCls(x.status), body:fcClean(x.note), copies:[['Copy note', x.note || '']] }); }
+}, true);
+/* ===== Fundamental check: BBCode renderer, stories and daily checks (Nov 2026) ===== */
+function bb2html(t){
+  let h = esc(t||'');
+  h = h.replace(/\[url=([^\]]+)\](.*?)\[\/url\]/g, (m, u, x) => /^https?:/i.test(u.replace(/&amp;/g,'&')) ? `<a href="${u}" target="_blank" rel="noopener">${x}</a>` : x);
+  h = h.replace(/\[list=1\]\n?([\s\S]*?)\[\/list\]/g, (m, x) => '<ol>' + x.split('[*]').filter(v => v.trim()).map(v => `<li>${v.trim()}</li>`).join('') + '</ol>');
+  h = h.replace(/\[list\]\n?([\s\S]*?)\[\/list\]/g, (m, x) => '<ul>' + x.split('[*]').filter(v => v.trim()).map(v => `<li>${v.trim()}</li>`).join('') + '</ul>');
+  ['b','i','s'].forEach(k => { h = h.split(`[${k}]`).join(`<${k}>`).split(`[/${k}]`).join(`</${k}>`); });
+  h = h.replace(/\[quote\]/g, '<blockquote>').replace(/\[\/quote\]/g, '</blockquote>');
+  h = h.replace(/\n(?=\s*<\/?(ol|ul|li|blockquote))/g, '').replace(/(<\/(ol|ul|blockquote)>)\n/g, '$1');
+  return h.replace(/\n/g, '<br>');
+}
+async function copyTxt(t, b){ try{ await navigator.clipboard.writeText(t); }catch(e){ const ta = document.createElement('textarea'); ta.value = t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(_){} ta.remove(); }
+  if(b){ const o = b.textContent; b.textContent = 'Copied ✓'; setTimeout(() => b.textContent = o, 1500); } else toast('Copied'); }
+function openStory({ title, sub, tag, tagCls, body, copies = [] }){
+  const d = document.getElementById('storyDlg');
+  d.innerHTML = `<div class="dlg-head"><div class="flex items-center gap-2" style="flex-wrap:wrap"><h2 style="margin:0">${esc(title)}</h2>${tag ? `<span class="fc-tag ${tagCls||''}">${esc(tag)}</span>` : ''}</div>${sub ? `<p class="muted" style="margin-top:4px;font-weight:600">${esc(sub)}</p>` : ''}</div>
+    <div class="dlg-body" style="max-height:66vh;overflow:auto"><div class="fc-post">${bb2html(body)}</div></div>
+    <div class="dlg-foot">${copies.map((c, i) => `<button class="btn ${i===copies.length-1 ? 'btn-primary' : ''}" data-cp="${i}">${esc(c[0])}</button>`).join('')}<button class="btn" id="stClose">Close</button></div>`;
+  d.querySelectorAll('[data-cp]').forEach(b => b.onclick = () => copyTxt(copies[+b.dataset.cp][1], b));
+  d.querySelector('#stClose').onclick = () => d.close();
+  d.onclick = ev => { if(ev.target===d) d.close(); };
+  d.showModal();
+}
+const BIAS_TAG = b => b==='bullish' ? ['▲ Bullish','bullish'] : b==='bearish' ? ['▼ Bearish','bearish'] : ['◆ Two-sided','two-sided'];
+S.fc = { y:null, w:null, ccy: ls.get('do_fc_ccy','ALL'), day:null };
+function fcCcyChips(){ return `<div class="chips">${['ALL', ...CCYS].map(c => `<button class="ch" data-fcc="${c}" aria-pressed="${S.fc.ccy===c}">${c==='ALL' ? 'All' : c}</button>`).join('')}</div>`; }
+function fcBindCcy(){ document.querySelectorAll('[data-fcc]').forEach(b => b.onclick = () => { S.fc.ccy = b.dataset.fcc; ls.set('do_fc_ccy', S.fc.ccy); renderMain(); }); }
+const fcPairOk = p => S.fc.ccy==='ALL' || base(p)===S.fc.ccy || quote(p)===S.fc.ccy;
+function storyWeeks(){ const set = new Map(); for(const r of S.weekly.values()) if(det(r).story?.text) set.set(r.year*100 + r.week, { year:r.year, week:r.week }); return [...set.values()].sort((a,b) => (a.year*100+a.week) - (b.year*100+b.week)); }
+function renderStories(){
+  const all = storyWeeks(), cur = isoWeek(new Date());
+  if(S.fc.y==null){ const last = all.filter(k => k.year*100+k.week <= cur.year*100+cur.week + 1).at(-1) || all.at(-1) || cur; S.fc.y = last.year; S.fc.w = last.week; }
+  const y = S.fc.y, w = S.fc.w, i = all.findIndex(k => k.year===y && k.week===w);
+  const rows = allPairs().filter(fcPairOk).map(p => ({ p, r:S.weekly.get(wk(p, y, w)) })).filter(x => x.r && det(x.r).story?.text);
+  document.getElementById('main').innerHTML = `
+    <div class="fc-bar"><button class="btn" id="fcPrev" ${i<=0 ? 'disabled' : ''}>‹</button><b style="font-size:16px">Week ${w} · ${y}</b><button class="btn" id="fcNext" ${i<0 || i>=all.length-1 ? 'disabled' : ''}>›</button>
+      <span class="muted" style="font-size:12.5px;font-weight:600">${rows.length} stor${rows.length===1 ? 'y' : 'ies'} · tap a pair to read it</span></div>
+    <div class="fc-bar">${fcCcyChips()}</div>
+    ${rows.length ? `<div class="fc-grid">${rows.map(({ p, r }) => { const d = det(r), st = d.story, [tl, tc] = BIAS_TAG(r.bias);
+      return `<button class="fc-card" data-st="${p}"><div class="fc-h"><b>${p}</b><span class="fc-tag ${tc}">${tl}${r.conviction ? ' · '+esc(r.conviction) : ''}</span></div>
+        <div class="fc-t">${esc(st.title || r.fundamentals || '')}</div>
+        ${d.base_score!=null ? `<div class="fc-gap muted">${base(p)} ${d.base_score>0?'+':''}${d.base_score} vs ${quote(p)} ${d.quote_score>0?'+':''}${d.quote_score}</div>` : ''}</button>`; }).join('')}</div>`
+      : `<div class="card fc-empty"><p>No stories for this week yet. They come with the Phase 1 / Phase 2 import (Import / export → paste the block).</p></div>`}`;
+  fcBindCcy();
+  document.getElementById('fcPrev').onclick = () => { if(i>0){ S.fc.y = all[i-1].year; S.fc.w = all[i-1].week; renderMain(); } };
+  document.getElementById('fcNext').onclick = () => { if(i>=0 && i<all.length-1){ S.fc.y = all[i+1].year; S.fc.w = all[i+1].week; renderMain(); } };
+  document.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { const p = b.dataset.st, r = S.weekly.get(wk(p, y, w)), st = det(r).story, [tl, tc] = BIAS_TAG(r.bias);
+    openStory({ title:p, sub:`${st.title || ''}${st.report ? ' · ' + st.report : ''}`, tag:tl, tagCls:tc, body:fcClean(st.text), copies:[['Copy title', st.title||p], ['Copy post', st.text]] }); });
+}
+/* daily checks are kept in do_settings as  fcheck:YYYY-MM-DD:morning|evening  → the imported JSON */
+function checkKeys(){ return Object.keys(S.settings||{}).filter(k => k.startsWith('fcheck:')).sort(); }
+function checksOn(day){ return ['morning','evening'].map(sl => ({ sl, j:S.settings[`fcheck:${day}:${sl}`] })).filter(x => x.j); }
+function stCls(st){ st = String(st||''); return st.startsWith('❌') ? 'bad' : (st.startsWith('⚠') || st.startsWith('👀')) ? 'warn' : st.startsWith('⚪') ? 'neu' : 'ok'; }
+function renderChecks(){
+  const days = [...new Set(checkKeys().map(k => k.split(':')[1]))].sort();
+  if(!S.fc.day) S.fc.day = days.at(-1) || iso(new Date());
+  const day = S.fc.day, list = checksOn(day).reverse(), di = days.indexOf(day);
+  const wkDays = (() => { const k = isoWeek(parseISO(day)), [a] = weekRange(k.year, k.week); return [0,1,2,3,4,5,6].map(n => { const d = parseISO(a); d.setDate(d.getDate()+n); return iso(d); }).filter(x => days.includes(x)); })();
+  document.getElementById('main').innerHTML = `
+    <div class="fc-bar"><button class="btn" id="fcdPrev" ${di<=0 ? 'disabled' : ''}>‹</button><input class="inp" type="date" id="fcDay" value="${day}" style="width:auto"><button class="btn" id="fcdNext" ${di<0 || di>=days.length-1 ? 'disabled' : ''}>›</button>
+      <div class="fc-days">${wkDays.map(x => `<button class="ch" data-fcd="${x}" aria-pressed="${x===day}">${fmtDayShort(x)}</button>`).join('')}</div></div>
+    <div class="fc-bar">${fcCcyChips()}</div>
+    ${list.length ? list.map(({ sl, j }) => {
+      const pairs = (j.pairs||[]).filter(x => fcPairOk(normPair(x.pair)));
+      const groups = {}; pairs.forEach(x => (groups[stCls(x.status)] ||= 0, groups[stCls(x.status)]++));
+      const ccys = Object.entries(j.currencies||{}).filter(([c]) => S.fc.ccy==='ALL' || c===S.fc.ccy);
+      return `<div class="fc-sec"><h3>${sl==='morning' ? '🌅 Morning' : '🌙 Evening'} check${j.check ? ' · #' + esc(j.check) : ''}</h3><span class="muted" style="font-weight:600;font-size:12.5px">${esc(j.title||'')}${j.time ? ' · ' + esc(j.time) : ''}</span></div>
+        ${j.summary ? `<div class="card" style="margin-bottom:10px"><div class="fc-post">${bb2html(j.summary)}</div></div>` : ''}
+        ${ccys.length ? `<div class="card" style="overflow:auto;margin-bottom:10px"><table class="fc-ccy"><thead><tr><th>Currency</th><th>Score</th><th>Today's read</th><th>Status</th><th>What changed</th></tr></thead><tbody>
+          ${ccys.map(([c, v]) => `<tr><td><b>${c}</b></td><td class="n">${v.score>0?'+':''}${v.score ?? ''}</td><td class="n">${v.shadow!=null ? (v.shadow>0?'+':'') + v.shadow : ''}</td><td><span class="fc-tag ${stCls(v.status)}">${esc(v.status||'')}</span></td><td style="min-width:220px">${esc(v.note||'')}</td></tr>`).join('')}</tbody></table></div>` : ''}
+        <div class="fc-grid">${pairs.map(x => { const p = normPair(x.pair);
+          return `<button class="fc-card" data-ck="${sl}|${p}"><div class="fc-h"><b>${p}</b><span class="fc-tag ${stCls(x.status)}">${esc(x.status||'')}</span></div>
+            <div class="fc-gap">${x.published_gap!=null ? `gap ${x.published_gap>0?'+':''}${x.published_gap} → ${x.read ? esc(x.read) : (x.today_gap>0?'+':'') + (x.today_gap ?? '?')}` : ''}${x.flag ? ` · 🚩 ${esc(x.flag)}` : ''}</div>
+            ${x.hook ? `<div class="fc-t">${esc(x.hook)}</div>` : ''}</button>`; }).join('')}</div>`; }).join('')
+      : `<div class="card fc-empty"><p>No check imported for ${fmtDayShort(day)}. After each morning or evening check, paste its JSON in Import / export.</p></div>`}`;
+  fcBindCcy();
+  const go = d => { if(d){ S.fc.day = d; renderMain(); } };
+  document.getElementById('fcDay').onchange = e => go(e.target.value);
+  document.getElementById('fcdPrev').onclick = () => go(days[di-1]);
+  document.getElementById('fcdNext').onclick = () => go(days[di+1]);
+  document.querySelectorAll('[data-fcd]').forEach(b => b.onclick = () => go(b.dataset.fcd));
+  document.querySelectorAll('[data-ck]').forEach(b => b.onclick = () => { const [sl, p] = b.dataset.ck.split('|'), j = S.settings[`fcheck:${day}:${sl}`], x = (j.pairs||[]).find(v => normPair(v.pair)===p);
+    openStory({ title:p, sub:`${sl==='morning' ? 'Morning' : 'Evening'} check · ${fmtDayShort(day)}${x.flag ? ' · chart flag ' + x.flag : ''}`, tag:x.status, tagCls:stCls(x.status), body:fcClean(x.note), copies:[['Copy note', x.note || '']] }); });
+}
+function openCheckImport(j){
+  const d0 = /^\d{4}-\d{2}-\d{2}$/.test(j.date||'') ? j.date : iso(new Date()), sl0 = j.slot==='morning' ? 'morning' : 'evening';
+  fundDlg.innerHTML = `<form id="ckForm" method="dialog"><div class="dlg-head"><h2>Import daily check</h2>
+      <p class="muted" style="margin-top:4px;font-weight:600">${esc(j.title || 'Fundamental check')} · ${(j.pairs||[]).length} pairs · ${Object.keys(j.currencies||{}).length} currencies</p></div>
+    <div class="dlg-body" style="display:grid;gap:14px">
+      <div><span class="lbl">Day</span><input class="inp" type="date" id="ckDay" value="${d0}" style="width:auto"></div>
+      <div><span class="lbl">Check</span><div class="seg" role="group" id="ckSl"><button type="button" data-sl="morning" aria-pressed="${sl0==='morning'}">🌅 Morning</button><button type="button" data-sl="evening" aria-pressed="${sl0==='evening'}">🌙 Evening</button></div>
+        <p class="hint" id="ckInfo"></p></div></div>
+    <div class="dlg-foot"><button type="button" class="btn" id="ckCancel">Cancel</button><button type="submit" class="btn btn-primary" id="ckGo">Import</button></div></form>`;
+  const f = fundDlg.querySelector('#ckForm'); let sl = sl0;
+  const info = () => { const k = `fcheck:${f.querySelector('#ckDay').value}:${sl}`; f.querySelector('#ckInfo').textContent = S.settings[k] ? 'This day already has this check — importing replaces it.' : ''; };
+  f.querySelectorAll('[data-sl]').forEach(b => b.onclick = () => { sl = b.dataset.sl; f.querySelectorAll('[data-sl]').forEach(x => x.setAttribute('aria-pressed', String(x===b))); info(); });
+  f.querySelector('#ckDay').oninput = info; info();
+  f.querySelector('#ckCancel').onclick = () => fundDlg.close();
+  f.onsubmit = async ev => { ev.preventDefault(); const day = f.querySelector('#ckDay').value; if(!/^\d{4}-\d{2}-\d{2}$/.test(day)) return;
+    const key = `fcheck:${day}:${sl}`, btn = f.querySelector('#ckGo'); btn.disabled = true; btn.textContent = 'Importing…';
+    try{ const { error } = await sb.from('do_settings').upsert({ key, value:j }, { onConflict:'key' }); if(error) throw error;
+      S.settings[key] = j; fundDlg.close(); toast(`Check imported for ${fmtDayShort(day)} (${sl})`);
+      S.fc.day = day; ls.set('do_hist_tab', 'checks'); goView('history');
+    }catch(e){ console.error(e); toast('Import failed: ' + e.message); btn.disabled = false; btn.textContent = 'Import'; } };
+  fundDlg.showModal();
 }
 function renderHistory(){
   const H = S.hist, weeks = histWeeks(H.n), cur = weeks.at(-1);
@@ -7562,7 +7740,7 @@ function openPending(){
 }
 const qaDock = (() => { const d = document.createElement('div'); d.className = 'qa-dock'; document.body.appendChild(d); return d; })();
 function refreshDock(){
-  if(!CONFIGURED){ qaDock.innerHTML = ''; return; }
+  if(!CONFIGURED || !SUAPP){ qaDock.innerHTML = ''; const sq0 = document.getElementById('sideQa'); if(sq0) sq0.innerHTML = ''; return; }   /* trades removed from the app (Nov 2026) */
   const n = pendingList().length;
   qaDock.innerHTML = `<button class="qa-fab" id="qaFab" title="Quick add trade (T)" aria-label="Quick add trade"><span class="qa-plus">+</span><span class="qa-l">Trade</span></button>`;
   qaDock.querySelector('#qaFab').onclick = openQuickAdd;
@@ -7640,7 +7818,7 @@ function openQuickAdd(){
   drawPairs(); qaDlg.showModal(); setTimeout(() => q.focus(), 30);
 }
 document.addEventListener('keydown', ev => {
-  if(ev.key.toLowerCase()!=='t' || ev.ctrlKey || ev.metaKey || ev.altKey || !CONFIGURED || document.querySelector('dialog[open]')) return;
+  if(!SUAPP || ev.key.toLowerCase()!=='t' || ev.ctrlKey || ev.metaKey || ev.altKey || !CONFIGURED || document.querySelector('dialog[open]')) return;
   if(ev.target.closest?.('input,textarea,select,[contenteditable="true"]')) return;
   ev.preventDefault(); openQuickAdd();
 });
