@@ -4931,7 +4931,7 @@ function fcWeekHtml(p, y, w, days){
   if(!st?.text && !cks.length) return '';
   return `${cks.length ? `<div class="vsec"><h4>📍 Daily checks</h4><div class="fc-chk">${cks.map(c => `<button class="fc-ckb" data-fcopen="check|${c.ds}|${c.sl}|${p}"><b>${fmtDayShort(c.ds)} ${c.sl==='morning' ? '🌅' : '🌙'}</b><span class="fc-tag ${stCls(c.x.status)}">${esc(c.x.status)}</span>${c.x.read ? `<span class="muted" style="font-size:12px">${esc(c.x.read)}</span>` : ''}</button>`).join('')}</div></div>` : ''}
     ${st?.text ? `<div class="vsec"><div class="flex items-center gap-2" style="justify-content:space-between"><h4 style="margin:0">📖 Story</h4><button class="btn" data-fcopen="story|${p}|${y}|${w}">Open · copy</button></div>
-      ${st.title ? `<p style="font-weight:700;margin:8px 0 4px">${esc(st.title)}</p>` : ''}${st.kit ? kitHtml(st.kit) : ''}<div class="fc-post">${bb2html(fcClean(st.text))}</div></div>` : ''}`;
+      ${st.title ? `<p style="font-weight:700;margin:8px 0 4px">${esc(st.title)}</p>` : ''}${st.kit ? `<details class="kit-d"><summary style="cursor:pointer;font-weight:700;margin:6px 0">📈 TV chart kit</summary>${kitHtml(st.kit)}</details>` : ''}<div class="fc-post">${bb2html(fcClean(st.text))}</div></div>` : ''}`;
 }
 document.addEventListener('click', ev => {
   const b = ev.target.closest('[data-fcopen]'); if(!b) return; ev.preventDefault(); ev.stopPropagation();
@@ -4957,11 +4957,12 @@ async function copyTxt(t, b){ try{ await navigator.clipboard.writeText(t); }catc
 function openStory({ title, sub, tag, tagCls, body, copies = [], kit = null }){
   const d = document.getElementById('storyDlg');
   d.innerHTML = `<div class="dlg-head"><div class="flex items-center gap-2" style="flex-wrap:wrap"><h2 style="margin:0">${esc(title)}</h2>${tag ? `<span class="fc-tag ${tagCls||''}">${esc(tag)}</span>` : ''}</div>${sub ? `<p class="muted" style="margin-top:4px;font-weight:600">${esc(sub)}</p>` : ''}</div>
-    <div class="dlg-body" style="max-height:66vh;overflow:auto">${kit ? kitHtml(kit) : ''}<div class="fc-post">${bb2html(body)}</div></div>
+    ${kit ? `<div class="seg st-tabs" role="tablist" style="margin:0 20px 8px"><button type="button" data-stt="art" aria-pressed="true">📖 Article</button><button type="button" data-stt="tv" aria-pressed="false">📈 TV</button></div>` : ''}
+    <div class="dlg-body" style="max-height:66vh;overflow:auto"><div data-stp="art"><div class="fc-post">${bb2html(body)}</div></div>${kit ? `<div data-stp="tv" hidden>${kitHtml(kit)}</div>` : ''}</div>
     <div class="dlg-foot">${copies.map((c, i) => `<button class="btn ${i===copies.length-1 ? 'btn-primary' : ''}" data-cp="${i}">${esc(c[0])}</button>`).join('')}<button class="btn" id="stClose">Close</button></div>`;
   d.querySelectorAll('[data-cp]').forEach(b => b.onclick = () => copyTxt(copies[+b.dataset.cp][1], b));
   d.querySelector('#stClose').onclick = () => d.close();
-  if(kit) kitBind(d, kit);
+  d.querySelectorAll('[data-stt]').forEach(b => b.onclick = () => { d.querySelectorAll('[data-stt]').forEach(x => x.setAttribute('aria-pressed', String(x===b))); d.querySelectorAll('[data-stp]').forEach(x => x.hidden = x.dataset.stp!==b.dataset.stt); d.querySelector('.dlg-body').scrollTop = 0; });
   d.onclick = ev => { if(ev.target===d) d.close(); };
   d.showModal();
 }
