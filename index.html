@@ -2124,6 +2124,11 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   @media (max-width:520px){ .g2{ grid-template-columns:1fr; } }
 
   /* ===== Fundamental check: stories + daily checks ===== */
+  .kit{ border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:14px; font-size:13.5px; }
+  .kit-l{ font-weight:800; margin:6px 0 4px; } .kit-r{ margin:4px 0; } .kit-c{ width:120px !important; display:inline-block; padding:4px 8px; } .kit-h{ font-size:12px; margin:4px 0; }
+  .kit-t{ width:100%; border-collapse:collapse; margin:6px 0; } .kit-t th{ font-size:11.5px; text-align:left; opacity:.7; padding:3px 4px; }
+  .kit-t td{ padding:5px 4px; border-bottom:1px solid var(--line); vertical-align:middle; } .kit-t td:nth-child(2), .kit-t td:nth-child(3){ font-variant-numeric:tabular-nums; font-weight:700; white-space:nowrap; } .kit-t td:last-child{ font-size:12px; opacity:.8; }
+  .kit .sw{ display:inline-block; width:14px; height:10px; margin-right:6px; vertical-align:middle; border-radius:2px; } .kit-p{ margin:2px 0; padding-left:18px; list-style:disc; } .kit-n{ font-style:italic; opacity:.9; } .kit-b{ display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 4px; }
   .fc-best{ border-color:color-mix(in srgb, var(--amber) 55%, var(--line)); box-shadow:inset 3px 0 0 var(--amber); }
   .fc-why{ font-size:11.5px; font-weight:700; color:var(--amber); }
   .fc-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px; }
@@ -4772,7 +4777,7 @@ async function runFundImport(j, { y, w }, pairs, secs, mode){
     if(secs.has('catalysts')) put(d, 'catalysts', (s.catalysts||[]).map(c => typeof c==='string' ? { date:'', event:c, imp:'' } : { date:c.date||'', event:c.event||'', imp:normImp(c.imp || c.importance) }).filter(c => c.date || c.event));
     if(secs.has('assessment')){ put(d, 'priced', s.priced); put(d, 'invalidation', s.invalidation); put(d, 'horizon', s.horizon); put(d, 'alignment', normAlign(s.alignment)); put(d, 'alignment_note', s.alignment_note); }
     if(secs.has('changed')) put(d, 'changed', s.changed);
-    if(secs.has('story')){ const st = j.stories?.[p] || s.story; if(st && st.text) put(d, 'story', { title:String(st.title||''), text:String(st.text), tags:st.tags||'', report:j.report_title||'', date:j.report_date||'' }); }
+    if(secs.has('story')){ const st = j.stories?.[p] || s.story; if(st && st.text) put(d, 'story', { title:String(st.title||''), text:String(st.text), tags:st.tags||'', report:j.report_title||'', date:j.report_date||'', ...(st.kit && typeof st.kit==='object' ? { kit:st.kit } : {}) }); }
     row.details = d;
     return row;
   });
@@ -4932,7 +4937,7 @@ document.addEventListener('click', ev => {
   const b = ev.target.closest('[data-fcopen]'); if(!b) return; ev.preventDefault(); ev.stopPropagation();
   const a = b.dataset.fcopen.split('|');
   if(a[0]==='story'){ const [, p, y, w] = a, r = S.weekly.get(wk(p, +y, +w)), st = det(r).story; if(!st) return; const [tl, tc] = BIAS_TAG(r.bias);
-    openStory({ title:p, sub:`${st.title || ''}${st.report ? ' · ' + st.report : ''}`, tag:tl, tagCls:tc, body:fcClean(st.text), copies:[['Copy title', st.title||p], ['Copy post', st.text]] }); }
+    openStory({ title:p, sub:`${st.title || ''}${st.report ? ' · ' + st.report : ''}`, tag:tl, tagCls:tc, body:fcClean(st.text), copies:[['Copy title', st.title||p], ['Copy post', st.text]], kit:st.kit }); }
   else { const [, ds, sl, p] = a, j = S.settings[`fcheck:${ds}:${sl}`], x = (j?.pairs||[]).find(v => normPair(v.pair)===p); if(!x) return;
     openStory({ title:p, sub:`${sl==='morning' ? 'Morning' : 'Evening'} check · ${fmtDayShort(ds)}${x.flag ? ' · chart flag ' + x.flag : ''}`, tag:x.status, tagCls:stCls(x.status), body:fcClean(x.note), copies:[['Copy note', x.note || '']] }); }
 }, true);
@@ -4949,13 +4954,14 @@ function bb2html(t){
 }
 async function copyTxt(t, b){ try{ await navigator.clipboard.writeText(t); }catch(e){ const ta = document.createElement('textarea'); ta.value = t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(_){} ta.remove(); }
   if(b){ const o = b.textContent; b.textContent = 'Copied ✓'; setTimeout(() => b.textContent = o, 1500); } else toast('Copied'); }
-function openStory({ title, sub, tag, tagCls, body, copies = [] }){
+function openStory({ title, sub, tag, tagCls, body, copies = [], kit = null }){
   const d = document.getElementById('storyDlg');
   d.innerHTML = `<div class="dlg-head"><div class="flex items-center gap-2" style="flex-wrap:wrap"><h2 style="margin:0">${esc(title)}</h2>${tag ? `<span class="fc-tag ${tagCls||''}">${esc(tag)}</span>` : ''}</div>${sub ? `<p class="muted" style="margin-top:4px;font-weight:600">${esc(sub)}</p>` : ''}</div>
-    <div class="dlg-body" style="max-height:66vh;overflow:auto"><div class="fc-post">${bb2html(body)}</div></div>
+    <div class="dlg-body" style="max-height:66vh;overflow:auto">${kit ? kitHtml(kit) : ''}<div class="fc-post">${bb2html(body)}</div></div>
     <div class="dlg-foot">${copies.map((c, i) => `<button class="btn ${i===copies.length-1 ? 'btn-primary' : ''}" data-cp="${i}">${esc(c[0])}</button>`).join('')}<button class="btn" id="stClose">Close</button></div>`;
   d.querySelectorAll('[data-cp]').forEach(b => b.onclick = () => copyTxt(copies[+b.dataset.cp][1], b));
   d.querySelector('#stClose').onclick = () => d.close();
+  if(kit) kitBind(d, kit);
   d.onclick = ev => { if(ev.target===d) d.close(); };
   d.showModal();
 }
@@ -4987,6 +4993,33 @@ function checkWhy(x){ const why = [];
   if(x.published_gap!=null && x.today_gap!=null && x.published_gap!==x.today_gap) why.push(`Gap moved ${x.published_gap>0?'+':''}${x.published_gap} → ${x.today_gap>0?'+':''}${x.today_gap}`);
   if(/✗/.test(String(x.flag||''))) why.push('Chart flag ✗');
   return [...new Set(why)]; }
+/* TradingView chart kit carried by the weekly story (stories[PAIR].kit): levels = close·e^(±σ), close·e^(±2σ) */
+function kitLv(k, c){ const s = (+k.sigma_pct||0)/100, d = k.dec ?? 5, f = n => (c*Math.exp(n*s)).toFixed(d); return { c:(+c).toFixed(d), t1:f(-1), t2:f(1), b1:f(-2), b2:f(2) }; }
+function kitHtml(k){
+  if(k.close==null || k.sigma_pct==null) return `<div class="kit"><div class="kit-l">🗺️ Chart kit</div><p class="muted">Volatility data unavailable for this week — no levels.</p></div>`;
+  const v = kitLv(k, k.close), mk = { bearish:['#E53935','Bearish','Red'], bullish:['#43A047','Bullish','Green'] }[k.bias] || ['#9E9E9E','Two-sided','Grey'];
+  const side = k.bias==='bearish' ? `<tr><td><span class="sw" style="background:#E53935;opacity:.55"></span>Bias side</td><td data-kv="b1">${v.b1}</td><td data-kv="c">${v.c}</td><td>Red-pink fill, red label</td></tr>`
+    : k.bias==='bullish' ? `<tr><td><span class="sw" style="background:#43A047;opacity:.55"></span>Bias side</td><td data-kv="c">${v.c}</td><td data-kv="b2">${v.b2}</td><td>Green fill, green label</td></tr>`
+    : `<tr><td colspan="4" class="muted">Two-sided pair: no bias side to shade.</td></tr>`;
+  return `<div class="kit"><div class="kit-l">🗺️ Chart kit · draw these on TradingView</div>
+    <div class="kit-r">Friday close <input class="inp kit-c" type="number" step="any" value="${v.c}"> <span class="muted">reference${k.close_date ? ' (' + esc(k.close_date) + ')' : ''}; type your chart's Friday close</span></div>
+    <div class="muted kit-h">Rectangle → double-click → <b>Coordinates</b>: #1 = bottom price, #2 = top price.${k.bars ? ' Bars: ' + esc(k.bars) + '.' : ''}</div>
+    <div style="overflow:auto"><table class="kit-t"><tr><th>Drawing</th><th>#1 (bottom)</th><th>#2 (top)</th><th>Style</th></tr>
+    <tr><td><span class="sw" style="background:#2962FF;height:3px"></span>Week starts here</td><td colspan="2" style="text-align:center" data-kv="c">${v.c}</td><td>Blue line, extend right</td></tr>
+    <tr><td><span class="sw" style="background:${mk[0]};width:3px"></span>Week marker</td><td colspan="2" style="text-align:center">${esc(k.monday || 'Monday')} open</td><td>${mk[2]} vertical line, text "Week ${esc(k.week ?? '')} · ${mk[1]}"</td></tr>
+    <tr><td><span class="sw" style="background:#C5CAE9;border:1.5px solid #1A3A8F"></span>Typical week</td><td data-kv="t1">${v.t1}</td><td data-kv="t2">${v.t2}</td><td>Dark blue border, light blue fill, blue label</td></tr>
+    <tr><td><span class="sw" style="border:1.5px dashed #888;background:transparent"></span>Big-news week</td><td data-kv="b1">${v.b1}</td><td data-kv="b2">${v.b2}</td><td>Black dashed lines, no fill, black label</td></tr>
+    ${side}</table></div>
+    ${(k.pins||[]).length ? `<div class="kit-l">📌 News pins (4H)</div><ul class="kit-p">${k.pins.map(z => `<li><b>${esc(z.label||'')}</b> · ${esc(z.day||'')}${z.time ? ' ' + esc(z.time) + (/late/.test(z.time) ? '' : ' Bucharest') : ' (time not verified)'}</li>`).join('')}</ul>` : ''}
+    ${k.twist ? `<div class="kit-l">💡 Plot-twist note</div><div class="kit-n">${esc(k.twist).replace(/\n/g,'<br>')}</div>` : ''}
+    <div class="kit-b">${(k.legend||[]).length ? '<button class="btn" data-kcp="leg">Copy legend (article)</button><button class="btn" data-kcp="legp">Copy legend (chart text)</button>' : ''}${k.twist ? '<button class="btn" data-kcp="note">Copy note text</button>' : ''}</div>
+    <div class="muted kit-h">Typical week = the move the pair stayed within in about 2 of 3 weeks over the last 26 weeks (±${esc(k.sigma_pct)}% from Friday's close); big-news week = twice that. Not a target and not a signal.</div></div>`; }
+function kitBind(d, k){
+  const inp = d.querySelector('.kit-c');
+  if(inp) inp.oninput = () => { const c = parseFloat(inp.value); if(!isFinite(c)) return; const v = kitLv(k, c); d.querySelectorAll('[data-kv]').forEach(n => n.textContent = v[n.dataset.kv]); };
+  const head = k.legend_head || '🗺️ HOW TO READ THE CHART', L = k.legend || [];
+  d.querySelectorAll('[data-kcp]').forEach(b => b.onclick = () => { const t = b.dataset.kcp;
+    copyTxt(t==='note' ? k.twist : t==='legp' ? head + '\n\n' + L.join('\n') : '[b]' + head + '[/b]\n[list]\n' + L.map(x => '[*]' + x).join('\n') + '\n[/list]', b); }); }
 const BIAS_TAG = b => b==='bullish' ? ['▲ Bullish','bullish'] : b==='bearish' ? ['▼ Bearish','bearish'] : ['◆ Two-sided','two-sided'];
 S.fc = { y:null, w:null, ccy: ls.get('do_fc_ccy','ALL'), day:null };
 function fcCcyChips(){ return `<div class="chips">${['ALL', ...CCYS].map(c => `<button class="ch" data-fcc="${c}" aria-pressed="${S.fc.ccy===c}">${c==='ALL' ? 'All' : c}</button>`).join('')}</div>`; }
@@ -5015,7 +5048,7 @@ function renderStories(){
   document.getElementById('fcPrev').onclick = () => { if(i>0){ S.fc.y = all[i-1].year; S.fc.w = all[i-1].week; renderMain(); } };
   document.getElementById('fcNext').onclick = () => { if(i>=0 && i<all.length-1){ S.fc.y = all[i+1].year; S.fc.w = all[i+1].week; renderMain(); } };
   document.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { const p = b.dataset.st, r = S.weekly.get(wk(p, y, w)), st = det(r).story, [tl, tc] = BIAS_TAG(r.bias);
-    openStory({ title:p, sub:`${st.title || ''}${st.report ? ' · ' + st.report : ''}`, tag:tl, tagCls:tc, body:fcClean(st.text), copies:[['Copy title', st.title||p], ['Copy post', st.text]] }); });
+    openStory({ title:p, sub:`${st.title || ''}${st.report ? ' · ' + st.report : ''}`, tag:tl, tagCls:tc, body:fcClean(st.text), copies:[['Copy title', st.title||p], ['Copy post', st.text]], kit:st.kit }); });
 }
 /* daily checks are kept in do_settings as  fcheck:YYYY-MM-DD:morning|evening  → the imported JSON */
 function checkKeys(){ return Object.keys(S.settings||{}).filter(k => k.startsWith('fcheck:')).sort(); }
