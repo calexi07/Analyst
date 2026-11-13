@@ -5150,10 +5150,10 @@ function hlBadge(n){ document.querySelectorAll('[data-view="health"]').forEach(b
 /* ===== Analyst (Nov 2026): the weekly trade review, imported automatically (do_settings treview:YYYY-Www) ===== */
 function anWeeks(){ return Object.keys(S.settings||{}).filter(k => k.startsWith('treview:')).sort(); }
 S.an = S.an || null;
-const AN_TABS = [['rev','🧾 Weekly review'],['mon','📅 Monthly'],['proc','🎯 Process goals'],['lib','⭐ A+ library']];
+const AN_TABS = [['rev','🧾 Weekly review'],['mon','📅 Monthly'],['thr','📏 Threshold'],['proc','🎯 Process goals'],['lib','⭐ A+ library']];
 function renderAnalyst(){
   const tab = ls.get('do_an_tab', 'rev');
-  if(tab==='mon') renderMonthly(); else if(tab==='proc') renderProcess(); else if(tab==='lib') renderLibrary(); else renderAnalystReview();
+  if(tab==='mon') renderMonthly(); else if(tab==='thr') renderThreshold(); else if(tab==='proc') renderProcess(); else if(tab==='lib') renderLibrary(); else renderAnalystReview();
   const m = document.getElementById('main');
   m.insertAdjacentHTML('afterbegin', `<header class="hp-top"><div><div class="pairtitle">Analyst</div><div class="muted" style="font-weight:600;font-size:12px">Your live trades, reviewed</div></div>
     <nav class="hp-tabs" role="tablist">${AN_TABS.map(([k, l]) => `<button role="tab" data-antab="${k}" aria-selected="${tab===k}">${l}</button>`).join('')}</nav></header>`);
@@ -5188,6 +5188,37 @@ function renderMonthly(){
   document.getElementById('mPrev').onclick = () => { if(i>0){ S.anMon = months[i-1]; renderMain(); } };
   document.getElementById('mNext').onclick = () => { if(i<months.length-1){ S.anMon = months[i+1]; renderMain(); } };
 }
+/* ===== 3. Quality threshold: from which fundamental edge (score gap in your direction) your trades pay ===== */
+const TH_MIN_ALL = 30, TH_MIN_ROW = 10;
+function renderThreshold(){
+  const m = document.getElementById('main'), src = ls.get('do_th_src', 'live');
+  const all = [...S.bt.rows.values()].filter(x => ['W','L','BE'].includes(x.result) && (src==='both' || (src==='live') === (x.run===LIVE_RUN))).map(btDerive);
+  const withE = all.filter(x => x.edge!=null), st = list => { const a = stat(list); return a; };
+  const cuts = [-99, 1, 2, 3, 4, 5, 6, 8, 10, 13];
+  const rows = cuts.map(c => { const l = withE.filter(x => x.edge >= c); return { c, ...st(l) }; }).filter((r, i, a) => r.n && (i===0 || r.n !== a[i-1].n || r.c===3));
+  const ok = rows.filter(r => r.n >= TH_MIN_ROW && r.c > -99), base0 = rows[0];
+  const pick = withE.length >= TH_MIN_ALL ? ok.filter(r => r.avg > (base0?.avg ?? 0) && r.avg > 0).sort((a, b) => b.R - a.R)[0] : null;
+  const conv = ['high','medium','low'].map(c => ({ c, ...st(all.filter(x => x.conviction===c)) }));
+  const chk = (() => { const g = {}; all.forEach(x => { const k = btCheckAt(x); (g[k] ||= []).push(x); }); return Object.entries(g).map(([k, l]) => ({ k, ...st(l) })).sort((a, b) => (b.avg ?? -9) - (a.avg ?? -9)); })();
+  const pct = v => v==null ? '–' : Math.round(v*100) + '%';
+  const tr = (lab, r, hi) => `<tr${hi ? ' style="background:color-mix(in srgb,#22AB94 14%,transparent)"' : ''}><td><b>${lab}</b></td><td>${r.n}</td><td>${pct(r.wr)}</td><td class="${r.avg > 0 ? 'pos' : r.avg < 0 ? 'neg' : ''}"><b>${sgR(r.avg)}</b></td><td>${sgR(r.R)}</td><td class="muted">${r.n < TH_MIN_ROW ? 'too few' : ''}</td></tr>`;
+  m.innerHTML = `<p class="muted" style="font-weight:600;margin:0 0 10px;max-width:720px">Edge = the weekly score gap in the direction you traded (EURUSD short with EUR −3 vs USD +7 = +10; against the bias it is negative). This page shows from which edge your trades start to pay, so you can stop taking the weak ones.</p>
+    <div class="fc-bar"><div class="seg" role="group">${[['live','Live trades'],['bt','Backtests'],['both','Both']].map(([v, l]) => `<button type="button" data-thsrc="${v}" aria-pressed="${src===v}">${l}</button>`).join('')}</div>
+      <span class="muted" style="font-size:12.5px;font-weight:600">${withE.length} trades with an edge recorded${all.length - withE.length ? ` · ${all.length - withE.length} without scores (not counted)` : ''}</span></div>
+    <div class="card" style="margin-bottom:12px"><p style="margin:0;font-weight:700">${withE.length < TH_MIN_ALL ? `⏳ Not enough trades yet: ${withE.length} of ${TH_MIN_ALL}. The table already fills in, but no threshold is suggested before ${TH_MIN_ALL} trades.` : pick ? `📏 Suggested threshold: edge ${pick.c} or more — ${pick.n} trades, ${pct(pick.wr)} wins, ${sgR(pick.avg)} per trade (all trades: ${sgR(base0.avg)}).` : `No edge level beats your overall result yet (all trades: ${sgR(base0?.avg)} per trade). Keep logging; check again in a few weeks.`}</p>
+      <p class="muted" style="margin:4px 0 0;font-size:12px">The suggestion is the edge level with the biggest total R among those with at least ${TH_MIN_ROW} trades and a better average than all trades. A guide for your own rules, not a trade signal; re-check it every month.</p></div>
+    <div class="an-sec">Trades with edge ≥ …</div><div class="card" style="overflow:auto"><table class="hl-t"><tr><th>Edge</th><th>Trades</th><th>Win rate</th><th>Avg R</th><th>Total R</th><th></th></tr>${rows.map(r => tr(r.c===-99 ? 'All trades' : '≥ ' + r.c, r, pick && r.c===pick.c)).join('')}</table></div>
+    <div class="an-sec">By weekly conviction</div><div class="card" style="overflow:auto"><table class="hl-t"><tr><th>Conviction</th><th>Trades</th><th>Win rate</th><th>Avg R</th><th>Total R</th><th></th></tr>${conv.map(r => tr(r.c, r)).join('')}</table></div>
+    <div class="an-sec">By the daily check status at entry</div><div class="card" style="overflow:auto"><table class="hl-t"><tr><th>Status</th><th>Trades</th><th>Win rate</th><th>Avg R</th><th>Total R</th><th></th></tr>${chk.map(r => tr(r.k, r)).join('')}</table></div>`;
+  m.querySelectorAll('[data-thsrc]').forEach(b => b.onclick = () => { ls.set('do_th_src', b.dataset.thsrc); renderMain(); });
+}
+/* status of the pair in the latest daily check before the entry (same day morning/evening, else the day before) */
+function btCheckAt(x){
+  const d0 = new Date(x.day + 'T12:00:00'), t = x.entry_time || '12:00';
+  for(let k = 0; k < 4; k++){ const d = new Date(d0); d.setDate(d0.getDate() - k); const ds = iso(d);
+    for(const sl of ['evening','morning']){ if(k===0 && ((sl==='evening' && t < '19:55') || (sl==='morning' && t < '06:30'))) continue;
+      const j = S.settings?.[`fcheck:${ds}:${sl}`]; const p = j?.pairs?.find(v => normPair(v.pair)===x.pair); if(p){ const s2 = String(p.status||''); return s2.startsWith('❌') ? '❌ Invalidated' : s2.startsWith('⚠') ? '⚠️ Under pressure' : s2.startsWith('👀') ? '👀 Under watch' : s2.startsWith('🟡') ? '🟡 Confirmed, fragile' : s2.startsWith('⚪') ? '⚪ Two-sided' : '✅ Confirmed'; } } }
+  return 'No check found'; }
 /* ===== 30. Process goals: habits you control, measured per week ===== */
 const PROC = [['snap','TradingView snapshot attached', x => /^https?:\/\//i.test(x.chart_url||''), 100],
   ['bias','Taken with the weekly bias', x => x.withB==='with', 100],
