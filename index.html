@@ -5535,8 +5535,12 @@ function btDerive(t){
   const withB = !b || ['two-sided','neutral'].includes(b) ? 'none' : ((b==='bullish') === L ? 'with' : 'against');
   const edge = t.base_score!=null && t.quote_score!=null ? (L ? 1 : -1) * (t.base_score - t.quote_score) : null;
   const d = t.day ? new Date(t.day + 'T12:00:00') : null;
+  const x = (t.id!=null && S.settings?.[`btx:${t.id}`]) || {};
+  let swMin = null;
+  if(x.sweep_time && t.entry_time){ const a = new Date(`${x.sweep_day || t.day}T${x.sweep_time}:00`), b2 = new Date(`${t.day}T${t.entry_time}:00`); if(!isNaN(a) && !isNaN(b2)) swMin = Math.round((b2 - a) / 60000); }
   return { ...t, withB, edge, dow: d ? WD_SHORT[d.getDay()] : null, sess: t.session || sessionName(t.entry_time) || 'Off-session',
-    newsDay: t.news_day ?? !!(t.news && t.news.length) };
+    newsDay: t.news_day ?? !!(t.news && t.news.length), sweep_day:x.sweep_day || null, sweep_time:x.sweep_time || null, mae_r:x.mae_r ?? null, swMin,
+    swSess: x.sweep_time ? (sessionName(x.sweep_time) || 'Off-session') : null };
 }
 /* a real trade from Trades → the same shape, context taken from its week */
 function btFromLive(t){
@@ -5572,6 +5576,9 @@ const BT_DIMS = [
   ['sess', 'Session', x => x.sess, [['Asia','Asia'],['London','London'],['London / New York','London / New York'],['New York','New York'],['Off-session','Off-session']]],
   ['dow', 'Day of the week', x => x.dow, [['Mon','Monday'],['Tue','Tuesday'],['Wed','Wednesday'],['Thu','Thursday'],['Fri','Friday']]],
   ['brk', 'Fractal break', x => x.break_type || 'na', [['wick','Wick'],['body','Body'],['na','Not set']]],
+  ['swGap', 'Liquidity taken → entry', x => x.swMin==null ? 'na' : x.swMin < 0 ? 'neg' : x.swMin < 60 ? 'a' : x.swMin <= 240 ? 'b' : 'c',
+    [['a','Under 1 hour'],['b','1–4 hours'],['c','Over 4 hours'],['neg','Entry before the sweep (?)'],['na','Not logged']]],
+  ['swSess', 'Session of the liquidity sweep', x => x.swSess || 'na', [['Asia','Asia'],['London','London'],['London / New York','London / New York'],['New York','New York'],['Off-session','Off-session'],['na','Not logged']]],
   ['rules', 'Rules followed', x => x.rules_ok==null ? 'na' : x.rules_ok ? 'y' : 'n', [['y','Yes'],['n','No'],['na','—']]],
 ];
 function btGroups(list, dim){
@@ -5636,6 +5643,8 @@ function renderBacktest(){
       <select class="inp" id="btPair" aria-label="Pair"><option value="all">All pairs</option>${pairs.map(p => `<option ${S.bt.pair===p ? 'selected' : ''}>${p}</option>`).join('')}</select>
       ${seg([['all','All'],['365','1Y'],['180','6M'],['90','3M']], per, 'data-btper')}
     </div>
+    ${(() => { const op = [...S.bt.rows.values()].filter(x => x.run===LIVE_RUN && x.result==='O').sort((a, b) => (a.day + (a.entry_time||'')).localeCompare(b.day + (b.entry_time||'')));
+      return op.length ? `<div class="card" style="margin-bottom:12px"><div style="font-weight:800;margin-bottom:6px">🟢 Open live trades (${op.length}) <span class="muted" style="font-weight:600;font-size:12px">· tap to close one with its result</span></div><div class="fc-chk">${op.map(x => `<button class="fc-ckb" data-btid="${x.id}"><b>${esc(x.pair)}</b><span class="${x.direction==='Long' ? 'pos' : 'neg'}" style="font-weight:700">${x.direction==='Long' ? '▲ Long' : '▼ Short'}</span><span class="muted" style="font-size:12px">${fmtDayShort(x.day)}${x.entry_time ? ' ' + esc(x.entry_time) : ''}</span></button>`).join('')}</div></div>` : ''; })()}
     ${!list.length ? `<div class="empty"><div class="orb" aria-hidden="true"></div><p>${src==='live' ? 'No live trades in this filter yet. Log each executed trade here; the Saturday trade review reads them.' : 'No backtest trades yet. Open TradingView in replay mode, find your setups (liquidity → fractal change → retest) and log each one here.'}</p><button class="btn btn-primary" id="btAdd2">+ Log the first trade</button></div>` : `
     <section class="bt-kpi">
       <div class="ab-k"><span>Trades</span><b>${st.n}</b><small>${st.w} W · ${st.l} L · ${st.be} BE</small></div>
@@ -5715,7 +5724,8 @@ function openBacktest(row, keep){
     ['dir','res','brk','kind'].forEach(k => dlg.querySelectorAll(`[data-${k}]`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset[k]===String({ dir:F.direction, res:F.result, brk:F.break_type, kind:F.kind }[k])))));
     dlg.querySelector('#btTitle').textContent = `${row ? 'Edit' : 'Log'} ${F.kind==='live' ? 'a live trade' : 'a backtest trade'}`;
     dlg.querySelector('#btRunWrap').style.visibility = F.kind==='live' ? 'hidden' : '';
-    const rIn = dlg.querySelector('#btR'); if(rIn && !rIn.dataset.touched && F.result) rIn.value = { W:2, L:-1, BE:0 }[F.result];
+    dlg.querySelector('#btULbl').textContent = F.kind==='live' ? 'TradingView snapshot (required)' : 'Chart link';
+    const rIn = dlg.querySelector('#btR'); if(rIn && !rIn.dataset.touched && F.result) rIn.value = { W:2, L:-1, BE:0 }[F.result] ?? '';
   };
   dlg.innerHTML = `<form id="btForm" method="dialog">
     <div class="dlg-head"><h2 id="btTitle"></h2></div>
@@ -5735,18 +5745,19 @@ function openBacktest(row, keep){
         <label><span class="lbl">Fractal break</span>${chips('brk', [['wick','Wick'],['body','Body']], F.break_type)}</label>
       </div>
       <div class="bt-two">
-        <label><span class="lbl">Result</span>${chips('res', [['W','Win (TP)'],['L','Loss (SL)'],['BE','Break-even']], F.result)}</label>
+        <label><span class="lbl">Result</span>${chips('res', [['W','Win (TP)'],['L','Loss (SL)'],['BE','Break-even'],['O','Open']], F.result)}</label>
         <label><span class="lbl">R</span><input class="inp num" id="btR" inputmode="decimal" value="${r.r ?? ''}" placeholder="+2 / −1"></label>
       </div>
       <div class="g3">
         <label><span class="lbl">Entry</span><input class="inp num" id="btE" inputmode="decimal" value="${r.entry ?? ''}" placeholder="optional"></label>
         <label><span class="lbl">Stop loss</span><input class="inp num" id="btS" inputmode="decimal" value="${r.sl ?? ''}" placeholder="optional"></label>
-        <label><span class="lbl">Max favourable (R)</span><input class="inp num" id="btM" inputmode="decimal" value="${r.mfe_r ?? ''}" placeholder="how far it went"></label>
+        <label><span class="lbl">Max favourable (R)</span><input class="inp num" id="btM" inputmode="decimal" value="${r.mfe_r ?? ''}" placeholder="best point, e.g. 1.6"></label>
+        <label><span class="lbl">Max adverse (R)</span><input class="inp num" id="btMae" inputmode="decimal" value="${btx.mae_r ?? ''}" placeholder="worst point, e.g. 0.7"></label>
       </div>
       <div id="btCtx" class="bt-cx"></div>
       <div class="bt-two">
         <label id="btRunWrap"><span class="lbl">Run (group of backtests)</span><input class="inp" id="btRunIn" list="btRunsL" value="${esc(r.run || '')}" placeholder="e.g. EURUSD Q3 2026"><datalist id="btRunsL">${runs.map(x => `<option>${esc(x)}</option>`).join('')}</datalist></label>
-        <label><span class="lbl">Chart link</span><input class="inp" id="btU" value="${esc(r.chart_url || '')}" placeholder="TradingView snapshot"></label>
+        <label><span class="lbl" id="btULbl">Chart link</span><input class="inp" id="btU" value="${esc(r.chart_url || '')}" placeholder="TradingView snapshot"></label>
       </div>
       <label class="sx-sw"><input type="checkbox" id="btOk" ${F.rules_ok ? 'checked' : ''}><i></i>I followed my rules on this one</label>
       <label><span class="lbl">Notes</span><textarea class="inp" id="btN" rows="2" placeholder="What did you see? What would you do differently?">${esc(r.notes || '')}</textarea></label>
@@ -5767,8 +5778,9 @@ function openBacktest(row, keep){
     const { error } = await sb.from('do_backtests').delete().eq('id', row.id); if(error) return toast(error.message);
     S.bt.rows.delete(row.id); dlg.close(); renderMain(); toast('Deleted'); });
   const save = async next => {
-    if(!F.result) return toast('Pick the result');
-    const R = parseNum($('#btR').value) ?? { W:2, L:-1, BE:0 }[F.result], tm = $('#btT').value || null, c = ctxNow();
+    if(!F.result) return toast('Pick the result (or Open if it is still running)');
+    if(F.kind==='live' && !/^https?:\/\//i.test($('#btU').value.trim())) return toast('Live trade: paste the TradingView snapshot link first');
+    const R = F.result==='O' ? null : (parseNum($('#btR').value) ?? { W:2, L:-1, BE:0 }[F.result]), tm = $('#btT').value || null, c = ctxNow();
     const rec = { pair:F.pair, day:F.day, entry_time:tm, direction:F.direction, session:sessionName(tm), break_type:F.break_type, result:F.result, r:R,
       entry:parseNum($('#btE').value), sl:parseNum($('#btS').value), mfe_r:parseNum($('#btM').value), run:F.kind==='live' ? LIVE_RUN : ($('#btRunIn').value.trim()!==LIVE_RUN && $('#btRunIn').value.trim()) || null, chart_url:$('#btU').value.trim() || null,
       rules_ok:$('#btOk').checked, notes:$('#btN').value.trim() || null,
@@ -5777,8 +5789,8 @@ function openBacktest(row, keep){
     const q = row ? sb.from('do_backtests').update(rec).eq('id', row.id).select().single() : sb.from('do_backtests').insert(rec).select().single();
     const { data, error } = await q; if(error) return toast(/relation|does not exist|schema cache/i.test(error.message) ? 'Run migration-backtest.sql in Supabase first' : error.message);
     S.bt.rows.set(data.id, data); ls.set(BT_RUNS_KEY, { pair:F.pair, run:rec.run || '' });
-    { const swT = $('#btSwT').value, swD = $('#btSwD').value || (swT ? F.day : ''), k = `btx:${data.id}`;
-      if(swT || swD || S.settings?.[k]) await saveSettingKey(k, { sweep_day:swD || null, sweep_time:swT || null }); }
+    { const swT = $('#btSwT').value, swD = $('#btSwD').value || (swT ? F.day : ''), mae = parseNum($('#btMae').value), k = `btx:${data.id}`;
+      if(swT || swD || mae!=null || S.settings?.[k]) await saveSettingKey(k, { sweep_day:swD || null, sweep_time:swT || null, mae_r:mae ?? null }); }
     if(next){ toast('Saved · next one'); openBacktest(null, { pair:F.pair, run:F.kind==='live' ? '' : rec.run, day:F.day, kind:F.kind }); renderMain(); return; }
     dlg.close(); renderMain(); toast('Saved');
   };
