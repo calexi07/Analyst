@@ -784,6 +784,11 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .bt-t th{ text-align:left; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); padding:8px 10px; border-bottom:1px solid var(--line); }
   .bt-t td{ padding:9px 10px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; } .bt-t tbody tr{ cursor:pointer; } .bt-t tbody tr:hover{ background:var(--hover); }
   .bt-form{ display:grid; gap:14px; } .bt-form label{ display:grid; gap:4px; } .bt-form label.sx-sw{ display:flex; } .bt-two{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .cf-wrap{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } @media (max-width:640px){ .cf-wrap{ grid-template-columns:1fr; } }
+  .cf-box{ display:grid; gap:6px; padding:10px; border:1px solid var(--line); border-radius:12px; } .cf-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .cf-chip{ font:inherit; font-size:12px; font-weight:700; padding:4px 9px; border-radius:999px; border:1px solid var(--line); background:var(--surface-2); color:var(--muted); cursor:pointer; }
+  .cf-pro .cf-chip[aria-pressed="true"]{ background:color-mix(in srgb,#22AB94 22%,transparent); border-color:#22AB94; color:var(--ink,inherit); }
+  .cf-con .cf-chip[aria-pressed="true"]{ background:color-mix(in srgb,#F23645 20%,transparent); border-color:#F23645; color:var(--ink,inherit); }
   @media (max-width:560px){ .bt-two{ grid-template-columns:1fr; } }
   .bt-ch{ flex-wrap:wrap; justify-self:start; } .bt-ch button{ min-height:36px; }
   .bt-cx{ padding:14px; border-radius:16px; border:1px solid var(--line); background:var(--surface-2); display:grid; gap:10px; }
@@ -5209,6 +5214,10 @@ function renderThreshold(){
       <p class="muted" style="margin:4px 0 0;font-size:12px">The suggestion is the edge level with the biggest total R among those with at least ${TH_MIN_ROW} trades and a better average than all trades. A guide for your own rules, not a trade signal; re-check it every month.</p></div>
     <div class="an-sec">Trades with edge ≥ …</div><div class="card" style="overflow:auto"><table class="hl-t"><tr><th>Edge</th><th>Trades</th><th>Win rate</th><th>Avg R</th><th>Total R</th><th></th></tr>${rows.map(r => tr(r.c===-99 ? 'All trades' : '≥ ' + r.c, r, pick && r.c===pick.c)).join('')}</table></div>
     <div class="an-sec">By weekly conviction</div><div class="card" style="overflow:auto"><table class="hl-t"><tr><th>Conviction</th><th>Trades</th><th>Win rate</th><th>Avg R</th><th>Total R</th><th></th></tr>${conv.map(r => tr(r.c, r)).join('')}</table></div>
+    ${(() => { const lg = all.filter(x => x.cfLogged); if(!lg.length) return `<div class="an-sec">By confluence</div><div class="card"><p class="muted" style="margin:0">No confluences logged yet. Tick them in the trade form (optional) and this table fills in.</p></div>`;
+      const g = new Map(); lg.forEach(x => { x.conf_pro.forEach(v => (g.get('✅ ' + v) || g.set('✅ ' + v, []).get('✅ ' + v)).push(x)); x.conf_con.forEach(v => (g.get('⛔ ' + v) || g.set('⛔ ' + v, []).get('⛔ ' + v)).push(x)); });
+      const cr = [...g.entries()].map(([k, l]) => ({ k, ...st(l) })).sort((a, b) => b.n - a.n || (b.avg ?? -9) - (a.avg ?? -9));
+      return `<div class="an-sec">By confluence (trades where it was ticked · ${lg.length} trades logged)</div><div class="card" style="overflow:auto"><table class="hl-t"><tr><th>Confluence</th><th>Trades</th><th>Win rate</th><th>Avg R</th><th>Total R</th><th></th></tr>${cr.map(r => tr(r.k, r)).join('')}</table></div>`; })()}
     <div class="an-sec">By the daily check status at entry</div><div class="card" style="overflow:auto"><table class="hl-t"><tr><th>Status</th><th>Trades</th><th>Win rate</th><th>Avg R</th><th>Total R</th><th></th></tr>${chk.map(r => tr(r.k, r)).join('')}</table></div>`;
   m.querySelectorAll('[data-thsrc]').forEach(b => b.onclick = () => { ls.set('do_th_src', b.dataset.thsrc); renderMain(); });
 }
@@ -5696,8 +5705,27 @@ function btDerive(t){
   if(x.sweep_time && t.entry_time){ const a = new Date(`${x.sweep_day || t.day}T${x.sweep_time}:00`), b2 = new Date(`${t.day}T${t.entry_time}:00`); if(!isNaN(a) && !isNaN(b2)) swMin = Math.round((b2 - a) / 60000); }
   return { ...t, withB, edge, dow: d ? WD_SHORT[d.getDay()] : null, sess: t.session || sessionName(t.entry_time) || 'Off-session',
     newsDay: t.news_day ?? !!(t.news && t.news.length), aplus:!!x.aplus, sweep_day:x.sweep_day || null, sweep_time:x.sweep_time || null, mae_r:x.mae_r ?? null, swMin,
-    swSess: x.sweep_time ? (sessionName(x.sweep_time) || 'Off-session') : null };
+    swSess: x.sweep_time ? (sessionName(x.sweep_time) || 'Off-session') : null,
+    conf_pro: x.conf_pro || [], conf_con: x.conf_con || [], cfLogged: !!((x.conf_pro && x.conf_pro.length) || (x.conf_con && x.conf_con.length)),
+    cfNet: (x.conf_pro || []).length - (x.conf_con || []).length };
 }
+/* ===== optional confluences pro / contra, logged per trade (kept in do_settings btx, no schema change) ===== */
+const CF_PRO = ['With weekly bias','Daily check confirmed','HTF trend','Liquidity sweep','Key level','Order block','FVG','BOS / CHoCH','SMT divergence','Session open','Clean structure'];
+const CF_CON = ['Against weekly bias','Check under pressure','Against HTF trend','News soon','Extended move','Near opposing level','Choppy structure','Low liquidity time','Correlated exposure','Late entry'];
+function cfFormHtml(x){
+  const used = side => [...new Set([...(side==='pro' ? CF_PRO : CF_CON), ...[...S.bt.rows.keys()].flatMap(id => S.settings?.[`btx:${id}`]?.[side==='pro' ? 'conf_pro' : 'conf_con'] || [])])];
+  const sel = side => new Set(x[side==='pro' ? 'conf_pro' : 'conf_con'] || []);
+  const blk = (side, lab) => { const on = sel(side), list = used(side);
+    return `<div class="cf-box cf-${side}"><span class="lbl">${lab} <span class="muted" style="font-weight:600">(optional)</span></span><div class="cf-chips">${list.map(v => `<button type="button" class="cf-chip" data-cf="${side}" data-v="${esc(v)}" aria-pressed="${on.has(v)}">${esc(v)}</button>`).join('')}</div>
+      <input class="inp" id="cfX-${side}" placeholder="other, separated by commas" value="${esc([...on].filter(v => !list.includes(v)).join(', '))}"></div>`; };
+  return `<div class="cf-wrap">${blk('pro', '✅ Confluences for')}${blk('con', '⛔ Confluences against')}</div>`;
+}
+function cfRead(side){
+  const a = [...document.querySelectorAll(`.cf-chip[data-cf="${side}"][aria-pressed="true"]`)].map(b => b.dataset.v);
+  const o = (document.getElementById(`cfX-${side}`)?.value || '').split(',').map(v => v.trim()).filter(Boolean);
+  return [...new Set([...a, ...o])];
+}
+document.addEventListener('click', e => { const b = e.target.closest?.('.cf-chip'); if(b) b.setAttribute('aria-pressed', b.getAttribute('aria-pressed')==='true' ? 'false' : 'true'); });
 /* a real trade from Trades → the same shape, context taken from its week */
 function btFromLive(t){
   const c = btAutoCtx(t.pair, t.day, t.direction);
@@ -5735,6 +5763,8 @@ const BT_DIMS = [
   ['swGap', 'Liquidity taken → entry', x => x.swMin==null ? 'na' : x.swMin < 0 ? 'neg' : x.swMin < 60 ? 'a' : x.swMin <= 240 ? 'b' : 'c',
     [['a','Under 1 hour'],['b','1–4 hours'],['c','Over 4 hours'],['neg','Entry before the sweep (?)'],['na','Not logged']]],
   ['swSess', 'Session of the liquidity sweep', x => x.swSess || 'na', [['Asia','Asia'],['London','London'],['London / New York','London / New York'],['New York','New York'],['Off-session','Off-session'],['na','Not logged']]],
+  ['cf', 'Confluence balance (for − against)', x => !x.cfLogged ? 'na' : x.cfNet >= 3 ? 'p3' : x.cfNet >= 1 ? 'p1' : x.cfNet===0 ? 'z' : 'n',
+    [['p3','+3 or more'],['p1','+1 to +2'],['z','Balanced (0)'],['n','More against'],['na','Not logged']]],
   ['rules', 'Rules followed', x => x.rules_ok==null ? 'na' : x.rules_ok ? 'y' : 'n', [['y','Yes'],['n','No'],['na','—']]],
 ];
 function btGroups(list, dim){
@@ -5927,6 +5957,7 @@ function openBacktest(row, keep){
         <label id="btRunWrap"><span class="lbl">Run (group of backtests)</span><input class="inp" id="btRunIn" list="btRunsL" value="${esc(r.run || '')}" placeholder="e.g. EURUSD Q3 2026"><datalist id="btRunsL">${runs.map(x => `<option>${esc(x)}</option>`).join('')}</datalist></label>
         <label><span class="lbl" id="btULbl">Chart link</span><input class="inp" id="btU" value="${esc(r.chart_url || '')}" placeholder="TradingView snapshot"></label>
       </div>
+      ${cfFormHtml(btx)}
       <label class="sx-sw"><input type="checkbox" id="btOk" ${F.rules_ok ? 'checked' : ''}><i></i>I followed my rules on this one</label>
       <label class="sx-sw"><input type="checkbox" id="btAp" ${btx.aplus ? 'checked' : ''}><i></i>⭐ A+ setup — add it to my A+ library</label>
       <label><span class="lbl">Notes</span><textarea class="inp" id="btN" rows="2" placeholder="What did you see? What would you do differently?">${esc(r.notes || '')}</textarea></label>
@@ -5958,8 +5989,8 @@ function openBacktest(row, keep){
     const q = row ? sb.from('do_backtests').update(rec).eq('id', row.id).select().single() : sb.from('do_backtests').insert(rec).select().single();
     const { data, error } = await q; if(error) return toast(/relation|does not exist|schema cache/i.test(error.message) ? 'Run migration-backtest.sql in Supabase first' : error.message);
     S.bt.rows.set(data.id, data); ls.set(BT_RUNS_KEY, { pair:F.pair, run:rec.run || '' });
-    { const swT = $('#btSwT').value, swD = $('#btSwD').value || (swT ? F.day : ''), mae = parseNum($('#btMae').value), ap = $('#btAp').checked, k = `btx:${data.id}`;
-      if(swT || swD || mae!=null || ap || S.settings?.[k]) await saveSettingKey(k, { sweep_day:swD || null, sweep_time:swT || null, mae_r:mae ?? null, aplus:ap }); }
+    { const swT = $('#btSwT').value, swD = $('#btSwD').value || (swT ? F.day : ''), mae = parseNum($('#btMae').value), ap = $('#btAp').checked, k = `btx:${data.id}`, cp = cfRead('pro'), cc = cfRead('con');
+      if(swT || swD || mae!=null || ap || cp.length || cc.length || S.settings?.[k]) await saveSettingKey(k, { sweep_day:swD || null, sweep_time:swT || null, mae_r:mae ?? null, aplus:ap, conf_pro:cp, conf_con:cc }); }
     if(next){ toast('Saved · next one'); openBacktest(null, { pair:F.pair, run:F.kind==='live' ? '' : rec.run, day:F.day, kind:F.kind }); renderMain(); return; }
     dlg.close(); renderMain(); toast('Saved');
   };
