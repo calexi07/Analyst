@@ -5040,16 +5040,21 @@ function renderFA(){
   const y = S.fa.year, w = S.fa.week, i = all.findIndex(k => k.year===y && k.week===w);
   const rows = [...new Set([...allPairs(), 'XAUUSD'])].filter(fcPairOk).map(p => { const r = S.weekly.get(wk(p, y, w)), cks = faChecks(p, y, w); return { p, r, cks }; })
     .filter(x => (x.r && (det(x.r).story?.text || x.r.bias)) || x.cks.length);
+  const sortBy = ls.get('do_fa_sort', 'pair'), CV = { high:3, medium:2, low:1 };
+  rows.forEach(x => { x.g = faGap(x.p, x.r, x.cks); x.cv = CV[x.r?.conviction] || 0; });
+  if(sortBy==='gap') rows.sort((a, b) => Math.abs(b.g ?? 0) - Math.abs(a.g ?? 0) || b.cv - a.cv);
+  else if(sortBy==='conv') rows.sort((a, b) => b.cv - a.cv || Math.abs(b.g ?? 0) - Math.abs(a.g ?? 0));
   const nCk = faWeekDays(y, w).reduce((n, ds) => n + checksOn(ds).length, 0);
   document.getElementById('main').innerHTML = `
     <div class="fc-bar"><button class="btn" id="faPrev" ${i<=0 ? 'disabled' : ''}>‹</button><b style="font-size:16px">Week ${w} · ${y}</b><button class="btn" id="faNext" ${i<0 || i>=all.length-1 ? 'disabled' : ''}>›</button>
       <span class="muted" style="font-size:12.5px;font-weight:600">${wkSpan(y, w)} · ${nCk} daily check${nCk===1 ? '' : 's'} · tap a pair</span></div>
-    <div class="fc-bar">${fcCcyChips()}</div>
-    ${rows.length ? `<div class="fa-grid">${rows.map(({ p, r, cks }) => { const g = faGap(p, r, cks), bias = r?.bias || cks.at(-1)?.x?.bias, [tl, tc] = BIAS_TAG(bias);
+    <div class="fc-bar">${fcCcyChips()}<div class="seg" role="group" aria-label="Sort" style="margin-left:auto">${[['pair','Pair order'],['gap','Biggest gap'],['conv','Conviction']].map(([v, l]) => `<button type="button" data-fasort="${v}" aria-pressed="${sortBy===v}">${l}</button>`).join('')}</div></div>
+    ${rows.length ? `<div class="fa-grid">${rows.map(({ p, r, cks, g }) => { const bias = r?.bias || cks.at(-1)?.x?.bias, [tl, tc] = BIAS_TAG(bias);
       return `<button class="fa-card" data-fa="${p}"><div class="fa-top"><b>${p}</b><span class="fa-gap ${g>0 ? 'pos' : g<0 ? 'neg' : ''}">${g==null ? '–' : (g>0 ? '+' : '') + g}</span></div>
         <div class="fa-sub"><span class="fc-tag ${tc}">${tl}</span>${r?.conviction ? ` <span class="muted">· ${esc(r.conviction)}</span>` : ''}</div></button>`; }).join('')}</div>`
       : `<div class="card fc-empty"><p>Nothing imported for this week yet. The weekly analysis and the daily checks arrive automatically.</p></div>`}`;
   fcBindCcy();
+  document.querySelectorAll('[data-fasort]').forEach(b => b.onclick = () => { ls.set('do_fa_sort', b.dataset.fasort); renderMain(); });
   document.getElementById('faPrev').onclick = () => { if(i>0){ S.fa = { ...all[i-1] }; renderMain(); } };
   document.getElementById('faNext').onclick = () => { if(i>=0 && i<all.length-1){ S.fa = { ...all[i+1] }; renderMain(); } };
   document.querySelectorAll('[data-fa]').forEach(b => b.onclick = () => openPairFA(b.dataset.fa, y, w));
