@@ -5147,11 +5147,81 @@ function hlBadge(n){ document.querySelectorAll('[data-view="health"]').forEach(b
 /* ===== Analyst (Nov 2026): the weekly trade review, imported automatically (do_settings treview:YYYY-Www) ===== */
 function anWeeks(){ return Object.keys(S.settings||{}).filter(k => k.startsWith('treview:')).sort(); }
 S.an = S.an || null;
+const AN_TABS = [['rev','🧾 Weekly review'],['mon','📅 Monthly'],['proc','🎯 Process goals'],['lib','⭐ A+ library']];
 function renderAnalyst(){
+  const tab = ls.get('do_an_tab', 'rev');
+  if(tab==='mon') renderMonthly(); else if(tab==='proc') renderProcess(); else if(tab==='lib') renderLibrary(); else renderAnalystReview();
+  const m = document.getElementById('main');
+  m.insertAdjacentHTML('afterbegin', `<header class="hp-top"><div><div class="pairtitle">Analyst</div><div class="muted" style="font-weight:600;font-size:12px">Your live trades, reviewed</div></div>
+    <nav class="hp-tabs" role="tablist">${AN_TABS.map(([k, l]) => `<button role="tab" data-antab="${k}" aria-selected="${tab===k}">${l}</button>`).join('')}</nav></header>`);
+  m.querySelectorAll('[data-antab]').forEach(b => b.onclick = () => { ls.set('do_an_tab', b.dataset.antab); renderMain(); });
+}
+function liveClosed(){ return [...S.bt.rows.values()].filter(x => x.run===LIVE_RUN && ['W','L','BE'].includes(x.result)).map(btDerive).sort((a, b) => (a.day + (a.entry_time||'')).localeCompare(b.day + (b.entry_time||''))); }
+function stat(list){ const n = list.length, w = list.filter(x => x.result==='W').length, l = list.filter(x => x.result==='L').length, R = list.reduce((a, x) => a + (Number(x.r) || 0), 0);
+  return { n, w, l, be:n - w - l, R, avg: n ? R / n : null, wr: n ? w / n : null }; }
+const sgR = v => v==null ? '–' : (v > 0 ? '+' : '') + fmt(v, 2) + 'R';
+/* ===== 28. Monthly review (computed in the app from your live trades) ===== */
+function renderMonthly(){
+  const m = document.getElementById('main'), all = liveClosed(), months = [...new Set(all.map(x => x.day.slice(0, 7)))].sort();
+  if(!months.length){ m.innerHTML = `<div class="card fc-empty"><p>No closed live trades yet. The monthly review fills in from your live trades (Trades → Type = Live).</p></div>`; return; }
+  if(!S.anMon || !months.includes(S.anMon)) S.anMon = months.at(-1);
+  const i = months.indexOf(S.anMon), cur = all.filter(x => x.day.startsWith(S.anMon)), prev = i > 0 ? all.filter(x => x.day.startsWith(months[i-1])) : [];
+  const a = stat(cur), b = stat(prev), d = (x, y, f) => prev.length && x!=null && y!=null ? `<small>${x - y >= 0 ? '▲' : '▼'} ${f(Math.abs(x - y))} vs last month</small>` : '';
+  const groups = BT_DIMS.flatMap(dim => btGroups(cur, dim).filter(g => g.n >= 3 && g.exp!=null && !['na','none'].includes(g.k)).map(g => ({ dim:dim[1], label:g.label, n:g.n, exp:g.exp, wr:g.wr }))).sort((x, y) => y.exp - x.exp);
+  const best = groups.filter(g => a.avg!=null && g.exp > a.avg).slice(0, 3), worst = groups.filter(g => a.avg!=null && g.exp < a.avg).slice(-3).reverse();
+  const wk = scData().filter(W => iso(mondayOf(W.year, W.week)).startsWith(S.anMon)), bias = scRate(wk.flatMap(W => W.calls));
+  const pr = procRows(cur), [yy, mm] = S.anMon.split('-'), mname = new Date(+yy, +mm - 1, 1).toLocaleString('en-GB', { month:'long', year:'numeric' });
+  const li = g => `<li class="an-li"><b>${esc(g.dim)}: ${esc(g.label)}</b> — ${g.n} trades, ${sgR(g.exp)} per trade, ${Math.round(g.wr||0)}% wins</li>`;
+  m.innerHTML = `
+    <div class="fc-bar"><button class="btn" id="mPrev" ${i<=0 ? 'disabled' : ''}>‹</button><b style="font-size:16px">${mname}</b><button class="btn" id="mNext" ${i>=months.length-1 ? 'disabled' : ''}>›</button></div>
+    <div class="sc-g"><div><span>Trades</span><b>${a.n}</b>${d(a.n, b.n, v => v)}</div><div><span>W / L / BE</span><b>${a.w} / ${a.l} / ${a.be}</b></div>
+      <div><span>Total</span><b class="${a.R > 0 ? 'pos' : a.R < 0 ? 'neg' : ''}">${sgR(a.R)}</b>${d(a.R, b.R, v => fmt(v, 2) + 'R')}</div><div><span>Per trade</span><b>${sgR(a.avg)}</b>${d(a.avg, b.avg, v => fmt(v, 2) + 'R')}</div>
+      <div><span>Win rate</span><b>${a.wr==null ? '–' : Math.round(a.wr*100) + '%'}</b>${d(a.wr, b.wr, v => Math.round(v*100) + ' pts')}</div><div><span>Weekly bias hit rate</span><b>${bias.rate==null ? '–' : Math.round(bias.rate*100) + '%'}</b><small>${bias.h} / ${bias.n} calls this month</small></div></div>
+    ${best.length ? `<div class="an-sec">✅ Where you did best</div><div class="card"><ul>${best.map(li).join('')}</ul></div>` : ''}
+    ${worst.length ? `<div class="an-sec">⚠️ Where you did worst</div><div class="card"><ul>${worst.map(li).join('')}</ul></div>` : ''}
+    ${!groups.length ? `<p class="muted">Groups need at least 3 trades each before they are compared.</p>` : ''}
+    <div class="an-sec">🎯 Process this month</div>${procTable(pr)}
+    <p class="muted" style="font-size:12px">Small samples: with fewer than 20 trades a month, read the best/worst groups as hints, not conclusions.</p>`;
+  document.getElementById('mPrev').onclick = () => { if(i>0){ S.anMon = months[i-1]; renderMain(); } };
+  document.getElementById('mNext').onclick = () => { if(i<months.length-1){ S.anMon = months[i+1]; renderMain(); } };
+}
+/* ===== 30. Process goals: habits you control, measured per week ===== */
+const PROC = [['snap','TradingView snapshot attached', x => /^https?:\/\//i.test(x.chart_url||''), 100],
+  ['bias','Taken with the weekly bias', x => x.withB==='with', 100],
+  ['sweep','Liquidity time logged', x => !!x.sweep_time, 100],
+  ['rules','“I followed my rules” ticked', x => x.rules_ok!==false, 100],
+  ['exc','MFE and MAE filled in', x => x.mfe_r!=null && x.mae_r!=null, 80],
+  ['notes','Notes written', x => !!(x.notes && x.notes.trim()), 80]];
+function procTargets(){ const t = S.settings?.process_goals || {}; return Object.fromEntries(PROC.map(([k, , , d]) => [k, t[k] ?? d])); }
+function procRows(list){ const T = procTargets(); return PROC.map(([k, l, f]) => { const n = list.length, ok = list.filter(f).length, pct = n ? Math.round(ok / n * 100) : null; return { k, l, n, ok, pct, target:T[k], met: pct!=null && pct >= T[k] }; }); }
+function procTable(rows){ return `<div class="card" style="overflow:auto"><table class="hl-t"><tr><th>Goal</th><th>Done</th><th>Target</th><th></th></tr>${rows.map(r => `<tr><td>${esc(r.l)}</td><td><b>${r.pct==null ? '–' : r.pct + '%'}</b> <span class="muted">${r.ok}/${r.n}</span></td><td>${r.target}%</td><td class="hl-s ${r.pct==null ? 'na' : r.met ? 'ok' : 'miss'}">${r.pct==null ? '—' : r.met ? '✅' : '❌'}</td></tr>`).join('')}</table></div>`; }
+function renderProcess(){
+  const m = document.getElementById('main'), all = liveClosed();
+  const wks = [...new Set(all.map(x => { const w = isoWeek(new Date(x.day + 'T12:00:00')); return w.year*100 + w.week; }))].sort().reverse().slice(0, 8);
+  const T = procTargets();
+  m.innerHTML = `<p class="muted" style="font-weight:600;margin:0 0 10px">Goals about how you trade, not how much you make. Hitting them every week is what makes the results trustworthy. Targets are yours to set.</p>
+    ${wks.length ? wks.map(k => { const y = Math.floor(k/100), w = k%100, list = all.filter(x => { const i2 = isoWeek(new Date(x.day + 'T12:00:00')); return i2.year===y && i2.week===w; }), rows = procRows(list), met = rows.filter(r => r.met).length;
+      return `<div class="an-sec">Week ${w} · ${wkSpan(y, w)} · ${met}/${rows.length} goals met</div>${procTable(rows)}`; }).join('') : `<div class="card fc-empty"><p>No closed live trades yet.</p></div>`}
+    <div class="an-sec">⚙️ Targets</div><div class="card"><div class="sc-g">${PROC.map(([k, l]) => `<label><span class="lbl">${esc(l)}</span><input class="inp num" data-pg="${k}" inputmode="numeric" value="${T[k]}"> %</label>`).join('')}</div><button class="btn btn-primary" id="pgSave">Save targets</button></div>`;
+  document.getElementById('pgSave').onclick = async () => { const v = {}; m.querySelectorAll('[data-pg]').forEach(i2 => { const n = Math.max(0, Math.min(100, parseInt(i2.value, 10) || 0)); v[i2.dataset.pg] = n; });
+    await saveSettingKey('process_goals', v); toast('Targets saved'); renderMain(); };
+}
+/* ===== 29. A+ library: the trades you starred, with their TradingView snapshot ===== */
+function renderLibrary(){
+  const m = document.getElementById('main'), lib = [...S.bt.rows.values()].map(btDerive).filter(x => x.aplus).sort((a, b) => b.day.localeCompare(a.day));
+  m.innerHTML = `<p class="muted" style="font-weight:600;margin:0 0 10px">Your best setups, as a visual reference before you enter. Tick “⭐ A+ setup” when you log or edit a trade (live or backtest).</p>
+    ${lib.length ? `<div class="fc-grid">${lib.map(x => { const img = tvImg(x.chart_url);
+      return `<div class="an-card">${img ? `<a href="${esc(x.chart_url)}" target="_blank" rel="noopener"><img src="${img}" alt="${esc(x.pair)} snapshot" loading="lazy" style="width:100%;border-radius:8px;margin-bottom:6px" onerror="this.remove()"></a>` : x.chart_url ? `<a href="${esc(x.chart_url)}" target="_blank" rel="noopener">Open chart</a>` : ''}
+        <div class="an-h"><b>${esc(x.pair)}</b><span class="fc-tag ${x.direction==='Long' ? 'bullish' : 'bearish'}">${x.direction==='Long' ? '▲ Long' : '▼ Short'}</span><span class="muted" style="font-size:12px">${fmtDayShort(x.day)}${x.entry_time ? ' ' + esc(x.entry_time) : ''} · ${esc(x.sess)}${x.run===LIVE_RUN ? ' · live' : ' · backtest'}</span>${x.r!=null ? `<b class="${x.r > 0 ? 'pos' : x.r < 0 ? 'neg' : ''}">${sgR(Number(x.r))}</b>` : ''}</div>
+        <p class="muted" style="font-size:12.5px;margin:4px 0">${x.bias ? 'Bias ' + esc(x.bias) + (x.conviction ? ' · ' + esc(x.conviction) : '') : 'No bias recorded'}${x.sweep_time ? ' · liquidity ' + esc(x.sweep_time) : ''}${x.break_type ? ' · ' + esc(x.break_type) + ' break' : ''}</p>
+        ${x.notes ? `<p style="margin:4px 0;font-size:13px">${esc(x.notes)}</p>` : ''}<button class="btn" data-btedit="${x.id}">Edit</button></div>`; }).join('')}</div>` : `<div class="card fc-empty"><p>No A+ setups yet. When a trade is a textbook example of your setup, tick “⭐ A+ setup” in the trade form.</p></div>`}`;
+  m.querySelectorAll('[data-btedit]').forEach(b => b.onclick = () => { const r = S.bt.rows.get(b.dataset.btedit) || S.bt.rows.get(Number(b.dataset.btedit)); if(r) openBacktest(r); });
+}
+function renderAnalystReview(){
   const m = document.getElementById('main'), ks = anWeeks();
   if(!S.an || !ks.includes(S.an)) S.an = ks.at(-1) || null;
   const i = ks.indexOf(S.an), j = S.an ? S.settings[S.an] : null;
-  const head = `<div class="flex flex-wrap items-end gap-4 mb-4"><div><div class="pairtitle">Analyst</div><div class="muted mt-1" style="font-weight:600;max-width:640px">Your weekly trade review: every live trade checked against your strategy and that week's fundamentals. Arrives automatically after the Friday-night review.</div></div></div>`;
+  const head = `<p class="muted" style="font-weight:600;margin:0 0 10px;max-width:680px">Every live trade checked against your strategy and that week's fundamentals. Arrives automatically after the Friday-night review.</p>`;
   if(!j){ m.innerHTML = head + `<div class="card fc-empty"><p>No trade review yet. Log your live trades in Trades (Type = Live); the review runs on Friday night at 00:00 and appears here.</p></div>`; return; }
   const sm = j.summary || {}, sg = v => v==null ? '–' : (v > 0 ? '+' : '') + fmt(v, 2);
   const card = x => `<div class="an-card"><div class="an-h"><b>${esc(x.pair||'')}</b><span class="muted" style="font-size:12.5px;font-weight:600">${esc([x.day ? fmtDayShort(x.day) : '', x.time, x.session].filter(Boolean).join(' · '))}</span>
@@ -5591,7 +5661,7 @@ function btDerive(t){
   let swMin = null;
   if(x.sweep_time && t.entry_time){ const a = new Date(`${x.sweep_day || t.day}T${x.sweep_time}:00`), b2 = new Date(`${t.day}T${t.entry_time}:00`); if(!isNaN(a) && !isNaN(b2)) swMin = Math.round((b2 - a) / 60000); }
   return { ...t, withB, edge, dow: d ? WD_SHORT[d.getDay()] : null, sess: t.session || sessionName(t.entry_time) || 'Off-session',
-    newsDay: t.news_day ?? !!(t.news && t.news.length), sweep_day:x.sweep_day || null, sweep_time:x.sweep_time || null, mae_r:x.mae_r ?? null, swMin,
+    newsDay: t.news_day ?? !!(t.news && t.news.length), aplus:!!x.aplus, sweep_day:x.sweep_day || null, sweep_time:x.sweep_time || null, mae_r:x.mae_r ?? null, swMin,
     swSess: x.sweep_time ? (sessionName(x.sweep_time) || 'Off-session') : null };
 }
 /* a real trade from Trades → the same shape, context taken from its week */
@@ -5824,6 +5894,7 @@ function openBacktest(row, keep){
         <label><span class="lbl" id="btULbl">Chart link</span><input class="inp" id="btU" value="${esc(r.chart_url || '')}" placeholder="TradingView snapshot"></label>
       </div>
       <label class="sx-sw"><input type="checkbox" id="btOk" ${F.rules_ok ? 'checked' : ''}><i></i>I followed my rules on this one</label>
+      <label class="sx-sw"><input type="checkbox" id="btAp" ${btx.aplus ? 'checked' : ''}><i></i>⭐ A+ setup — add it to my A+ library</label>
       <label><span class="lbl">Notes</span><textarea class="inp" id="btN" rows="2" placeholder="What did you see? What would you do differently?">${esc(r.notes || '')}</textarea></label>
     </div>
     <div class="dlg-foot">${row ? '<button type="button" class="btn btn-danger" id="btDel" style="margin-right:auto">Delete</button>' : ''}<button type="button" class="btn" id="btCancel">Cancel</button>
@@ -5853,8 +5924,8 @@ function openBacktest(row, keep){
     const q = row ? sb.from('do_backtests').update(rec).eq('id', row.id).select().single() : sb.from('do_backtests').insert(rec).select().single();
     const { data, error } = await q; if(error) return toast(/relation|does not exist|schema cache/i.test(error.message) ? 'Run migration-backtest.sql in Supabase first' : error.message);
     S.bt.rows.set(data.id, data); ls.set(BT_RUNS_KEY, { pair:F.pair, run:rec.run || '' });
-    { const swT = $('#btSwT').value, swD = $('#btSwD').value || (swT ? F.day : ''), mae = parseNum($('#btMae').value), k = `btx:${data.id}`;
-      if(swT || swD || mae!=null || S.settings?.[k]) await saveSettingKey(k, { sweep_day:swD || null, sweep_time:swT || null, mae_r:mae ?? null }); }
+    { const swT = $('#btSwT').value, swD = $('#btSwD').value || (swT ? F.day : ''), mae = parseNum($('#btMae').value), ap = $('#btAp').checked, k = `btx:${data.id}`;
+      if(swT || swD || mae!=null || ap || S.settings?.[k]) await saveSettingKey(k, { sweep_day:swD || null, sweep_time:swT || null, mae_r:mae ?? null, aplus:ap }); }
     if(next){ toast('Saved · next one'); openBacktest(null, { pair:F.pair, run:F.kind==='live' ? '' : rec.run, day:F.day, kind:F.kind }); renderMain(); return; }
     dlg.close(); renderMain(); toast('Saved');
   };
