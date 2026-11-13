@@ -5456,7 +5456,7 @@ function btRows(){
   const cut = per==='all' ? '' : iso(new Date(Date.now() - Number(per) * 864e5));
   let rows = [];
   rows.push(...[...S.bt.rows.values()].filter(x => src==='both' || (src==='live') === (x.run===LIVE_RUN)).map(btDerive).filter(x => run==='all' || (x.run || 'No run')===run));
-  if(src!=='bt' && run==='all') rows.push(...[...S.trades.values()].filter(t => ['W','L','BE'].includes(t.result) && t.direction).map(btFromLive));
+  /* old Trades-app rows (do_trades) are no longer shown: only trades logged here by hand count (Nov 2026) */
   return rows.filter(x => (pair==='all' || x.pair===pair) && (!cut || x.day >= cut) && ['W','L','BE'].includes(x.result))
     .sort((a, b) => a.day.localeCompare(b.day) || String(a.entry_time || '').localeCompare(String(b.entry_time || '')));
 }
@@ -5527,7 +5527,7 @@ function renderBacktest(){
   if(S.bt.missing){ m.innerHTML = `<div class="pairtitle">Trades</div><div class="card" style="margin-top:14px"><p>Run <b>migration-backtest.sql</b> in Supabase → SQL Editor, then reload.</p></div>`; return; }
   const src = ls.get('do_bt_src', 'bt'), per = ls.get('do_bt_per', 'all'), list = btRows(), st = btStats(list);
   const runs = [...new Set([...S.bt.rows.values()].map(x => x.run || 'No run'))].sort();
-  const pairs = [...new Set([...S.bt.rows.values()].map(x => x.pair).concat(src!=='bt' ? [...S.trades.values()].map(t => t.pair) : []))].filter(Boolean).sort();
+  const pairs = [...new Set([...S.bt.rows.values()].map(x => x.pair))].filter(Boolean).sort();
   const seg = (opts, val, attr) => `<div class="seg" role="group">${opts.map(([v, l]) => `<button ${attr}="${v}" aria-pressed="${val===v}">${l}</button>`).join('')}</div>`;
   const ins = btInsights(list, st), noCtx = list.filter(x => !x.bias && x.base_score==null).length;
   const recent = [...list].reverse().slice(0, S.bt.more ? 400 : 40);
