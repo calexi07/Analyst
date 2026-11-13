@@ -2132,6 +2132,8 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .lu-bar{ display:flex; flex-wrap:wrap; gap:6px 18px; align-items:center; padding:9px 14px; margin:0 0 14px; font-size:12.5px; }
   .lu-t{ font-weight:800; }
   .fc-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px; }
+  .hl-t{ width:100%; border-collapse:collapse; font-size:13px; } .hl-t td, .hl-t th{ padding:7px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; } .hl-t th{ font-size:11.5px; opacity:.7; }
+  .hl-s{ font-weight:800; white-space:nowrap; } .hl-s.ok{ color:#22AB94; } .hl-s.miss{ color:#F23645; } .hl-s.wait{ color:#E0A800; } .hl-s.na{ opacity:.6; }
   .an-kpi{ display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; margin-bottom:12px; }
   .an-kpi > div{ border:1px solid var(--line); border-radius:12px; padding:9px 11px; background:var(--surface); } .an-kpi span{ display:block; font-size:11.5px; opacity:.7; font-weight:600; } .an-kpi b{ font-size:18px; font-variant-numeric:tabular-nums; }
   .an-sec{ margin:16px 0 8px; font-size:15px; font-weight:800; }
@@ -2522,7 +2524,7 @@ const NAV = [
   [null, [['today','Today','home']]],
   ['Fundamental Analyse', [['journal','Calendar','calendar'],['history','Check','trend'],['backtest','Trades','flask'],['analyst','Analyst','radar']]],
   ['Money', [['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target']]],
-  ['Tools', [['prompts','Prompts','spark']]],
+  ['Tools', [['health','Health','radar'],['prompts','Prompts','spark']]],
 ];
 const navActive = v => S.view===v || (v==='history' && ['overview','analysis'].includes(S.view));
 const GONE_VIEWS = ['trades','setups','analysis'];   /* Trades and Setups were removed from the app (Nov 2026); Backtest replaces trades */
@@ -2685,7 +2687,7 @@ function render(){
 function openMore(){
   const d = document.getElementById('moreDlg'), light = document.documentElement.dataset.theme === 'light';
   d.innerHTML = `<div class="dlg-head"><h2>More</h2></div><div class="dlg-body more-g">
-    ${[['analyst','Analyst','radar'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
+    ${[['analyst','Analyst','radar'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['health','Health','radar'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
     <button class="more-i" data-ma="share">${ico('share', 22)}<span>Share</span></button>
     <button class="more-i" data-ma="data">${ico('swap', 22)}<span>Import / export</span></button>
     <button class="more-i" data-ma="theme">${ico(light ? 'moon' : 'sun', 22)}<span>${light ? 'Dark' : 'Light'} theme</span></button></div>`;
@@ -2761,6 +2763,7 @@ function renderStrip(){
 }
 function tierIdx(x){ return ['high','medium','low',''].indexOf(x.conv); }
 function renderMain(){
+  setTimeout(() => hlBadge(S.hlMiss || 0), 0);
   S.charts.forEach(c => c.destroy()); S.charts = [];
   if(!SUAPP && GONE_VIEWS.includes(S.view)){ S.view = 'history'; ls.set('do_view', 'history'); }
   if(S.view === 'analysis'){ renderAnalysis(); histTabsInto('perf'); }
@@ -2776,6 +2779,7 @@ function renderMain(){
   else if(S.view === 'portfolio') renderPortfolio();
   else if(S.view === 'backtest') renderBacktest();
   else if(S.view === 'analyst') renderAnalyst();
+  else if(S.view === 'health') renderHealth();
   else if(S.view === 'trades') renderTrades();
   else if(S.view === 'setups') renderSetups();
   else renderJournal();
@@ -5033,6 +5037,61 @@ function fcCcyChips(){ return `<div class="chips">${['ALL', ...CCYS].map(c => `<
 function fcBindCcy(){ document.querySelectorAll('[data-fcc]').forEach(b => b.onclick = () => { S.fc.ccy = b.dataset.fcc; ls.set('do_fc_ccy', S.fc.ccy); renderMain(); }); }
 const fcPairOk = p => S.fc.ccy==='ALL' || base(p)===S.fc.ccy || quote(p)===S.fc.ccy;
 function storyWeeks(){ const set = new Map(); for(const r of S.weekly.values()) if(det(r).story?.text) set.set(r.year*100 + r.week, { year:r.year, week:r.week }); return [...set.values()].sort((a,b) => (a.year*100+a.week) - (b.year*100+b.week)); }
+/* ===== Health (Nov 2026): did every scheduled job deliver? Built from imports/index.json, the exports and the app's import log ===== */
+async function hlFetch(path){ try{ const r = await fetch(path + '?t=' + Date.now(), { cache:'no-store' }); return r.ok ? await r.json() : null; }catch(_){ return null; } }
+const HL_START = '2026-11-12';   /* automatic delivery started on this day; earlier days are not monitored */
+function hlExpected(now){
+  const out = [], W2 = w => String(w).padStart(2, '0');
+  for(let k = 8; k >= 0; k--){
+    const d = new Date(now); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - k);
+    const ds = iso(d), dow = d.getDay(), at = (h, m) => { const x = new Date(d); x.setHours(h, m, 0, 0); return x; };
+    if(ds < HL_START) continue;
+    if(dow >= 1 && dow <= 5) out.push({ job:'Morning check', id:`check-${ds}-morning`, due:at(7, 45), sched:'Mon–Fri 06:30', manual:() => !!S.settings?.[`fcheck:${ds}:morning`] });
+    if(dow >= 0 && dow <= 4) out.push({ job:'Evening check', id:`check-${ds}-evening`, due:at(21, 15), sched:'Sun–Thu 19:55', manual:() => !!S.settings?.[`fcheck:${ds}:evening`] });
+    if(dow === 6){ const nx = new Date(d); nx.setDate(d.getDate() + 2); const t = isoWeek(nx), cw = isoWeek(d);
+      out.push({ job:'Trade review', id:`trade-review-${cw.year}-W${W2(cw.week)}`, due:at(2, 0), sched:'Sat 00:00', optional:true });
+      out.push({ job:'Phase 1', id:`${t.year}-W${W2(t.week)}-phase1`, due:at(13, 30), sched:'Sat 09:55' }); }
+    if(dow === 0){ const nx = new Date(d); nx.setDate(d.getDate() + 1); const t = isoWeek(nx);
+      out.push({ job:'Phase 2 (FINAL)', id:`${t.year}-W${W2(t.week)}-final`, due:at(21, 30), sched:'Sun 18:55' }); }
+  }
+  return out;
+}
+async function renderHealth(quiet){
+  const m = quiet ? null : document.getElementById('main');
+  if(m) m.innerHTML = `<div class="pairtitle">Health</div><p class="muted" style="font-weight:600">Checking the scheduled jobs…</p>`;
+  const [ix, pa, fv, tr] = await Promise.all([hlFetch('imports/index.json'), hlFetch('exports/latest.json'), hlFetch('exports/fx-vol-latest.json'), hlFetch('exports/trades-latest.json')]);
+  if(!quiet && S.view !== 'health') return;
+  const now = new Date(), ids = (ix?.files || []).map(f => f.id), done = new Set(Array.isArray(S.settings?.auto_imports) ? S.settings.auto_imports : []);
+  const log = Array.isArray(S.settings?.import_log) ? S.settings.import_log : [];
+  const fmtT = t => t ? new Date(t).toLocaleString('en-GB', { weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+  const rows = hlExpected(now).map(e => {
+    const hit = ids.filter(x => x===e.id || x.startsWith(e.id + '-')), lg = log.find(l => l.id && hit.includes(l.id));
+    let st, txt;
+    if(hit.length){ const imp = hit.some(x => done.has(x)); st = 'ok'; txt = imp ? 'Delivered · imported' + (lg?.at ? ' ' + fmtT(lg.at) : '') : 'Delivered · opens on next app load'; }
+    else if(e.manual?.()){ st = 'ok'; txt = 'In the app (imported by hand, not delivered automatically)'; }
+    else if(now < e.due){ st = 'wait'; txt = 'Not due yet (by ' + fmtT(e.due) + ')'; }
+    else if(e.optional){ st = 'na'; txt = 'Nothing delivered (normal if no live trades that week)'; }
+    else { st = 'miss'; txt = 'MISSING — expected by ' + fmtT(e.due); }
+    return { ...e, st, txt };
+  }).reverse();
+  const lastFri = (() => { const d = new Date(now); d.setHours(12,0,0,0); while(d.getDay() !== 5) d.setDate(d.getDate() - 1); if(now.getDay() === 5 && now.getHours() < 23) d.setDate(d.getDate() - 7); return d; })();
+  const pw = pa?.week, lw = isoWeek(lastFri);
+  const ex = [
+    { job:'Price-action export (Phase 3 input)', sched:'Sat 06:30', st: pw && pw.year===lw.year && pw.week===lw.week ? 'ok' : (now.getDay()===6 && now.getHours() < 8 ? 'wait' : 'miss'), txt: pw ? `Week ${pw.week} · ${pa.generated_at ? fmtT(pa.generated_at) : ''}${pa.pairs_not_logged?.length ? ' · ' + pa.pairs_not_logged.length + ' pairs not logged' : ''}` : 'File missing' },
+    { job:'FX volatility (chart kit)', sched:'Sat 07:00 · Sun 12:00', st: fv?.baseline_friday===iso(lastFri) ? 'ok' : (now.getDay()===6 && now.getHours() < 8 ? 'wait' : 'miss'), txt: fv ? `Friday ${fv.baseline_friday} · ${Object.keys(fv.data||{}).length} pairs` : 'File missing' },
+    { job:'Live-trade export (trade review input)', sched:'Fri 21:00–23:50 · Sat 07:15', st: tr ? 'ok' : 'miss', txt: tr ? `Week ${tr.week?.week} · ${tr.count} trade${tr.count===1 ? '' : 's'} · ${fmtT(tr.generated_at)}` : 'File missing' } ];
+  const nMiss = rows.filter(r => r.st==='miss').length + ex.filter(r => r.st==='miss').length;
+  S.hlMiss = nMiss; hlBadge(nMiss);
+  if(quiet) return nMiss;
+  const lab = { ok:'✅ OK', miss:'❌ Missing', wait:'⏳ Pending', na:'⚪ —' };
+  const tbl = list => `<div class="card" style="overflow:auto;margin-bottom:14px"><table class="hl-t"><tr><th>Status</th><th>Job</th><th>Schedule</th><th>Detail</th></tr>${list.map(r => `<tr><td class="hl-s ${r.st}">${lab[r.st]}</td><td><b>${esc(r.job)}</b>${r.id ? `<div class="muted" style="font-size:11.5px">${esc(r.id)}</div>` : ''}</td><td class="muted">${esc(r.sched)}</td><td>${esc(r.txt)}</td></tr>`).join('')}</table></div>`;
+  m.innerHTML = `<div class="flex flex-wrap items-end gap-4 mb-4"><div><div class="pairtitle">Health</div><div class="muted mt-1" style="font-weight:600;max-width:680px">Did every scheduled job deliver? Last 9 days, newest first. Phase 3 is not listed: it only writes to the Project, not to the app.</div></div><button class="btn" id="hlRe" style="margin-left:auto">↻ Re-check</button></div>
+    <div class="card" style="margin-bottom:14px"><p style="margin:0;font-weight:700">${nMiss ? `❌ ${nMiss} job${nMiss===1 ? '' : 's'} missing — tell Claude in the Bias Engine chat, e.g. “Health: lipsește …”.` : '✅ Everything that was due has been delivered.'}</p><p class="muted" style="margin:4px 0 0;font-size:12px">Checked ${fmtT(now)}</p></div>
+    <div class="an-sec">📥 Deliveries to the app</div>${tbl(rows)}
+    <div class="an-sec">⚙️ GitHub data exports</div>${tbl(ex)}`;
+  document.getElementById('hlRe').onclick = () => renderHealth();
+}
+function hlBadge(n){ document.querySelectorAll('[data-view="health"]').forEach(b => { b.querySelector('.hl-dot')?.remove(); if(n) b.insertAdjacentHTML('beforeend', `<span class="hl-dot" style="margin-left:auto;background:#F23645;color:#fff;border-radius:9px;padding:0 6px;font-size:11px;font-weight:800">${n}</span>`); }); }
 /* ===== Analyst (Nov 2026): the weekly trade review, imported automatically (do_settings treview:YYYY-Www) ===== */
 function anWeeks(){ return Object.keys(S.settings||{}).filter(k => k.startsWith('treview:')).sort(); }
 S.an = S.an || null;
@@ -9035,7 +9094,7 @@ async function autoImports(){
     try{ await loadAll(); }catch(e){ console.error(e); toast('Could not load data: ' + e.message); }
   }
   render(); splashDone();
-  if(CONFIGURED && !SUAPP){ autoImports(); setInterval(autoImports, 10*60*1000); document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible') autoImports(); }); }
+  if(CONFIGURED && !SUAPP){ autoImports().finally(() => renderHealth(true)); setInterval(() => renderHealth(true), 30*60*1000); setInterval(autoImports, 10*60*1000); document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible') autoImports(); }); }
   if(CONFIGURED){ const tz = Intl.DateTimeFormat().resolvedOptions().timeZone; if(tz && S.settings && S.settings.tz!==tz) saveSettingKey('tz', tz);
     /* address of this site, for the "Setups" button in phone notifications */
     const site = location.origin + location.pathname; if(location.protocol.startsWith('http') && S.settings && S.settings.site_url!==site) saveSettingKey('site_url', site);
