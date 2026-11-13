@@ -2136,6 +2136,9 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .hl-s{ font-weight:800; white-space:nowrap; } .hl-s.ok{ color:#22AB94; } .hl-s.miss{ color:#F23645; } .hl-s.wait{ color:#E0A800; } .hl-s.na{ opacity:.6; }
   .ex-w{ margin:6px 0 2px; } .ex-chips{ display:flex; flex-wrap:wrap; gap:5px; margin:4px 0; } .ex-c{ font-size:12px; font-weight:800; padding:2px 8px; border-radius:9px; border:1px solid var(--line); font-variant-numeric:tabular-nums; }
   .ex-c.warn{ color:#E0A800; border-color:#E0A80066; } .ex-c.bad{ color:#F23645; border-color:#F2364566; } .ex-msg{ font-size:12.5px; font-weight:700; margin:4px 0; } .ex-msg.warn{ color:#E0A800; } .ex-msg.bad{ color:#F23645; }
+  .sc-g{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; margin-bottom:12px; }
+  .sc-g > div{ border:1px solid var(--line); border-radius:12px; padding:9px 11px; background:var(--surface); } .sc-g span{ display:block; font-size:11.5px; opacity:.7; font-weight:600; } .sc-g b{ font-size:18px; } .sc-g small{ display:block; font-size:11px; opacity:.7; }
+  .mom{ font-size:11px; font-weight:800; color:#E0A800; }
   .an-kpi{ display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; margin-bottom:12px; }
   .an-kpi > div{ border:1px solid var(--line); border-radius:12px; padding:9px 11px; background:var(--surface); } .an-kpi span{ display:block; font-size:11.5px; opacity:.7; font-weight:600; } .an-kpi b{ font-size:18px; font-variant-numeric:tabular-nums; }
   .an-sec{ margin:16px 0 8px; font-size:15px; font-weight:800; }
@@ -2772,8 +2775,8 @@ function renderMain(){
   else if(S.view === 'overview'){ renderOverview(); histTabsInto('week'); }
   else if(S.view === 'accounts') (KIOSK ? renderKiosk : renderAccounts)();
   else if(S.view === 'goals') renderGoals();
-  else if(S.view === 'history'){ let t = ls.get('do_hist_tab', 'fa'); if(!['fa','fund'].includes(t)) t = 'fa';
-    if(t==='fa') renderFA(); else renderHistory(); histTabsInto(t); }
+  else if(S.view === 'history'){ let t = ls.get('do_hist_tab', 'fa'); if(!['fa','fund','sc'].includes(t)) t = 'fa';
+    if(t==='fa') renderFA(); else if(t==='sc') renderScore(); else renderHistory(); histTabsInto(t); }
   else if(S.view === 'desk'){ S.view = 'today'; ls.set('do_view', 'today'); renderToday(); }   /* Desk was removed */
   else if(S.view === 'today') renderToday();
   else if(S.view === 'prompts') renderPrompts();
@@ -4931,7 +4934,7 @@ function lastUpdHtml(){
 function histTabsInto(tab){
   const m = document.getElementById('main'); if(!m) return;
   m.insertAdjacentHTML('afterbegin', `<header class="hp-top"><div><div class="pairtitle">Check</div><div class="muted" style="font-weight:600;font-size:12px">Fundamental Analyse</div></div>
-    <nav class="hp-tabs" role="tablist">${[['fa','📖 Fundamental','weekly story and daily checks of every pair'],['fund','🧭 Bias history','bias & scores week by week'],['week','🗓️ This week','every pair at a glance']].map(([k, l, t]) => `<button role="tab" data-htab="${k}" aria-selected="${tab===k}" title="${t}">${l}</button>`).join('')}</nav></header>${lastUpdHtml()}`);
+    <nav class="hp-tabs" role="tablist">${[['fa','📖 Fundamental','weekly story and daily checks of every pair'],['sc','🎯 Scorecard','how the weekly bias did against the real moves'],['fund','🧭 Bias history','bias & scores week by week'],['week','🗓️ This week','every pair at a glance']].map(([k, l, t]) => `<button role="tab" data-htab="${k}" aria-selected="${tab===k}" title="${t}">${l}</button>`).join('')}</nav></header>${lastUpdHtml()}`);
   m.querySelectorAll('[data-htab]').forEach(b => b.onclick = () => { const k = b.dataset.htab; if(k!=='week') ls.set('do_hist_tab', k);
     S.view = k==='week' ? 'overview' : 'history'; ls.set('do_view', 'history'); renderMain(); });
 }
@@ -5039,6 +5042,53 @@ function fcCcyChips(){ return `<div class="chips">${['ALL', ...CCYS].map(c => `<
 function fcBindCcy(){ document.querySelectorAll('[data-fcc]').forEach(b => b.onclick = () => { S.fc.ccy = b.dataset.fcc; ls.set('do_fc_ccy', S.fc.ccy); renderMain(); }); }
 const fcPairOk = p => S.fc.ccy==='ALL' || base(p)===S.fc.ccy || quote(p)===S.fc.ccy;
 function storyWeeks(){ const set = new Map(); for(const r of S.weekly.values()) if(det(r).story?.text) set.set(r.year*100 + r.week, { year:r.year, week:r.week }); return [...set.values()].sort((a,b) => (a.year*100+a.week) - (b.year*100+b.week)); }
+/* ===== Scorecard (Nov 2026): weekly bias vs the real week, from the daily closes logged in Daily Observer ===== */
+const SC_FLAT = 0.10;   /* % — a week inside ±0.10% counts as flat (same fixed band as the engine's v1 thresholds, labelled uncalibrated) */
+function scWeekMove(p, y, w){ const m = mondayOf(y, w); let lr = 0, n = 0;
+  for(let i = 0; i < 5; i++){ const d = new Date(m); d.setDate(m.getDate()+i); const e = S.daily.get(dk(p, iso(d))); if(e?.daily_change!=null){ lr += Math.log(1 + Number(e.daily_change)/100); n++; } }
+  return n >= 4 ? (Math.exp(lr) - 1) * 100 : null; }
+function scDone(y, w){ const f = mondayOf(y, w); f.setDate(f.getDate()+4); f.setHours(23, 59, 0, 0); return Date.now() > f.getTime(); }
+function scData(){
+  const weeks = new Map();
+  for(const r of S.weekly.values()){ if(!r.bias || !scDone(r.year, r.week)) continue; const k = r.year*100 + r.week; if(!weeks.has(k)) weeks.set(k, { year:r.year, week:r.week, calls:[], scores:{} });
+    const W = weeks.get(k), d = det(r); if(d.base_score!=null) W.scores[base(r.pair)] = d.base_score; if(d.quote_score!=null) W.scores[quote(r.pair)] = d.quote_score;
+    const mv = scWeekMove(r.pair, r.year, r.week); if(mv==null) continue;
+    const dir = r.bias==='bullish' ? 1 : r.bias==='bearish' ? -1 : 0;
+    const out = !dir ? 'none' : Math.abs(mv) <= SC_FLAT ? 'flat' : Math.sign(mv)===dir ? 'hit' : 'miss';
+    W.calls.push({ pair:r.pair, bias:r.bias, conv:r.conviction || 'low', mv, out }); }
+  const list = [...weeks.values()].filter(w => w.calls.length).sort((a, b) => (a.year*100+a.week) - (b.year*100+b.week));
+  list.forEach(W => { const st = {}; W.calls.forEach(c => { const [b, q] = [base(c.pair), quote(c.pair)]; [[b, 1], [q, -1]].forEach(([cc, s2]) => { (st[cc] ||= []).push(s2 * c.mv); }); });
+    W.ccy = Object.fromEntries(Object.entries(st).filter(([, a]) => a.length >= 4).map(([cc, a]) => [cc, a.reduce((x, y) => x + y, 0) / a.length])); });
+  return list;
+}
+function scRate(calls){ const d = calls.filter(c => c.out==='hit' || c.out==='miss'); const h = d.filter(c => c.out==='hit').length; return { n:d.length, h, flat:calls.filter(c => c.out==='flat').length, rate: d.length ? h / d.length : null }; }
+/* momentum vs bias (#22): completed weeks in a row that moved against the CURRENT bias */
+function scAgainst(p, bias, y, w){ const dir = bias==='bullish' ? 1 : bias==='bearish' ? -1 : 0; if(!dir) return 0; let n = 0;
+  for(let k = 1; k <= 6; k++){ const d = mondayOf(y, w); d.setDate(d.getDate() - 7*k); const iw = isoWeek(d); const mv = scWeekMove(p, iw.year, iw.week); if(mv==null || Math.abs(mv) <= SC_FLAT || Math.sign(mv)===dir) break; n++; }
+  return n; }
+function renderScore(){
+  const m = document.getElementById('main'), L = scData(), all = L.flatMap(w => w.calls), pctf = r => r==null ? '–' : Math.round(r*100) + '%';
+  const small = n => n < 20 ? '<small>small sample</small>' : '';
+  if(!L.length){ m.innerHTML = `<div class="card fc-empty"><p>No completed week with both a weekly bias and your daily closes yet. The scorecard fills in automatically every week (it needs at least 4 of the 5 daily closes per pair).</p></div>`; return; }
+  const tot = scRate(all), cv = ['high','medium','low'].map(c => [c, scRate(all.filter(x => x.conv===c))]);
+  const last8 = L.slice(-8), ccyRows = CCYS.filter(c => c!=='XAU').map(c => { let n = 0, h = 0;
+    last8.forEach(W => { const sc = W.scores[c], st = W.ccy?.[c]; if(sc==null || st==null) return; const dir = sc >= 3 ? 1 : sc <= -3 ? -1 : 0; if(!dir || Math.abs(st) <= SC_FLAT) return; n++; if(Math.sign(st)===dir) h++; });
+    return { c, n, h, rate: n ? h/n : null }; }).sort((a, b) => (b.rate ?? -1) - (a.rate ?? -1) || b.n - a.n);
+  const cur = (() => { const ks = [...new Set([...S.weekly.values()].map(r => r.year*100 + r.week))].sort(); const k = ks.filter(x => x <= isoWeek(new Date()).year*100 + isoWeek(new Date()).week + 1).at(-1); return k ? { year:Math.floor(k/100), week:k%100 } : null; })();
+  const mom = cur ? [...S.weekly.values()].filter(r => r.year===cur.year && r.week===cur.week && r.bias && r.bias!=='two-sided').map(r => ({ p:r.pair, bias:r.bias, n:scAgainst(r.pair, r.bias, cur.year, cur.week) })).filter(x => x.n >= 2).sort((a, b) => b.n - a.n) : [];
+  m.innerHTML = `
+    <p class="muted" style="font-weight:600;margin:0 0 10px">How each week's bias did against the real Monday–Friday move of the pair (your daily closes). A week inside ±${SC_FLAT}% counts as flat and is left out of the hit rate. ${L.length} completed week${L.length===1 ? '' : 's'}.</p>
+    <div class="sc-g"><div><span>All calls</span><b>${pctf(tot.rate)}</b><small>${tot.h} / ${tot.n} hit · ${tot.flat} flat</small>${small(tot.n)}</div>
+      ${cv.map(([c, r]) => `<div><span>${c[0].toUpperCase() + c.slice(1)} conviction</span><b>${pctf(r.rate)}</b><small>${r.h} / ${r.n} hit</small>${small(r.n)}</div>`).join('')}</div>
+    <p class="muted" style="font-size:12px;margin:-4px 0 12px">Rule of thumb: high conviction should beat medium, and medium should beat low. Until each bucket has 20 calls, read these as early signs, not proof.</p>
+    ${mom.length ? `<div class="an-sec">↯ Price running against the current bias (week ${cur.week})</div><div class="card"><ul>${mom.map(x => `<li class="an-li"><b>${x.p}</b> · bias ${x.bias} · the last <b>${x.n} weeks</b> moved the other way</li>`).join('')}</ul><p class="muted" style="font-size:12px;margin-top:6px">A caution flag, not a signal: the fundamentals may still be right, but the market has not agreed for a while.</p></div>` : ''}
+    <div class="an-sec">💱 Currencies, last ${last8.length} week${last8.length===1 ? '' : 's'}</div>
+    <div class="card" style="overflow:auto"><table class="hl-t"><tr><th>Currency</th><th>Calls (score ≥3 or ≤−3)</th><th>Right direction</th><th>Hit rate</th></tr>${ccyRows.map(r => `<tr><td><b>${r.c}</b></td><td>${r.n}</td><td>${r.h}</td><td><b>${pctf(r.rate)}</b></td></tr>`).join('')}</table>
+      <p class="muted" style="font-size:12px;margin:6px 0 0">Strength = average move of the currency across its pairs that week. Higher rows = where the model has read the currency best lately.</p></div>
+    <div class="an-sec">🗓️ Week by week</div>
+    <div class="card" style="overflow:auto"><table class="hl-t"><tr><th>Week</th><th>Calls</th><th>Hit</th><th>Miss</th><th>Flat</th><th>Hit rate</th><th>High conv.</th></tr>${[...L].reverse().map(W => { const r = scRate(W.calls), hc = scRate(W.calls.filter(c => c.conv==='high'));
+      return `<tr><td><b>W${W.week}</b> <span class="muted">${wkSpan(W.year, W.week)}</span></td><td>${r.n + r.flat}</td><td>${r.h}</td><td>${r.n - r.h}</td><td>${r.flat}</td><td><b>${pctf(r.rate)}</b></td><td>${hc.n ? `${hc.h}/${hc.n}` : '–'}</td></tr>`; }).join('')}</table></div>`;
+}
 /* ===== Health (Nov 2026): did every scheduled job deliver? Built from imports/index.json, the exports and the app's import log ===== */
 async function hlFetch(path){ try{ const r = await fetch(path + '?t=' + Date.now(), { cache:'no-store' }); return r.ok ? await r.json() : null; }catch(_){ return null; } }
 const HL_START = '2026-11-12';   /* automatic delivery started on this day; earlier days are not monitored */
@@ -5147,7 +5197,7 @@ function renderFA(){
     <div class="fc-bar">${fcCcyChips()}<div class="seg" role="group" aria-label="Sort" style="margin-left:auto">${[['pair','Pair order'],['gap','Biggest gap'],['conv','Conviction']].map(([v, l]) => `<button type="button" data-fasort="${v}" aria-pressed="${sortBy===v}">${l}</button>`).join('')}</div></div>
     ${rows.length ? `<div class="fa-grid">${rows.map(({ p, r, cks, g }) => { const bias = r?.bias || cks.at(-1)?.x?.bias, [tl, tc] = BIAS_TAG(bias);
       return `<button class="fa-card" data-fa="${p}"><div class="fa-top"><b>${p}</b><span class="fa-gap ${g>0 ? 'pos' : g<0 ? 'neg' : ''}">${g==null ? '–' : (g>0 ? '+' : '') + g}</span></div>
-        <div class="fa-sub"><span class="fc-tag ${tc}">${tl}</span>${r?.conviction ? ` <span class="muted">· ${esc(r.conviction)}</span>` : ''}</div></button>`; }).join('')}</div>`
+        <div class="fa-sub"><span class="fc-tag ${tc}">${tl}</span>${r?.conviction ? ` <span class="muted">· ${esc(r.conviction)}</span>` : ''}</div>${(() => { const n = r?.bias ? scAgainst(p, r.bias, y, w) : 0; return n >= 2 ? `<div class="mom" title="The last ${n} completed weeks moved against this bias">↯ ${n} wk against</div>` : ''; })()}</button>`; }).join('')}</div>`
       : `<div class="card fc-empty"><p>Nothing imported for this week yet. The weekly analysis and the daily checks arrive automatically.</p></div>`}`;
   fcBindCcy();
   document.querySelectorAll('[data-fasort]').forEach(b => b.onclick = () => { ls.set('do_fa_sort', b.dataset.fasort); renderMain(); });
