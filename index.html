@@ -2132,6 +2132,13 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .lu-bar{ display:flex; flex-wrap:wrap; gap:6px 18px; align-items:center; padding:9px 14px; margin:0 0 14px; font-size:12.5px; }
   .lu-t{ font-weight:800; }
   .fc-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px; }
+  .an-kpi{ display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; margin-bottom:12px; }
+  .an-kpi > div{ border:1px solid var(--line); border-radius:12px; padding:9px 11px; background:var(--surface); } .an-kpi span{ display:block; font-size:11.5px; opacity:.7; font-weight:600; } .an-kpi b{ font-size:18px; font-variant-numeric:tabular-nums; }
+  .an-sec{ margin:16px 0 8px; font-size:15px; font-weight:800; }
+  .an-card{ border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--surface); margin-bottom:8px; }
+  .an-card .an-h{ display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; } .an-rules{ display:flex; flex-wrap:wrap; gap:5px; margin:6px 0; }
+  .an-r{ font-size:11.5px; font-weight:700; padding:2px 7px; border-radius:9px; border:1px solid var(--line); } .an-r.ok{ color:#22AB94; } .an-r.broken{ color:#F23645; } .an-r.unknown{ opacity:.65; }
+  .an-li{ margin:4px 0 4px 18px; list-style:disc; }
   .fa-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
   .fa-card{ text-align:left; border:1px solid var(--line); border-radius:12px; padding:9px 11px; background:var(--surface); color:var(--ink); cursor:pointer; display:grid; gap:4px; }
   .fa-card:hover{ border-color:color-mix(in srgb, var(--ink) 30%, var(--line)); }
@@ -2513,7 +2520,7 @@ const ICONS = {
 const ico = (k, s = 18) => `<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]||''}</svg>`;
 const NAV = [
   [null, [['today','Today','home']]],
-  ['Fundamental Analyse', [['journal','Calendar','calendar'],['history','Check','trend'],['backtest','Trades','flask']]],
+  ['Fundamental Analyse', [['journal','Calendar','calendar'],['history','Check','trend'],['backtest','Trades','flask'],['analyst','Analyst','radar']]],
   ['Money', [['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target']]],
   ['Tools', [['prompts','Prompts','spark']]],
 ];
@@ -2678,7 +2685,7 @@ function render(){
 function openMore(){
   const d = document.getElementById('moreDlg'), light = document.documentElement.dataset.theme === 'light';
   d.innerHTML = `<div class="dlg-head"><h2>More</h2></div><div class="dlg-body more-g">
-    ${[['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
+    ${[['analyst','Analyst','radar'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
     <button class="more-i" data-ma="share">${ico('share', 22)}<span>Share</span></button>
     <button class="more-i" data-ma="data">${ico('swap', 22)}<span>Import / export</span></button>
     <button class="more-i" data-ma="theme">${ico(light ? 'moon' : 'sun', 22)}<span>${light ? 'Dark' : 'Light'} theme</span></button></div>`;
@@ -2768,6 +2775,7 @@ function renderMain(){
   else if(S.view === 'bank') renderBank();
   else if(S.view === 'portfolio') renderPortfolio();
   else if(S.view === 'backtest') renderBacktest();
+  else if(S.view === 'analyst') renderAnalyst();
   else if(S.view === 'trades') renderTrades();
   else if(S.view === 'setups') renderSetups();
   else renderJournal();
@@ -5025,6 +5033,33 @@ function fcCcyChips(){ return `<div class="chips">${['ALL', ...CCYS].map(c => `<
 function fcBindCcy(){ document.querySelectorAll('[data-fcc]').forEach(b => b.onclick = () => { S.fc.ccy = b.dataset.fcc; ls.set('do_fc_ccy', S.fc.ccy); renderMain(); }); }
 const fcPairOk = p => S.fc.ccy==='ALL' || base(p)===S.fc.ccy || quote(p)===S.fc.ccy;
 function storyWeeks(){ const set = new Map(); for(const r of S.weekly.values()) if(det(r).story?.text) set.set(r.year*100 + r.week, { year:r.year, week:r.week }); return [...set.values()].sort((a,b) => (a.year*100+a.week) - (b.year*100+b.week)); }
+/* ===== Analyst (Nov 2026): the weekly trade review, imported automatically (do_settings treview:YYYY-Www) ===== */
+function anWeeks(){ return Object.keys(S.settings||{}).filter(k => k.startsWith('treview:')).sort(); }
+S.an = S.an || null;
+function renderAnalyst(){
+  const m = document.getElementById('main'), ks = anWeeks();
+  if(!S.an || !ks.includes(S.an)) S.an = ks.at(-1) || null;
+  const i = ks.indexOf(S.an), j = S.an ? S.settings[S.an] : null;
+  const head = `<div class="flex flex-wrap items-end gap-4 mb-4"><div><div class="pairtitle">Analyst</div><div class="muted mt-1" style="font-weight:600;max-width:640px">Your weekly trade review: every live trade checked against your strategy and that week's fundamentals. Arrives automatically after the Friday-night review.</div></div></div>`;
+  if(!j){ m.innerHTML = head + `<div class="card fc-empty"><p>No trade review yet. Log your live trades in Trades (Type = Live); the review runs on Friday night at 00:00 and appears here.</p></div>`; return; }
+  const sm = j.summary || {}, sg = v => v==null ? '–' : (v > 0 ? '+' : '') + fmt(v, 2);
+  const card = x => `<div class="an-card"><div class="an-h"><b>${esc(x.pair||'')}</b><span class="muted" style="font-size:12.5px;font-weight:600">${esc([x.day ? fmtDayShort(x.day) : '', x.time, x.session].filter(Boolean).join(' · '))}</span>
+      <span class="fc-tag ${x.direction==='Long' ? 'bullish' : 'bearish'}">${x.direction==='Long' ? '▲ Long' : '▼ Short'}</span><b class="${x.r > 0 ? 'pos' : x.r < 0 ? 'neg' : ''}">${esc(x.result||'')} ${x.r!=null ? sg(x.r) + 'R' : ''}</b>${x.accounts > 1 ? `<span class="muted" style="font-size:12px">${x.accounts} accounts</span>` : ''}</div>
+    ${(x.rules||[]).length ? `<div class="an-rules">${x.rules.map(r => `<span class="an-r ${esc(r.status)}" title="${esc(r.note||'')}">${r.status==='ok' ? '✓' : r.status==='broken' ? '✗' : '?'} ${esc(r.rule)}</span>`).join('')}</div>` : ''}
+    ${x.context ? `<p class="muted" style="font-size:12.5px;margin:4px 0">📍 ${esc(x.context)}</p>` : ''}${x.verdict ? `<p style="margin:4px 0">${esc(x.verdict)}</p>` : ''}</div>`;
+  m.innerHTML = head + `
+    <div class="fc-bar"><button class="btn" id="anPrev" ${i<=0 ? 'disabled' : ''}>‹</button><b style="font-size:16px">Week ${j.week?.week} · ${j.week?.year}</b><button class="btn" id="anNext" ${i<0 || i>=ks.length-1 ? 'disabled' : ''}>›</button>
+      <span class="muted" style="font-size:12.5px;font-weight:600">${j.week ? wkSpan(j.week.year, j.week.week) : ''}${j.export_generated_at ? ' · trades up to ' + esc(new Date(j.export_generated_at).toLocaleString('en-GB', { weekday:'short', hour:'2-digit', minute:'2-digit' })) : ''}</span></div>
+    ${j.headline ? `<div class="card" style="margin-bottom:12px"><p style="margin:0;font-weight:600">${esc(j.headline)}</p></div>` : ''}
+    <div class="an-kpi"><div><span>Setups</span><b>${sm.setups ?? '–'}</b></div><div><span>W / L / BE</span><b>${sm.wins ?? 0} / ${sm.losses ?? 0} / ${sm.be ?? 0}</b></div><div><span>Total R</span><b class="${sm.total_r > 0 ? 'pos' : sm.total_r < 0 ? 'neg' : ''}">${sg(sm.total_r)}</b></div><div><span>Avg R</span><b>${sg(sm.avg_r)}</b></div><div><span>Win rate</span><b>${sm.win_rate!=null ? Math.round(sm.win_rate*100) + '%' : '–'}</b></div><div><span>With / against bias</span><b>${sm.with_bias ?? 0} / ${sm.against_bias ?? 0}</b></div></div>
+    ${(j.recommendations||[]).length ? `<div class="an-sec">💡 Recommendations</div><div class="card"><ul>${j.recommendations.map(t => `<li class="an-li">${esc(t)}</li>`).join('')}</ul></div>` : ''}
+    ${(j.questions||[]).length ? `<div class="an-sec">❓ Questions for you</div><div class="card"><ul>${j.questions.map(q => `<li class="an-li"><b>${esc(q.id||'')}</b>${q.setup ? ` <span class="muted">(${esc(q.setup)})</span>` : ''} ${esc(q.text||'')}</li>`).join('')}</ul><p class="muted" style="font-size:12px;margin-top:6px">Answer in the Bias Engine project chat: “Răspuns trade review W${j.week?.week}: Q1 …”</p></div>` : ''}
+    ${(j.patterns||[]).length ? `<div class="an-sec">📊 Patterns (all your live trades)</div><div class="card"><ul>${j.patterns.map(p => `<li class="an-li"><b>${p.type==='clear' ? '⚠️' : p.type==='edge' ? '✅' : '👀'} ${esc(p.group||'')}</b> — ${p.n} setups, ${sg(p.total_r)}R${p.win_rate!=null ? ', ' + Math.round(p.win_rate*100) + '% wins' : ''}${p.text ? ': ' + esc(p.text) : ''}</li>`).join('')}</ul></div>` : ''}
+    <div class="an-sec">🧾 Setups</div>${(j.setups||[]).map(card).join('') || '<p class="muted">No setups.</p>'}
+    ${j.strengths ? `<div class="an-sec">👍 What went well</div><div class="card"><p style="margin:0">${esc(j.strengths)}</p></div>` : ''}`;
+  document.getElementById('anPrev').onclick = () => { if(i>0){ S.an = ks[i-1]; renderMain(); } };
+  document.getElementById('anNext').onclick = () => { if(i>=0 && i<ks.length-1){ S.an = ks[i+1]; renderMain(); } };
+}
 /* ===== Fundamental tab (Nov 2026): one grid per week, pair popup with Weekly fundamental / Daily check ===== */
 function faWeeks(){ const set = new Map(); const add = (y, w) => set.set(y*100 + w, { year:y, week:w });
   for(const r of S.weekly.values()) if(det(r).story?.text) add(r.year, r.week);
@@ -8975,6 +9010,10 @@ async function autoImports(){
           const key = `fcheck:${j.date}:${j.slot}`, { error } = await sb.from('do_settings').upsert({ key, value:j }, { onConflict:'key' }); if(error) throw error;
           S.settings[key] = j; got.push(`${fmtDayShort(j.date)} ${j.slot} check`);
           await logImport({ kind:'check', id:f.id, date:j.date, slot:j.slot, check:j.check ?? null, time:j.time || '' });
+        } else if(j.format==='daily-observer-trade-review'){
+          const vw = j.week; if(!vw?.year || !vw?.week) throw new Error('no week');
+          const key = `treview:${vw.year}-W${String(vw.week).padStart(2,'0')}`, { error } = await sb.from('do_settings').upsert({ key, value:j }, { onConflict:'key' }); if(error) throw error;
+          S.settings[key] = j; got.push(`trade review week ${vw.week}`);
         } else if(j.format==='daily-observer-fundamentals'){
           j.pairs = (j.pairs||[]).map(p => ({ ...p, pair: normPair(p.pair) })).filter(p => p.pair.length===6);
           const vw = j.valid_week; if(!vw?.year || !vw?.week) throw new Error('no valid_week');
