@@ -5455,7 +5455,7 @@ function btRows(){
   const src = ls.get('do_bt_src', 'bt'), run = S.bt.run || 'all', pair = S.bt.pair || 'all', per = ls.get('do_bt_per', 'all');
   const cut = per==='all' ? '' : iso(new Date(Date.now() - Number(per) * 864e5));
   let rows = [];
-  if(src!=='live') rows.push(...[...S.bt.rows.values()].map(btDerive).filter(x => run==='all' || (x.run || 'No run')===run));
+  rows.push(...[...S.bt.rows.values()].filter(x => src==='both' || (src==='live') === (x.run===LIVE_RUN)).map(btDerive).filter(x => run==='all' || (x.run || 'No run')===run));
   if(src!=='bt' && run==='all') rows.push(...[...S.trades.values()].filter(t => ['W','L','BE'].includes(t.result) && t.direction).map(btFromLive));
   return rows.filter(x => (pair==='all' || x.pair===pair) && (!cut || x.day >= cut) && ['W','L','BE'].includes(x.result))
     .sort((a, b) => a.day.localeCompare(b.day) || String(a.entry_time || '').localeCompare(String(b.entry_time || '')));
@@ -5533,7 +5533,7 @@ function renderBacktest(){
   const recent = [...list].reverse().slice(0, S.bt.more ? 400 : 40);
   m.innerHTML = `
     <div class="flex flex-wrap items-end gap-4 mb-4">
-      <div><div class="pairtitle">Trades</div><div class="muted mt-1" style="font-weight:600;max-width:640px">Replay setups on TradingView and log them here. Each trade is tagged with that week's fundamentals, so you can see in which context your edge is real.</div></div>
+      <div><div class="pairtitle">Trades</div><div class="muted mt-1" style="font-weight:600;max-width:640px">Log your live trades (they feed the Saturday trade review) and your TradingView replay backtests. Each trade is tagged with that week's fundamentals, so you can see in which context your edge is real.</div></div>
       <div class="flex flex-wrap items-center gap-2 ml-auto"><button class="btn" id="btCsv">⇩ CSV</button><button class="btn btn-primary" id="btAdd">+ Log a trade</button></div>
     </div>
     <div class="bt-bar0">
@@ -5542,7 +5542,7 @@ function renderBacktest(){
       <select class="inp" id="btPair" aria-label="Pair"><option value="all">All pairs</option>${pairs.map(p => `<option ${S.bt.pair===p ? 'selected' : ''}>${p}</option>`).join('')}</select>
       ${seg([['all','All'],['365','1Y'],['180','6M'],['90','3M']], per, 'data-btper')}
     </div>
-    ${!list.length ? `<div class="empty"><div class="orb" aria-hidden="true"></div><p>${src==='live' ? 'No closed trades in this filter.' : 'No backtest trades yet. Open TradingView in replay mode, find your setups (liquidity → fractal change → retest) and log each one here.'}</p>${src!=='live' ? '<button class="btn btn-primary" id="btAdd2">+ Log the first trade</button>' : ''}</div>` : `
+    ${!list.length ? `<div class="empty"><div class="orb" aria-hidden="true"></div><p>${src==='live' ? 'No live trades in this filter yet. Log each executed trade here; the Saturday trade review reads them.' : 'No backtest trades yet. Open TradingView in replay mode, find your setups (liquidity → fractal change → retest) and log each one here.'}</p><button class="btn btn-primary" id="btAdd2">+ Log the first trade</button></div>` : `
     <section class="bt-kpi">
       <div class="ab-k"><span>Trades</span><b>${st.n}</b><small>${st.w} W · ${st.l} L · ${st.be} BE</small></div>
       <div class="ab-k"><span>Win rate</span><b>${st.wr==null ? '–' : fmt(st.wr, 0) + '%'}</b><small>without break-evens</small></div>
@@ -5581,10 +5581,12 @@ function btCsv(list){
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' })); a.download = `backtest-${iso(new Date())}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 /* the form: what happened on the chart + the fundamentals of that week (filled in for you, you can correct them) */
+const LIVE_RUN = 'Live';   /* live (executed) trades live in do_backtests with run = 'Live' (Nov 2026) */
 function openBacktest(row, keep){
   const dlg = document.getElementById('btDlg'), last = ls.get(BT_RUNS_KEY, {}), r = row || { ...keep, pair:keep?.pair || last.pair || S.pair || 'EURUSD', run:keep?.run || last.run || '', direction:'Long', result:null, break_type:null, rules_ok:true };
   const runs = [...new Set([...S.bt.rows.values()].map(x => x.run).filter(Boolean))];
   const F = { pair:r.pair, day:r.day || iso(new Date()), direction:r.direction || 'Long', result:r.result || null, break_type:r.break_type || null, rules_ok:r.rules_ok!==false,
+    kind: row ? (row.run===LIVE_RUN ? 'live' : 'bt') : (keep?.kind || (ls.get('do_bt_src', 'bt')==='live' ? 'live' : ls.get('do_bt_kind', 'bt'))),
     ctxEdit: !!row?.ctx_manual, bias:r.bias ?? null, conviction:r.conviction ?? null, base_score:r.base_score ?? null, quote_score:r.quote_score ?? null, alignment:r.alignment ?? null, news:r.news || null };
   const chips = (name, opts, val) => `<div class="seg bt-ch" role="group">${opts.map(([v, l]) => `<button type="button" data-${name}="${v}" aria-pressed="${String(val)===String(v)}">${l}</button>`).join('')}</div>`;
   const ctxNow = () => { if(F.ctxEdit) return F; const c = btAutoCtx(F.pair, F.day, F.direction); return { ...c }; };
@@ -5615,12 +5617,15 @@ function openBacktest(row, keep){
     dlg.querySelectorAll('[data-bcn]').forEach(b => b.onclick = () => { F.news = b.dataset.bcn==='1' ? ['marked by hand'] : []; draw(); });
     dlg.querySelector('#btBs')?.addEventListener('change', e => { F.base_score = parseNum(e.target.value); draw(); });
     dlg.querySelector('#btQs')?.addEventListener('change', e => { F.quote_score = parseNum(e.target.value); draw(); });
-    ['dir','res','brk'].forEach(k => dlg.querySelectorAll(`[data-${k}]`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset[k]===String({ dir:F.direction, res:F.result, brk:F.break_type }[k])))));
+    ['dir','res','brk','kind'].forEach(k => dlg.querySelectorAll(`[data-${k}]`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset[k]===String({ dir:F.direction, res:F.result, brk:F.break_type, kind:F.kind }[k])))));
+    dlg.querySelector('#btTitle').textContent = `${row ? 'Edit' : 'Log'} ${F.kind==='live' ? 'a live trade' : 'a backtest trade'}`;
+    dlg.querySelector('#btRunWrap').style.visibility = F.kind==='live' ? 'hidden' : '';
     const rIn = dlg.querySelector('#btR'); if(rIn && !rIn.dataset.touched && F.result) rIn.value = { W:2, L:-1, BE:0 }[F.result];
   };
   dlg.innerHTML = `<form id="btForm" method="dialog">
-    <div class="dlg-head"><h2>${row ? 'Edit backtest trade' : 'Log a backtest trade'}</h2></div>
+    <div class="dlg-head"><h2 id="btTitle"></h2></div>
     <div class="dlg-body bt-form">
+      <label><span class="lbl">Type</span>${chips('kind', [['live','🟢 Live trade (executed)'],['bt','🧪 Backtest (replay)']], F.kind)}</label>
       <div class="g3">
         <label><span class="lbl">Pair</span><select class="inp" id="btP">${[...new Set([...allPairs(), F.pair])].map(p => `<option ${p===F.pair ? 'selected' : ''}>${p}</option>`).join('')}</select></label>
         <label><span class="lbl">Entry day</span><input class="inp" type="date" id="btD" value="${F.day}" required></label>
@@ -5641,7 +5646,7 @@ function openBacktest(row, keep){
       </div>
       <div id="btCtx" class="bt-cx"></div>
       <div class="bt-two">
-        <label><span class="lbl">Run (group of backtests)</span><input class="inp" id="btRunIn" list="btRunsL" value="${esc(r.run || '')}" placeholder="e.g. EURUSD Q3 2026"><datalist id="btRunsL">${runs.map(x => `<option>${esc(x)}</option>`).join('')}</datalist></label>
+        <label id="btRunWrap"><span class="lbl">Run (group of backtests)</span><input class="inp" id="btRunIn" list="btRunsL" value="${esc(r.run || '')}" placeholder="e.g. EURUSD Q3 2026"><datalist id="btRunsL">${runs.map(x => `<option>${esc(x)}</option>`).join('')}</datalist></label>
         <label><span class="lbl">Chart link</span><input class="inp" id="btU" value="${esc(r.chart_url || '')}" placeholder="TradingView snapshot"></label>
       </div>
       <label class="sx-sw"><input type="checkbox" id="btOk" ${F.rules_ok ? 'checked' : ''}><i></i>I followed my rules on this one</label>
@@ -5655,24 +5660,25 @@ function openBacktest(row, keep){
   $('#btD').onchange = e => { F.day = e.target.value; draw(); };
   $('#btR').oninput = e => { e.target.dataset.touched = '1'; };
   dlg.querySelectorAll('[data-dir]').forEach(b => b.onclick = () => { F.direction = b.dataset.dir; draw(); });
+  dlg.querySelectorAll('[data-kind]').forEach(b => b.onclick = () => { F.kind = b.dataset.kind; ls.set('do_bt_kind', F.kind); draw(); });
   dlg.querySelectorAll('[data-res]').forEach(b => b.onclick = () => { F.result = b.dataset.res; draw(); });
   dlg.querySelectorAll('[data-brk]').forEach(b => b.onclick = () => { F.break_type = F.break_type===b.dataset.brk ? null : b.dataset.brk; draw(); });
   $('#btCancel').onclick = () => dlg.close();
-  $('#btDel')?.addEventListener('click', async () => { if(!confirm('Delete this backtest trade?')) return;
+  $('#btDel')?.addEventListener('click', async () => { if(!confirm('Delete this trade?')) return;
     const { error } = await sb.from('do_backtests').delete().eq('id', row.id); if(error) return toast(error.message);
     S.bt.rows.delete(row.id); dlg.close(); renderMain(); toast('Deleted'); });
   const save = async next => {
     if(!F.result) return toast('Pick the result');
     const R = parseNum($('#btR').value) ?? { W:2, L:-1, BE:0 }[F.result], tm = $('#btT').value || null, c = ctxNow();
     const rec = { pair:F.pair, day:F.day, entry_time:tm, direction:F.direction, session:sessionName(tm), break_type:F.break_type, result:F.result, r:R,
-      entry:parseNum($('#btE').value), sl:parseNum($('#btS').value), mfe_r:parseNum($('#btM').value), run:$('#btRunIn').value.trim() || null, chart_url:$('#btU').value.trim() || null,
+      entry:parseNum($('#btE').value), sl:parseNum($('#btS').value), mfe_r:parseNum($('#btM').value), run:F.kind==='live' ? LIVE_RUN : ($('#btRunIn').value.trim()!==LIVE_RUN && $('#btRunIn').value.trim()) || null, chart_url:$('#btU').value.trim() || null,
       rules_ok:$('#btOk').checked, notes:$('#btN').value.trim() || null,
       bias:c.bias || null, conviction:c.conviction || null, base_score:c.base_score ?? null, quote_score:c.quote_score ?? null, alignment:c.alignment || null,
       news:c.news || [], news_day:!!(c.news && c.news.length), ctx_manual:F.ctxEdit };
     const q = row ? sb.from('do_backtests').update(rec).eq('id', row.id).select().single() : sb.from('do_backtests').insert(rec).select().single();
     const { data, error } = await q; if(error) return toast(/relation|does not exist|schema cache/i.test(error.message) ? 'Run migration-backtest.sql in Supabase first' : error.message);
     S.bt.rows.set(data.id, data); ls.set(BT_RUNS_KEY, { pair:F.pair, run:rec.run || '' });
-    if(next){ toast('Saved · next one'); openBacktest(null, { pair:F.pair, run:rec.run, day:F.day }); renderMain(); return; }
+    if(next){ toast('Saved · next one'); openBacktest(null, { pair:F.pair, run:F.kind==='live' ? '' : rec.run, day:F.day, kind:F.kind }); renderMain(); return; }
     dlg.close(); renderMain(); toast('Saved');
   };
   $('#btForm').onsubmit = ev => { ev.preventDefault(); save(false); };

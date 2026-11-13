@@ -1,0 +1,36 @@
+name: Weekly live-trade export (Bias Engine trade review)
+
+on:
+  schedule:
+    - cron: '15 5 * * 6'   # Saturday 05:15 UTC (07:15 Bucharest in winter)
+  workflow_dispatch:
+    inputs:
+      week:
+        description: 'ISO week to export, e.g. 2026-W46 (empty = last completed week)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Build trade export from Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          WEEK: ${{ github.event.inputs.week }}
+        run: node scripts/trades-export.mjs
+      - name: Commit export
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main || true
+          git add exports/trades-*.json
+          git diff --cached --quiet && echo "No change" || (git commit -m "Weekly live-trade export" && git push)
