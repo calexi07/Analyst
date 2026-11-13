@@ -5111,7 +5111,7 @@ function hlExpected(now){
 async function renderHealth(quiet){
   const m = quiet ? null : document.getElementById('main');
   if(m) m.innerHTML = `<div class="pairtitle">Health</div><p class="muted" style="font-weight:600">Checking the scheduled jobs…</p>`;
-  const [ix, pa, fv, tr] = await Promise.all([hlFetch('imports/index.json'), hlFetch('exports/latest.json'), hlFetch('exports/fx-vol-latest.json'), hlFetch('exports/trades-latest.json')]);
+  const [ix, pa, fv, tr, dc] = await Promise.all([hlFetch('imports/index.json'), hlFetch('exports/latest.json'), hlFetch('exports/fx-vol-latest.json'), hlFetch('exports/trades-latest.json'), hlFetch('exports/discord-bias.json')]);
   if(!quiet && S.view !== 'health') return;
   const now = new Date(), ids = (ix?.files || []).map(f => f.id), done = new Set(Array.isArray(S.settings?.auto_imports) ? S.settings.auto_imports : []);
   const log = Array.isArray(S.settings?.import_log) ? S.settings.import_log : [];
@@ -5131,6 +5131,9 @@ async function renderHealth(quiet){
   const ex = [
     { job:'Price-action export (Phase 3 input)', sched:'Sat 06:30', st: pw && pw.year===lw.year && pw.week===lw.week ? 'ok' : (now.getDay()===6 && now.getHours() < 8 ? 'wait' : 'miss'), txt: pw ? `Week ${pw.week} · ${pa.generated_at ? fmtT(pa.generated_at) : ''}${pa.pairs_not_logged?.length ? ' · ' + pa.pairs_not_logged.length + ' pairs not logged' : ''}` : 'File missing' },
     { job:'FX volatility (chart kit)', sched:'Sat 07:00 · Sun 12:00', st: fv?.baseline_friday===iso(lastFri) ? 'ok' : (now.getDay()===6 && now.getHours() < 8 ? 'wait' : 'miss'), txt: fv ? `Friday ${fv.baseline_friday} · ${Object.keys(fv.data||{}).length} pairs` : 'File missing' },
+    (() => { const nx = new Date(now); const sat = now.getDay()===6 && now.getHours() >= 14 || now.getDay()===0; if(sat){ nx.setDate(nx.getDate() + (now.getDay()===6 ? 2 : 1)); } const want = isoWeek(nx);
+      return { job:'Discord bot data', sched:'Sat (Phase 1) · Sun (Phase 2)', st: !dc ? (HL_START < '2026-11-14' && now < new Date('2026-11-14T14:00:00') ? 'wait' : 'miss') : dc.week===want.week && dc.year===want.year ? 'ok' : 'miss',
+        txt: dc ? `Week ${dc.week} · ${esc(dc.status || '')}` : 'exports/discord-bias.json not published yet (first automatic one: Phase 1, Sat 14 Nov)' }; })(),
     { job:'Live-trade export (trade review input)', sched:'Fri 21:00–23:50 · Sat 07:15', st: tr ? 'ok' : 'miss', txt: tr ? `Week ${tr.week?.week} · ${tr.count} trade${tr.count===1 ? '' : 's'} · ${fmtT(tr.generated_at)}` : 'File missing' } ];
   const nMiss = rows.filter(r => r.st==='miss').length + ex.filter(r => r.st==='miss').length;
   S.hlMiss = nMiss; hlBadge(nMiss);
