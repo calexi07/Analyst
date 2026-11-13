@@ -12,21 +12,24 @@ function isoWeek(dt) { const d = new Date(Date.UTC(dt.getUTCFullYear(), dt.getUT
   const y = d.getUTCFullYear(), w = Math.ceil(((d - Date.UTC(y, 0, 1)) / 864e5 + 1) / 7); return { year: y, week: w }; }
 function mondayOf(y, w) { const j4 = new Date(Date.UTC(y, 0, 4)); const m = new Date(j4); m.setUTCDate(4 - ((j4.getUTCDay() || 7) - 1) + (w - 1) * 7); return m; }
 
-// Week: WEEK=2026-W46 if given (manual run), otherwise the last completed Mon–Fri week.
+// Week: WEEK=2026-W46 if given (manual run); on Friday–Sunday the current week, otherwise the last completed week.
 let y, w; const arg = (process.env.WEEK || '').match(/(\d{4})-?W(\d{1,2})/i);
 if (arg) { y = +arg[1]; w = +arg[2]; }
-else { const d = new Date(); const dow = d.getUTCDay(); if (!(dow === 6 || dow === 0)) d.setUTCDate(d.getUTCDate() - 7); ({ year: y, week: w } = isoWeek(d)); }
+else { const d = new Date(); const dow = d.getUTCDay(); if (dow >= 1 && dow <= 4) d.setUTCDate(d.getUTCDate() - 7); ({ year: y, week: w } = isoWeek(d)); }   // Fri/Sat/Sun → the current week; Mon–Thu → last week
 const mon = mondayOf(y, w), sun = new Date(mon); sun.setUTCDate(mon.getUTCDate() + 6);
 const from = iso(mon), to = iso(sun);
 
 const res = await fetch(`${URL_}/rest/v1/do_backtests?select=*&run=eq.Live&order=day.asc,entry_time.asc&limit=10000`,
   { headers: { apikey: KEY, Authorization: `Bearer ${KEY}` } });
 if (!res.ok) { console.error('Supabase error', res.status, await res.text()); process.exit(1); }
-const all = (await res.json()).map(t => ({ ...t, iso_week: (({ year, week }) => `${year}-W${String(week).padStart(2, '0')}`)(isoWeek(new Date(t.day + 'T12:00:00Z'))) }));
+// extra fields saved by the app in do_settings under btx:<trade id> (liquidity sweep day and time)
+const xr = await fetch(`${URL_}/rest/v1/do_settings?select=key,value&key=like.btx:*&limit=10000`, { headers: { apikey: KEY, Authorization: `Bearer ${KEY}` } });
+const extra = new Map(xr.ok ? (await xr.json()).map(r => [r.key.slice(4), r.value || {}]) : []);
+const all = (await res.json()).map(t => ({ ...t, sweep_day: extra.get(String(t.id))?.sweep_day ?? null, sweep_time: extra.get(String(t.id))?.sweep_time ?? null, iso_week: (({ year, week }) => `${year}-W${String(week).padStart(2, '0')}`)(isoWeek(new Date(t.day + 'T12:00:00Z'))) }));
 const week = all.filter(t => t.day >= from && t.day <= to);
 const ww = String(w).padStart(2, '0');
 const meta = { generated_at: new Date().toISOString(), source: 'GitHub Action trades-export (Supabase do_backtests, run = Live)',
-  note: 'Live trades logged by the trader in Daily Observer. entry_time is Bucharest time. r = result in R multiples.' };
+  note: 'Live trades logged by the trader in Daily Observer. entry_time and sweep_time (when the liquidity was taken) are Bucharest time. r = result in R multiples.' };
 const out = { format: 'daily-observer-trades', version: 1, ...meta, week: { year: y, week: w, from, to }, count: week.length, trades: week };
 mkdirSync('exports', { recursive: true });
 writeFileSync(`exports/trades-${y}-W${ww}.json`, JSON.stringify(out, null, 1));

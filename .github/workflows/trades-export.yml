@@ -2,11 +2,12 @@ name: Weekly live-trade export (Bias Engine trade review)
 
 on:
   schedule:
-    - cron: '15 5 * * 6'   # Saturday 05:15 UTC (07:15 Bucharest in winter)
+    - cron: '*/30 8-21 * * 5'   # Friday every 30 min, 10:00–23:30 Bucharest (winter): fresh data for the Friday review and manual runs
+    - cron: '15 5 * * 6'        # Saturday 05:15 UTC: final export of the week
   workflow_dispatch:
     inputs:
       week:
-        description: 'ISO week to export, e.g. 2026-W46 (empty = last completed week)'
+        description: 'ISO week to export, e.g. 2026-W46 (empty = this week on Fri–Sun, else last week)'
         required: false
         default: ''
 

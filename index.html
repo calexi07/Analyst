@@ -5585,6 +5585,7 @@ const LIVE_RUN = 'Live';   /* live (executed) trades live in do_backtests with r
 function openBacktest(row, keep){
   const dlg = document.getElementById('btDlg'), last = ls.get(BT_RUNS_KEY, {}), r = row || { ...keep, pair:keep?.pair || last.pair || S.pair || 'EURUSD', run:keep?.run || last.run || '', direction:'Long', result:null, break_type:null, rules_ok:true };
   const runs = [...new Set([...S.bt.rows.values()].map(x => x.run).filter(Boolean))];
+  const btx = (row && S.settings?.[`btx:${row.id}`]) || {};   /* extra trade fields kept in do_settings (no schema change): liquidity sweep day/time */
   const F = { pair:r.pair, day:r.day || iso(new Date()), direction:r.direction || 'Long', result:r.result || null, break_type:r.break_type || null, rules_ok:r.rules_ok!==false,
     kind: row ? (row.run===LIVE_RUN ? 'live' : 'bt') : (keep?.kind || (ls.get('do_bt_src', 'bt')==='live' ? 'live' : ls.get('do_bt_kind', 'bt'))),
     ctxEdit: !!row?.ctx_manual, bias:r.bias ?? null, conviction:r.conviction ?? null, base_score:r.base_score ?? null, quote_score:r.quote_score ?? null, alignment:r.alignment ?? null, news:r.news || null };
@@ -5630,6 +5631,10 @@ function openBacktest(row, keep){
         <label><span class="lbl">Pair</span><select class="inp" id="btP">${[...new Set([...allPairs(), F.pair])].map(p => `<option ${p===F.pair ? 'selected' : ''}>${p}</option>`).join('')}</select></label>
         <label><span class="lbl">Entry day</span><input class="inp" type="date" id="btD" value="${F.day}" required></label>
         <label><span class="lbl">Entry time (RO)</span><input class="inp" type="time" id="btT" value="${esc(r.entry_time || '')}"></label>
+      </div>
+      <div class="bt-two">
+        <label><span class="lbl">Liquidity taken · day</span><input class="inp" type="date" id="btSwD" value="${esc(btx.sweep_day || '')}"></label>
+        <label><span class="lbl">Liquidity taken · time (RO)</span><input class="inp" type="time" id="btSwT" value="${esc(btx.sweep_time || '')}"></label>
       </div>
       <div class="bt-two">
         <label><span class="lbl">Direction</span>${chips('dir', [['Long','▲ Long'],['Short','▼ Short']], F.direction)}</label>
@@ -5678,6 +5683,8 @@ function openBacktest(row, keep){
     const q = row ? sb.from('do_backtests').update(rec).eq('id', row.id).select().single() : sb.from('do_backtests').insert(rec).select().single();
     const { data, error } = await q; if(error) return toast(/relation|does not exist|schema cache/i.test(error.message) ? 'Run migration-backtest.sql in Supabase first' : error.message);
     S.bt.rows.set(data.id, data); ls.set(BT_RUNS_KEY, { pair:F.pair, run:rec.run || '' });
+    { const swT = $('#btSwT').value, swD = $('#btSwD').value || (swT ? F.day : ''), k = `btx:${data.id}`;
+      if(swT || swD || S.settings?.[k]) await saveSettingKey(k, { sweep_day:swD || null, sweep_time:swT || null }); }
     if(next){ toast('Saved · next one'); openBacktest(null, { pair:F.pair, run:F.kind==='live' ? '' : rec.run, day:F.day, kind:F.kind }); renderMain(); return; }
     dlg.close(); renderMain(); toast('Saved');
   };
