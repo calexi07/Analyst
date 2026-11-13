@@ -2132,6 +2132,12 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .lu-bar{ display:flex; flex-wrap:wrap; gap:6px 18px; align-items:center; padding:9px 14px; margin:0 0 14px; font-size:12.5px; }
   .lu-t{ font-weight:800; }
   .fc-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px; }
+  .fa-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; }
+  .fa-card{ text-align:left; border:1px solid var(--line); border-radius:12px; padding:9px 11px; background:var(--surface); color:var(--ink); cursor:pointer; display:grid; gap:4px; }
+  .fa-card:hover{ border-color:color-mix(in srgb, var(--ink) 30%, var(--line)); }
+  .fa-top{ display:flex; justify-content:space-between; align-items:baseline; gap:6px; } .fa-top b{ font-size:14.5px; } .fa-gap{ font-size:18px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .fa-gap.pos{ color:#22AB94; } .fa-gap.neg{ color:#F23645; } .fa-sub{ font-size:11.5px; font-weight:700; }
+  .fa-days{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 10px; }
   .fc-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px; }
   .fc-card{ text-align:left; border:1px solid var(--line); border-radius:14px; padding:12px 14px; background:var(--surface); color:var(--ink); cursor:pointer; display:grid; gap:6px; }
   .fc-card:hover{ border-color:var(--ink); }
@@ -2754,8 +2760,8 @@ function renderMain(){
   else if(S.view === 'overview'){ renderOverview(); histTabsInto('week'); }
   else if(S.view === 'accounts') (KIOSK ? renderKiosk : renderAccounts)();
   else if(S.view === 'goals') renderGoals();
-  else if(S.view === 'history'){ let t = ls.get('do_hist_tab', 'checks'); if(!['checks','stories','fund'].includes(t)) t = 'checks';
-    if(t==='checks') renderChecks(); else if(t==='stories') renderStories(); else renderHistory(); histTabsInto(t); }
+  else if(S.view === 'history'){ let t = ls.get('do_hist_tab', 'fa'); if(!['fa','fund'].includes(t)) t = 'fa';
+    if(t==='fa') renderFA(); else renderHistory(); histTabsInto(t); }
   else if(S.view === 'desk'){ S.view = 'today'; ls.set('do_view', 'today'); renderToday(); }   /* Desk was removed */
   else if(S.view === 'today') renderToday();
   else if(S.view === 'prompts') renderPrompts();
@@ -4911,7 +4917,7 @@ function lastUpdHtml(){
 function histTabsInto(tab){
   const m = document.getElementById('main'); if(!m) return;
   m.insertAdjacentHTML('afterbegin', `<header class="hp-top"><div><div class="pairtitle">Check</div><div class="muted" style="font-weight:600;font-size:12px">Fundamental Analyse</div></div>
-    <nav class="hp-tabs" role="tablist">${[['checks','📍 Daily checks','morning and evening checks, imported day by day'],['stories','📖 Stories','the weekly story of every pair'],['fund','🧭 Bias history','bias & scores week by week'],['week','🗓️ This week','every pair at a glance']].map(([k, l, t]) => `<button role="tab" data-htab="${k}" aria-selected="${tab===k}" title="${t}">${l}</button>`).join('')}</nav></header>${lastUpdHtml()}`);
+    <nav class="hp-tabs" role="tablist">${[['fa','📖 Fundamental','weekly story and daily checks of every pair'],['fund','🧭 Bias history','bias & scores week by week'],['week','🗓️ This week','every pair at a glance']].map(([k, l, t]) => `<button role="tab" data-htab="${k}" aria-selected="${tab===k}" title="${t}">${l}</button>`).join('')}</nav></header>${lastUpdHtml()}`);
   m.querySelectorAll('[data-htab]').forEach(b => b.onclick = () => { const k = b.dataset.htab; if(k!=='week') ls.set('do_hist_tab', k);
     S.view = k==='week' ? 'overview' : 'history'; ls.set('do_view', 'history'); renderMain(); });
 }
@@ -5019,6 +5025,63 @@ function fcCcyChips(){ return `<div class="chips">${['ALL', ...CCYS].map(c => `<
 function fcBindCcy(){ document.querySelectorAll('[data-fcc]').forEach(b => b.onclick = () => { S.fc.ccy = b.dataset.fcc; ls.set('do_fc_ccy', S.fc.ccy); renderMain(); }); }
 const fcPairOk = p => S.fc.ccy==='ALL' || base(p)===S.fc.ccy || quote(p)===S.fc.ccy;
 function storyWeeks(){ const set = new Map(); for(const r of S.weekly.values()) if(det(r).story?.text) set.set(r.year*100 + r.week, { year:r.year, week:r.week }); return [...set.values()].sort((a,b) => (a.year*100+a.week) - (b.year*100+b.week)); }
+/* ===== Fundamental tab (Nov 2026): one grid per week, pair popup with Weekly fundamental / Daily check ===== */
+function faWeeks(){ const set = new Map(); const add = (y, w) => set.set(y*100 + w, { year:y, week:w });
+  for(const r of S.weekly.values()) if(det(r).story?.text) add(r.year, r.week);
+  for(const k of checkKeys()){ const iw = isoWeek(parseISO(k.split(':')[1])); add(iw.year, iw.week); }
+  return [...set.values()].sort((a, b) => (a.year*100+a.week) - (b.year*100+b.week)); }
+function faWeekDays(y, w){ const m = mondayOf(y, w); return [0,1,2,3,4,5,6].map(n => { const d = new Date(m); d.setDate(m.getDate()+n); return iso(d); }); }
+function faChecks(p, y, w){ return faWeekDays(y, w).flatMap(ds => checksOn(ds).map(({ sl, j }) => ({ ds, sl, j, x:(j.pairs||[]).find(v => normPair(v.pair)===p) })).filter(c => c.x)); }
+function faGap(p, r, cks){ const d = r ? det(r) : {}; if(d.base_score!=null && d.quote_score!=null) return d.base_score - d.quote_score; const c = cks.at(-1); return c?.x?.published_gap ?? null; }
+S.fa = S.fa || null;
+function renderFA(){
+  const all = faWeeks(), cur = isoWeek(new Date());
+  if(!S.fa){ const last = all.filter(k => k.year*100+k.week <= cur.year*100+cur.week + 1).at(-1) || all.at(-1) || cur; S.fa = { year:last.year, week:last.week }; }
+  const y = S.fa.year, w = S.fa.week, i = all.findIndex(k => k.year===y && k.week===w);
+  const rows = [...new Set([...allPairs(), 'XAUUSD'])].filter(fcPairOk).map(p => { const r = S.weekly.get(wk(p, y, w)), cks = faChecks(p, y, w); return { p, r, cks }; })
+    .filter(x => (x.r && (det(x.r).story?.text || x.r.bias)) || x.cks.length);
+  const nCk = faWeekDays(y, w).reduce((n, ds) => n + checksOn(ds).length, 0);
+  document.getElementById('main').innerHTML = `
+    <div class="fc-bar"><button class="btn" id="faPrev" ${i<=0 ? 'disabled' : ''}>‹</button><b style="font-size:16px">Week ${w} · ${y}</b><button class="btn" id="faNext" ${i<0 || i>=all.length-1 ? 'disabled' : ''}>›</button>
+      <span class="muted" style="font-size:12.5px;font-weight:600">${wkSpan(y, w)} · ${nCk} daily check${nCk===1 ? '' : 's'} · tap a pair</span></div>
+    <div class="fc-bar">${fcCcyChips()}</div>
+    ${rows.length ? `<div class="fa-grid">${rows.map(({ p, r, cks }) => { const g = faGap(p, r, cks), bias = r?.bias || cks.at(-1)?.x?.bias, [tl, tc] = BIAS_TAG(bias);
+      return `<button class="fa-card" data-fa="${p}"><div class="fa-top"><b>${p}</b><span class="fa-gap ${g>0 ? 'pos' : g<0 ? 'neg' : ''}">${g==null ? '–' : (g>0 ? '+' : '') + g}</span></div>
+        <div class="fa-sub"><span class="fc-tag ${tc}">${tl}</span>${r?.conviction ? ` <span class="muted">· ${esc(r.conviction)}</span>` : ''}</div></button>`; }).join('')}</div>`
+      : `<div class="card fc-empty"><p>Nothing imported for this week yet. The weekly analysis and the daily checks arrive automatically.</p></div>`}`;
+  fcBindCcy();
+  document.getElementById('faPrev').onclick = () => { if(i>0){ S.fa = { ...all[i-1] }; renderMain(); } };
+  document.getElementById('faNext').onclick = () => { if(i>=0 && i<all.length-1){ S.fa = { ...all[i+1] }; renderMain(); } };
+  document.querySelectorAll('[data-fa]').forEach(b => b.onclick = () => openPairFA(b.dataset.fa, y, w));
+}
+function openPairFA(p, y, w, tab){
+  const d = document.getElementById('storyDlg'), r = S.weekly.get(wk(p, y, w)), st = r ? det(r).story : null, cks = faChecks(p, y, w);
+  const g = faGap(p, r, cks), [tl, tc] = BIAS_TAG(r?.bias || cks.at(-1)?.x?.bias);
+  tab = tab || (st?.text ? 'wk' : 'dc'); let sub = 'art', ci = cks.length - 1;
+  const paint = () => {
+    const c = cks[ci];
+    const body = tab==='wk'
+      ? (st?.text ? `${st.kit ? `<div class="seg" role="group" style="margin-bottom:10px"><button type="button" data-fsub="art" aria-pressed="${sub==='art'}">📖 Article</button><button type="button" data-fsub="tv" aria-pressed="${sub==='tv'}">📈 TV</button></div>` : ''}
+          ${sub==='tv' && st.kit ? kitHtml(st.kit) : `${st.title ? `<p style="font-weight:700;margin:0 0 8px">${esc(st.title)}</p>` : ''}<div class="fc-post">${bb2html(fcClean(st.text))}</div>`}`
+        : `<p class="muted">No weekly story imported for this pair in week ${w}.</p>`)
+      : (cks.length ? `<div class="fa-days">${cks.map((k, n) => `<button type="button" class="ch" data-fday="${n}" aria-pressed="${n===ci}">${fmtDayShort(k.ds)} ${k.sl==='morning' ? '🌅' : '🌙'}</button>`).join('')}</div>
+          <div class="flex items-center gap-2" style="flex-wrap:wrap;margin-bottom:8px"><span class="fc-tag ${stCls(c.x.status)}">${esc(c.x.status||'')}</span>${c.x.read ? `<span class="muted" style="font-size:12.5px;font-weight:600">${esc(c.x.read)}</span>` : ''}${c.x.flag ? `<span class="muted" style="font-size:12.5px">· chart flag ${esc(c.x.flag)}</span>` : ''}</div>
+          <div class="fc-post">${bb2html(fcClean(c.x.note||''))}</div>`
+        : `<p class="muted">No daily check imported for this pair in week ${w}.</p>`);
+    const copies = tab==='wk' ? (st?.text ? [['Copy title', st.title||p], ['Copy post', st.text]] : []) : (c ? [['Copy note', c.x.note||'']] : []);
+    d.innerHTML = `<div class="dlg-head"><div class="flex items-center gap-2" style="flex-wrap:wrap"><h2 style="margin:0">${esc(p)}</h2><span class="fc-tag ${tc}">${tl}${r?.conviction ? ' · ' + esc(r.conviction) : ''}</span>${g!=null ? `<span class="fa-gap ${g>0 ? 'pos' : g<0 ? 'neg' : ''}" style="font-size:15px">gap ${(g>0 ? '+' : '') + g}</span>` : ''}</div>
+        <p class="muted" style="margin-top:4px;font-weight:600">Week ${w} · ${wkSpan(y, w)}</p></div>
+      <div class="seg" role="tablist" style="margin:0 20px 8px"><button type="button" data-ftab="wk" aria-pressed="${tab==='wk'}">📖 Weekly fundamental</button><button type="button" data-ftab="dc" aria-pressed="${tab==='dc'}">📍 Daily check${cks.length ? ' (' + cks.length + ')' : ''}</button></div>
+      <div class="dlg-body" style="max-height:62vh;overflow:auto">${body}</div>
+      <div class="dlg-foot">${copies.map((c2, n) => `<button class="btn ${n===copies.length-1 ? 'btn-primary' : ''}" data-cp="${n}">${esc(c2[0])}</button>`).join('')}<button class="btn" id="stClose">Close</button></div>`;
+    d.querySelectorAll('[data-ftab]').forEach(b => b.onclick = () => { tab = b.dataset.ftab; paint(); });
+    d.querySelectorAll('[data-fsub]').forEach(b => b.onclick = () => { sub = b.dataset.fsub; paint(); });
+    d.querySelectorAll('[data-fday]').forEach(b => b.onclick = () => { ci = +b.dataset.fday; paint(); });
+    d.querySelectorAll('[data-cp]').forEach(b => b.onclick = () => copyTxt(copies[+b.dataset.cp][1], b));
+    d.querySelector('#stClose').onclick = () => d.close();
+  };
+  paint(); d.onclick = ev => { if(ev.target===d) d.close(); }; if(!d.open) d.showModal();
+}
 function renderStories(){
   const all = storyWeeks(), cur = isoWeek(new Date());
   if(S.fc.y==null){ const last = all.filter(k => k.year*100+k.week <= cur.year*100+cur.week + 1).at(-1) || all.at(-1) || cur; S.fc.y = last.year; S.fc.w = last.week; }
@@ -5094,7 +5157,7 @@ function openCheckImport(j){
     try{ const { error } = await sb.from('do_settings').upsert({ key, value:j }, { onConflict:'key' }); if(error) throw error;
       S.settings[key] = j; fundDlg.close(); toast(`Check imported for ${fmtDayShort(day)} (${sl})`);
       logImport({ kind:'check', id:'manual', date:day, slot:sl, check:j.check ?? null, time:j.time || '' });
-      S.fc.day = day; ls.set('do_hist_tab', 'checks'); goView('history');
+      S.fc.day = day; S.fa = { ...(S.fa||{}), ...isoWeek(parseISO(day)) }; ls.set('do_hist_tab', 'fa'); goView('history');
     }catch(e){ console.error(e); toast('Import failed: ' + e.message); btn.disabled = false; btn.textContent = 'Import'; } };
   fundDlg.showModal();
 }
