@@ -2134,6 +2134,8 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .fc-bar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px; }
   .hl-t{ width:100%; border-collapse:collapse; font-size:13px; } .hl-t td, .hl-t th{ padding:7px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; } .hl-t th{ font-size:11.5px; opacity:.7; }
   .hl-s{ font-weight:800; white-space:nowrap; } .hl-s.ok{ color:#22AB94; } .hl-s.miss{ color:#F23645; } .hl-s.wait{ color:#E0A800; } .hl-s.na{ opacity:.6; }
+  .ex-w{ margin:6px 0 2px; } .ex-chips{ display:flex; flex-wrap:wrap; gap:5px; margin:4px 0; } .ex-c{ font-size:12px; font-weight:800; padding:2px 8px; border-radius:9px; border:1px solid var(--line); font-variant-numeric:tabular-nums; }
+  .ex-c.warn{ color:#E0A800; border-color:#E0A80066; } .ex-c.bad{ color:#F23645; border-color:#F2364566; } .ex-msg{ font-size:12.5px; font-weight:700; margin:4px 0; } .ex-msg.warn{ color:#E0A800; } .ex-msg.bad{ color:#F23645; }
   .an-kpi{ display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; margin-bottom:12px; }
   .an-kpi > div{ border:1px solid var(--line); border-radius:12px; padding:9px 11px; background:var(--surface); } .an-kpi span{ display:block; font-size:11.5px; opacity:.7; font-weight:600; } .an-kpi b{ font-size:18px; font-variant-numeric:tabular-nums; }
   .an-sec{ margin:16px 0 8px; font-size:15px; font-weight:800; }
@@ -5644,7 +5646,7 @@ function renderBacktest(){
       ${seg([['all','All'],['365','1Y'],['180','6M'],['90','3M']], per, 'data-btper')}
     </div>
     ${(() => { const op = [...S.bt.rows.values()].filter(x => x.run===LIVE_RUN && x.result==='O').sort((a, b) => (a.day + (a.entry_time||'')).localeCompare(b.day + (b.entry_time||'')));
-      return op.length ? `<div class="card" style="margin-bottom:12px"><div style="font-weight:800;margin-bottom:6px">🟢 Open live trades (${op.length}) <span class="muted" style="font-weight:600;font-size:12px">· tap to close one with its result</span></div><div class="fc-chk">${op.map(x => `<button class="fc-ckb" data-btid="${x.id}"><b>${esc(x.pair)}</b><span class="${x.direction==='Long' ? 'pos' : 'neg'}" style="font-weight:700">${x.direction==='Long' ? '▲ Long' : '▼ Short'}</span><span class="muted" style="font-size:12px">${fmtDayShort(x.day)}${x.entry_time ? ' ' + esc(x.entry_time) : ''}</span></button>`).join('')}</div></div>` : ''; })()}
+      return op.length ? `<div class="card" style="margin-bottom:12px"><div style="font-weight:800;margin-bottom:6px">🟢 Open live trades (${op.length}) <span class="muted" style="font-weight:600;font-size:12px">· tap to close one with its result</span></div>${expoHtml(op, 'Exposure by currency, 1R per open trade (your 1% risk). Net 2R on one currency = amber, 3R or more = red.')}<div class="fc-chk">${op.map(x => `<button class="fc-ckb" data-btid="${x.id}"><b>${esc(x.pair)}</b><span class="${x.direction==='Long' ? 'pos' : 'neg'}" style="font-weight:700">${x.direction==='Long' ? '▲ Long' : '▼ Short'}</span><span class="muted" style="font-size:12px">${fmtDayShort(x.day)}${x.entry_time ? ' ' + esc(x.entry_time) : ''}</span></button>`).join('')}</div></div>` : ''; })()}
     ${!list.length ? `<div class="empty"><div class="orb" aria-hidden="true"></div><p>${src==='live' ? 'No live trades in this filter yet. Log each executed trade here; the Saturday trade review reads them.' : 'No backtest trades yet. Open TradingView in replay mode, find your setups (liquidity → fractal change → retest) and log each one here.'}</p><button class="btn btn-primary" id="btAdd2">+ Log the first trade</button></div>` : `
     <section class="bt-kpi">
       <div class="ab-k"><span>Trades</span><b>${st.n}</b><small>${st.w} W · ${st.l} L · ${st.be} BE</small></div>
@@ -5684,6 +5686,15 @@ function btCsv(list){
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' })); a.download = `backtest-${iso(new Date())}.csv`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 /* the form: what happened on the chart + the fundamentals of that week (filled in for you, you can correct them) */
+/* currency exposure of open live trades, in R (each open trade = 1R at your fixed 1% risk). Long EURUSD = +1R EUR, −1R USD. */
+function openLive(extra){ const a = [...S.bt.rows.values()].filter(x => x.run===LIVE_RUN && x.result==='O'); return extra ? [...a.filter(x => x.id!==extra.id), extra] : a; }
+function expo(list){ const m = {}; list.forEach(x => { const sgn = x.direction==='Long' ? 1 : -1, b = base(x.pair), q = quote(x.pair);
+    [[b, sgn], [q, -sgn]].forEach(([c, v]) => { (m[c] ||= { net:0, n:0, pairs:[] }); m[c].net += v; m[c].n++; m[c].pairs.push(`${x.pair} ${x.direction==='Long' ? '▲' : '▼'}`); }); });
+  return Object.entries(m).map(([c, v]) => ({ c, ...v, lvl: Math.abs(v.net) >= 3 ? 'bad' : Math.abs(v.net) >= 2 ? 'warn' : 'ok' })).sort((a, b) => Math.abs(b.net) - Math.abs(a.net)); }
+function expoHtml(list, note){ const e = expo(list).filter(x => x.net !== 0); if(!e.length) return '';
+  const hot = e.filter(x => x.lvl!=='ok');
+  return `<div class="ex-w">${hot.length ? `<div class="ex-msg ${hot.some(x => x.lvl==='bad') ? 'bad' : 'warn'}">⚠️ ${hot.map(x => `${x.net > 0 ? 'Long' : 'Short'} ${x.c} ${Math.abs(x.net)}R (${esc(x.pairs.join(', '))})`).join(' · ')} — these trades are one bet on the same currency.</div>` : ''}
+    <div class="ex-chips">${e.map(x => `<span class="ex-c ${x.lvl}" title="${esc(x.pairs.join(', '))}">${x.c} ${x.net > 0 ? '+' : ''}${x.net}R</span>`).join('')}</div>${note ? `<div class="muted" style="font-size:11.5px">${note}</div>` : ''}</div>`; }
 const LIVE_RUN = 'Live';   /* live (executed) trades live in do_backtests with run = 'Live' (Nov 2026) */
 function openBacktest(row, keep){
   const dlg = document.getElementById('btDlg'), last = ls.get(BT_RUNS_KEY, {}), r = row || { ...keep, pair:keep?.pair || last.pair || S.pair || 'EURUSD', run:keep?.run || last.run || '', direction:'Long', result:null, break_type:null, rules_ok:true };
@@ -5725,6 +5736,8 @@ function openBacktest(row, keep){
     dlg.querySelector('#btTitle').textContent = `${row ? 'Edit' : 'Log'} ${F.kind==='live' ? 'a live trade' : 'a backtest trade'}`;
     dlg.querySelector('#btRunWrap').style.visibility = F.kind==='live' ? 'hidden' : '';
     dlg.querySelector('#btULbl').textContent = F.kind==='live' ? 'TradingView snapshot (required)' : 'Chart link';
+    { const box = dlg.querySelector('#btExpo'); if(box){ const me = { id:row?.id ?? '__new', pair:F.pair, direction:F.direction, run:LIVE_RUN, result:'O' };
+      box.innerHTML = F.kind==='live' && F.result==='O' ? expoHtml(openLive(me), 'Exposure with this trade included.') : ''; } }
     const rIn = dlg.querySelector('#btR'); if(rIn && !rIn.dataset.touched && F.result) rIn.value = { W:2, L:-1, BE:0 }[F.result] ?? '';
   };
   dlg.innerHTML = `<form id="btForm" method="dialog">
@@ -5754,6 +5767,7 @@ function openBacktest(row, keep){
         <label><span class="lbl">Max favourable (R)</span><input class="inp num" id="btM" inputmode="decimal" value="${r.mfe_r ?? ''}" placeholder="best point, e.g. 1.6"></label>
         <label><span class="lbl">Max adverse (R)</span><input class="inp num" id="btMae" inputmode="decimal" value="${btx.mae_r ?? ''}" placeholder="worst point, e.g. 0.7"></label>
       </div>
+      <div id="btExpo"></div>
       <div id="btCtx" class="bt-cx"></div>
       <div class="bt-two">
         <label id="btRunWrap"><span class="lbl">Run (group of backtests)</span><input class="inp" id="btRunIn" list="btRunsL" value="${esc(r.run || '')}" placeholder="e.g. EURUSD Q3 2026"><datalist id="btRunsL">${runs.map(x => `<option>${esc(x)}</option>`).join('')}</datalist></label>
