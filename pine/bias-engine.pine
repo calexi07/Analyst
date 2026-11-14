@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — weekly bias + daily checks (history) on the chart.
-// Generated automatically: 2026-11-14 21:06 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 4 daily checks.
+// Generated automatically: 2026-11-14 21:13 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 4 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // Fundamental context only. Not a trade signal.
 //@version=6
@@ -24,7 +24,7 @@ color  bullC   = input.color(#22AB94, "Bullish",  group = "Colours")
 color  bearC   = input.color(#F23645, "Bearish",  group = "Colours")
 color  neutC   = input.color(#787B86, "Two-sided", group = "Colours")
 
-// ───────── data (generated 2026-11-14 21:06 UTC) ─────────
+// ───────── data (generated 2026-11-14 21:13 UTC) ─────────
 var string[] PAIRS = array.from("EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD")
 var string[] CCY   = array.from("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "XAU")
 var int[]    wT = array.new_int()     // week start (Sunday 21:00 UTC)
@@ -212,8 +212,18 @@ while ci < array.size(cT) and array.get(cT, ci) < barEnd
             ckTip += (ckTip == "" ? "" : "\n\n") + "▌" + array.get(cN, ci) + "\n" + f_emo(s) + " " + f_sname(s) + "\n" + gapTxt + (chg == "" ? "" : "\n" + chg) + (hk == "" or hk == "-" ? "" : "\n\n" + f_wrap(hk, 60)) + (bL == "" ? "" : "\n\n" + bL) + (qL == "" ? "" : "\n" + qL)
             prevS := s
     ci += 1
+var label[] ckLbl = array.new<label>()
+var int[] ckWk = array.new_int()
 if showCk and ckTxt != ""
-    label.new(bar_index, low, ckTxt, yloc = yloc.belowbar, style = label.style_none, size = mob ? size.small : TS, tooltip = ckTip + "\n\nMarker = latest check of the day. Fundamental context only, not a trade signal.", textcolor = chart.fg_color)
+    color ckC = color.new(f_stc(prevS), dark ? 20 : 5)
+    array.push(ckWk, array.size(wkTop) - 1)
+    array.push(ckLbl, label.new(bar_index, high, ckTxt, yloc = yloc.price, style = label.style_label_up, color = ckC, textcolor = color.white, size = mob ? size.small : size.normal, tooltip = ckTip + "\n\nMarker = latest check of the day. Fundamental context only, not a trade signal."))
+// checks sit on the same line as the week labels, just under it
+if barstate.islast and array.size(ckLbl) > 0
+    for j = 0 to array.size(ckLbl) - 1
+        int wq = array.get(ckWk, j)
+        float y = wkPos == "Above the week's high" and wq >= 0 and wq < array.size(wkTop) ? array.get(wkTop, wq) : na(visHi) ? high : visHi
+        label.set_y(array.get(ckLbl, j), y + nz(atrPad))
 
 // ───────── info table and dashboard ─────────
 f_curWeek() =>
