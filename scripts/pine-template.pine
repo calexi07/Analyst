@@ -161,8 +161,18 @@ while ci < array.size(cT) and array.get(cT, ci) < barEnd
             ckTip += (ckTip == "" ? "" : "\n\n") + "▌" + array.get(cN, ci) + "\n" + f_emo(s) + " " + f_sname(s) + "\n" + gapTxt + (chg == "" ? "" : "\n" + chg) + (hk == "" or hk == "-" ? "" : "\n\n" + f_wrap(hk, 60)) + (bL == "" ? "" : "\n\n" + bL) + (qL == "" ? "" : "\n" + qL)
             prevS := s
     ci += 1
+var label[] ckLbl = array.new<label>()
+var int[] ckWk = array.new_int()
 if showCk and ckTxt != ""
-    label.new(bar_index, low, ckTxt, yloc = yloc.belowbar, style = label.style_none, size = mob ? size.small : TS, tooltip = ckTip + "\n\nMarker = latest check of the day. Fundamental context only, not a trade signal.", textcolor = chart.fg_color)
+    color ckC = color.new(f_stc(prevS), dark ? 20 : 5)
+    array.push(ckWk, array.size(wkTop) - 1)
+    array.push(ckLbl, label.new(bar_index, high, ckTxt, yloc = yloc.price, style = label.style_label_up, color = ckC, textcolor = color.white, size = mob ? size.small : size.normal, tooltip = ckTip + "\n\nMarker = latest check of the day. Fundamental context only, not a trade signal."))
+// checks sit on the same line as the week labels, just under it
+if barstate.islast and array.size(ckLbl) > 0
+    for j = 0 to array.size(ckLbl) - 1
+        int wq = array.get(ckWk, j)
+        float y = wkPos == "Above the week's high" and wq >= 0 and wq < array.size(wkTop) ? array.get(wkTop, wq) : na(visHi) ? high : visHi
+        label.set_y(array.get(ckLbl, j), y + nz(atrPad))
 
 // ───────── info table and dashboard ─────────
 f_curWeek() =>
