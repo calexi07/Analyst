@@ -1,0 +1,191 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Forex Fundamental Bias Engine — weekly bias + daily checks (history) on the chart.
+// Generated automatically: 2026-11-14 20:25 UTC. Data: 2026-W46 → 2026-W47 (2 weeks), 3 daily checks.
+// Do not edit by hand: the data block is rewritten after every phase and daily check.
+// Fundamental context only. Not a trade signal.
+//@version=6
+indicator("Bias Engine · weekly bias & daily checks", shorttitle = "Bias Engine", overlay = true, max_labels_count = 500)
+
+// ───────── settings ─────────
+string pairIn  = input.string("Auto", "Pair", options = ["Auto", "EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD"], tooltip = "Auto reads the chart symbol (e.g. EURUSD, OANDA:XAUUSD).")
+bool   showBg  = input.bool(true,  "Shade each week by its bias",   group = "Show")
+bool   showWk  = input.bool(true,  "Week labels",                   group = "Show")
+bool   showCk  = input.bool(true,  "Daily check markers",           group = "Show")
+bool   showTb  = input.bool(true,  "Info table",                    group = "Show")
+bool   showDb  = input.bool(false, "All-pairs dashboard",           group = "Show")
+string tbPos   = input.string("Top right", "Table position", options = ["Top right", "Bottom right", "Top left", "Bottom left"], group = "Show")
+color  bullC   = input.color(#22AB94, "Bullish",  group = "Colours")
+color  bearC   = input.color(#F23645, "Bearish",  group = "Colours")
+color  neutC   = input.color(#787B86, "Two-sided", group = "Colours")
+
+// ───────── data (generated 2026-11-14 20:25 UTC) ─────────
+var string[] PAIRS = array.from("EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD")
+var string[] CCY   = array.from("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "XAU")
+var int[]    wT = array.new_int()     // week start (Sunday 21:00 UTC)
+var string[] wN = array.new_string()  // week name and phase
+var string[] wD = array.new_string()  // per pair: bias U/D/N + conviction h/m/l + gap
+var string[] wS = array.new_string()  // currency scores in CCY order
+var int[]    cT = array.new_int()     // check time
+var string[] cN = array.new_string()  // check name
+var string[] cD = array.new_string()  // per pair: status + today's gap
+if barstate.isfirst
+    array.push(wT, timestamp("UTC", 2026, 11, 8, 21, 0))
+    array.push(wN, "2026-W46 FINAL")
+    array.push(wD, "Dh-10,Dh-10,Um5,Um7,Um13,Dm-7,Dm-10,Nl0,Dm-5,Dl-3,Dl-3,Nl0,Ul3,Dm-5,Dl-3,Dl-3,Nl0,Ul3,Nl-2,Nl0,Ul3,Um6,Dm-5,Dl-3,Ul3,Dm-8,Dm-6,Nl-2,Um7")
+    array.push(wS, "7,-3,-3,2,0,-6,0,-3,14")
+    array.push(wT, timestamp("UTC", 2026, 11, 15, 21, 0))
+    array.push(wN, "2026-W47 PHASE 1")
+    array.push(wD, "Dm-8,Dl-4,Um5,Um8,Ul9,Nl-2,Dl-4,Dl-4,Dl-3,Nl0,Dm-6,Dl-4,Nl1,Nl1,Ul4,Nl-2,Nl0,Ul5,Ul3,Um6,Nl2,Ul7,Nl1,Ul4,Ul5,Dl-4,Nl-1,Dl-3,Dl-3")
+    array.push(wS, "5,-3,1,0,-3,-4,3,1,2")
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 11, 19, 55))
+    array.push(cN, "Wed 11 Nov · evening")
+    array.push(cD, "C-10,C-10,W5,C7,C13,C-7,C-10,T0,S-5,F-3,F-3,T0,F3,S-5,F-3,F-3,T0,F3,W-2,T0,F3,C6,S-5,F-3,F3,S-8,C-6,W-2,P4")
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 12, 6, 30))
+    array.push(cN, "Thu 12 Nov · morning")
+    array.push(cD, "C-10,C-10,W5,C7,C13,C-7,C-10,T0,W-5,W-3,W-3,T0,F3,S-5,F-3,F-3,T0,F3,W-2,T0,F3,C6,S-5,F-3,F3,S-8,C-6,W-2,P4")
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 12, 19, 55))
+    array.push(cN, "Thu 12 Nov · evening")
+    array.push(cD, "C-10,C-10,W5,C7,C13,C-7,C-10,T0,W-5,W-3,W-3,T0,F3,S-5,F-3,F-3,T0,F3,W-2,T0,F3,C6,S-5,F-3,F3,S-8,C-6,W-2,P4")
+string LAST_HOOKS = "Another day, another push for the dollar, while the euro waits for fresh French clues.|The pound passed its growth test, but it didn't win the day.|A Bank of Japan dove spoke up, and the yen's December hopes got a little quieter.|The franc stayed silent again, and the dollar kept the floor.|Oil stayed soft, and the widest gap on our board stayed wide.|A quiet day in Australia left the dollar doing all the talking.|The kiwi had another empty page, and the Fed kept writing.|The pound took its test and passed it quietly, so the stand-off goes on.|Today's BoJ news pulled the yen's strongest scenario further away.|No new French data and no Swiss news: the thin lean stays thin.|The knife-edge pair is still balancing, with no new push from either side.|Two quiet currencies, one more day without a winner.|Oil softened again, and the slim euro lean stayed on its feet.|Sterling's growth number came in as expected, and a BoJ dove trimmed the yen's upside scenario.|The pound cleared its hurdle without drama, so the lean stays thin.|The UK's growth report landed on target, and the Aussie kept its narrow edge.|The pound had its turn, and the stand-off survived it.|Oil drifted lower again while the pound got an on-target growth report.|A dovish voice in Tokyo made the bearish scenario for this pair less likely.|Another day without a tie-breaker.|Two quiet neighbours, and the Aussie keeps its thin lead.|Oil's soft start on Thursday kept the commodity cousins apart.|The kiwi stayed quiet, and Tokyo's message turned mixed.|Neither side spoke today, so the thin lean is unchanged.|Oil's slide kept the kiwi's thin lead in place.|Oil weaker and a BoJ dove: the lean holds, the extreme scenario fades.|Weaker oil, a silent franc: the lean holds.|Two safe havens, and tonight the yen's case got a little softer.|Gold's slide continued, and its main enemy, higher rates, is still in the room."
+int    LAST_CI    = 2
+
+// ───────── helpers ─────────
+f_col(string b) => b == "U" ? bullC : b == "D" ? bearC : neutC
+f_tr(string c)  => c == "h" ? 76 : c == "m" ? 84 : 91
+f_bname(string b) => b == "U" ? "BULLISH" : b == "D" ? "BEARISH" : "TWO-SIDED"
+f_cname(string c) => c == "h" ? "high" : c == "m" ? "medium" : c == "l" ? "low" : "–"
+f_arrow(string b) => b == "U" ? "▲" : b == "D" ? "▼" : "◆"
+f_sg(float g) => na(g) ? "–" : g > 0 ? "+" + str.tostring(g) : str.tostring(g)
+f_emo(string s) => s == "C" ? "✅" : s == "S" ? "✅" : s == "F" ? "🟡" : s == "W" ? "👀" : s == "P" ? "⚠️" : s == "X" ? "❌" : s == "T" ? "⚪" : "•"
+f_sname(string s) => s == "C" ? "Confirmed" : s == "S" ? "Confirmed, could get stronger" : s == "F" ? "Confirmed but fragile" : s == "W" ? "Under watch" : s == "P" ? "Under pressure" : s == "X" ? "Invalidated" : s == "T" ? "Still two-sided" : "No status"
+f_item(string row, int i) =>
+    string[] parts = str.split(row, ",")
+    i >= 0 and i < array.size(parts) ? array.get(parts, i) : "?"
+f_num(string s) => str.tonumber(s)
+f_score(int wi, string ccy) =>
+    int k = array.indexof(CCY, ccy)
+    string v = wi >= 0 and k >= 0 ? f_item(array.get(wS, math.max(wi, 0)), k) : "?"
+    v == "?" ? "?" : f_sg(f_num(v))
+f_pos(string p) => p == "Top right" ? position.top_right : p == "Bottom right" ? position.bottom_right : p == "Top left" ? position.top_left : position.bottom_left
+
+// ───────── which pair ─────────
+string symA = syminfo.basecurrency + syminfo.currency
+string tk   = str.upper(syminfo.ticker)
+string symB = str.length(tk) >= 6 ? str.substring(tk, 0, 6) : tk
+int pIdx = pairIn != "Auto" ? array.indexof(PAIRS, pairIn) : array.indexof(PAIRS, symA) >= 0 ? array.indexof(PAIRS, symA) : array.indexof(PAIRS, symB)
+string pName = pIdx >= 0 ? array.get(PAIRS, pIdx) : "—"
+
+// ───────── week of this bar ─────────
+int WEEK_MS = 7 * 86400000
+var int wi = -1
+while wi + 1 < array.size(wT) and time >= array.get(wT, wi + 1)
+    wi += 1
+bool inWk = wi >= 0 and time < array.get(wT, math.max(wi, 0)) + WEEK_MS
+string rec = inWk and pIdx >= 0 ? f_item(array.get(wD, math.max(wi, 0)), pIdx) : "?"
+bool hasRec = rec != "?" and str.length(rec) >= 2
+string b  = hasRec ? str.substring(rec, 0, 1) : "N"
+string cv = hasRec ? str.substring(rec, 1, 2) : "-"
+float  g  = hasRec and str.length(rec) > 2 ? f_num(str.substring(rec, 2)) : na
+
+bgcolor(showBg and hasRec ? color.new(f_col(b), f_tr(cv)) : na, title = "Week bias")
+
+bool newWk = hasRec and (wi != nz(wi[1], -1) or not inWk[1])
+if showWk and newWk
+    string base  = str.substring(pName, 0, 3)
+    string quote = str.substring(pName, 3, 6)
+    string txt = array.get(wN, wi) + "\n" + f_arrow(b) + " " + f_bname(b) + " · " + f_cname(cv) + "\ngap " + f_sg(g)
+    string tip = pName + " · " + array.get(wN, wi) + "\n" + base + " " + f_score(wi, base) + " vs " + quote + " " + f_score(wi, quote) + "\nFundamental bias only, not a trade signal."
+    label.new(bar_index, high, txt, yloc = yloc.abovebar, style = label.style_label_down, color = color.new(f_col(b), 15), textcolor = color.white, size = size.small, tooltip = tip)
+
+// ───────── daily checks on this bar ─────────
+var int ci = 0
+int barEnd = time + timeframe.in_seconds() * 1000
+string ckTxt = ""
+string ckTip = ""
+while ci < array.size(cT) and array.get(cT, ci) < barEnd
+    if array.get(cT, ci) >= time - 3 * 86400000 and pIdx >= 0
+        string r = f_item(array.get(cD, ci), pIdx)
+        if r != "?"
+            string s = str.substring(r, 0, 1)
+            float tg = str.length(r) > 1 ? f_num(str.substring(r, 1)) : na
+            ckTxt += f_emo(s)
+            ckTip += (ckTip == "" ? "" : "\n") + array.get(cN, ci) + ": " + f_emo(s) + " " + f_sname(s) + " · gap " + f_sg(tg)
+    ci += 1
+if showCk and ckTxt != ""
+    label.new(bar_index, low, ckTxt, yloc = yloc.belowbar, style = label.style_none, size = size.normal, tooltip = ckTip + "\nDaily check · fundamental context only")
+
+// ───────── info table and dashboard ─────────
+f_curWeek() =>
+    int k = -1
+    for j = 0 to array.size(wT) - 1
+        if array.get(wT, j) <= timenow
+            k := j
+    k
+f_lastCheck(int p) =>
+    int k = -1
+    int n = array.size(cT)
+    for j = 0 to math.max(n - 1, 0)
+        if j >= n
+            break
+        if p >= 0 and f_item(array.get(cD, j), p) != "?"
+            k := j
+    k
+
+var table tb = na
+if barstate.islast and (showTb or showDb)
+    table.delete(tb)
+    color hdr = color.new(#131722, 0)
+    color bgc = color.new(#1E222D, 5)
+    int kw = f_curWeek()
+    if showDb
+        tb := table.new(f_pos(tbPos), 5, array.size(PAIRS) + 1, bgcolor = bgc, border_color = color.new(#363A45, 0), border_width = 1)
+        table.cell(tb, 0, 0, "Pair", text_color = color.white, bgcolor = hdr, text_size = size.small)
+        table.cell(tb, 1, 0, kw >= 0 ? array.get(wN, kw) : "Week", text_color = color.white, bgcolor = hdr, text_size = size.small)
+        table.cell(tb, 2, 0, "Conv.", text_color = color.white, bgcolor = hdr, text_size = size.small)
+        table.cell(tb, 3, 0, "Gap", text_color = color.white, bgcolor = hdr, text_size = size.small)
+        table.cell(tb, 4, 0, "Check", text_color = color.white, bgcolor = hdr, text_size = size.small)
+        for j = 0 to array.size(PAIRS) - 1
+            string rr = kw >= 0 ? f_item(array.get(wD, kw), j) : "?"
+            bool ok = rr != "?" and str.length(rr) >= 2
+            string bb = ok ? str.substring(rr, 0, 1) : "N"
+            int lc = f_lastCheck(j)
+            string cr = lc >= 0 ? f_item(array.get(cD, lc), j) : "?"
+            color rowC = j == pIdx ? color.new(#2A2E39, 0) : bgc
+            table.cell(tb, 0, j + 1, array.get(PAIRS, j), text_color = color.white, bgcolor = rowC, text_size = size.tiny)
+            table.cell(tb, 1, j + 1, ok ? f_arrow(bb) + " " + f_bname(bb) : "–", text_color = ok ? f_col(bb) : neutC, bgcolor = rowC, text_size = size.tiny)
+            table.cell(tb, 2, j + 1, ok ? f_cname(str.substring(rr, 1, 2)) : "–", text_color = color.white, bgcolor = rowC, text_size = size.tiny)
+            table.cell(tb, 3, j + 1, ok and str.length(rr) > 2 ? f_sg(f_num(str.substring(rr, 2))) : "–", text_color = color.white, bgcolor = rowC, text_size = size.tiny)
+            table.cell(tb, 4, j + 1, cr != "?" ? f_emo(str.substring(cr, 0, 1)) : "–", text_color = color.white, bgcolor = rowC, text_size = size.tiny, tooltip = cr != "?" ? array.get(cN, lc) + ": " + f_sname(str.substring(cr, 0, 1)) : "")
+    else
+        tb := table.new(f_pos(tbPos), 2, 8, bgcolor = bgc, border_color = color.new(#363A45, 0), border_width = 1)
+        table.cell(tb, 0, 0, "Bias Engine", text_color = color.white, bgcolor = hdr, text_size = size.small)
+        table.cell(tb, 1, 0, pName, text_color = color.white, bgcolor = hdr, text_size = size.small)
+        if pIdx < 0
+            table.cell(tb, 0, 1, "Symbol", text_color = color.white, text_size = size.small)
+            table.cell(tb, 1, 1, "not tracked: choose a pair in Settings", text_color = neutC, text_size = size.small)
+        else
+            string rr = kw >= 0 ? f_item(array.get(wD, kw), pIdx) : "?"
+            bool ok = rr != "?" and str.length(rr) >= 2
+            string bb = ok ? str.substring(rr, 0, 1) : "N"
+            string base  = str.substring(pName, 0, 3)
+            string quote = str.substring(pName, 3, 6)
+            table.cell(tb, 0, 1, "Week", text_color = color.white, text_size = size.small)
+            table.cell(tb, 1, 1, kw >= 0 ? array.get(wN, kw) : "–", text_color = color.white, text_size = size.small)
+            table.cell(tb, 0, 2, "Bias", text_color = color.white, text_size = size.small)
+            table.cell(tb, 1, 2, ok ? f_arrow(bb) + " " + f_bname(bb) + " · " + f_cname(str.substring(rr, 1, 2)) : "no analysis", text_color = ok ? f_col(bb) : neutC, text_size = size.small)
+            table.cell(tb, 0, 3, "Scores", text_color = color.white, text_size = size.small)
+            table.cell(tb, 1, 3, base + " " + f_score(kw, base) + " vs " + quote + " " + f_score(kw, quote) + " · gap " + (ok and str.length(rr) > 2 ? f_sg(f_num(str.substring(rr, 2))) : "–"), text_color = color.white, text_size = size.small)
+            int nx = kw + 1 < array.size(wT) ? kw + 1 : -1
+            string nr = nx >= 0 ? f_item(array.get(wD, nx), pIdx) : "?"
+            table.cell(tb, 0, 4, "Next", text_color = color.white, text_size = size.small)
+            table.cell(tb, 1, 4, nx >= 0 and nr != "?" and str.length(nr) >= 2 ? array.get(wN, nx) + ": " + f_arrow(str.substring(nr, 0, 1)) + " " + f_bname(str.substring(nr, 0, 1)) + " · " + f_cname(str.substring(nr, 1, 2)) : "–", text_color = nx >= 0 and nr != "?" ? f_col(str.substring(nr, 0, 1)) : neutC, text_size = size.small)
+            int lc = f_lastCheck(pIdx)
+            string cr = lc >= 0 ? f_item(array.get(cD, lc), pIdx) : "?"
+            table.cell(tb, 0, 5, "Last check", text_color = color.white, text_size = size.small)
+            table.cell(tb, 1, 5, lc >= 0 ? array.get(cN, lc) : "–", text_color = color.white, text_size = size.small)
+            table.cell(tb, 0, 6, "Status", text_color = color.white, text_size = size.small)
+            table.cell(tb, 1, 6, cr != "?" ? f_emo(str.substring(cr, 0, 1)) + " " + f_sname(str.substring(cr, 0, 1)) + " · gap " + f_sg(str.length(cr) > 1 ? f_num(str.substring(cr, 1)) : na) : "–", text_color = color.white, text_size = size.small)
+            string[] hks = str.split(LAST_HOOKS, "|")
+            string hk = lc == LAST_CI and lc >= 0 and pIdx < array.size(hks) ? array.get(hks, pIdx) : ""
+            table.cell(tb, 0, 7, "Note", text_color = color.white, text_size = size.small)
+            table.cell(tb, 1, 7, hk == "" or hk == "?" or hk == "-" ? "–" : str.length(hk) > 60 ? str.substring(hk, 0, 57) + "…" : hk, text_color = color.new(color.white, 20), text_size = size.small, tooltip = hk)
