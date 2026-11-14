@@ -15,9 +15,9 @@ export async function chart(s, interval, range, base = 'https://query1.finance.y
   throw new Error(`Yahoo ${s} ${interval}: no data`);
 }
 // last completed Friday (UTC date) as of `asof` (YYYY-MM-DD, a Saturday/Sunday, or today)
-export function baselineFriday(asof){
+export function baselineFriday(asof, afterClose = false){   // afterClose: run on a Friday after 21:30 UTC → that Friday is the baseline
   const d = new Date(asof + 'T12:00:00Z'); const back = (d.getUTCDay() + 2) % 7 || 7; // Sat→1, Sun→2, Mon→3 … Fri→7 (previous Friday)
-  const f = new Date(d); f.setUTCDate(d.getUTCDate() - (d.getUTCDay() === 5 ? 7 : back)); return f.toISOString().slice(0, 10);
+  const f = new Date(d); f.setUTCDate(d.getUTCDate() - (d.getUTCDay() === 5 ? (afterClose ? 0 : 7) : back)); return f.toISOString().slice(0, 10);
 }
 export async function computePair(p, fri, base){
   const gold = p === 'XAUUSD', s = sym(p);
@@ -41,7 +41,8 @@ export async function computePair(p, fri, base){
 }
 export function isoWeek(ds){ const d = new Date(ds + 'T12:00:00Z'); const day = d.getUTCDay() || 7; d.setUTCDate(d.getUTCDate() + 4 - day); const y = d.getUTCFullYear(); const w = Math.ceil(((d - Date.UTC(y, 0, 1)) / 864e5 + 1) / 7); return { year:y, week:w }; }
 export async function run(asof, base){
-  const fri = baselineFriday(asof), data = {}, errors = {};
+  const now = new Date(), afterClose = now.toISOString().slice(0, 10) === asof && now.getUTCDay() === 5 && now.getUTCHours() * 60 + now.getUTCMinutes() >= 1290;
+  const fri = baselineFriday(asof, afterClose), data = {}, errors = {};
   for(const p of PAIRS){ try{ data[p] = await computePair(p, fri, base); }catch(e){ errors[p] = String(e.message || e); } await sleep(250); }
   const k = isoWeek(fri);
   return { format:'bias-engine-fx-vol', version:1, generated_at:new Date().toISOString(), baseline_friday:fri, baseline_week:k,

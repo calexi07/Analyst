@@ -18,10 +18,10 @@ function isoWeek(dt) { const d = new Date(Date.UTC(dt.getUTCFullYear(), dt.getUT
   const y = d.getUTCFullYear(), w = Math.ceil(((d - Date.UTC(y, 0, 1)) / 864e5 + 1) / 7); return { year: y, week: w }; }
 function mondayOf(y, w) { const j4 = new Date(Date.UTC(y, 0, 4)); const m = new Date(j4); m.setUTCDate(4 - ((j4.getUTCDay() || 7) - 1) + (w - 1) * 7); return m; }
 
-// Week: WEEK=2026-W46 if given (manual run), otherwise the last completed Mon–Fri week.
+// Week: WEEK=2026-W46 if given (manual run), otherwise the last completed Mon–Fri week (Friday from 21:00 UTC, after the close, counts as completed).
 let y, w; const arg = (process.env.WEEK || '').match(/(\d{4})-?W(\d{1,2})/i);
 if (arg) { y = +arg[1]; w = +arg[2]; }
-else { const d = new Date(); const dow = d.getUTCDay(); if (!(dow === 6 || dow === 0)) d.setUTCDate(d.getUTCDate() - 7); ({ year: y, week: w } = isoWeek(d)); }
+else { const d = new Date(); const dow = d.getUTCDay(); if (!(dow === 6 || dow === 0 || (dow === 5 && d.getUTCHours() >= 21))) d.setUTCDate(d.getUTCDate() - 7); ({ year: y, week: w } = isoWeek(d)); }
 const mon = mondayOf(y, w), days = [0,1,2,3,4].map(i => { const d = new Date(mon); d.setUTCDate(mon.getUTCDate() + i); return iso(d); });
 const label = ds => { const d = new Date(ds + 'T00:00:00Z'); return `${WD[d.getUTCDay()]} ${String(d.getUTCDate()).padStart(2,'0')} ${MON[d.getUTCMonth()]}`; };
 
