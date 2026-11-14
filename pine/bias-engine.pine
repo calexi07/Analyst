@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — weekly bias + daily checks (history) on the chart.
-// Generated automatically: 2026-11-14 21:19 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 4 daily checks.
+// Generated automatically: 2026-11-14 21:23 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 4 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // Fundamental context only. Not a trade signal.
 //@version=6
@@ -16,6 +16,7 @@ bool   showSep = input.bool(true,  "Dotted line at each week start", group = "Sh
 bool   showWk  = input.bool(true,  "Week labels",                   group = "Show")
 bool   showCk  = input.bool(true,  "Daily check markers",           group = "Show")
 string ckMode  = input.string("All days", "Check markers on", options = ["All days", "Only when the status changes"], group = "Show")
+bool   bdFill  = input.bool(false, "Fill the band", group = "Show")
 bool   showBd  = input.bool(true,  "Typical-week band (±1σ from last week's close)", group = "Show", tooltip = "σ = standard deviation of the last 26 weekly returns of this chart. Shows the normal range for the week; a move outside it against the bias is worth noticing. Context only.")
 string mkStyle = input.string("Emoji + gap", "Check marker", options = ["Emoji", "Emoji + gap", "Emoji + status"], group = "Show", tooltip = "Hover the marker for the full note: what changed, what was confirmed or invalidated, and both currencies.")
 bool   showTb  = input.bool(true,  "Info table",                    group = "Show")
@@ -26,7 +27,7 @@ color  bullC   = input.color(#22AB94, "Bullish",  group = "Colours")
 color  bearC   = input.color(#F23645, "Bearish",  group = "Colours")
 color  neutC   = input.color(#787B86, "Two-sided", group = "Colours")
 
-// ───────── data (generated 2026-11-14 21:19 UTC) ─────────
+// ───────── data (generated 2026-11-14 21:23 UTC) ─────────
 var string[] PAIRS = array.from("EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD")
 var string[] CCY   = array.from("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "XAU")
 var int[]    wT = array.new_int()     // week start (Sunday 21:00 UTC)
@@ -100,6 +101,7 @@ f_cname(string c) => c == "h" ? "high" : c == "m" ? "medium" : c == "l" ? "low" 
 f_arrow(string b) => b == "U" ? "▲" : b == "D" ? "▼" : "◆"
 f_sg(float g) => na(g) ? "–" : g > 0 ? "+" + str.tostring(g) : str.tostring(g)
 f_emo(string s) => s == "C" ? "✅" : s == "S" ? "✅" : s == "F" ? "🟡" : s == "W" ? "👀" : s == "P" ? "⚠️" : s == "X" ? "❌" : s == "T" ? "⚪" : "•"
+f_short(string s) => s == "C" ? "CONF" : s == "S" ? "CONF+" : s == "F" ? "FRAGILE" : s == "W" ? "WATCH" : s == "P" ? "PRESSURE" : s == "X" ? "INVALID" : s == "T" ? "2-SIDED" : "?"
 f_sname(string s) => s == "C" ? "Confirmed" : s == "S" ? "Confirmed, could get stronger" : s == "F" ? "Confirmed but fragile" : s == "W" ? "Under watch" : s == "P" ? "Under pressure" : s == "X" ? "Invalidated" : s == "T" ? "Still two-sided" : "No status"
 f_item(string row, int i) =>
     string[] parts = str.split(row, ",")
@@ -138,7 +140,7 @@ f_bar(string ccy, string sc) =>
     int n = na(v) ? 0 : math.min(5, int(math.round(math.abs(v) / 3)))
     string blk = ""
     for k = 1 to 5
-        blk += k <= n ? "▮" : "▯"
+        blk += k <= n ? "■" : "□"
     ccy + " " + (na(v) ? "?" : v > 0 ? "▲" : v < 0 ? "▼" : "•") + blk + " " + (na(v) ? "?" : f_sg(v))
 f_pos(string p) => p == "Top right" ? position.top_right : p == "Bottom right" ? position.bottom_right : p == "Top left" ? position.top_left : position.bottom_left
 
@@ -197,8 +199,13 @@ if showBd and newWk and not na(wkPrevC) and not na(wkSig)
     float up = wkPrevC * math.exp(wkSig)
     float dn = wkPrevC * math.exp(-wkSig)
     color bc = f_col(b)
-    box.new(time, up, t1, dn, xloc = xloc.bar_time, border_color = color.new(bc, 55), border_style = line.style_dashed, border_width = 1, bgcolor = color.new(bc, dark ? 93 : 95), text = "±1σ " + str.tostring(wkSig * 100, "#.##") + "%", text_size = size.tiny, text_color = color.new(tMu, 30), text_halign = text.align_right, text_valign = text.align_top)
-    line.new(time, wkPrevC, t1, wkPrevC, xloc = xloc.bar_time, color = color.new(tMu, 40), style = line.style_dotted, width = 1)
+    if bdFill
+        box.new(time, up, t1, dn, xloc = xloc.bar_time, border_color = color.new(bc, 100), bgcolor = color.new(bc, dark ? 94 : 96))
+    line.new(time, up, t1, up, xloc = xloc.bar_time, color = color.new(bc, 45), style = line.style_dashed, width = 1)
+    line.new(time, dn, t1, dn, xloc = xloc.bar_time, color = color.new(bc, 45), style = line.style_dashed, width = 1)
+    line.new(time, wkPrevC, t1, wkPrevC, xloc = xloc.bar_time, color = color.new(tMu, 50), style = line.style_dotted, width = 1)
+    label.new(t1, up, "+1σ", xloc = xloc.bar_time, style = label.style_none, textcolor = color.new(bc, 30), size = size.tiny)
+    label.new(t1, dn, "−1σ " + str.tostring(wkSig * 100, "#.##") + "%", xloc = xloc.bar_time, style = label.style_none, textcolor = color.new(bc, 30), size = size.tiny)
 if showSep and newWk
     line.new(bar_index, low, bar_index, high, extend = extend.both, style = line.style_dotted, color = color.new(f_col(b), 55), width = 1)
 if showWk and newWk
@@ -233,7 +240,7 @@ while ci < array.size(cT) and array.get(cT, ci) < barEnd
             string hk = f_part(array.get(cH, ci), "|", pIdx)
             string bL = f_leg(ci, str.substring(pName, 0, 3))
             string qL = f_leg(ci, str.substring(pName, 3, 6))
-            ckTxt := mkStyle == "Emoji" ? f_emo(s) : mkStyle == "Emoji + gap" ? f_emo(s) + " " + f_sg(tg) : f_emo(s) + " " + f_sname(s)
+            ckTxt := mkStyle == "Emoji" ? f_emo(s) : mkStyle == "Emoji + gap" ? f_emo(s) + " " + f_sg(tg) : f_emo(s) + " " + f_short(s) + " " + f_sg(tg)
             ckTip += (ckTip == "" ? "" : "\n\n") + "▌" + array.get(cN, ci) + "\n" + f_emo(s) + " " + f_sname(s) + "\n" + gapTxt + (chg == "" ? "" : "\n" + chg) + (hk == "" or hk == "-" ? "" : "\n\n" + f_wrap(hk, 60)) + (bL == "" ? "" : "\n\n" + bL) + (qL == "" ? "" : "\n" + qL)
             ckChg := ckChg or prevS == "" or prevS != s
             prevS := s
