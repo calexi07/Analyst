@@ -2,256 +2,418 @@
  "format": "bias-engine-discord",
  "version": 1,
  "year": 2026,
- "week": 46,
- "valid_from": "2026-11-09",
- "valid_to": "2026-11-13",
- "valid_label": "Mon 9 – Fri 13 Nov 2026",
- "status": "FINAL · delta check Sun 8 Nov 12:30 Bucharest · NZD corrected (−4 → −3)",
- "generated": "2026-11-08",
+ "week": 47,
+ "valid_from": "2026-11-16",
+ "valid_to": "2026-11-20",
+ "valid_label": "Mon 16 – Fri 20 Nov 2026",
+ "status": "PHASE 1 · research cutoff Sat 14 Nov 09:00 Bucharest · delta check Sunday evening",
+ "generated": "2026-11-14",
  "summary": [
-  "The global risk mood turned 'afraid' (−2): safe havens and gold gain, AUD and NZD lose.",
-  "Strongest: USD (+7). Weakest: CAD (−6); NZD, EUR and GBP at −3.",
-  "AUD fell from +5 to 0 and GBP from +4 to −3 after softer RBA and BoE guidance."
+  "The fear in markets is gone (risk mood 0): safe havens lose support, high-yield currencies recover.",
+  "Strongest: USD (+5). Weakest: CAD (−4); EUR and CHF at −3.",
+  "GBP, AUD and NZD climb back; CHF and JPY lose their haven bonus; gold factor turns negative (−3)."
  ],
  "key_events": [
-  "Mon 9 Nov · China inflation (AUD)",
-  "Tue 10 Nov 01:50 · BoJ Summary of Opinions (JPY)",
-  "Tue 10 Nov 15:30 · US CPI (USD, XAU) — HIGH",
-  "Thu 12 Nov 09:00 · UK Q3 GDP (GBP) — HIGH",
-  "Fri 13 Nov 15:30 · US PPI (USD); 12:00 euro-area GDP (EUR)"
+  "Mon 16 Nov 15:30 · Canada CPI (CAD) — HIGH",
+  "Tue 17 Nov 09:00 · UK jobs (GBP); 15:30 US retail sales (USD) — HIGH",
+  "Wed 18 Nov 09:00 · UK CPI (GBP); 21:00 FOMC minutes (USD, XAU) — HIGH",
+  "Thu 19 Nov 02:30 · Australia jobs (AUD) — HIGH",
+  "Fri 20 Nov 01:30 · Japan CPI (JPY); French Senate budget debate (EUR)"
  ],
  "currencies": {
   "USD": {
    "name": "US dollar",
    "flag": "🇺🇸",
-   "score": 7,
-   "prev": 2,
+   "score": 5,
+   "prev": 7,
    "bias": "bullish",
-   "short": "The strongest currency in the model. Bullish, high conviction.",
-   "breakdown": "`R1 +` · `R2 +` · `R3 +` · `N1 0` · `N2 0` · `G1 +`\nRaw **+6.75** → Published **+7**\nPriced-in: **Partially priced** · Confidence: **High** · Conviction: **High**",
+   "short": "Rank 1 of 8. Bullish, medium conviction.",
+   "breakdown": "`R1 +` · `R2 +` · `R3 +` · `N1 0` · `N2 0` · `G1 0`\nRaw **+5.40** → Published **+5**\nPriced-in: **Partially priced** · Confidence: **High** · Conviction: **Medium**",
    "why": [
-    "US jobs were much stronger than expected: +165,000 jobs versus about 60,000 expected, and unemployment fell to 4.1%. That is a positive surprise.",
-    "The market expects a Fed hike in December (about 75–78% chance) but only about one more after that. Strong data suggest the Fed may do more than that, so there is room for the dollar to gain (judgement call: without it the score would be +4).",
-    "Investors are nervous (risk mood 'afraid'). The dollar is partly a safe place to hold money, so this helps a little.",
-    "Result: +7, the strongest currency this week."
+    "US October inflation was hotter than expected: prices +0.4% in the month (forecast +0.3%) and core prices +0.3% (forecast +0.2%). That is a hawkish surprise.",
+    "A December Fed hike is now almost fully expected (about 91%). Several Fed officials (Waller, Logan) talk about more or bigger hikes, so the market may still be too low on what comes after (judgement call: without it the score would be +2).",
+    "The market is calm again (risk mood neutral), so the dollar loses its safe-haven bonus. Result: +5, still the strongest."
    ],
-   "helps": "US CPI on 10 Nov at or above consensus and Fed speakers backing December.",
-   "hurts": "US CPI below consensus (core under 0.2% m/m) or Fed speakers cooling December hike talk.",
+   "helps": "Warsh (16 Nov) or the FOMC minutes (18 Nov) backing a 50bp or a January hike; strong retail sales (17 Nov).",
+   "hurts": "A patient Warsh or FOMC minutes, or weak US retail sales (17 Nov).",
    "events": [
-    "10 Nov US CPI (HIGH)",
-    "13 Nov US PPI",
-    "25 Nov US PCE"
+    "16 Nov Fed Chair Warsh speech (HIGH)",
+    "17 Nov US October retail sales (HIGH)",
+    "18 Nov FOMC minutes (27–28 Oct meeting) (HIGH)",
+    "19 Nov APEC Shenzhen; Trump–Putin–Xi meeting announced"
    ]
   },
   "EUR": {
    "name": "Euro",
    "flag": "🇪🇺",
    "score": -3,
-   "prev": -4,
+   "prev": -3,
    "bias": "bearish",
-   "short": "Negative. Bearish, low conviction.",
+   "short": "Rank 6 of 8. Bearish, low conviction.",
    "breakdown": "`R1 0` · `R2 0` · `R3 0` · `N1 0` · `N2 −−` · `G1 0`\nRaw **-2.70** → Published **−3**\nPriced-in: **Largely priced** · Confidence: **High** · Conviction: **Low**",
    "why": [
-    "Euro-area inflation (4.0%) and core inflation (2.5%) were exactly as expected, so no surprise.",
-    "The ECB is expected to hike 2–3 times over the next year, and ECB speakers agree. Nothing extra to gain or lose here.",
-    "Oil fell about 6% in four weeks. The oil penalty for the euro area (an oil importer) is gone.",
-    "France is still the big problem: the French borrowing spread over Germany is 153.9bp (up from 132.5bp four weeks ago), the Senate votes on the budget on 20–23 Nov and S&P reviews France on 27 Nov. This gives the strongest negative (−2).",
-    "Result: −3 (better than −4 last week)."
+    "French government bonds pay 1.52 points more than German ones (151.8bp), more than four weeks ago (137.4bp). This is a sign of stress.",
+    "The French Senate votes on the social-security budget on 18 Nov and debates the main budget from 20 Nov to 9 Dec.",
+    "The ECB is expected to hike in December; that is already priced, so no extra boost. Result: −3."
    ],
-   "helps": "OAT–Bund spread back below about 130bp, or a Senate path that removes the budget risk.",
-   "hurts": "Spread above the 3 Nov peak (161.8bp) or a rating action on France.",
+   "helps": "The French spread falling back under ~137bp after smooth Senate votes (18 Nov, from 20 Nov).",
+   "hurts": "The spread widening above its 3 Nov peak or a failed Senate vote.",
    "events": [
-    "13 Nov euro-area Q3 GDP",
-    "13 Nov Fitch Germany / S&P Italy",
-    "20 Nov French Senate debate",
-    "27 Nov S&P France"
+    "18 Nov French Senate vote on the social-security budget (PLFSS)",
+    "20 Nov Lagarde keynote, European Banking Congress",
+    "20 Nov French Senate opens the 2027 budget (PLF) debate (HIGH)",
+    "23 Nov Flash PMIs (France, Germany, euro area, UK, US)"
    ]
   },
   "GBP": {
    "name": "British pound",
    "flag": "🇬🇧",
-   "score": -3,
-   "prev": 4,
-   "bias": "bearish",
-   "short": "Negative. Bearish, low conviction.",
-   "breakdown": "`R1 +` · `R2 −` · `R3 0` · `N1 0` · `N2 0` · `G1 −`\nRaw **-3.15** → Published **−3**\nPriced-in: **Largely priced** · Confidence: **High** · Conviction: **Low**",
+   "score": 1,
+   "prev": -3,
+   "bias": "neutral",
+   "short": "Rank 3 of 8. Neutral, low conviction.",
+   "breakdown": "`R1 +` · `R2 0` · `R3 0` · `N1 0` · `N2 0` · `G1 0`\nRaw **+1.35** → Published **+1**\nPriced-in: **Largely priced** · Confidence: **High** · Conviction: **Low**",
    "why": [
-    "The BoE raised its rate to 4.00% as expected (8 votes to 1; one member wanted a bigger hike).",
-    "But the BoE said this hike should not be seen as the first of a long series, while the market still expects about 3 more hikes. That gap points down for the pound (judgement call: without it the score would be 0).",
-    "Last week's budget relief is now old news, so it no longer helps.",
-    "The 'afraid' risk mood hurts the pound a little.",
-    "Result: −3 (down from +4)."
+    "Last week's fear in markets is gone, so the pound no longer loses from it.",
+    "BoE deputy governor Lombardelli said there is likely a case for another hike soon. Markets give December about 73%, which matches (judgement call: keeping last week's −1 would give −2).",
+    "UK growth was in line (+0.7% in Q3). Result: +1, up from −3."
    ],
-   "helps": "UK Q3 GDP on 12 Nov well above consensus, or MPC speakers backing more hikes.",
-   "hurts": "Weak Q3 GDP or MPC members talking about a pause.",
+   "helps": "Hot UK wages/CPI (17–18 Nov) that lock in a December BoE hike.",
+   "hurts": "UK CPI (18 Nov) below the BoE's 3.73% projection and December BoE pricing fading.",
    "events": [
-    "12 Nov UK Q3 GDP (HIGH)"
+    "17 Nov UK labour market data (HIGH)",
+    "18 Nov UK October CPI (HIGH)",
+    "20 Nov UK October retail sales",
+    "23 Nov Flash PMIs (France, Germany, euro area, UK, US)"
    ]
   },
   "JPY": {
    "name": "Japanese yen",
    "flag": "🇯🇵",
-   "score": 2,
+   "score": 0,
    "prev": 2,
    "bias": "neutral",
-   "short": "Slightly positive, but no clear direction.",
-   "breakdown": "`R1 −` · `R2 0` · `R3 0` · `N1 0` · `N2 +` · `G1 ++`\nRaw **+2.70** → Published **+2** (change below 1 point: score kept)\nPriced-in: **Largely priced** · Confidence: **Medium** · Conviction: **Low**",
+   "short": "Rank 5 of 8. Neutral, low conviction.",
+   "breakdown": "`R1 −` · `R2 0` · `R3 0` · `N1 0` · `N2 +` · `G1 0`\nRaw **+0.00** → Published **0**\nPriced-in: **Largely priced** · Confidence: **Medium** · Conviction: **Low**",
    "why": [
-    "Japanese rates are low compared with others (a minus).",
-    "BoJ notes sound ready to hike and wages hit a record. But two market sources disagree on how likely a December hike is (about 80% versus 56%), so this ingredient is 0.",
-    "Oil fell, so the oil penalty for Japan is gone. The Finance Minister warned against fast yen moves (intervention threat, a plus).",
-    "The 'afraid' risk mood helps the yen strongly (+2).",
-    "Result: the calculation gives +2.7, but the change from last week's +2 is too small to move the score, so it stays +2."
+    "Markets are calm, so the yen loses its safe-haven support (last week +2 from this).",
+    "Japan's finance minister warned again against rapid moves near 160 per dollar: an intervention threat that supports the yen.",
+    "The yen still has low interest rates, and the BoJ December hike is priced between 54% and 75% depending on the source. Result: 0."
    ],
-   "helps": "BoJ Summary of Opinions (10 Nov) pointing clearly to December.",
-   "hurts": "Risk mood recovering (carry trades back) or BoJ speakers delaying December.",
+   "helps": "Actual intervention, or hot Q3 GDP (16 Nov) and CPI (20 Nov) making a December BoJ hike certain.",
+   "hurts": "Weak Q3 GDP and fading BoJ December pricing without intervention.",
    "events": [
-    "10 Nov BoJ Summary of Opinions"
+    "16 Nov Japan Q3 GDP (1st preliminary) (HIGH)",
+    "20 Nov Japan October national CPI (HIGH)"
    ]
   },
   "CHF": {
    "name": "Swiss franc",
    "flag": "🇨🇭",
-   "score": 0,
-   "prev": -3,
-   "bias": "neutral",
-   "short": "Zero: low rates balanced by safe-haven demand.",
-   "breakdown": "`R1 −−` · `R2 0` · `R3 0` · `N1 0` · `N2 0` · `G1 ++`\nRaw **+0.00** → Published **0**\nPriced-in: **Not applicable** · Confidence: **Medium** · Conviction: **Low**",
+   "score": -3,
+   "prev": 0,
+   "bias": "bearish",
+   "short": "Rank 7 of 8. Bearish, low conviction.",
+   "breakdown": "`R1 −−` · `R2 0` · `R3 0` · `N1 0` · `N2 0` · `G1 0`\nRaw **-2.70** → Published **−3**\nPriced-in: **Not applicable** · Confidence: **Medium** · Conviction: **Low**",
    "why": [
-    "The SNB rate is 0%, the lowest of all eight (strong minus).",
-    "Swiss inflation was higher than expected (1.5% vs 1.3%), but core inflation was exactly as expected, so no surprise.",
-    "There is no clear market number for an SNB hike.",
-    "The 'afraid' risk mood helps the franc strongly as a safe haven (+2).",
-    "Result: 0 (up from −3)."
+    "The SNB pays 0%, the lowest rate of the eight.",
+    "Markets are calm, so the safe-haven support of last week is gone.",
+    "Only a small chance (about 10–12%) of a December SNB hike is priced. Result: −3."
    ],
-   "helps": "A deeper risk-off or a numeric SNB hike price appearing.",
-   "hurts": "Risk mood recovering quickly.",
+   "helps": "A new risk shock (VIX above 25) or an SNB hint of a December hike.",
+   "hurts": "Continued calm markets and an SNB that keeps sounding relaxed.",
    "events": [
-    "10 Dec SNB decision (later)"
+    "16 Nov Swiss Q3 GDP flash"
    ]
   },
   "CAD": {
    "name": "Canadian dollar",
    "flag": "🇨🇦",
-   "score": -6,
-   "prev": -2,
+   "score": -4,
+   "prev": -6,
    "bias": "bearish",
-   "short": "The weakest currency in the model. Bearish, medium conviction.",
-   "breakdown": "`R1 −` · `R2 0` · `R3 −` · `N1 −` · `N2 −` · `G1 −`\nRaw **-5.85** → Published **−6**\nPriced-in: **Not applicable** · Confidence: **Medium** · Conviction: **Medium**",
+   "short": "Rank 8 of 8. Bearish, medium conviction.",
+   "breakdown": "`R1 −` · `R2 0` · `R3 0` · `N1 −` · `N2 −` · `G1 0`\nRaw **-3.60** → Published **−4**\nPriced-in: **Not applicable** · Confidence: **Low** · Conviction: **Medium**",
    "why": [
-    "Canada lost 4,700 jobs when a gain of about 13,600 was expected; unemployment rose to 6.7%. Negative surprise.",
-    "Oil fell about 6% in four weeks. Canada exports oil, so this now hurts (last week oil helped strongly).",
-    "The US still has a 50% tariff on about $20bn of Canadian goods.",
-    "The 'afraid' risk mood hurts CAD a little.",
-    "Result: −6, the weakest currency this week."
+    "Oil fell about 13% in four weeks (Brent $109.86 → $95.41). Oil is Canada's key export.",
+    "A 50% US tariff on about $20bn of Canadian goods is still in place.",
+    "The Bank of Canada said rates could need to rise further, which markets price at 45–66% for December. The end of risk-off lifted the score from −6 to −4."
    ],
-   "helps": "Oil rebounding above its 9 Oct level, or a US–Canada tariff deal.",
-   "hurts": "Oil falling further or new tariff threats.",
+   "helps": "A hot October CPI (16 Nov), an oil rebound or a US–Canada tariff deal at APEC.",
+   "hurts": "Soft CPI, a further oil drop or new tariffs.",
    "events": [
-    "10 Nov BoC Summary of Deliberations",
-    "11 Nov OPEC monthly report",
-    "13 Nov IEA oil report"
+    "16 Nov Canada October CPI (HIGH)",
+    "20 Nov Canada September retail sales"
    ]
   },
   "AUD": {
    "name": "Australian dollar",
    "flag": "🇦🇺",
-   "score": 0,
-   "prev": 5,
-   "bias": "neutral",
-   "short": "Zero: top carry balanced by risk-off and a softer RBA.",
-   "breakdown": "`R1 ++` · `R2 0` · `R3 −` · `N1 +` · `N2 0` · `G1 −−`\nRaw **+0.00** → Published **0**\nPriced-in: **Largely priced** · Confidence: **High** · Conviction: **Low**",
+   "score": 3,
+   "prev": 0,
+   "bias": "bullish",
+   "short": "Rank 2 of 8. Bullish, low conviction.",
+   "breakdown": "`R1 ++` · `R2 0` · `R3 0` · `N1 0` · `N2 0` · `G1 0`\nRaw **+2.70** → Published **+3**\nPriced-in: **Not applicable** · Confidence: **Medium** · Conviction: **Low**",
    "why": [
-    "Australia still has the highest expected interest rate of the eight (strong plus).",
-    "The RBA raised its rate to 4.85% as expected, but 3 of 9 members voted against and it removed its 'more hikes possible' line. Softer than expected (judgement call: without it the score would be +1).",
-    "The market now expects no more hikes; there is no gap left to gain from.",
-    "Iron ore rose about 3% in four weeks (small plus).",
-    "The 'afraid' risk mood hurts AUD strongly (−2).",
-    "Result: 0 (down from +5)."
+    "Australia has the highest interest rate of the eight (4.85%), and in calm markets that matters.",
+    "The RBA is expected to stay on hold in December (about 97%).",
+    "Consumer sentiment is weak (78.2). Result: +3, up from 0 because the fear in markets is gone."
    ],
-   "helps": "Strong China data (9–10 Nov) and a risk-mood recovery.",
-   "hurts": "Weak China data or deeper risk-off.",
+   "helps": "October jobs above +27.5k (19 Nov) and strong wages (18 Nov) that revive RBA hike talk.",
+   "hurts": "Weak jobs/wages, dovish RBA minutes (17 Nov) or a new risk scare.",
    "events": [
-    "9 Nov China CPI/PPI",
-    "10 Nov China trade",
-    "25 Nov Australia CPI"
+    "16 Nov China October activity data",
+    "17 Nov RBA minutes (November meeting)",
+    "18 Nov Australia Q3 wage price index (HIGH)",
+    "19 Nov Australia October labour force (HIGH)"
    ]
   },
   "NZD": {
    "name": "New Zealand dollar",
    "flag": "🇳🇿",
-   "score": -3,
-   "prev": 1,
-   "bias": "bearish",
-   "short": "Negative. Bearish, low conviction (final check: −4 → −3).",
-   "breakdown": "`R1 0` · `R2 0` · `R3 −` · `N1 +` · `N2 0` · `G1 −−`\nRaw **-2.70** → Published **−3**\nPriced-in: **Not applicable** · Confidence: **Medium** · Conviction: **Low**",
+   "score": 1,
+   "prev": -3,
+   "bias": "neutral",
+   "short": "Rank 4 of 8. Neutral, low conviction.",
+   "breakdown": "`R1 0` · `R2 0` · `R3 0` · `N1 +` · `N2 0` · `G1 0`\nRaw **+0.90** → Published **+1**\nPriced-in: **Not applicable** · Confidence: **Low** · Conviction: **Low**",
    "why": [
-    "New Zealand unemployment rose to 5.7% (5.5% expected). Negative surprise.",
-    "A December RBNZ hike is about 60% expected; the bank wants more, but weak jobs argue against. No gap.",
-    "Dairy prices rose about 5.6% over two auctions (plus).",
-    "The 7 Nov election: on the first count the governing right-leaning bloc has 68 of 131 seats, a majority of three, and keeps a majority even in the worst case for the special votes. That is normal political risk, so this ingredient is 0 (final check: Phase 1 had misread the count and scored −1).",
-    "The 'afraid' risk mood hurts NZD strongly (−2).",
-    "Result: −3 (Phase 1 said −4)."
+    "Dairy prices rose in the last two auctions (+2.5% and +3.0%), good for New Zealand's income.",
+    "Markets are calm, so the kiwi no longer pays a 'fear tax'.",
+    "The interest rate is only 2.75% and card spending fell 0.7% in October. Result: +1, up from −3."
    ],
-   "helps": "the risk mood improves or dairy prices keep rising at the 17 Nov auction.",
-   "hurts": "coalition talks stall after the 27 Nov official result, or weaker dairy at the 17 Nov auction.",
+   "helps": "Another strong dairy auction (17 Nov) and a calm risk mood.",
+   "hurts": "A weaker dairy auction or special votes threatening the government majority before 27 Nov.",
    "events": [
-    "17 Nov dairy auction",
-    "27 Nov final election result"
+    "16 Nov China October activity data",
+    "17 Nov Global Dairy Trade auction",
+    "27 Nov NZ official election result (HIGH)"
    ]
   },
   "XAU": {
    "name": "Gold",
    "flag": "🥇",
-   "score": 14,
-   "prev": 2,
-   "bias": "bullish",
-   "short": "Gold's own score is +7; gold = +7 + USD +7 = +14.",
-   "breakdown": "`X1 0` · `X2 ++` · `X3 ++` · `X4 0` · `X5 0`\nGold factor **G = 7** → XAU = G + USD = **+14**\nConfidence: **High**",
+   "score": 2,
+   "prev": 14,
+   "bias": "neutral",
+   "short": "Gold score +2 (gold factor −3 + dollar +5). XAUUSD is bearish, low conviction.",
+   "breakdown": "`X1 −1` · `X2 0` · `X3 +1` · `X4 −1` · `X5 0`\nRaw **-2.70** → G **−3** · XAU **+2**\nConfidence: **Medium**",
    "why": [
-    "Gold is scored in US-dollar terms.",
-    "Fear (risk mood −2) gives the safe-haven ingredient +2.",
-    "Central banks bought 321 tonnes in Q3 and gold funds took in $2.7bn in October: +2.",
-    "Real yields fell, but a hawkish Fed caps that ingredient at 0. Inflation expectations fell exactly 10bp (edge, 0). Positioning not extreme (0).",
-    "Rule: gold score = G (+7) + USD (+7) = +14. XAUUSD gap = +7."
+    "Gold pays no interest. The US 10-year real yield rose from 2.74% to 2.86% in four weeks, which hurts gold.",
+    "Inflation expectations fell 11bp, so gold's inflation-hedge appeal is weaker.",
+    "Markets are calm, so no safe-haven demand. Central banks keep buying (China +26 tonnes in October). Gold factor −3; gold score +2 (= gold factor + the dollar's +5)."
    ],
-   "helps": "US CPI below consensus (real yields fall further) or deeper risk-off.",
-   "hurts": "Hot US CPI lifting real yields, or ETF outflows.",
+   "helps": "US real yields falling back below 2.74% or a new risk scare; strong ETF inflows.",
+   "hurts": "Real yields rising further or central-bank/ETF demand fading.",
    "events": [
-    "10 Nov US CPI (HIGH)",
-    "13 Nov US PPI"
+    "16 Nov Fed Chair Warsh speech (HIGH)",
+    "18 Nov FOMC minutes (27–28 Oct meeting) (HIGH)",
+    "25 Nov US Q3 GDP (2nd) and October PCE (HIGH)"
    ]
   }
  },
  "pairs": {
-  "EURUSD": { "gap": -10, "bias": "bearish", "conviction": "high", "text": "Fundamentals favour **USD** over **EUR**. If the fundamentals play out, EURUSD tends to fall.", "prev_bias": "bearish" },
-  "GBPUSD": { "gap": -10, "bias": "bearish", "conviction": "high", "text": "Fundamentals favour **USD** over **GBP**. If the fundamentals play out, GBPUSD tends to fall.", "prev_bias": "two-sided" },
-  "USDJPY": { "gap": 5, "bias": "bullish", "conviction": "medium", "text": "Fundamentals favour **USD** over **JPY**. If the fundamentals play out, USDJPY tends to rise.", "prev_bias": "two-sided" },
-  "USDCHF": { "gap": 7, "bias": "bullish", "conviction": "medium", "text": "Fundamentals favour **USD** over **CHF**. If the fundamentals play out, USDCHF tends to rise.", "prev_bias": "bullish" },
-  "USDCAD": { "gap": 13, "bias": "bullish", "conviction": "medium", "text": "Fundamentals favour **USD** over **CAD**. If the fundamentals play out, USDCAD tends to rise.", "prev_bias": "bullish" },
-  "AUDUSD": { "gap": -7, "bias": "bearish", "conviction": "medium", "text": "Fundamentals favour **USD** over **AUD**. If the fundamentals play out, AUDUSD tends to fall.", "prev_bias": "bullish" },
-  "NZDUSD": { "gap": -10, "bias": "bearish", "conviction": "medium", "text": "Fundamentals favour **USD** over **NZD**. If the fundamentals play out, NZDUSD tends to fall.\n*Final check: was bearish (medium) in Phase 1; NZD corrected from −4 to −3.*", "prev_bias": "two-sided" },
-  "EURGBP": { "gap": 0, "bias": "two-sided", "conviction": "low", "text": "**EUR** and **GBP** score close to each other. No clear fundamental direction.", "prev_bias": "bearish" },
-  "EURJPY": { "gap": -5, "bias": "bearish", "conviction": "medium", "text": "Fundamentals favour **JPY** over **EUR**. If the fundamentals play out, EURJPY tends to fall.", "prev_bias": "bearish" },
-  "EURCHF": { "gap": -3, "bias": "bearish", "conviction": "low", "text": "Fundamentals favour **CHF** over **EUR**. If the fundamentals play out, EURCHF tends to fall.\n*Low conviction: the gap is small, so this is only a mild lean.*", "prev_bias": "two-sided" },
-  "EURAUD": { "gap": -3, "bias": "bearish", "conviction": "low", "text": "Fundamentals favour **AUD** over **EUR**. If the fundamentals play out, EURAUD tends to fall.\n*Low conviction: the gap is small, so this is only a mild lean.*", "prev_bias": "bearish" },
-  "EURNZD": { "gap": 0, "bias": "two-sided", "conviction": "low", "text": "**EUR** and **NZD** score close to each other. No clear fundamental direction.\n*Final check: was two-sided (low) in Phase 1; NZD corrected from −4 to −3.*", "prev_bias": "bearish" },
-  "EURCAD": { "gap": 3, "bias": "bullish", "conviction": "low", "text": "Fundamentals favour **EUR** over **CAD**. If the fundamentals play out, EURCAD tends to rise.\n*Low conviction: the gap is small, so this is only a mild lean.*", "prev_bias": "two-sided" },
-  "GBPJPY": { "gap": -5, "bias": "bearish", "conviction": "medium", "text": "Fundamentals favour **JPY** over **GBP**. If the fundamentals play out, GBPJPY tends to fall.", "prev_bias": "two-sided" },
-  "GBPCHF": { "gap": -3, "bias": "bearish", "conviction": "low", "text": "Fundamentals favour **CHF** over **GBP**. If the fundamentals play out, GBPCHF tends to fall.\n*Low conviction: the gap is small, so this is only a mild lean.*", "prev_bias": "bullish" },
-  "GBPAUD": { "gap": -3, "bias": "bearish", "conviction": "low", "text": "Fundamentals favour **AUD** over **GBP**. If the fundamentals play out, GBPAUD tends to fall.\n*Low conviction: the gap is small, so this is only a mild lean.*", "prev_bias": "two-sided" },
-  "GBPNZD": { "gap": 0, "bias": "two-sided", "conviction": "low", "text": "**GBP** and **NZD** score close to each other. No clear fundamental direction.\n*Final check: was two-sided (low) in Phase 1; NZD corrected from −4 to −3.*", "prev_bias": "bullish" },
-  "GBPCAD": { "gap": 3, "bias": "bullish", "conviction": "low", "text": "Fundamentals favour **GBP** over **CAD**. If the fundamentals play out, GBPCAD tends to rise.\n*Low conviction: the gap is small, so this is only a mild lean.*", "prev_bias": "bullish" },
-  "AUDJPY": { "gap": -2, "bias": "two-sided", "conviction": "low", "text": "**AUD** and **JPY** score close to each other. No clear fundamental direction.", "prev_bias": "bullish" },
-  "AUDCHF": { "gap": 0, "bias": "two-sided", "conviction": "low", "text": "**AUD** and **CHF** score close to each other. No clear fundamental direction.", "prev_bias": "bullish" },
-  "AUDNZD": { "gap": 3, "bias": "bullish", "conviction": "low", "text": "Fundamentals favour **AUD** over **NZD**. If the fundamentals play out, AUDNZD tends to rise.\n*Low conviction: the gap is small, so this is only a mild lean.*\n*Final check: was bullish (low) in Phase 1; NZD corrected from −4 to −3.*", "prev_bias": "bullish" },
-  "AUDCAD": { "gap": 6, "bias": "bullish", "conviction": "medium", "text": "Fundamentals favour **AUD** over **CAD**. If the fundamentals play out, AUDCAD tends to rise.", "prev_bias": "bullish" },
-  "NZDJPY": { "gap": -5, "bias": "bearish", "conviction": "medium", "text": "Fundamentals favour **JPY** over **NZD**. If the fundamentals play out, NZDJPY tends to fall.\n*Final check: was bearish (medium) in Phase 1; NZD corrected from −4 to −3.*", "prev_bias": "two-sided" },
-  "NZDCHF": { "gap": -3, "bias": "bearish", "conviction": "low", "text": "Fundamentals favour **CHF** over **NZD**. If the fundamentals play out, NZDCHF tends to fall.\n*Low conviction: the gap is small, so this is only a mild lean.*\n*Final check: was bearish (low) in Phase 1; NZD corrected from −4 to −3.*", "prev_bias": "bullish" },
-  "NZDCAD": { "gap": 3, "bias": "bullish", "conviction": "low", "text": "Fundamentals favour **NZD** over **CAD**. If the fundamentals play out, NZDCAD tends to rise.\n*Low conviction: the gap is small, so this is only a mild lean.*\n*Final check: was two-sided (low) in Phase 1; NZD corrected from −4 to −3.*", "prev_bias": "bullish" },
-  "CADJPY": { "gap": -8, "bias": "bearish", "conviction": "medium", "text": "Fundamentals favour **JPY** over **CAD**. If the fundamentals play out, CADJPY tends to fall.", "prev_bias": "bearish" },
-  "CADCHF": { "gap": -6, "bias": "bearish", "conviction": "medium", "text": "Fundamentals favour **CHF** over **CAD**. If the fundamentals play out, CADCHF tends to fall.", "prev_bias": "two-sided" },
-  "CHFJPY": { "gap": -2, "bias": "two-sided", "conviction": "low", "text": "**CHF** and **JPY** score close to each other. No clear fundamental direction.", "prev_bias": "bearish" },
-  "XAUUSD": { "gap": 7, "bias": "bullish", "conviction": "medium", "text": "Fundamentals favour **XAU** over **USD**. If the fundamentals play out, XAUUSD tends to rise.", "prev_bias": "two-sided" }
+  "EURUSD": {
+   "gap": -8,
+   "bias": "bearish",
+   "conviction": "medium",
+   "text": "Fundamentals favour **USD** over **EUR**. If the fundamentals play out, EURUSD tends to fall.",
+   "prev_bias": "bearish"
+  },
+  "GBPUSD": {
+   "gap": -4,
+   "bias": "bearish",
+   "conviction": "low",
+   "text": "Fundamentals favour **USD** over **GBP**. If the fundamentals play out, GBPUSD tends to fall.",
+   "prev_bias": "bearish"
+  },
+  "USDJPY": {
+   "gap": 5,
+   "bias": "bullish",
+   "conviction": "medium",
+   "text": "Fundamentals favour **USD** over **JPY**. If the fundamentals play out, USDJPY tends to rise.",
+   "prev_bias": "bullish"
+  },
+  "USDCHF": {
+   "gap": 8,
+   "bias": "bullish",
+   "conviction": "medium",
+   "text": "Fundamentals favour **USD** over **CHF**. If the fundamentals play out, USDCHF tends to rise.",
+   "prev_bias": "bullish"
+  },
+  "USDCAD": {
+   "gap": 9,
+   "bias": "bullish",
+   "conviction": "low",
+   "text": "Fundamentals favour **USD** over **CAD**. If the fundamentals play out, USDCAD tends to rise.",
+   "prev_bias": "bullish"
+  },
+  "AUDUSD": {
+   "gap": -2,
+   "bias": "two-sided",
+   "conviction": "low",
+   "text": "No clear favourite: **AUD** and **USD** are too close (gap −2). Expect AUDUSD to follow the news rather than a fundamental lean.",
+   "prev_bias": "bearish"
+  },
+  "NZDUSD": {
+   "gap": -4,
+   "bias": "bearish",
+   "conviction": "low",
+   "text": "Fundamentals favour **USD** over **NZD**. If the fundamentals play out, NZDUSD tends to fall.",
+   "prev_bias": "bearish"
+  },
+  "EURGBP": {
+   "gap": -4,
+   "bias": "bearish",
+   "conviction": "low",
+   "text": "Fundamentals favour **GBP** over **EUR**. If the fundamentals play out, EURGBP tends to fall.",
+   "prev_bias": "two-sided"
+  },
+  "EURJPY": {
+   "gap": -3,
+   "bias": "bearish",
+   "conviction": "low",
+   "text": "Fundamentals favour **JPY** over **EUR**. If the fundamentals play out, EURJPY tends to fall.",
+   "prev_bias": "bearish"
+  },
+  "EURCHF": {
+   "gap": 0,
+   "bias": "two-sided",
+   "conviction": "low",
+   "text": "No clear favourite: **EUR** and **CHF** are too close (gap 0). Expect EURCHF to follow the news rather than a fundamental lean.",
+   "prev_bias": "bearish"
+  },
+  "EURAUD": {
+   "gap": -6,
+   "bias": "bearish",
+   "conviction": "medium",
+   "text": "Fundamentals favour **AUD** over **EUR**. If the fundamentals play out, EURAUD tends to fall.",
+   "prev_bias": "bearish"
+  },
+  "EURNZD": {
+   "gap": -4,
+   "bias": "bearish",
+   "conviction": "low",
+   "text": "Fundamentals favour **NZD** over **EUR**. If the fundamentals play out, EURNZD tends to fall.",
+   "prev_bias": "two-sided"
+  },
+  "EURCAD": {
+   "gap": 1,
+   "bias": "two-sided",
+   "conviction": "low",
+   "text": "No clear favourite: **EUR** and **CAD** are too close (gap +1). Expect EURCAD to follow the news rather than a fundamental lean.",
+   "prev_bias": "bullish"
+  },
+  "GBPJPY": {
+   "gap": 1,
+   "bias": "two-sided",
+   "conviction": "low",
+   "text": "No clear favourite: **GBP** and **JPY** are too close (gap +1). Expect GBPJPY to follow the news rather than a fundamental lean.",
+   "prev_bias": "bearish"
+  },
+  "GBPCHF": {
+   "gap": 4,
+   "bias": "bullish",
+   "conviction": "low",
+   "text": "Fundamentals favour **GBP** over **CHF**. If the fundamentals play out, GBPCHF tends to rise.",
+   "prev_bias": "bearish"
+  },
+  "GBPAUD": {
+   "gap": -2,
+   "bias": "two-sided",
+   "conviction": "low",
+   "text": "No clear favourite: **GBP** and **AUD** are too close (gap −2). Expect GBPAUD to follow the news rather than a fundamental lean.",
+   "prev_bias": "bearish"
+  },
+  "GBPNZD": {
+   "gap": 0,
+   "bias": "two-sided",
+   "conviction": "low",
+   "text": "No clear favourite: **GBP** and **NZD** are too close (gap 0). Expect GBPNZD to follow the news rather than a fundamental lean.",
+   "prev_bias": "two-sided"
+  },
+  "GBPCAD": {
+   "gap": 5,
+   "bias": "bullish",
+   "conviction": "low",
+   "text": "Fundamentals favour **GBP** over **CAD**. If the fundamentals play out, GBPCAD tends to rise.",
+   "prev_bias": "bullish"
+  },
+  "AUDJPY": {
+   "gap": 3,
+   "bias": "bullish",
+   "conviction": "low",
+   "text": "Fundamentals favour **AUD** over **JPY**. If the fundamentals play out, AUDJPY tends to rise.",
+   "prev_bias": "two-sided"
+  },
+  "AUDCHF": {
+   "gap": 6,
+   "bias": "bullish",
+   "conviction": "medium",
+   "text": "Fundamentals favour **AUD** over **CHF**. If the fundamentals play out, AUDCHF tends to rise.",
+   "prev_bias": "two-sided"
+  },
+  "AUDNZD": {
+   "gap": 2,
+   "bias": "two-sided",
+   "conviction": "low",
+   "text": "No clear favourite: **AUD** and **NZD** are too close (gap +2). Expect AUDNZD to follow the news rather than a fundamental lean.",
+   "prev_bias": "bullish"
+  },
+  "AUDCAD": {
+   "gap": 7,
+   "bias": "bullish",
+   "conviction": "low",
+   "text": "Fundamentals favour **AUD** over **CAD**. If the fundamentals play out, AUDCAD tends to rise.",
+   "prev_bias": "bullish"
+  },
+  "NZDJPY": {
+   "gap": 1,
+   "bias": "two-sided",
+   "conviction": "low",
+   "text": "No clear favourite: **NZD** and **JPY** are too close (gap +1). Expect NZDJPY to follow the news rather than a fundamental lean.",
+   "prev_bias": "bearish"
+  },
+  "NZDCHF": {
+   "gap": 4,
+   "bias": "bullish",
+   "conviction": "low",
+   "text": "Fundamentals favour **NZD** over **CHF**. If the fundamentals play out, NZDCHF tends to rise.",
+   "prev_bias": "bearish"
+  },
+  "NZDCAD": {
+   "gap": 5,
+   "bias": "bullish",
+   "conviction": "low",
+   "text": "Fundamentals favour **NZD** over **CAD**. If the fundamentals play out, NZDCAD tends to rise.",
+   "prev_bias": "bullish"
+  },
+  "CADJPY": {
+   "gap": -4,
+   "bias": "bearish",
+   "conviction": "low",
+   "text": "Fundamentals favour **JPY** over **CAD**. If the fundamentals play out, CADJPY tends to fall.",
+   "prev_bias": "bearish"
+  },
+  "CADCHF": {
+   "gap": -1,
+   "bias": "two-sided",
+   "conviction": "low",
+   "text": "No clear favourite: **CAD** and **CHF** are too close (gap −1). Expect CADCHF to follow the news rather than a fundamental lean.",
+   "prev_bias": "bearish"
+  },
+  "CHFJPY": {
+   "gap": -3,
+   "bias": "bearish",
+   "conviction": "low",
+   "text": "Fundamentals favour **JPY** over **CHF**. If the fundamentals play out, CHFJPY tends to fall.",
+   "prev_bias": "two-sided"
+  },
+  "XAUUSD": {
+   "gap": -3,
+   "bias": "bearish",
+   "conviction": "low",
+   "text": "Fundamentals favour **USD** over **XAU**. If the fundamentals play out, XAUUSD tends to fall.",
+   "prev_bias": "bullish"
+  }
  }
 }
