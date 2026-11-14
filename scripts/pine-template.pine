@@ -46,9 +46,9 @@ f_item(string row, int i) =>
     string[] parts = str.split(row, ",")
     i >= 0 and i < array.size(parts) ? array.get(parts, i) : "?"
 f_num(string s) => str.tonumber(s)
-f_score(int wi, string ccy) =>
+f_score(int wk, string ccy) =>
     int k = array.indexof(CCY, ccy)
-    string v = wi >= 0 and k >= 0 ? f_item(array.get(wS, math.max(wi, 0)), k) : "?"
+    string v = wk >= 0 and k >= 0 ? f_item(array.get(wS, math.max(wk, 0)), k) : "?"
     v == "?" ? "?" : f_sg(f_num(v))
 f_pos(string p) => p == "Top right" ? position.top_right : p == "Bottom right" ? position.bottom_right : p == "Top left" ? position.top_left : position.bottom_left
 
