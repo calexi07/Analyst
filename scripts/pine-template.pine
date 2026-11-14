@@ -11,6 +11,7 @@ string pairIn  = input.string("Auto", "Pair", options = [{{PAIR_OPTIONS}}], tool
 bool   showBg  = input.bool(true,  "Shade each week by its bias",   group = "Show")
 bool   showWk  = input.bool(true,  "Week labels",                   group = "Show")
 bool   showCk  = input.bool(true,  "Daily check markers",           group = "Show")
+string mkStyle = input.string("Emoji + gap", "Check marker", options = ["Emoji", "Emoji + gap", "Emoji + status"], group = "Show", tooltip = "Hover the marker for the full note: what changed, what was confirmed or invalidated, and both currencies.")
 bool   showTb  = input.bool(true,  "Info table",                    group = "Show")
 bool   showDb  = input.bool(false, "All-pairs dashboard",           group = "Show")
 string wkPos   = input.string("Top of the visible chart", "Week label position", options = ["Top of the visible chart", "Above the week's high"], group = "Show")
@@ -29,10 +30,10 @@ var string[] wS = array.new_string()  // currency scores in CCY order
 var int[]    cT = array.new_int()     // day of the check (00:00 Bucharest)
 var string[] cN = array.new_string()  // check name
 var string[] cD = array.new_string()  // per pair: status + today's gap
+var string[] cH = array.new_string()  // per pair: the check's one-line note (newest checks only)
+var string[] cC = array.new_string()  // per currency: status~note (newest checks only)
 if barstate.isfirst
 {{DATA}}
-string LAST_HOOKS = "{{LAST_HOOKS}}"
-int    LAST_CI    = {{LAST_CHECK_INDEX}}
 
 // ───────── helpers ─────────
 f_col(string b) => b == "U" ? bullC : b == "D" ? bearC : neutC
@@ -47,6 +48,29 @@ f_item(string row, int i) =>
     string[] parts = str.split(row, ",")
     i >= 0 and i < array.size(parts) ? array.get(parts, i) : "?"
 f_num(string s) => str.tonumber(s)
+f_part(string row, string sep, int i) =>
+    string[] parts = str.split(row, sep)
+    i >= 0 and i < array.size(parts) ? array.get(parts, i) : ""
+// break a long text into lines of about n characters (tooltips and table cells do not wrap by themselves)
+f_wrap(string txt, int n) =>
+    string[] words = str.split(txt, " ")
+    string out = ""
+    string ln = ""
+    for w in words
+        if ln != "" and str.length(ln) + str.length(w) + 1 > n
+            out := out == "" ? ln : out + "\n" + ln
+            ln := w
+        else
+            ln := ln == "" ? w : ln + " " + w
+    out == "" ? ln : out + "\n" + ln
+// one currency's status and note in a check
+f_leg(int ci, string ccy) =>
+    int k = array.indexof(CCY, ccy)
+    string row = array.get(cC, ci)
+    string it = row == "" or k < 0 ? "" : f_part(row, "|", k)
+    string st = f_part(it, "~", 0)
+    string nt = f_part(it, "~", 1)
+    it == "" ? "" : ccy + " · " + (st == "-" ? "" : st) + (nt == "-" or nt == "" ? "" : "\n" + f_wrap(nt, 60))
 f_score(int wk, string ccy) =>
     int k = array.indexof(CCY, ccy)
     string v = wk >= 0 and k >= 0 ? f_item(array.get(wS, math.max(wk, 0)), k) : "?"
@@ -102,17 +126,24 @@ var int ci = 0
 int barEnd = time + timeframe.in_seconds() * 1000
 string ckTxt = ""
 string ckTip = ""
+var string prevS = ""
 while ci < array.size(cT) and array.get(cT, ci) < barEnd
     if array.get(cT, ci) >= time - 3 * 86400000 and pIdx >= 0
         string r = f_item(array.get(cD, ci), pIdx)
         if r != "?"
             string s = str.substring(r, 0, 1)
             float tg = str.length(r) > 1 ? f_num(str.substring(r, 1)) : na
-            ckTxt := f_emo(s)
-            ckTip += (ckTip == "" ? "" : "\n") + array.get(cN, ci) + ": " + f_emo(s) + " " + f_sname(s) + " · gap " + f_sg(tg)
+            string chg = prevS == "" ? "" : prevS == s ? "unchanged since the last check" : "changed: " + f_emo(prevS) + " " + f_sname(prevS) + " → " + f_emo(s) + " " + f_sname(s)
+            string gapTxt = "gap " + f_sg(g) + " published → " + f_sg(tg) + " today" + (na(g) or na(tg) ? "" : tg == g ? " (same)" : math.abs(tg) > math.abs(g) and math.sign(tg) == math.sign(g) ? " (stronger)" : " (weaker)")
+            string hk = f_part(array.get(cH, ci), "|", pIdx)
+            string bL = f_leg(ci, str.substring(pName, 0, 3))
+            string qL = f_leg(ci, str.substring(pName, 3, 6))
+            ckTxt := mkStyle == "Emoji" ? f_emo(s) : mkStyle == "Emoji + gap" ? f_emo(s) + " " + f_sg(tg) : f_emo(s) + " " + f_sname(s)
+            ckTip += (ckTip == "" ? "" : "\n\n") + "▌" + array.get(cN, ci) + "\n" + f_emo(s) + " " + f_sname(s) + "\n" + gapTxt + (chg == "" ? "" : "\n" + chg) + (hk == "" or hk == "-" ? "" : "\n\n" + f_wrap(hk, 60)) + (bL == "" ? "" : "\n\n" + bL) + (qL == "" ? "" : "\n" + qL)
+            prevS := s
     ci += 1
 if showCk and ckTxt != ""
-    label.new(bar_index, low, ckTxt, yloc = yloc.belowbar, style = label.style_none, size = size.normal, tooltip = ckTip + "\nMarker = latest check of the day · fundamental context only")
+    label.new(bar_index, low, ckTxt, yloc = yloc.belowbar, style = label.style_none, size = size.normal, tooltip = ckTip + "\n\nMarker = latest check of the day. Fundamental context only, not a trade signal.", textcolor = chart.fg_color)
 
 // ───────── info table and dashboard ─────────
 f_curWeek() =>
@@ -185,7 +216,6 @@ if barstate.islast and (showTb or showDb)
             table.cell(tb, 1, 5, lc >= 0 ? array.get(cN, lc) : "–", text_color = color.white, text_size = size.small)
             table.cell(tb, 0, 6, "Status", text_color = color.white, text_size = size.small)
             table.cell(tb, 1, 6, cr != "?" ? f_emo(str.substring(cr, 0, 1)) + " " + f_sname(str.substring(cr, 0, 1)) + " · gap " + f_sg(str.length(cr) > 1 ? f_num(str.substring(cr, 1)) : na) : "–", text_color = color.white, text_size = size.small)
-            string[] hks = str.split(LAST_HOOKS, "|")
-            string hk = lc == LAST_CI and lc >= 0 and pIdx < array.size(hks) ? array.get(hks, pIdx) : ""
+            string hk = lc >= 0 ? f_part(array.get(cH, lc), "|", pIdx) : ""
             table.cell(tb, 0, 7, "Note", text_color = color.white, text_size = size.small)
-            table.cell(tb, 1, 7, hk == "" or hk == "?" or hk == "-" ? "–" : str.length(hk) > 60 ? str.substring(hk, 0, 57) + "…" : hk, text_color = color.new(color.white, 20), text_size = size.small, tooltip = hk)
+            table.cell(tb, 1, 7, hk == "" or hk == "?" or hk == "-" ? "–" : f_wrap(hk, 48), text_color = color.new(color.white, 15), text_size = size.small, text_halign = text.align_left)

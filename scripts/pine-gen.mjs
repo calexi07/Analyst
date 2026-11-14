@@ -26,7 +26,7 @@ function statusCode(s){ s = String(s || '');
   if(/STRONGER/i.test(s)) return 'S';
   if(s.startsWith('✅') || /CONFIRMED/i.test(s)) return 'C';
   return '?'; }
-const clean = (s, n) => String(s || '').replace(/\[\/?[a-z]+\]/gi, '').replace(/["\\|^\n\r\t]/g, m => m === '"' ? "'" : ' ').replace(/\s+/g, ' ').trim().slice(0, n);
+const clean = (s, n) => String(s || '').replace(/\[\/?[a-z]+\]/gi, '').replace(/["\\|^~\n\r\t]/g, m => m === '"' ? "'" : ' ').replace(/\s+/g, ' ').trim().slice(0, n);
 
 const weeks = new Map();   // key → { y, w, phase, pairs: {PAIR: {b, c, bs, qs}}, ccy: {CCY: score} }
 const checks = new Map();  // `${date}:${slot}` → { date, slot, title, pairs: {PAIR: {s, g, hook}} }
@@ -40,8 +40,9 @@ function addFundamentals(j, phase){
 }
 function addCheck(j){
   if(!j || !j.date || !j.pairs) return;
-  const k = `${j.date}:${j.slot || 'check'}`, C = { date:j.date, slot:j.slot || 'check', title:clean(j.title, 60), pairs:{} };
-  for(const p of j.pairs) C.pairs[norm(p.pair)] = { s:statusCode(p.status), g:p.today_gap ?? p.published_gap ?? null, hook:clean(p.hook, 140) };
+  const k = `${j.date}:${j.slot || 'check'}`, C = { date:j.date, slot:j.slot || 'check', title:clean(j.title, 60), pairs:{}, ccy:{} };
+  for(const [c, v] of Object.entries(j.currencies || {})) C.ccy[c] = { st:clean(v.status, 40), note:clean(v.note, 170) };
+  for(const p of j.pairs) C.pairs[norm(p.pair)] = { s:statusCode(p.status), g:p.today_gap ?? p.published_gap ?? null, hook:clean(p.hook, 170) };
   checks.set(k, C);
 }
 
@@ -85,6 +86,14 @@ for(const W of wl){
   L.push(`    array.push(wD, "${rec}")`);
   L.push(`    array.push(wS, "${sc}")`);
 }
+// texts for the hover notes: newest checks first, within a budget so the script stays under TradingView's size limit
+const TEXT_BUDGET = 50000; let used = 0;
+for(const C of [...cl].reverse()){
+  const ccyTxt = CCY.map(c => C.ccy[c] ? `${C.ccy[c].st || '-'}~${C.ccy[c].note || '-'}` : '-~-').join('|');
+  const hookTxt = PAIRS.map(p => C.pairs[p]?.hook || '-').join('|');
+  C.ccyTxt = used + ccyTxt.length <= TEXT_BUDGET ? ccyTxt : ''; used += C.ccyTxt.length;
+  C.hookTxt = used + hookTxt.length <= TEXT_BUDGET ? hookTxt : ''; used += C.hookTxt.length;
+}
 for(const C of cl){
   const [y, m, d] = C.date.split('-').map(Number), hh = C.slot === 'morning' ? 6 : 19, mm = C.slot === 'morning' ? 30 : 55;
   const dt = new Date(Date.UTC(y, m - 1, d)), name = `${WD[dt.getUTCDay()]} ${d} ${MON[m - 1]} · ${C.slot}`;
@@ -92,6 +101,8 @@ for(const C of cl){
   L.push(`    array.push(cT, timestamp("Europe/Bucharest", ${y}, ${m}, ${d}, 0, 0))`);   // shown on the candle that opens at 00:00 Bucharest that day
   L.push(`    array.push(cN, "${name}")`);
   L.push(`    array.push(cD, "${rec}")`);
+  L.push(`    array.push(cH, "${C.hookTxt}")`);
+  L.push(`    array.push(cC, "${C.ccyTxt}")`);
 }
 const lastC = cl.at(-1);
 const hooks = lastC ? PAIRS.map(p => lastC.pairs[p]?.hook || '-').join('|') : '';
