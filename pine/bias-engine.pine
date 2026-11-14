@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — weekly bias + daily checks (history) on the chart.
-// Generated automatically: 2026-11-14 21:23 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 4 daily checks.
+// Generated automatically: 2026-11-14 21:28 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 4 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // Fundamental context only. Not a trade signal.
 //@version=6
@@ -17,6 +17,9 @@ bool   showWk  = input.bool(true,  "Week labels",                   group = "Sho
 bool   showCk  = input.bool(true,  "Daily check markers",           group = "Show")
 string ckMode  = input.string("All days", "Check markers on", options = ["All days", "Only when the status changes"], group = "Show")
 bool   bdFill  = input.bool(false, "Fill the band", group = "Show")
+bool   showTg  = input.bool(true,  "🎯 Typical move in the bias direction", group = "Show", tooltip = "The +1σ (bullish) or −1σ (bearish) level of the week with a ± pips zone. A statistical reference for a normal week, not a trade target. Nothing is drawn for two-sided weeks.")
+int    tgPips  = input.int(10, "🎯 zone ± pips", minval = 1, group = "Show")
+color  tgC     = input.color(#22AB94, "🎯 zone colour", group = "Colours")
 bool   showBd  = input.bool(true,  "Typical-week band (±1σ from last week's close)", group = "Show", tooltip = "σ = standard deviation of the last 26 weekly returns of this chart. Shows the normal range for the week; a move outside it against the bias is worth noticing. Context only.")
 string mkStyle = input.string("Emoji + gap", "Check marker", options = ["Emoji", "Emoji + gap", "Emoji + status"], group = "Show", tooltip = "Hover the marker for the full note: what changed, what was confirmed or invalidated, and both currencies.")
 bool   showTb  = input.bool(true,  "Info table",                    group = "Show")
@@ -27,7 +30,7 @@ color  bullC   = input.color(#22AB94, "Bullish",  group = "Colours")
 color  bearC   = input.color(#F23645, "Bearish",  group = "Colours")
 color  neutC   = input.color(#787B86, "Two-sided", group = "Colours")
 
-// ───────── data (generated 2026-11-14 21:23 UTC) ─────────
+// ───────── data (generated 2026-11-14 21:28 UTC) ─────────
 var string[] PAIRS = array.from("EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD")
 var string[] CCY   = array.from("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "XAU")
 var int[]    wT = array.new_int()     // week start (Sunday 21:00 UTC)
@@ -206,6 +209,29 @@ if showBd and newWk and not na(wkPrevC) and not na(wkSig)
     line.new(time, wkPrevC, t1, wkPrevC, xloc = xloc.bar_time, color = color.new(tMu, 50), style = line.style_dotted, width = 1)
     label.new(t1, up, "+1σ", xloc = xloc.bar_time, style = label.style_none, textcolor = color.new(bc, 30), size = size.tiny)
     label.new(t1, dn, "−1σ " + str.tostring(wkSig * 100, "#.##") + "%", xloc = xloc.bar_time, style = label.style_none, textcolor = color.new(bc, 30), size = size.tiny)
+// 🎯 the typical move in the direction of the week's bias, with a ± pips zone; marked when price reaches it
+float pipSz = str.contains(pName, "JPY") ? 0.01 : str.contains(pName, "XAU") ? 0.1 : 0.0001
+var label tgLbl = na
+var box   tgBox = na
+var float tgLvl = na
+var bool  tgHit = false
+if showTg and newWk
+    tgLvl := na
+    tgHit := false
+    if b != "N" and not na(wkPrevC) and not na(wkSig)
+        int t2 = array.get(wT, wi) + 5 * 86400000 + 3 * 3600000
+        tgLvl := b == "U" ? wkPrevC * math.exp(wkSig) : wkPrevC * math.exp(-wkSig)
+        float zH = tgLvl + tgPips * pipSz
+        float zL = tgLvl - tgPips * pipSz
+        tgBox := box.new(time, zH, t2, zL, xloc = xloc.bar_time, border_color = color.new(tgC, 20), border_width = 1, bgcolor = color.new(tgC, 80))
+        tgLbl := label.new(t2, tgLvl, "🎯", xloc = xloc.bar_time, style = label.style_label_left, color = color.new(tgC, 100), textcolor = tgC, size = mob ? size.small : size.normal, tooltip = "Typical " + (b == "U" ? "+1σ" : "−1σ") + " move for the week in the bias direction: " + str.tostring(tgLvl, format.mintick) + " (± " + str.tostring(tgPips) + " pips).\nStatistical reference, not a trade target.")
+if showTg and inWk and not na(tgLvl) and not tgHit and not newWk
+    bool reached = b == "U" ? high >= tgLvl - tgPips * pipSz : low <= tgLvl + tgPips * pipSz
+    if reached
+        tgHit := true
+        label.set_text(tgLbl, "🎯 ✓")
+        label.set_tooltip(tgLbl, label.get_text(tgLbl) + " reached on " + str.format_time(time, "EEE d MMM HH:mm", "Europe/Bucharest") + "\nTypical move in the bias direction: " + str.tostring(tgLvl, format.mintick) + ". Statistical reference, not a trade target.")
+        box.set_bgcolor(tgBox, color.new(tgC, 60))
 if showSep and newWk
     line.new(bar_index, low, bar_index, high, extend = extend.both, style = line.style_dotted, color = color.new(f_col(b), 55), width = 1)
 if showWk and newWk
