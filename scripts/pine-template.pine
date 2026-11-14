@@ -4,11 +4,15 @@
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // Fundamental context only. Not a trade signal.
 //@version=6
-indicator("Bias Engine · weekly bias & daily checks", shorttitle = "Bias Engine", overlay = true, max_labels_count = 500)
+indicator("Bias Engine · weekly bias & daily checks", shorttitle = "Bias Engine", overlay = true, max_labels_count = 500, max_lines_count = 500)
 
 // ───────── settings ─────────
 string pairIn  = input.string("Auto", "Pair", options = [{{PAIR_OPTIONS}}], tooltip = "Auto reads the chart symbol (e.g. EURUSD, OANDA:XAUUSD).")
-bool   showBg  = input.bool(true,  "Shade each week by its bias",   group = "Show")
+string theme   = input.string("Auto", "Theme", options = ["Auto", "Light", "Dark"], group = "Look", tooltip = "Auto follows the chart background.")
+string layout  = input.string("Desktop", "Layout", options = ["Desktop", "Mobile (compact)"], group = "Look", tooltip = "Mobile: smaller table with only bias, last check and note; shorter week labels.")
+string txtSz   = input.string("Small", "Text size", options = ["Tiny", "Small", "Normal"], group = "Look")
+bool   showBg  = input.bool(false, "Shade each week by its bias",   group = "Show")
+bool   showSep = input.bool(true,  "Dotted line at each week start", group = "Show")
 bool   showWk  = input.bool(true,  "Week labels",                   group = "Show")
 bool   showCk  = input.bool(true,  "Daily check markers",           group = "Show")
 string mkStyle = input.string("Emoji + gap", "Check marker", options = ["Emoji", "Emoji + gap", "Emoji + status"], group = "Show", tooltip = "Hover the marker for the full note: what changed, what was confirmed or invalidated, and both currencies.")
@@ -77,6 +81,18 @@ f_score(int wk, string ccy) =>
     v == "?" ? "?" : f_sg(f_num(v))
 f_pos(string p) => p == "Top right" ? position.top_right : p == "Bottom right" ? position.bottom_right : p == "Top left" ? position.top_left : position.bottom_left
 
+// ───────── look ─────────
+float bgLum = (0.299 * color.r(chart.bg_color) + 0.587 * color.g(chart.bg_color) + 0.114 * color.b(chart.bg_color)) / 255
+bool  dark  = theme == "Dark" or (theme == "Auto" and bgLum < 0.5)
+bool  mob   = layout == "Mobile (compact)"
+color tBg   = dark ? #1E222D : #FFFFFF
+color tHd   = dark ? #131722 : #F0F3FA
+color tBd   = dark ? #363A45 : #D1D4DC
+color tTx   = dark ? #D1D4DC : #131722
+color tMu   = dark ? #8C8F99 : #6A6D78
+string TS   = txtSz == "Tiny" ? size.tiny : txtSz == "Normal" ? size.normal : size.small
+f_stc(string s) => s == "C" or s == "S" ? bullC : s == "F" ? #E2A400 : s == "W" ? #2962FF : s == "P" ? #FF9800 : s == "X" ? bearC : neutC
+
 // ───────── which pair ─────────
 string symA = syminfo.basecurrency + syminfo.currency
 string tk   = str.upper(syminfo.ticker)
@@ -109,12 +125,15 @@ var float[] wkTop = array.new_float()
 bool newWk = hasRec and (wi != nz(wi[1], -1) or not inWk[1])
 if hasRec and not newWk and array.size(wkTop) > 0
     array.set(wkTop, array.size(wkTop) - 1, math.max(array.get(wkTop, array.size(wkTop) - 1), high))
+if showSep and newWk
+    line.new(bar_index, low, bar_index, high, extend = extend.both, style = line.style_dotted, color = color.new(f_col(b), 55), width = 1)
 if showWk and newWk
     string base  = str.substring(pName, 0, 3)
     string quote = str.substring(pName, 3, 6)
-    string txt = array.get(wN, wi) + "\n" + f_arrow(b) + " " + f_bname(b) + " · " + f_cname(cv) + "\ngap " + f_sg(g)
+    string wkS = str.replace_all(str.replace_all(array.get(wN, wi), "2026-", ""), "PHASE 1", "P1")
+    string txt = mob ? wkS + " " + f_arrow(b) + " " + f_sg(g) : array.get(wN, wi) + "\n" + f_arrow(b) + " " + f_bname(b) + " · " + f_cname(cv) + " · gap " + f_sg(g)
     string tip = pName + " · " + array.get(wN, wi) + "\n" + base + " " + f_score(wi, base) + " vs " + quote + " " + f_score(wi, quote) + "\nFundamental bias only, not a trade signal."
-    array.push(wkLbl, label.new(bar_index, high, txt, yloc = yloc.price, style = label.style_label_down, color = color.new(f_col(b), 15), textcolor = color.white, size = size.small, tooltip = tip))
+    array.push(wkLbl, label.new(bar_index, high, txt, yloc = yloc.price, style = label.style_label_down, color = color.new(f_col(b), dark ? 25 : 10), textcolor = color.white, size = mob ? size.tiny : TS, tooltip = tip))
     array.push(wkTop, high)
 if barstate.islast and array.size(wkLbl) > 0
     for j = 0 to array.size(wkLbl) - 1
@@ -143,7 +162,7 @@ while ci < array.size(cT) and array.get(cT, ci) < barEnd
             prevS := s
     ci += 1
 if showCk and ckTxt != ""
-    label.new(bar_index, low, ckTxt, yloc = yloc.belowbar, style = label.style_none, size = size.normal, tooltip = ckTip + "\n\nMarker = latest check of the day. Fundamental context only, not a trade signal.", textcolor = chart.fg_color)
+    label.new(bar_index, low, ckTxt, yloc = yloc.belowbar, style = label.style_none, size = mob ? size.small : TS, tooltip = ckTip + "\n\nMarker = latest check of the day. Fundamental context only, not a trade signal.", textcolor = chart.fg_color)
 
 // ───────── info table and dashboard ─────────
 f_curWeek() =>
@@ -163,59 +182,72 @@ f_lastCheck(int p) =>
     k
 
 var table tb = na
+f_c(int col, int row, string txt, color tc, color bg, string sz) =>
+    table.cell(tb, col, row, txt, text_color = tc, bgcolor = bg, text_size = sz, text_halign = text.align_left)
 if barstate.islast and (showTb or showDb)
     table.delete(tb)
-    color hdr = color.new(#131722, 0)
-    color bgc = color.new(#1E222D, 5)
     int kw = f_curWeek()
     if showDb
-        tb := table.new(f_pos(tbPos), 5, array.size(PAIRS) + 1, bgcolor = bgc, border_color = color.new(#363A45, 0), border_width = 1)
-        table.cell(tb, 0, 0, "Pair", text_color = color.white, bgcolor = hdr, text_size = size.small)
-        table.cell(tb, 1, 0, kw >= 0 ? array.get(wN, kw) : "Week", text_color = color.white, bgcolor = hdr, text_size = size.small)
-        table.cell(tb, 2, 0, "Conv.", text_color = color.white, bgcolor = hdr, text_size = size.small)
-        table.cell(tb, 3, 0, "Gap", text_color = color.white, bgcolor = hdr, text_size = size.small)
-        table.cell(tb, 4, 0, "Check", text_color = color.white, bgcolor = hdr, text_size = size.small)
+        tb := table.new(f_pos(tbPos), 5, array.size(PAIRS) + 1, bgcolor = tBg, frame_color = tBd, frame_width = 1, border_color = tBd, border_width = 1)
+        string dz = mob ? size.tiny : (TS == size.normal ? size.small : size.tiny)
+        f_c(0, 0, "Pair", tMu, tHd, dz)
+        f_c(1, 0, kw >= 0 ? array.get(wN, kw) : "Week", tMu, tHd, dz)
+        f_c(2, 0, "Conv.", tMu, tHd, dz)
+        f_c(3, 0, "Gap", tMu, tHd, dz)
+        f_c(4, 0, "Check", tMu, tHd, dz)
         for j = 0 to array.size(PAIRS) - 1
             string rr = kw >= 0 ? f_item(array.get(wD, kw), j) : "?"
             bool ok = rr != "?" and str.length(rr) >= 2
             string bb = ok ? str.substring(rr, 0, 1) : "N"
             int lc = f_lastCheck(j)
             string cr = lc >= 0 ? f_item(array.get(cD, lc), j) : "?"
-            color rowC = j == pIdx ? color.new(#2A2E39, 0) : bgc
-            table.cell(tb, 0, j + 1, array.get(PAIRS, j), text_color = color.white, bgcolor = rowC, text_size = size.tiny)
-            table.cell(tb, 1, j + 1, ok ? f_arrow(bb) + " " + f_bname(bb) : "–", text_color = ok ? f_col(bb) : neutC, bgcolor = rowC, text_size = size.tiny)
-            table.cell(tb, 2, j + 1, ok ? f_cname(str.substring(rr, 1, 2)) : "–", text_color = color.white, bgcolor = rowC, text_size = size.tiny)
-            table.cell(tb, 3, j + 1, ok and str.length(rr) > 2 ? f_sg(f_num(str.substring(rr, 2))) : "–", text_color = color.white, bgcolor = rowC, text_size = size.tiny)
-            table.cell(tb, 4, j + 1, cr != "?" ? f_emo(str.substring(cr, 0, 1)) : "–", text_color = color.white, bgcolor = rowC, text_size = size.tiny, tooltip = cr != "?" ? array.get(cN, lc) + ": " + f_sname(str.substring(cr, 0, 1)) : "")
+            string cs = cr != "?" ? str.substring(cr, 0, 1) : ""
+            color rowC = j == pIdx ? color.new(f_col(bb), 85) : tBg
+            f_c(0, j + 1, array.get(PAIRS, j), tTx, rowC, dz)
+            f_c(1, j + 1, ok ? f_arrow(bb) + " " + f_bname(bb) : "–", ok ? f_col(bb) : tMu, rowC, dz)
+            f_c(2, j + 1, ok ? f_cname(str.substring(rr, 1, 2)) : "–", tTx, rowC, dz)
+            f_c(3, j + 1, ok and str.length(rr) > 2 ? f_sg(f_num(str.substring(rr, 2))) : "–", tTx, rowC, dz)
+            f_c(4, j + 1, cr != "?" ? f_emo(cs) : "–", cr != "?" ? f_stc(cs) : tMu, rowC, dz)
+            if cr != "?"
+                table.cell_set_tooltip(tb, 4, j + 1, array.get(cN, lc) + ": " + f_sname(cs))
     else
-        tb := table.new(f_pos(tbPos), 2, 8, bgcolor = bgc, border_color = color.new(#363A45, 0), border_width = 1)
-        table.cell(tb, 0, 0, "Bias Engine", text_color = color.white, bgcolor = hdr, text_size = size.small)
-        table.cell(tb, 1, 0, pName, text_color = color.white, bgcolor = hdr, text_size = size.small)
+        tb := table.new(f_pos(tbPos), 2, 8, bgcolor = tBg, frame_color = tBd, frame_width = 1, border_color = tBd, border_width = 1)
         if pIdx < 0
-            table.cell(tb, 0, 1, "Symbol", text_color = color.white, text_size = size.small)
-            table.cell(tb, 1, 1, "not tracked: choose a pair in Settings", text_color = neutC, text_size = size.small)
+            f_c(0, 0, "Bias Engine", tMu, tHd, TS)
+            f_c(1, 0, "Symbol not tracked: choose a pair in Settings", tTx, tHd, TS)
         else
             string rr = kw >= 0 ? f_item(array.get(wD, kw), pIdx) : "?"
             bool ok = rr != "?" and str.length(rr) >= 2
             string bb = ok ? str.substring(rr, 0, 1) : "N"
+            string gp = ok and str.length(rr) > 2 ? f_sg(f_num(str.substring(rr, 2))) : "–"
             string base  = str.substring(pName, 0, 3)
             string quote = str.substring(pName, 3, 6)
-            table.cell(tb, 0, 1, "Week", text_color = color.white, text_size = size.small)
-            table.cell(tb, 1, 1, kw >= 0 ? array.get(wN, kw) : "–", text_color = color.white, text_size = size.small)
-            table.cell(tb, 0, 2, "Bias", text_color = color.white, text_size = size.small)
-            table.cell(tb, 1, 2, ok ? f_arrow(bb) + " " + f_bname(bb) + " · " + f_cname(str.substring(rr, 1, 2)) : "no analysis", text_color = ok ? f_col(bb) : neutC, text_size = size.small)
-            table.cell(tb, 0, 3, "Scores", text_color = color.white, text_size = size.small)
-            table.cell(tb, 1, 3, base + " " + f_score(kw, base) + " vs " + quote + " " + f_score(kw, quote) + " · gap " + (ok and str.length(rr) > 2 ? f_sg(f_num(str.substring(rr, 2))) : "–"), text_color = color.white, text_size = size.small)
-            int nx = kw + 1 < array.size(wT) ? kw + 1 : -1
-            string nr = nx >= 0 ? f_item(array.get(wD, nx), pIdx) : "?"
-            table.cell(tb, 0, 4, "Next", text_color = color.white, text_size = size.small)
-            table.cell(tb, 1, 4, nx >= 0 and nr != "?" and str.length(nr) >= 2 ? array.get(wN, nx) + ": " + f_arrow(str.substring(nr, 0, 1)) + " " + f_bname(str.substring(nr, 0, 1)) + " · " + f_cname(str.substring(nr, 1, 2)) : "–", text_color = nx >= 0 and nr != "?" ? f_col(str.substring(nr, 0, 1)) : neutC, text_size = size.small)
             int lc = f_lastCheck(pIdx)
             string cr = lc >= 0 ? f_item(array.get(cD, lc), pIdx) : "?"
-            table.cell(tb, 0, 5, "Last check", text_color = color.white, text_size = size.small)
-            table.cell(tb, 1, 5, lc >= 0 ? array.get(cN, lc) : "–", text_color = color.white, text_size = size.small)
-            table.cell(tb, 0, 6, "Status", text_color = color.white, text_size = size.small)
-            table.cell(tb, 1, 6, cr != "?" ? f_emo(str.substring(cr, 0, 1)) + " " + f_sname(str.substring(cr, 0, 1)) + " · gap " + f_sg(str.length(cr) > 1 ? f_num(str.substring(cr, 1)) : na) : "–", text_color = color.white, text_size = size.small)
+            string cs = cr != "?" ? str.substring(cr, 0, 1) : ""
             string hk = lc >= 0 ? f_part(array.get(cH, lc), "|", pIdx) : ""
-            table.cell(tb, 0, 7, "Note", text_color = color.white, text_size = size.small)
-            table.cell(tb, 1, 7, hk == "" or hk == "?" or hk == "-" ? "–" : f_wrap(hk, 48), text_color = color.new(color.white, 15), text_size = size.small, text_halign = text.align_left)
+            int nx = kw + 1 < array.size(wT) ? kw + 1 : -1
+            string nr = nx >= 0 ? f_item(array.get(wD, nx), pIdx) : "?"
+            bool nok = nr != "?" and str.length(nr) >= 2
+            color hdrC = ok ? color.new(f_col(bb), dark ? 20 : 0) : tHd
+            int row = 0
+            // header: pair + week bias
+            table.cell(tb, 0, row, pName, text_color = color.white, bgcolor = hdrC, text_size = TS, text_halign = text.align_left)
+            table.cell(tb, 1, row, (ok ? f_arrow(bb) + " " + f_bname(bb) + " · " + f_cname(str.substring(rr, 1, 2)) : "no analysis") + " · gap " + gp, text_color = color.white, bgcolor = hdrC, text_size = TS, text_halign = text.align_left)
+            row += 1
+            if not mob
+                f_c(0, row, "Week", tMu, tBg, TS)
+                f_c(1, row, kw >= 0 ? array.get(wN, kw) : "–", tTx, tBg, TS)
+                row += 1
+                f_c(0, row, "Scores", tMu, tBg, TS)
+                f_c(1, row, base + " " + f_score(kw, base) + "   vs   " + quote + " " + f_score(kw, quote), tTx, tBg, TS)
+                row += 1
+                f_c(0, row, "Next week", tMu, tBg, TS)
+                f_c(1, row, nok ? array.get(wN, nx) + " · " + f_arrow(str.substring(nr, 0, 1)) + " " + f_bname(str.substring(nr, 0, 1)) + " · " + f_cname(str.substring(nr, 1, 2)) : "not published yet", nok ? f_col(str.substring(nr, 0, 1)) : tMu, tBg, TS)
+                row += 1
+            color stBg = cs != "" ? color.new(f_stc(cs), dark ? 75 : 85) : tBg
+            f_c(0, row, mob ? "Check" : "Last check", tMu, stBg, TS)
+            f_c(1, row, (lc >= 0 ? array.get(cN, lc) + "\n" : "") + (cr != "?" ? f_emo(cs) + " " + f_sname(cs) + " · gap " + f_sg(str.length(cr) > 1 ? f_num(str.substring(cr, 1)) : na) : "–"), tTx, stBg, TS)
+            row += 1
+            f_c(0, row, "Note", tMu, tBg, TS)
+            f_c(1, row, hk == "" or hk == "?" or hk == "-" ? "–" : f_wrap(hk, mob ? 34 : 50), tTx, tBg, TS)
