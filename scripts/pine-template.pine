@@ -18,6 +18,8 @@ bool   showCk  = input.bool(true,  "Daily check markers",           group = "Sho
 string ckMode  = input.string("All days", "Check markers on", options = ["All days", "Only when the status changes"], group = "Show")
 bool   bdFill  = input.bool(false, "Fill the band", group = "Show")
 bool   showTg  = input.bool(true,  "🎯 Typical move in the bias direction", group = "Show", tooltip = "The +1σ (bullish) or −1σ (bearish) level of the week with a ± pips zone. A statistical reference for a normal week, not a trade target. Nothing is drawn for two-sided weeks.")
+string tgScope = input.string("Current week only", "🎯 show for", options = ["Current week only", "All weeks (history)"], group = "Show")
+string bdScope = input.string("All weeks (history)", "Band show for", options = ["Current week only", "All weeks (history)"], group = "Show")
 int    tgPips  = input.int(10, "🎯 zone ± pips", minval = 1, group = "Show")
 color  tgC     = input.color(#22AB94, "🎯 zone colour", group = "Colours")
 bool   showBd  = input.bool(true,  "Typical-week band (±1σ from last week's close)", group = "Show", tooltip = "σ = standard deviation of the last 26 weekly returns of this chart. Shows the normal range for the week; a move outside it against the bias is worth noticing. Context only.")
@@ -146,7 +148,8 @@ if hasRec and not newWk and array.size(wkTop) > 0
     array.set(wkTop, array.size(wkTop) - 1, math.max(array.get(wkTop, array.size(wkTop) - 1), high))
 // typical-week band: last week's close ± 1σ of weekly returns (this chart's own data, 26 weeks)
 [wkPrevC, wkSig] = request.security(syminfo.tickerid, "W", [close[1], ta.stdev(math.log(close[1] / close[2]), 26)], lookahead = barmerge.lookahead_on)
-if showBd and newWk and not na(wkPrevC) and not na(wkSig)
+bool isCurWk = wi >= 0 and array.get(wT, math.max(wi, 0)) <= timenow and array.get(wT, math.max(wi, 0)) + WEEK_MS > timenow
+if showBd and newWk and (bdScope == "All weeks (history)" or isCurWk) and not na(wkPrevC) and not na(wkSig)
     int t1 = array.get(wT, wi) + 5 * 86400000 + 3 * 3600000
     float up = wkPrevC * math.exp(wkSig)
     float dn = wkPrevC * math.exp(-wkSig)
@@ -167,7 +170,7 @@ var bool  tgHit = false
 if showTg and newWk
     tgLvl := na
     tgHit := false
-    if b != "N" and not na(wkPrevC) and not na(wkSig)
+    if b != "N" and (tgScope == "All weeks (history)" or isCurWk) and not na(wkPrevC) and not na(wkSig)
         int t2 = array.get(wT, wi) + 5 * 86400000 + 3 * 3600000
         tgLvl := b == "U" ? wkPrevC * math.exp(wkSig) : wkPrevC * math.exp(-wkSig)
         float zH = tgLvl + tgPips * pipSz
@@ -217,7 +220,11 @@ while ci < array.size(cT) and array.get(cT, ci) < barEnd
             string qL = f_leg(ci, str.substring(pName, 3, 6))
             ckTxt := mkStyle == "Emoji" ? f_emo(s) : mkStyle == "Emoji + gap" ? f_emo(s) + " " + f_sg(tg) : f_emo(s) + " " + f_short(s) + " " + f_sg(tg)
             ckTip += (ckTip == "" ? "" : "\n\n") + "▌" + array.get(cN, ci) + "\n" + f_emo(s) + " " + f_sname(s) + "\n" + gapTxt + (chg == "" ? "" : "\n" + chg) + (hk == "" or hk == "-" ? "" : "\n\n" + f_wrap(hk, 60)) + (bL == "" ? "" : "\n\n" + bL) + (qL == "" ? "" : "\n" + qL)
-            ckChg := ckChg or prevS == "" or prevS != s
+            // a change = a different status group than the previous check (Confirmed and "could get stronger" count as the same);
+            // the very first check counts only if it is not a plain confirmation of the weekly bias
+            string gN = s == "S" ? "C" : s
+            string gP = prevS == "S" ? "C" : prevS
+            ckChg := ckChg or (prevS == "" ? gN != "C" : gP != gN)
             prevS := s
     ci += 1
 var label[] ckLbl = array.new<label>()
