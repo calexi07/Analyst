@@ -89,7 +89,7 @@ for(const C of cl){
   const [y, m, d] = C.date.split('-').map(Number), hh = C.slot === 'morning' ? 6 : 19, mm = C.slot === 'morning' ? 30 : 55;
   const dt = new Date(Date.UTC(y, m - 1, d)), name = `${WD[dt.getUTCDay()]} ${d} ${MON[m - 1]} · ${C.slot}`;
   const rec = PAIRS.map(p => { const x = C.pairs[p]; return x ? `${x.s}${x.g ?? ''}` : '?'; }).join(',');
-  L.push(`    array.push(cT, timestamp("Europe/Bucharest", ${y}, ${m}, ${d}, ${hh}, ${mm}))`);
+  L.push(`    array.push(cT, timestamp("Europe/Bucharest", ${y}, ${m}, ${d}, 0, 0))`);   // shown on the candle that opens at 00:00 Bucharest that day
   L.push(`    array.push(cN, "${name}")`);
   L.push(`    array.push(cD, "${rec}")`);
 }

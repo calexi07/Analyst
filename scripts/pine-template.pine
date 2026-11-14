@@ -13,6 +13,7 @@ bool   showWk  = input.bool(true,  "Week labels",                   group = "Sho
 bool   showCk  = input.bool(true,  "Daily check markers",           group = "Show")
 bool   showTb  = input.bool(true,  "Info table",                    group = "Show")
 bool   showDb  = input.bool(false, "All-pairs dashboard",           group = "Show")
+string wkPos   = input.string("Top of the visible chart", "Week label position", options = ["Top of the visible chart", "Above the week's high"], group = "Show")
 string tbPos   = input.string("Top right", "Table position", options = ["Top right", "Bottom right", "Top left", "Bottom left"], group = "Show")
 color  bullC   = input.color(#22AB94, "Bullish",  group = "Colours")
 color  bearC   = input.color(#F23645, "Bearish",  group = "Colours")
@@ -25,7 +26,7 @@ var int[]    wT = array.new_int()     // week start (Sunday 21:00 UTC)
 var string[] wN = array.new_string()  // week name and phase
 var string[] wD = array.new_string()  // per pair: bias U/D/N + conviction h/m/l + gap
 var string[] wS = array.new_string()  // currency scores in CCY order
-var int[]    cT = array.new_int()     // check time
+var int[]    cT = array.new_int()     // day of the check (00:00 Bucharest)
 var string[] cN = array.new_string()  // check name
 var string[] cD = array.new_string()  // per pair: status + today's gap
 if barstate.isfirst
@@ -73,13 +74,28 @@ float  g  = hasRec and str.length(rec) > 2 ? f_num(str.substring(rec, 2)) : na
 
 bgcolor(showBg and hasRec ? color.new(f_col(b), f_tr(cv)) : na, title = "Week bias")
 
+float atrPad = ta.atr(14) * 0.5
+// highest high of the bars currently visible (labels go above it)
+var float visHi = na
+bool isVis = time >= chart.left_visible_bar_time and time <= chart.right_visible_bar_time
+if isVis
+    visHi := na(visHi) ? high : math.max(visHi, high)
+var label[] wkLbl = array.new<label>()
+var float[] wkTop = array.new_float()
 bool newWk = hasRec and (wi != nz(wi[1], -1) or not inWk[1])
+if hasRec and not newWk and array.size(wkTop) > 0
+    array.set(wkTop, array.size(wkTop) - 1, math.max(array.get(wkTop, array.size(wkTop) - 1), high))
 if showWk and newWk
     string base  = str.substring(pName, 0, 3)
     string quote = str.substring(pName, 3, 6)
     string txt = array.get(wN, wi) + "\n" + f_arrow(b) + " " + f_bname(b) + " · " + f_cname(cv) + "\ngap " + f_sg(g)
     string tip = pName + " · " + array.get(wN, wi) + "\n" + base + " " + f_score(wi, base) + " vs " + quote + " " + f_score(wi, quote) + "\nFundamental bias only, not a trade signal."
-    label.new(bar_index, high, txt, yloc = yloc.abovebar, style = label.style_label_down, color = color.new(f_col(b), 15), textcolor = color.white, size = size.small, tooltip = tip)
+    array.push(wkLbl, label.new(bar_index, high, txt, yloc = yloc.price, style = label.style_label_down, color = color.new(f_col(b), 15), textcolor = color.white, size = size.small, tooltip = tip))
+    array.push(wkTop, high)
+if barstate.islast and array.size(wkLbl) > 0
+    for j = 0 to array.size(wkLbl) - 1
+        float y = wkPos == "Above the week's high" or na(visHi) ? array.get(wkTop, j) : visHi
+        label.set_y(array.get(wkLbl, j), y + nz(atrPad))
 
 // ───────── daily checks on this bar ─────────
 var int ci = 0
@@ -92,11 +108,11 @@ while ci < array.size(cT) and array.get(cT, ci) < barEnd
         if r != "?"
             string s = str.substring(r, 0, 1)
             float tg = str.length(r) > 1 ? f_num(str.substring(r, 1)) : na
-            ckTxt += f_emo(s)
+            ckTxt := f_emo(s)
             ckTip += (ckTip == "" ? "" : "\n") + array.get(cN, ci) + ": " + f_emo(s) + " " + f_sname(s) + " · gap " + f_sg(tg)
     ci += 1
 if showCk and ckTxt != ""
-    label.new(bar_index, low, ckTxt, yloc = yloc.belowbar, style = label.style_none, size = size.normal, tooltip = ckTip + "\nDaily check · fundamental context only")
+    label.new(bar_index, low, ckTxt, yloc = yloc.belowbar, style = label.style_none, size = size.normal, tooltip = ckTip + "\nMarker = latest check of the day · fundamental context only")
 
 // ───────── info table and dashboard ─────────
 f_curWeek() =>
