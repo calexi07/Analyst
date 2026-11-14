@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — weekly bias + daily checks (history) on the chart.
-// Generated automatically: 2026-11-14 20:25 UTC. Data: 2026-W46 → 2026-W47 (2 weeks), 3 daily checks.
+// Generated automatically: 2026-11-14 20:25 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 4 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // Fundamental context only. Not a trade signal.
 //@version=6
@@ -29,6 +29,30 @@ var int[]    cT = array.new_int()     // check time
 var string[] cN = array.new_string()  // check name
 var string[] cD = array.new_string()  // per pair: status + today's gap
 if barstate.isfirst
+    array.push(wT, timestamp("UTC", 2026, 9, 27, 21, 0))
+    array.push(wN, "2026-W40")
+    array.push(wD, "Dm-9,D--10,U-12,U-6,U-14,D--9,D--14,Nl1,Nl3,Nl-3,N-0,D-5,U-5,Nl2,Dl-4,Nl-1,D-4,Dl4,N-3,N--3,U-5,Ul5,N--2,D--8,N--10,N--2,D--8,U-6,?")
+    array.push(wS, "9,0,-1,-3,3,-5,0,-5,?")
+    array.push(wT, timestamp("UTC", 2026, 10, 4, 21, 0))
+    array.push(wN, "2026-W41")
+    array.push(wD, "Dm-5,Nl-2,Um6,Dl-3,Uh10,Nl-3,Dh-10,Dl-3,Nl1,Dm-8,Dl-2,Um5,Um5,Ul4,Dm-5,Ul1,Um8,Um8,Ul3,Dm-6,Um7,Um7,Dl-4,Dh-13,Nl0,Nl-4,Dh-13,Um9,Dm-7")
+    array.push(wS, "4,-1,2,-2,7,-6,1,-6,-3")
+    array.push(wT, timestamp("UTC", 2026, 10, 11, 21, 0))
+    array.push(wN, "2026-W42")
+    array.push(wD, "Dm-9,Dm-8,Um8,Ul4,Um9,Dl-3,Dm-6,Nl-1,Nl-1,Dm-5,Dm-6,Dl-3,Nl0,Nl0,Dl-4,Dm-5,Nl-2,Nl1,Um5,Nl1,Ul3,Um6,Nl2,Nl-2,Ul3,Nl-1,Dm-5,Ul4,Dm-6")
+    array.push(wS, "5,-4,-3,-3,1,-4,2,-1,-1")
+    array.push(wT, timestamp("UTC", 2026, 10, 18, 21, 0))
+    array.push(wN, "2026-W43")
+    array.push(wD, "Dh-10,Dm-6,Um6,Ul3,Um7,Dm-5,Dm-7,Dl-4,Dl-4,Dm-7,Dm-5,Dl-3,Dl-3,Nl0,Dl-3,Nl-1,Nl1,Nl1,Nl1,Nl-2,Nl2,Nl2,Nl-1,Dl-4,Nl0,Nl-1,Dl-4,Ul3,Dl-4")
+    array.push(wS, "5,-5,-1,-1,2,-2,0,-2,1")
+    array.push(wT, timestamp("UTC", 2026, 10, 25, 21, 0))
+    array.push(wN, "2026-W44")
+    array.push(wD, "Dm-7,Nl-1,Nl0,Ul3,Ul4,Ul3,Nl-2,Dm-6,Dm-7,Dl-4,Dh-10,Dm-5,Dl-3,Nl-1,Nl2,Dl-4,Nl1,Ul3,Ul3,Um6,Um5,Um7,Nl-2,Nl1,Nl2,Dl-4,Nl-1,Dl-3,Nl1")
+    array.push(wS, "2,-5,1,2,-1,-2,5,0,3")
+    array.push(wT, timestamp("UTC", 2026, 11, 1, 21, 0))
+    array.push(wN, "2026-W45")
+    array.push(wD, "Dm-6,Nl2,Nl0,Um5,Ul4,Ul3,Nl-1,Dm-8,Dm-6,Nl-1,Dm-9,Dm-5,Nl-2,Nl2,Um7,Nl-1,Ul3,Um6,Ul3,Um8,Ul4,Um7,Nl-1,Ul4,Ul3,Dl-4,Nl1,Dm-5,Nl0")
+    array.push(wS, "2,-4,4,2,-3,-2,5,1,2")
     array.push(wT, timestamp("UTC", 2026, 11, 8, 21, 0))
     array.push(wN, "2026-W46 FINAL")
     array.push(wD, "Dh-10,Dh-10,Um5,Um7,Um13,Dm-7,Dm-10,Nl0,Dm-5,Dl-3,Dl-3,Nl0,Ul3,Dm-5,Dl-3,Dl-3,Nl0,Ul3,Nl-2,Nl0,Ul3,Um6,Dm-5,Dl-3,Ul3,Dm-8,Dm-6,Nl-2,Um7")
@@ -46,8 +70,11 @@ if barstate.isfirst
     array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 12, 19, 55))
     array.push(cN, "Thu 12 Nov · evening")
     array.push(cD, "C-10,C-10,W5,C7,C13,C-7,C-10,T0,W-5,W-3,W-3,T0,F3,S-5,F-3,F-3,T0,F3,W-2,T0,F3,C6,S-5,F-3,F3,S-8,C-6,W-2,P4")
-string LAST_HOOKS = "Another day, another push for the dollar, while the euro waits for fresh French clues.|The pound passed its growth test, but it didn't win the day.|A Bank of Japan dove spoke up, and the yen's December hopes got a little quieter.|The franc stayed silent again, and the dollar kept the floor.|Oil stayed soft, and the widest gap on our board stayed wide.|A quiet day in Australia left the dollar doing all the talking.|The kiwi had another empty page, and the Fed kept writing.|The pound took its test and passed it quietly, so the stand-off goes on.|Today's BoJ news pulled the yen's strongest scenario further away.|No new French data and no Swiss news: the thin lean stays thin.|The knife-edge pair is still balancing, with no new push from either side.|Two quiet currencies, one more day without a winner.|Oil softened again, and the slim euro lean stayed on its feet.|Sterling's growth number came in as expected, and a BoJ dove trimmed the yen's upside scenario.|The pound cleared its hurdle without drama, so the lean stays thin.|The UK's growth report landed on target, and the Aussie kept its narrow edge.|The pound had its turn, and the stand-off survived it.|Oil drifted lower again while the pound got an on-target growth report.|A dovish voice in Tokyo made the bearish scenario for this pair less likely.|Another day without a tie-breaker.|Two quiet neighbours, and the Aussie keeps its thin lead.|Oil's soft start on Thursday kept the commodity cousins apart.|The kiwi stayed quiet, and Tokyo's message turned mixed.|Neither side spoke today, so the thin lean is unchanged.|Oil's slide kept the kiwi's thin lead in place.|Oil weaker and a BoJ dove: the lean holds, the extreme scenario fades.|Weaker oil, a silent franc: the lean holds.|Two safe havens, and tonight the yen's case got a little softer.|Gold's slide continued, and its main enemy, higher rates, is still in the room."
-int    LAST_CI    = 2
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 13, 6, 30))
+    array.push(cN, "Fri 13 Nov · morning")
+    array.push(cD, "C-10,C-10,W5,C7,C13,C-7,C-10,T0,S-5,F-3,F-3,T0,F3,S-5,F-3,F-3,T0,F3,W-2,T0,F3,C6,S-5,F-3,F3,S-8,C-6,W-2,P4")
+string LAST_HOOKS = "French bond stress crept back up just as the Fed's doves turned out to be hawks too.|The pound had a quiet night while the Fed's leadership circle added to the hawkish chorus.|The yen poked through 160 overnight, and Tokyo's warning lights are blinking again.|A wobble on Wall Street, a steady dollar, and a franc that still has nothing new to say.|Oil bounced hard on Middle East attacks, giving the loonie its first good headline in days.|The Aussie slipped toward its 2026 lows while the Fed kept turning the screw.|The kiwi's factories kept growing, just a little slower, while the Fed kept talking tough.|The French bond gap widened again, but not enough to break the tie with sterling.|Both of this pair's open questions moved toward the base case overnight.|The euro's escape route narrowed again, so the thin bearish lean is back on firmer ground.|French bond stress ticked higher, and the knife-edge pair leaned back toward its call.|A softer factory survey in New Zealand, a wider French spread, and still no winner.|Oil's sharp rebound gave Canada a lift, testing a lean that was already thin.|Quiet in London, loud around 160 in Tokyo.|No news for either side, and a small dose of Wall Street nerves in the background.|Two quiet currencies, and the Aussie keeps its slim lead on paper.|The kiwi's factories cooled a touch, but the tie with sterling holds.|Oil's bounce gave the loonie a breather, and this thin lean felt it.|The yen hit 160 against the dollar, and the bearish path for this pair didn't get closer.|Wall Street flinched a little, but not enough to pick a winner here.|The kiwi's factory survey cooled, nudging this thin lean the right way.|Oil bounced, and the commodity cousins' gap faces its first real test.|Kiwi factories cooled, and the yen sat right on Tokyo's red line.|A cooler kiwi factory survey and a jumpier Wall Street, both nudging the same way.|Oil's rebound gave Canada a lift, and this fragile lean got squeezed from both sides.|Oil jumped, the yen sank to 160: the lean holds, the extreme case still waits.|Oil rallied and markets got jumpier: a mixed night for this pair.|Two safe havens, one at Tokyo's red line, and still no clear winner.|Gold's three-day slide hit its lowest since October 2025, then bounced in Asia."
+int    LAST_CI    = 3
 
 // ───────── helpers ─────────
 f_col(string b) => b == "U" ? bullC : b == "D" ? bearC : neutC
