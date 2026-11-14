@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — weekly bias + daily checks (history) on the chart.
-// Generated automatically: 2026-11-14 20:27 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 4 daily checks.
+// Generated automatically: 2026-11-14 20:37 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 4 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // Fundamental context only. Not a trade signal.
 //@version=6
@@ -13,19 +13,20 @@ bool   showWk  = input.bool(true,  "Week labels",                   group = "Sho
 bool   showCk  = input.bool(true,  "Daily check markers",           group = "Show")
 bool   showTb  = input.bool(true,  "Info table",                    group = "Show")
 bool   showDb  = input.bool(false, "All-pairs dashboard",           group = "Show")
+string wkPos   = input.string("Top of the visible chart", "Week label position", options = ["Top of the visible chart", "Above the week's high"], group = "Show")
 string tbPos   = input.string("Top right", "Table position", options = ["Top right", "Bottom right", "Top left", "Bottom left"], group = "Show")
 color  bullC   = input.color(#22AB94, "Bullish",  group = "Colours")
 color  bearC   = input.color(#F23645, "Bearish",  group = "Colours")
 color  neutC   = input.color(#787B86, "Two-sided", group = "Colours")
 
-// ───────── data (generated 2026-11-14 20:27 UTC) ─────────
+// ───────── data (generated 2026-11-14 20:37 UTC) ─────────
 var string[] PAIRS = array.from("EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD")
 var string[] CCY   = array.from("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "XAU")
 var int[]    wT = array.new_int()     // week start (Sunday 21:00 UTC)
 var string[] wN = array.new_string()  // week name and phase
 var string[] wD = array.new_string()  // per pair: bias U/D/N + conviction h/m/l + gap
 var string[] wS = array.new_string()  // currency scores in CCY order
-var int[]    cT = array.new_int()     // check time
+var int[]    cT = array.new_int()     // day of the check (00:00 Bucharest)
 var string[] cN = array.new_string()  // check name
 var string[] cD = array.new_string()  // per pair: status + today's gap
 if barstate.isfirst
@@ -61,16 +62,16 @@ if barstate.isfirst
     array.push(wN, "2026-W47 PHASE 1")
     array.push(wD, "Dm-8,Dl-4,Um5,Um8,Ul9,Nl-2,Dl-4,Dl-4,Dl-3,Nl0,Dm-6,Dl-4,Nl1,Nl1,Ul4,Nl-2,Nl0,Ul5,Ul3,Um6,Nl2,Ul7,Nl1,Ul4,Ul5,Dl-4,Nl-1,Dl-3,Dl-3")
     array.push(wS, "5,-3,1,0,-3,-4,3,1,2")
-    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 11, 19, 55))
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 11, 0, 0))
     array.push(cN, "Wed 11 Nov · evening")
     array.push(cD, "C-10,C-10,W5,C7,C13,C-7,C-10,T0,S-5,F-3,F-3,T0,F3,S-5,F-3,F-3,T0,F3,W-2,T0,F3,C6,S-5,F-3,F3,S-8,C-6,W-2,P4")
-    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 12, 6, 30))
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 12, 0, 0))
     array.push(cN, "Thu 12 Nov · morning")
     array.push(cD, "C-10,C-10,W5,C7,C13,C-7,C-10,T0,W-5,W-3,W-3,T0,F3,S-5,F-3,F-3,T0,F3,W-2,T0,F3,C6,S-5,F-3,F3,S-8,C-6,W-2,P4")
-    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 12, 19, 55))
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 12, 0, 0))
     array.push(cN, "Thu 12 Nov · evening")
     array.push(cD, "C-10,C-10,W5,C7,C13,C-7,C-10,T0,W-5,W-3,W-3,T0,F3,S-5,F-3,F-3,T0,F3,W-2,T0,F3,C6,S-5,F-3,F3,S-8,C-6,W-2,P4")
-    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 13, 6, 30))
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 13, 0, 0))
     array.push(cN, "Fri 13 Nov · morning")
     array.push(cD, "C-10,C-10,W5,C7,C13,C-7,C-10,T0,S-5,F-3,F-3,T0,F3,S-5,F-3,F-3,T0,F3,W-2,T0,F3,C6,S-5,F-3,F3,S-8,C-6,W-2,P4")
 string LAST_HOOKS = "French bond stress crept back up just as the Fed's doves turned out to be hawks too.|The pound had a quiet night while the Fed's leadership circle added to the hawkish chorus.|The yen poked through 160 overnight, and Tokyo's warning lights are blinking again.|A wobble on Wall Street, a steady dollar, and a franc that still has nothing new to say.|Oil bounced hard on Middle East attacks, giving the loonie its first good headline in days.|The Aussie slipped toward its 2026 lows while the Fed kept turning the screw.|The kiwi's factories kept growing, just a little slower, while the Fed kept talking tough.|The French bond gap widened again, but not enough to break the tie with sterling.|Both of this pair's open questions moved toward the base case overnight.|The euro's escape route narrowed again, so the thin bearish lean is back on firmer ground.|French bond stress ticked higher, and the knife-edge pair leaned back toward its call.|A softer factory survey in New Zealand, a wider French spread, and still no winner.|Oil's sharp rebound gave Canada a lift, testing a lean that was already thin.|Quiet in London, loud around 160 in Tokyo.|No news for either side, and a small dose of Wall Street nerves in the background.|Two quiet currencies, and the Aussie keeps its slim lead on paper.|The kiwi's factories cooled a touch, but the tie with sterling holds.|Oil's bounce gave the loonie a breather, and this thin lean felt it.|The yen hit 160 against the dollar, and the bearish path for this pair didn't get closer.|Wall Street flinched a little, but not enough to pick a winner here.|The kiwi's factory survey cooled, nudging this thin lean the right way.|Oil bounced, and the commodity cousins' gap faces its first real test.|Kiwi factories cooled, and the yen sat right on Tokyo's red line.|A cooler kiwi factory survey and a jumpier Wall Street, both nudging the same way.|Oil's rebound gave Canada a lift, and this fragile lean got squeezed from both sides.|Oil jumped, the yen sank to 160: the lean holds, the extreme case still waits.|Oil rallied and markets got jumpier: a mixed night for this pair.|Two safe havens, one at Tokyo's red line, and still no clear winner.|Gold's three-day slide hit its lowest since October 2025, then bounced in Asia."
@@ -116,13 +117,28 @@ float  g  = hasRec and str.length(rec) > 2 ? f_num(str.substring(rec, 2)) : na
 
 bgcolor(showBg and hasRec ? color.new(f_col(b), f_tr(cv)) : na, title = "Week bias")
 
+float atrPad = ta.atr(14) * 0.5
+// highest high of the bars currently visible (labels go above it)
+var float visHi = na
+bool isVis = time >= chart.left_visible_bar_time and time <= chart.right_visible_bar_time
+if isVis
+    visHi := na(visHi) ? high : math.max(visHi, high)
+var label[] wkLbl = array.new<label>()
+var float[] wkTop = array.new_float()
 bool newWk = hasRec and (wi != nz(wi[1], -1) or not inWk[1])
+if hasRec and not newWk and array.size(wkTop) > 0
+    array.set(wkTop, array.size(wkTop) - 1, math.max(array.get(wkTop, array.size(wkTop) - 1), high))
 if showWk and newWk
     string base  = str.substring(pName, 0, 3)
     string quote = str.substring(pName, 3, 6)
     string txt = array.get(wN, wi) + "\n" + f_arrow(b) + " " + f_bname(b) + " · " + f_cname(cv) + "\ngap " + f_sg(g)
     string tip = pName + " · " + array.get(wN, wi) + "\n" + base + " " + f_score(wi, base) + " vs " + quote + " " + f_score(wi, quote) + "\nFundamental bias only, not a trade signal."
-    label.new(bar_index, high, txt, yloc = yloc.abovebar, style = label.style_label_down, color = color.new(f_col(b), 15), textcolor = color.white, size = size.small, tooltip = tip)
+    array.push(wkLbl, label.new(bar_index, high, txt, yloc = yloc.price, style = label.style_label_down, color = color.new(f_col(b), 15), textcolor = color.white, size = size.small, tooltip = tip))
+    array.push(wkTop, high)
+if barstate.islast and array.size(wkLbl) > 0
+    for j = 0 to array.size(wkLbl) - 1
+        float y = wkPos == "Above the week's high" or na(visHi) ? array.get(wkTop, j) : visHi
+        label.set_y(array.get(wkLbl, j), y + nz(atrPad))
 
 // ───────── daily checks on this bar ─────────
 var int ci = 0
@@ -135,11 +151,11 @@ while ci < array.size(cT) and array.get(cT, ci) < barEnd
         if r != "?"
             string s = str.substring(r, 0, 1)
             float tg = str.length(r) > 1 ? f_num(str.substring(r, 1)) : na
-            ckTxt += f_emo(s)
+            ckTxt := f_emo(s)
             ckTip += (ckTip == "" ? "" : "\n") + array.get(cN, ci) + ": " + f_emo(s) + " " + f_sname(s) + " · gap " + f_sg(tg)
     ci += 1
 if showCk and ckTxt != ""
-    label.new(bar_index, low, ckTxt, yloc = yloc.belowbar, style = label.style_none, size = size.normal, tooltip = ckTip + "\nDaily check · fundamental context only")
+    label.new(bar_index, low, ckTxt, yloc = yloc.belowbar, style = label.style_none, size = size.normal, tooltip = ckTip + "\nMarker = latest check of the day · fundamental context only")
 
 // ───────── info table and dashboard ─────────
 f_curWeek() =>
