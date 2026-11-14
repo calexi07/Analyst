@@ -1,10 +1,10 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — weekly bias + daily checks (history) on the chart.
-// Generated automatically: 2026-11-14 21:13 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 4 daily checks.
+// Generated automatically: 2026-11-14 21:19 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 4 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // Fundamental context only. Not a trade signal.
 //@version=6
-indicator("Bias Engine · weekly bias & daily checks", shorttitle = "Bias Engine", overlay = true, max_labels_count = 500, max_lines_count = 500)
+indicator("Bias Engine · weekly bias & daily checks", shorttitle = "Bias Engine", overlay = true, max_labels_count = 500, max_lines_count = 500, max_boxes_count = 200)
 
 // ───────── settings ─────────
 string pairIn  = input.string("Auto", "Pair", options = ["Auto", "EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD"], tooltip = "Auto reads the chart symbol (e.g. EURUSD, OANDA:XAUUSD).")
@@ -15,6 +15,8 @@ bool   showBg  = input.bool(false, "Shade each week by its bias",   group = "Sho
 bool   showSep = input.bool(true,  "Dotted line at each week start", group = "Show")
 bool   showWk  = input.bool(true,  "Week labels",                   group = "Show")
 bool   showCk  = input.bool(true,  "Daily check markers",           group = "Show")
+string ckMode  = input.string("All days", "Check markers on", options = ["All days", "Only when the status changes"], group = "Show")
+bool   showBd  = input.bool(true,  "Typical-week band (±1σ from last week's close)", group = "Show", tooltip = "σ = standard deviation of the last 26 weekly returns of this chart. Shows the normal range for the week; a move outside it against the bias is worth noticing. Context only.")
 string mkStyle = input.string("Emoji + gap", "Check marker", options = ["Emoji", "Emoji + gap", "Emoji + status"], group = "Show", tooltip = "Hover the marker for the full note: what changed, what was confirmed or invalidated, and both currencies.")
 bool   showTb  = input.bool(true,  "Info table",                    group = "Show")
 bool   showDb  = input.bool(false, "All-pairs dashboard",           group = "Show")
@@ -24,7 +26,7 @@ color  bullC   = input.color(#22AB94, "Bullish",  group = "Colours")
 color  bearC   = input.color(#F23645, "Bearish",  group = "Colours")
 color  neutC   = input.color(#787B86, "Two-sided", group = "Colours")
 
-// ───────── data (generated 2026-11-14 21:13 UTC) ─────────
+// ───────── data (generated 2026-11-14 21:19 UTC) ─────────
 var string[] PAIRS = array.from("EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD")
 var string[] CCY   = array.from("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "XAU")
 var int[]    wT = array.new_int()     // week start (Sunday 21:00 UTC)
@@ -130,6 +132,14 @@ f_score(int wk, string ccy) =>
     int k = array.indexof(CCY, ccy)
     string v = wk >= 0 and k >= 0 ? f_item(array.get(wS, math.max(wk, 0)), k) : "?"
     v == "?" ? "?" : f_sg(f_num(v))
+// mini bar for a currency score: 5 blocks, 1 block ≈ 3 points
+f_bar(string ccy, string sc) =>
+    float v = f_num(sc)
+    int n = na(v) ? 0 : math.min(5, int(math.round(math.abs(v) / 3)))
+    string blk = ""
+    for k = 1 to 5
+        blk += k <= n ? "▮" : "▯"
+    ccy + " " + (na(v) ? "?" : v > 0 ? "▲" : v < 0 ? "▼" : "•") + blk + " " + (na(v) ? "?" : f_sg(v))
 f_pos(string p) => p == "Top right" ? position.top_right : p == "Bottom right" ? position.bottom_right : p == "Top left" ? position.top_left : position.bottom_left
 
 // ───────── look ─────────
@@ -169,27 +179,41 @@ float atrPad = ta.atr(14) * 0.5
 // highest high of the bars currently visible (labels go above it)
 var float visHi = na
 bool isVis = time >= chart.left_visible_bar_time and time <= chart.right_visible_bar_time
+var float visLo = na
 if isVis
     visHi := na(visHi) ? high : math.max(visHi, high)
+    visLo := na(visLo) ? low : math.min(visLo, low)
+// two rows above the price: checks (lower) and week labels (higher), spaced in proportion to the visible range
+float vRng = na(visHi) or na(visLo) or visHi == visLo ? ta.atr(14) * 8 : visHi - visLo
 var label[] wkLbl = array.new<label>()
 var float[] wkTop = array.new_float()
 bool newWk = hasRec and (wi != nz(wi[1], -1) or not inWk[1])
 if hasRec and not newWk and array.size(wkTop) > 0
     array.set(wkTop, array.size(wkTop) - 1, math.max(array.get(wkTop, array.size(wkTop) - 1), high))
+// typical-week band: last week's close ± 1σ of weekly returns (this chart's own data, 26 weeks)
+[wkPrevC, wkSig] = request.security(syminfo.tickerid, "W", [close[1], ta.stdev(math.log(close[1] / close[2]), 26)], lookahead = barmerge.lookahead_on)
+if showBd and newWk and not na(wkPrevC) and not na(wkSig)
+    int t1 = array.get(wT, wi) + 5 * 86400000 + 3 * 3600000
+    float up = wkPrevC * math.exp(wkSig)
+    float dn = wkPrevC * math.exp(-wkSig)
+    color bc = f_col(b)
+    box.new(time, up, t1, dn, xloc = xloc.bar_time, border_color = color.new(bc, 55), border_style = line.style_dashed, border_width = 1, bgcolor = color.new(bc, dark ? 93 : 95), text = "±1σ " + str.tostring(wkSig * 100, "#.##") + "%", text_size = size.tiny, text_color = color.new(tMu, 30), text_halign = text.align_right, text_valign = text.align_top)
+    line.new(time, wkPrevC, t1, wkPrevC, xloc = xloc.bar_time, color = color.new(tMu, 40), style = line.style_dotted, width = 1)
 if showSep and newWk
     line.new(bar_index, low, bar_index, high, extend = extend.both, style = line.style_dotted, color = color.new(f_col(b), 55), width = 1)
 if showWk and newWk
     string base  = str.substring(pName, 0, 3)
     string quote = str.substring(pName, 3, 6)
     string wkS = str.replace_all(str.replace_all(array.get(wN, wi), "2026-", ""), "PHASE 1", "P1")
-    string txt = mob ? wkS + " " + f_arrow(b) + " " + f_sg(g) : array.get(wN, wi) + "\n" + f_arrow(b) + " " + f_bname(b) + " · " + f_cname(cv) + " · gap " + f_sg(g)
+    string bars = f_bar(base, f_score(wi, base)) + "   " + f_bar(quote, f_score(wi, quote))
+    string txt = mob ? wkS + " " + f_arrow(b) + " " + f_sg(g) : array.get(wN, wi) + "\n" + f_arrow(b) + " " + f_bname(b) + " · " + f_cname(cv) + " · gap " + f_sg(g) + "\n" + bars
     string tip = pName + " · " + array.get(wN, wi) + "\n" + base + " " + f_score(wi, base) + " vs " + quote + " " + f_score(wi, quote) + "\nFundamental bias only, not a trade signal."
     array.push(wkLbl, label.new(bar_index, high, txt, yloc = yloc.price, style = label.style_label_down, color = color.new(f_col(b), dark ? 25 : 10), textcolor = color.white, size = mob ? size.tiny : TS, tooltip = tip))
     array.push(wkTop, high)
 if barstate.islast and array.size(wkLbl) > 0
     for j = 0 to array.size(wkLbl) - 1
         float y = wkPos == "Above the week's high" or na(visHi) ? array.get(wkTop, j) : visHi
-        label.set_y(array.get(wkLbl, j), y + nz(atrPad))
+        label.set_y(array.get(wkLbl, j), y + vRng * (mob ? 0.10 : 0.14))
 
 // ───────── daily checks on this bar ─────────
 var int ci = 0
@@ -197,6 +221,7 @@ int barEnd = time + timeframe.in_seconds() * 1000
 string ckTxt = ""
 string ckTip = ""
 var string prevS = ""
+bool ckChg = false
 while ci < array.size(cT) and array.get(cT, ci) < barEnd
     if array.get(cT, ci) >= time - 3 * 86400000 and pIdx >= 0
         string r = f_item(array.get(cD, ci), pIdx)
@@ -210,20 +235,21 @@ while ci < array.size(cT) and array.get(cT, ci) < barEnd
             string qL = f_leg(ci, str.substring(pName, 3, 6))
             ckTxt := mkStyle == "Emoji" ? f_emo(s) : mkStyle == "Emoji + gap" ? f_emo(s) + " " + f_sg(tg) : f_emo(s) + " " + f_sname(s)
             ckTip += (ckTip == "" ? "" : "\n\n") + "▌" + array.get(cN, ci) + "\n" + f_emo(s) + " " + f_sname(s) + "\n" + gapTxt + (chg == "" ? "" : "\n" + chg) + (hk == "" or hk == "-" ? "" : "\n\n" + f_wrap(hk, 60)) + (bL == "" ? "" : "\n\n" + bL) + (qL == "" ? "" : "\n" + qL)
+            ckChg := ckChg or prevS == "" or prevS != s
             prevS := s
     ci += 1
 var label[] ckLbl = array.new<label>()
 var int[] ckWk = array.new_int()
-if showCk and ckTxt != ""
+if showCk and ckTxt != "" and (ckMode == "All days" or ckChg)
     color ckC = color.new(f_stc(prevS), dark ? 20 : 5)
     array.push(ckWk, array.size(wkTop) - 1)
-    array.push(ckLbl, label.new(bar_index, high, ckTxt, yloc = yloc.price, style = label.style_label_up, color = ckC, textcolor = color.white, size = mob ? size.small : size.normal, tooltip = ckTip + "\n\nMarker = latest check of the day. Fundamental context only, not a trade signal."))
+    array.push(ckLbl, label.new(bar_index, high, ckTxt, yloc = yloc.price, style = label.style_label_down, color = ckC, textcolor = color.white, size = mob ? size.small : size.normal, tooltip = ckTip + "\n\nMarker = latest check of the day. Fundamental context only, not a trade signal."))
 // checks sit on the same line as the week labels, just under it
 if barstate.islast and array.size(ckLbl) > 0
     for j = 0 to array.size(ckLbl) - 1
         int wq = array.get(ckWk, j)
         float y = wkPos == "Above the week's high" and wq >= 0 and wq < array.size(wkTop) ? array.get(wkTop, wq) : na(visHi) ? high : visHi
-        label.set_y(array.get(ckLbl, j), y + nz(atrPad))
+        label.set_y(array.get(ckLbl, j), y + vRng * 0.035)
 
 // ───────── info table and dashboard ─────────
 f_curWeek() =>
