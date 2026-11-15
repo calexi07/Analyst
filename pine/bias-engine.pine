@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — weekly bias + daily checks (history) on the chart.
-// Generated automatically: 2026-11-14 21:47 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 4 daily checks.
+// Generated automatically: 2026-11-15 08:11 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 4 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // Fundamental context only. Not a trade signal.
 //@version=6
@@ -32,7 +32,7 @@ color  bullC   = input.color(#22AB94, "Bullish",  group = "Colours")
 color  bearC   = input.color(#F23645, "Bearish",  group = "Colours")
 color  neutC   = input.color(#787B86, "Two-sided", group = "Colours")
 
-// ───────── data (generated 2026-11-14 21:47 UTC) ─────────
+// ───────── data (generated 2026-11-15 08:11 UTC) ─────────
 var string[] PAIRS = array.from("EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD")
 var string[] CCY   = array.from("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "XAU")
 var int[]    wT = array.new_int()     // week start (Sunday 21:00 UTC)
@@ -181,6 +181,8 @@ string cv = hasRec ? str.substring(rec, 1, 2) : "-"
 float  g  = hasRec and str.length(rec) > 2 ? f_num(str.substring(rec, 2)) : na
 
 bgcolor(showBg and hasRec ? color.new(f_col(b), f_tr(cv)) : na, title = "Week bias")
+// the week's published gap for the Setup Planner indicator (Settings → Bias Engine link); not drawn on the chart
+plot(hasRec ? g : na, "Bias gap (for Setup Planner)", color = color.new(neutC, 100), display = display.data_window)
 
 float atrPad = ta.atr(14) * 0.5
 // highest high of the bars currently visible (labels go above it)
