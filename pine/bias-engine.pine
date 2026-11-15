@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — weekly bias + daily checks (history) on the chart.
-// Generated automatically: 2026-11-15 08:11 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 4 daily checks.
+// Generated automatically: 2026-11-15 08:45 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 4 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // Fundamental context only. Not a trade signal.
 //@version=6
@@ -32,7 +32,7 @@ color  bullC   = input.color(#22AB94, "Bullish",  group = "Colours")
 color  bearC   = input.color(#F23645, "Bearish",  group = "Colours")
 color  neutC   = input.color(#787B86, "Two-sided", group = "Colours")
 
-// ───────── data (generated 2026-11-15 08:11 UTC) ─────────
+// ───────── data (generated 2026-11-15 08:45 UTC) ─────────
 var string[] PAIRS = array.from("EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD")
 var string[] CCY   = array.from("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "XAU")
 var int[]    wT = array.new_int()     // week start (Sunday 21:00 UTC)
@@ -74,7 +74,7 @@ if barstate.isfirst
     array.push(wD, "Dh-10,Dh-10,Um5,Um7,Um13,Dm-7,Dm-10,Nl0,Dm-5,Dl-3,Dl-3,Nl0,Ul3,Dm-5,Dl-3,Dl-3,Nl0,Ul3,Nl-2,Nl0,Ul3,Um6,Dm-5,Dl-3,Ul3,Dm-8,Dm-6,Nl-2,Um7")
     array.push(wS, "7,-3,-3,2,0,-6,0,-3,14")
     array.push(wT, timestamp("UTC", 2026, 11, 15, 21, 0))
-    array.push(wN, "2026-W47 PHASE 1")
+    array.push(wN, "2026-W47 FINAL")
     array.push(wD, "Dm-8,Dl-4,Um5,Um8,Ul9,Nl-2,Dl-4,Dl-4,Dl-3,Nl0,Dm-6,Dl-4,Nl1,Nl1,Ul4,Nl-2,Nl0,Ul5,Ul3,Um6,Nl2,Ul7,Nl1,Ul4,Ul5,Dl-4,Nl-1,Dl-3,Dl-3")
     array.push(wS, "5,-3,1,0,-3,-4,3,1,2")
     array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 11, 0, 0))
