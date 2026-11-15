@@ -101,6 +101,21 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .dlg-head{ padding:18px 20px 10px; }
   .dlg-head h2{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800 !important; font-size:22px !important; }
   .dlg-body{ padding:6px 20px 12px; }
+  .wl-pairs{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px; }
+  .wl-pairs button{ font:inherit; font-size:12.5px; font-weight:700; padding:5px 10px; border-radius:999px; border:1px solid var(--line); background:var(--surface-2); color:var(--muted); cursor:pointer; }
+  .wl-pairs button[aria-pressed="true"]{ background:var(--ink, #131722); color:var(--surface, #fff); border-color:transparent; }
+  .wl-pairs button b{ display:inline-block; min-width:16px; margin-left:5px; padding:0 5px; border-radius:999px; background:#22AB94; color:#fff; font-size:11px; }
+  .wl-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px; }
+  .wl-card{ display:flex; flex-direction:column; gap:8px; padding:14px; border-radius:16px; border:1px solid var(--line); background:var(--surface); }
+  .wl-card.off{ opacity:.62; }
+  .wl-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .wl-h .p{ font-weight:800; font-size:16px; }
+  .wl-tag{ font-size:11.5px; font-weight:800; padding:2px 8px; border-radius:999px; }
+  .wl-img{ width:100%; border-radius:10px; border:1px solid var(--line); display:block; cursor:zoom-in; }
+  .wl-box{ font-size:13px; padding:8px 10px; border-radius:10px; white-space:pre-wrap; }
+  .wl-v{ background:color-mix(in srgb,#22AB94 12%,transparent); } .wl-i{ background:color-mix(in srgb,#F23645 10%,transparent); }
+  .wl-foot{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-top:auto; }
+  .wl-foot .sp{ margin-right:auto; font-size:12px; color:var(--muted); font-weight:600; }
   .dlg-foot{ padding:12px 20px 18px; display:flex; gap:8px; justify-content:flex-end; border-top:1px solid var(--line); }
 
   /* journal layout */
@@ -2251,6 +2266,7 @@ setTimeout(function(){var sp=document.getElementById('splash');if(!sp||!document
 <!-- Data dialog -->
 <script type="application/json" id="promptData">[{"id": "phase1", "group": "weekly", "step": 1, "title": "Phase 1 — Weekly research", "when": "Saturday / Sunday · attach last week's report", "desc": "The AI rebuilds last week from its own research (scheduled + unscheduled news), re-scores every currency and writes the full report for the coming week, including the Section 12 import block.", "text": "WEEKLY FUNDAMENTAL UPDATE — PHASE 1 (research only)\n\nAttached: your report from last week.\n\nUpdate the full analysis for the coming week using only your own research.\nDo NOT ask for or use price action yet — I will send it after you finish.\n\n1. Rebuild last week (search, do not rely on memory). For USD, EUR, GBP, JPY, CHF, CAD,\n   AUD, NZD and XAU, find everything that happened Mon–Fri plus the weekend:\n   - scheduled data and central-bank decisions/speakers\n   - UNSCHEDULED events: political and fiscal crises (governments, budgets, bond spreads —\n     including big euro-area states like France, Italy, Germany), geopolitics, trade policy,\n     commodity shocks, interventions, haven flows, credit stress\n   Cite a source for every event you use.\n2. Re-score every currency from the evidence. Do not anchor on last week's numbers; every\n   change must be justified.\n3. Produce the complete report in the usual structure, valid for the coming week, including\n   Section 12 \"Daily Observer Import\" with \"valid_week\" set to the NEXT ISO week.\n   Bias rule: if the weekly label is Neutral/Two-sided but the horizon or main driver clearly\n   leans one way, set \"bias\" to that direction with conviction \"low\" and keep the original\n   wording in \"summary\".\n4. State the data cut-off (Friday close plus any weekend news) at the top.\n\nWhen you are done, write: \"PHASE 1 COMPLETE — send the price action.\"\n\n----- Section 12 specification -----\nAt the very end of the report, after the Trader Handoff section, add one more section:\n\"12. Daily Observer Import\".\n\nIt must contain:\n- a short line: \"Copy this block and paste it into Daily Observer → Import / export.\"\n- a \"Copy\" button that copies the block below to the clipboard (navigator.clipboard.writeText)\n- a <pre id=\"dobs-import\"> block containing ONE valid JSON object and nothing else\n\nThe JSON must be strictly valid: double quotes only, no comments, no trailing commas, escape inner quotes.\nIt must only restate what is already in the report — do not add new analysis.\n\nSchema:\n{\n  \"format\": \"daily-observer-fundamentals\",\n  \"version\": 1,\n  \"report_date\": \"YYYY-MM-DD\",\n  \"report_title\": \"Forex Fundamental Bias Engine — Week NN\",\n  \"valid_week\": { \"year\": 2026, \"week\": NN },          // ISO week the analysis is FOR (the trading week that starts the Monday after the report)\n  \"currencies\": {\n    \"USD\": { \"score\": 4, \"state\": \"Strong\", \"note\": \"one-line thesis state\" }\n    // same for EUR, GBP, JPY, CHF, CAD, AUD, NZD, XAU\n  },\n  \"pairs\": [                                            // ALL pairs in the 28-pair matrix + XAUUSD\n    {\n      \"pair\": \"EURUSD\",                                 // 6 letters, no slash\n      \"bias\": \"bearish\",                                // bullish | bearish | two-sided | neutral\n      \"conviction\": \"medium\",                           // low | medium | high\n      \"summary\": \"Bearish (EUR -1 vs USD +4)\",          // same wording as the weekly bias history\n      \"base_state\": \"Weak\",                             // Strong | Improving | Neutral | Weakening | Weak\n      \"base_score\": -1,                                 // number from the scorecard\n      \"quote_state\": \"Strong\",\n      \"quote_score\": 4,\n      \"main_driver\": \"one or two sentences\",\n      \"drivers\": [\"secondary driver 1\", \"secondary driver 2\"],      // [] if none\n      \"catalysts\": [ { \"date\": \"28 Oct\", \"event\": \"FOMC decision\", \"imp\": \"CRITICAL\" } ],  // imp: LOW | MEDIUM | HIGH | CRITICAL\n      \"priced\": \"what is already priced in\",\n      \"invalidation\": \"what would invalidate the thesis\",\n      \"horizon\": \"Swing: mild bearish\",\n      \"alignment\": \"Aligned\",                           // Aligned | Partial conflict | Conflicting | Neutral\n      \"alignment_note\": \"short explanation\",\n      \"changed\": \"what changed vs last week for this pair (both currencies)\"\n    }\n  ],\n  \"news\": [                                             // every dated event from the Catalyst Calendar\n    { \"date\": \"2026-10-28\", \"currency\": \"USD\", \"event\": \"FOMC decision\", \"importance\": \"CRITICAL\" }\n    // ISO dates only; one entry per currency (an event for \"USD, XAU\" becomes one USD entry); skip \"Ongoing\"/undated items\n  ]\n}"}, {"id": "export", "group": "weekly", "step": 2, "title": "Export price action", "when": "after the AI says “PHASE 1 COMPLETE”", "action": "export", "desc": "Copy the daily-close export for the week that just ended. Nothing to paste here — use the button."}, {"id": "phase2", "group": "weekly", "step": 3, "title": "Phase 2 — Price-action confirmation", "when": "send together with the price-action export", "desc": "The AI checks its analysis against what price actually did and re-checks only real anomalies. Price can never flip a bias on its own — only a news item it missed or misweighted can change the analysis.", "text": "WEEKLY FUNDAMENTAL UPDATE — PHASE 2 (price-action confirmation)\n\nAttached: my price-action export for last week (\"daily-observer-price-action\" JSON:\ndaily close % per pair). Use it only to CONFIRM your Phase 1 analysis, not to rebuild it.\nFundamentals describe direction over several weeks — a single week of price against the\nbias is normal and is NOT, by itself, evidence that the analysis is wrong.\n\n1. Treat my logged closes as ground truth; fetch real daily closes for every pair in\n   \"pairs_not_logged\". If closes are not available, use ECB reference rates (state the\n   fixing time) and derive the crosses from them; say clearly which days are missing.\n   Build the realized currency-strength ranking (use the crosses, not only the USD pairs,\n   to isolate each currency).\n2. Flag ANOMALIES only:\n   - a pair whose weekly move against the bias you gave it is larger than ~1.5x its normal\n     weekly range (roughly: >0.8% for EURGBP/EURCHF, >1.2% for majors, >1.8% for GBPJPY/XAU)\n   - a currency whose realized rank differs from its score rank by 3 or more places\n   - a currency that moved against its score consistently on the crosses for 2+ sessions\n3. For each anomaly, run a TARGETED re-check for a concrete fundamental cause, with a source\n   (the country's politics, fiscal news, central-bank speakers, interventions, flows,\n   commodities). Then classify:\n   MISSED NEWS · MISWEIGHTED KNOWN NEWS · ALREADY PRICED · FLOWS/POSITIONING ·\n   TECHNICAL RETRACEMENT · NOISE\n   - Only MISSED NEWS or MISWEIGHTED KNOWN NEWS may change a score or a bias.\n   - ALREADY PRICED, FLOWS/POSITIONING, TECHNICAL RETRACEMENT and NOISE never change the bias.\n   - A single week against the bias with no fundamental cause changes nothing.\n     After 2–3 consecutive weeks against the bias with no cause, lower conviction by ONE\n     level only.\n   - Price alone never flips a bias. Never invent a cause to fit the chart.\n   - For each anomaly, state whether it looks like a retracement inside an intact\n     fundamental trend or an early sign the market is pricing something new — and what\n     would confirm it next week.\n4. Output:\n   - \"0a. Price-Action Check\": hit-rate table (last week's bias vs realized move, every pair)\n     and the realized currency ranking vs scores\n   - \"0b. Self-Correction Log\": each anomaly, what you re-checked, the cause and\n     classification, and what changed (or why nothing changed)\n   - the final report, where only MISSED NEWS / MISWEIGHTED KNOWN NEWS corrections are\n     applied; in every affected pair's \"changed\" field, note that the change came from the\n     Phase 2 check\n   - a NEW Section 12 \"Daily Observer Import\" block reflecting the corrections (same format,\n     same \"valid_week\")\n5. Section 12 quality rules (apply even if nothing was corrected):\n   - Rewrite \"alignment\" and \"alignment_note\" for EVERY pair from the realized price data —\n     never leave Phase 1 \"provisional\" wording in the final block.\n   - \"priced\" must be pair-specific text in every pair — no placeholders and no references\n     to other sections of the report.\n   - Any currency score change of 3 points or more versus last week (from Phase 1 or\n     Phase 2) must be listed in 0b with its source.\nIf nothing needed correcting, say so — but still output Section 12 with the rules above applied."}, {"id": "import", "group": "weekly", "step": 4, "title": "Import into Daily Observer", "when": "copy Section 12 from the Phase 2 answer", "action": "import", "desc": "Paste the Section 12 block, choose the next week, the pairs and the sections."}]</script>
 <dialog id="pfDlg" class="panel" aria-label="Purchase" style="width:min(560px,96vw)"></dialog>
+<dialog id="wlDlg" class="panel" aria-label="Watchlist setup" style="width:min(620px,96vw)"></dialog>
 <dialog id="btDlg" class="panel" aria-label="Backtest trade" style="width:min(680px,96vw)"></dialog>
 <dialog id="bankDlg" class="panel" aria-label="Bank entry" style="width:min(560px,96vw)"></dialog>
 <dialog id="qaDlg" class="panel" aria-label="Quick add trade" style="width:min(520px,94vw)"></dialog>
@@ -2532,7 +2548,7 @@ const ICONS = {
 const ico = (k, s = 18) => `<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]||''}</svg>`;
 const NAV = [
   [null, [['today','Today','home']]],
-  ['Fundamental Analyse', [['journal','Calendar','calendar'],['history','Check','trend'],['backtest','Trades','flask'],['analyst','Analyst','radar']]],
+  ['Fundamental Analyse', [['journal','Calendar','calendar'],['history','Check','trend'],['watch','Watchlist','target'],['backtest','Trades','flask'],['analyst','Analyst','radar']]],
   ['Money', [['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target']]],
   ['Tools', [['health','Health','radar'],['prompts','Prompts','spark']]],
 ];
@@ -2697,7 +2713,7 @@ function render(){
 function openMore(){
   const d = document.getElementById('moreDlg'), light = document.documentElement.dataset.theme === 'light';
   d.innerHTML = `<div class="dlg-head"><h2>More</h2></div><div class="dlg-body more-g">
-    ${[['analyst','Analyst','radar'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['health','Health','radar'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
+    ${[['watch','Watchlist','target'],['analyst','Analyst','radar'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['health','Health','radar'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
     <button class="more-i" data-ma="share">${ico('share', 22)}<span>Share</span></button>
     <button class="more-i" data-ma="data">${ico('swap', 22)}<span>Import / export</span></button>
     <button class="more-i" data-ma="theme">${ico(light ? 'moon' : 'sun', 22)}<span>${light ? 'Dark' : 'Light'} theme</span></button></div>`;
@@ -2789,6 +2805,7 @@ function renderMain(){
   else if(S.view === 'portfolio') renderPortfolio();
   else if(S.view === 'backtest') renderBacktest();
   else if(S.view === 'analyst') renderAnalyst();
+  else if(S.view === 'watch') renderWatch();
   else if(S.view === 'health') renderHealth();
   else if(S.view === 'trades') renderTrades();
   else if(S.view === 'setups') renderSetups();
@@ -5156,6 +5173,89 @@ function hlBadge(n){ document.querySelectorAll('[data-view="health"]').forEach(b
 function anWeeks(){ return Object.keys(S.settings||{}).filter(k => k.startsWith('treview:')).sort(); }
 S.an = S.an || null;
 const AN_TABS = [['rev','🧾 Weekly review'],['mon','📅 Monthly'],['thr','📏 Threshold'],['proc','🎯 Process goals'],['lib','⭐ A+ library']];
+/* ===== Watchlist: setups you are watching (kept in do_settings as wl:<id>, no schema change) ===== */
+const WL_PAIRS = [...PAIRS, 'XAUUSD'];
+const wlAll = () => Object.entries(S.settings || {}).filter(([k, v]) => k.startsWith('wl:') && v && v.pair).map(([k, v]) => ({ key:k, ...v }))
+  .sort((a, b) => (b.created || '').localeCompare(a.created || ''));
+const WL_ST = { active:['Watching','#2962FF'], taken:['Trade taken','#22AB94'], invalid:['Invalidated','#F23645'] };
+function wlBias(pair){ const r = biasRaw(pair, new Date()); return r ? { bias:r.bias, conv:r.conviction, d:det(r) } : null; }
+function renderWatch(){
+  const m = document.getElementById('main'), all = wlAll(), flt = ls.get('do_wl_f', 'active'), pf = ls.get('do_wl_p', 'All');
+  const cnt = p => all.filter(x => x.status==='active' && (p==='All' || x.pair===p)).length;
+  const list = all.filter(x => (flt==='all' || x.status===flt) && (pf==='All' || x.pair===pf));
+  const card = x => {
+    const st = WL_ST[x.status] || WL_ST.active, b = wlBias(x.pair), img = tvImg(x.img || ''), L = x.dir==='Long';
+    const fit = !b || !b.bias || ['two-sided','neutral'].includes(b.bias) ? 'none' : ((b.bias==='bullish') === L ? 'with' : 'against');
+    const bTag = b && b.bias ? `<span class="wl-tag" style="background:${fit==='with' ? 'color-mix(in srgb,#22AB94 18%,transparent);color:#0b7a68' : fit==='against' ? 'color-mix(in srgb,#FF9800 22%,transparent);color:#b25e00' : 'var(--surface-2);color:var(--muted)'}">${fit==='with' ? '✓ with' : fit==='against' ? '⚠ against' : '◆ no clear'} weekly bias · ${esc(BIAS_LBL[b.bias] || b.bias)}${b.conv ? ' ' + esc(b.conv) : ''}</span>` : '<span class="wl-tag" style="background:var(--surface-2);color:var(--muted)">no weekly analysis</span>';
+    const tr = x.trade_id!=null ? S.bt.rows.get(x.trade_id) : null;
+    return `<article class="wl-card ${x.status==='active' ? '' : 'off'}" data-wl="${esc(x.key)}">
+      <div class="wl-h"><span class="p">${esc(x.pair)}</span><span class="wl-tag" style="background:${L ? '#22AB94' : '#F23645'};color:#fff">${L ? '▲ Long' : '▼ Short'}</span>
+        <span class="wl-tag" style="background:color-mix(in srgb,${st[1]} 16%,transparent);color:${st[1]}">${st[0]}</span></div>
+      <div>${bTag}</div>
+      ${img ? `<img class="wl-img" src="${esc(img)}" alt="TradingView chart for ${esc(x.pair)}" loading="lazy" data-wlimg="${esc(x.img)}">` : x.img ? `<a href="${esc(x.img)}" target="_blank" rel="noopener" class="muted" style="font-size:12.5px">Open the chart ↗</a>` : ''}
+      ${x.text ? `<div style="font-size:13.5px;white-space:pre-wrap">${esc(x.text)}</div>` : ''}
+      ${x.valid ? `<div class="wl-box wl-v"><b>✅ Validation</b>\n${esc(x.valid)}</div>` : ''}
+      ${x.invalid ? `<div class="wl-box wl-i"><b>✖ Invalidation</b>\n${esc(x.invalid)}</div>` : ''}
+      ${x.status==='invalid' && x.reason ? `<div class="muted" style="font-size:12.5px">Invalidated${x.closed ? ' on ' + esc(fmtDayShort(x.closed.slice(0, 10))) : ''}: ${esc(x.reason)}</div>` : ''}
+      <div class="wl-foot"><span class="sp">Added ${esc(fmtDayShort((x.created || '').slice(0, 10)))}</span>
+        ${x.status==='active' ? `<button type="button" class="btn btn-primary" data-wltake>Take trade</button><button type="button" class="btn" data-wlinv>Invalidate</button>` : ''}
+        ${x.status==='taken' && tr ? `<button type="button" class="btn" data-wltr>View trade</button>` : ''}
+        ${x.status!=='active' ? `<button type="button" class="btn" data-wlre>Watch again</button>` : ''}
+        <button type="button" class="btn" data-wled aria-label="Edit setup">Edit</button></div>
+      <div data-wlinvbox hidden style="display:flex;gap:6px"><input class="inp" placeholder="Why? (optional)" style="flex:1" data-wlreason><button type="button" class="btn btn-danger" data-wlinvgo>Confirm</button></div>
+    </article>`; };
+  m.innerHTML = `<header class="hp-top"><div><div class="pairtitle">Watchlist</div><div class="muted" style="font-weight:600;font-size:12px">Setups you are watching · take the trade or invalidate it from the card</div></div>
+      <button type="button" class="btn btn-primary" id="wlAdd">+ Add setup${pf!=='All' ? ' · ' + esc(pf) : ''}</button></header>
+    <div class="fc-bar"><div class="seg" role="group">${[['active','Watching'],['taken','Taken'],['invalid','Invalidated'],['all','All']].map(([v, l]) => `<button type="button" data-wlf="${v}" aria-pressed="${flt===v}">${l}${v==='active' ? ' (' + cnt('All') + ')' : ''}</button>`).join('')}</div></div>
+    <div class="wl-pairs" role="group" aria-label="Pair">${['All', ...WL_PAIRS].map(p => `<button type="button" data-wlp="${p}" aria-pressed="${pf===p}">${p}${cnt(p) ? `<b>${cnt(p)}</b>` : ''}</button>`).join('')}</div>
+    ${list.length ? `<div class="wl-grid">${list.map(card).join('')}</div>` : `<div class="card fc-empty"><p>${flt==='active' ? `No setups on the watchlist${pf!=='All' ? ' for ' + esc(pf) : ''}. Pick a pair and press “+ Add setup”.` : 'Nothing here yet.'}</p></div>`}`;
+  m.querySelectorAll('[data-wlf]').forEach(b => b.onclick = () => { ls.set('do_wl_f', b.dataset.wlf); renderWatch(); });
+  m.querySelectorAll('[data-wlp]').forEach(b => b.onclick = () => { ls.set('do_wl_p', b.dataset.wlp); renderWatch(); });
+  m.querySelector('#wlAdd').onclick = () => openWatch(null, pf==='All' ? null : pf);
+  m.querySelectorAll('.wl-card').forEach(c => {
+    const k = c.dataset.wl, x = S.settings[k];
+    const upd = async patch => { await saveSettingKey(k, { ...S.settings[k], ...patch }); renderWatch(); };
+    c.querySelector('[data-wled]').onclick = () => openWatch(k);
+    c.querySelector('[data-wlimg]')?.addEventListener('click', e => window.open(e.target.dataset.wlimg, '_blank', 'noopener'));
+    c.querySelector('[data-wlinv]')?.addEventListener('click', () => { const bx = c.querySelector('[data-wlinvbox]'); bx.hidden = !bx.hidden; bx.querySelector('input').focus(); });
+    c.querySelector('[data-wlinvgo]')?.addEventListener('click', () => upd({ status:'invalid', reason:c.querySelector('[data-wlreason]').value.trim() || null, closed:new Date().toISOString() }).then(() => toast('Setup invalidated')));
+    c.querySelector('[data-wlre]')?.addEventListener('click', () => upd({ status:'active', reason:null, closed:null, trade_id:null }));
+    c.querySelector('[data-wltr]')?.addEventListener('click', () => openBacktest(S.bt.rows.get(x.trade_id)));
+    c.querySelector('[data-wltake]')?.addEventListener('click', () => openBacktest(null, { pair:x.pair, kind:'live', direction:x.dir, result:'O', day:iso(new Date()), chart_url:x.img || '',
+      notes:[x.text, x.valid ? 'Validation: ' + x.valid : '', x.invalid ? 'Invalidation: ' + x.invalid : ''].filter(Boolean).join('\n'),
+      onSaved: async t => { await saveSettingKey(k, { ...S.settings[k], status:'taken', trade_id:t.id, closed:new Date().toISOString() }); toast('Trade saved · setup moved to Taken'); if(S.view==='watch') renderWatch(); } }));
+  });
+}
+function openWatch(key, pair){
+  const dlg = document.getElementById('wlDlg'), x = key ? S.settings[key] : { pair:pair || ls.get('do_wl_lastpair', 'EURUSD'), dir:'Long', img:'', text:'', valid:'', invalid:'', status:'active' };
+  let dir = x.dir || 'Long';
+  dlg.innerHTML = `<form method="dialog" id="wlForm"><div class="dlg-head"><h2>${key ? 'Edit setup' : 'Add setup'}</h2></div>
+    <div class="bt-form" style="padding:0 20px 14px">
+      <div class="bt-two"><label><span class="lbl">Pair</span><select class="inp" id="wlPair">${WL_PAIRS.map(p => `<option${p===x.pair ? ' selected' : ''}>${p}</option>`).join('')}</select></label>
+        <label><span class="lbl">Direction</span><div class="seg bt-ch" role="group"><button type="button" data-wdir="Long" aria-pressed="${dir==='Long'}">▲ Long</button><button type="button" data-wdir="Short" aria-pressed="${dir==='Short'}">▼ Short</button></div></label></div>
+      <label><span class="lbl">TradingView snapshot link</span><input class="inp" id="wlImg" value="${esc(x.img || '')}" placeholder="https://www.tradingview.com/x/…"></label>
+      <div id="wlPrev"></div>
+      <label><span class="lbl">What you see</span><textarea class="inp" id="wlText" rows="3" placeholder="The setup in your words">${esc(x.text || '')}</textarea></label>
+      <label><span class="lbl">✅ Validation (what must happen)</span><textarea class="inp" id="wlValid" rows="2" placeholder="e.g. sweep of Asia low, then a 15m fractal break up">${esc(x.valid || '')}</textarea></label>
+      <label><span class="lbl">✖ Invalidation (when it is off)</span><textarea class="inp" id="wlInv" rows="2" placeholder="e.g. 1h close below 1.0950, or US CPI hot">${esc(x.invalid || '')}</textarea></label>
+    </div>
+    <div class="dlg-foot">${key ? '<button type="button" class="btn btn-danger" id="wlDel" style="margin-right:auto">Delete</button>' : ''}<button type="button" class="btn" id="wlCancel">Cancel</button><button type="submit" class="btn btn-primary">Save</button></div></form>`;
+  const prev = () => { const u = tvImg(dlg.querySelector('#wlImg').value.trim()); dlg.querySelector('#wlPrev').innerHTML = u ? `<img class="wl-img" src="${esc(u)}" alt="Snapshot preview">` : ''; };
+  prev(); dlg.querySelector('#wlImg').oninput = prev;
+  dlg.querySelectorAll('[data-wdir]').forEach(b => b.onclick = () => { dir = b.dataset.wdir; dlg.querySelectorAll('[data-wdir]').forEach(o => o.setAttribute('aria-pressed', String(o===b))); });
+  dlg.querySelector('#wlCancel').onclick = () => dlg.close();
+  dlg.querySelector('#wlDel')?.addEventListener('click', async () => { if(!confirm('Delete this setup?')) return;
+    delete S.settings[key]; try{ const { error } = await sb.from('do_settings').delete().eq('key', key); if(error) throw error; }catch(e){ toast('Could not delete: ' + e.message); }
+    dlg.close(); renderWatch(); });
+  dlg.querySelector('#wlForm').onsubmit = async ev => { ev.preventDefault();
+    const img = dlg.querySelector('#wlImg').value.trim();
+    if(img && !/^https?:\/\//i.test(img)) return toast('The chart link must start with https://');
+    const v = { ...x, pair:dlg.querySelector('#wlPair').value, dir, img, text:dlg.querySelector('#wlText').value.trim(), valid:dlg.querySelector('#wlValid').value.trim(), invalid:dlg.querySelector('#wlInv').value.trim(),
+      status:x.status || 'active', created:x.created || new Date().toISOString() };
+    const k = key || `wl:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    await saveSettingKey(k, v); ls.set('do_wl_lastpair', v.pair); dlg.close(); toast('Setup saved'); if(S.view==='watch') renderWatch(); };
+  if(!dlg.open) dlg.showModal();
+}
 function renderAnalyst(){
   const tab = ls.get('do_an_tab', 'rev');
   if(tab==='mon') renderMonthly(); else if(tab==='thr') renderThreshold(); else if(tab==='proc') renderProcess(); else if(tab==='lib') renderLibrary(); else renderAnalystReview();
@@ -5881,7 +5981,7 @@ function expoHtml(list, note){ const e = expo(list).filter(x => x.net !== 0); if
     <div class="ex-chips">${e.map(x => `<span class="ex-c ${x.lvl}" title="${esc(x.pairs.join(', '))}">${x.c} ${x.net > 0 ? '+' : ''}${x.net}R</span>`).join('')}</div>${note ? `<div class="muted" style="font-size:11.5px">${note}</div>` : ''}</div>`; }
 const LIVE_RUN = 'Live';   /* live (executed) trades live in do_backtests with run = 'Live' (Nov 2026) */
 function openBacktest(row, keep){
-  const dlg = document.getElementById('btDlg'), last = ls.get(BT_RUNS_KEY, {}), r = row || { ...keep, pair:keep?.pair || last.pair || S.pair || 'EURUSD', run:keep?.run || last.run || '', direction:'Long', result:null, break_type:null, rules_ok:true };
+  const dlg = document.getElementById('btDlg'), last = ls.get(BT_RUNS_KEY, {}), r = row || { ...keep, pair:keep?.pair || last.pair || S.pair || 'EURUSD', run:keep?.run || last.run || '', direction:keep?.direction || 'Long', result:keep?.result ?? null, break_type:null, rules_ok:true };
   const runs = [...new Set([...S.bt.rows.values()].map(x => x.run).filter(Boolean))];
   const btx = (row && S.settings?.[`btx:${row.id}`]) || {};   /* extra trade fields kept in do_settings (no schema change): liquidity sweep day/time */
   const F = { pair:r.pair, day:r.day || iso(new Date()), direction:r.direction || 'Long', result:r.result || null, break_type:r.break_type || null, rules_ok:r.rules_ok!==false,
@@ -5989,6 +6089,7 @@ function openBacktest(row, keep){
     const q = row ? sb.from('do_backtests').update(rec).eq('id', row.id).select().single() : sb.from('do_backtests').insert(rec).select().single();
     const { data, error } = await q; if(error) return toast(/relation|does not exist|schema cache/i.test(error.message) ? 'Run migration-backtest.sql in Supabase first' : error.message);
     S.bt.rows.set(data.id, data); ls.set(BT_RUNS_KEY, { pair:F.pair, run:rec.run || '' });
+    if(!row && typeof keep?.onSaved === 'function'){ try{ await keep.onSaved(data); }catch(e){ console.warn(e); } }
     { const swT = $('#btSwT').value, swD = $('#btSwD').value || (swT ? F.day : ''), mae = parseNum($('#btMae').value), ap = $('#btAp').checked, k = `btx:${data.id}`, cp = cfRead('pro'), cc = cfRead('con');
       if(swT || swD || mae!=null || ap || cp.length || cc.length || S.settings?.[k]) await saveSettingKey(k, { sweep_day:swD || null, sweep_time:swT || null, mae_r:mae ?? null, aplus:ap, conf_pro:cp, conf_con:cc }); }
     if(next){ toast('Saved · next one'); openBacktest(null, { pair:F.pair, run:F.kind==='live' ? '' : rec.run, day:F.day, kind:F.kind }); renderMain(); return; }
