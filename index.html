@@ -2159,6 +2159,8 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .sc-g{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px; margin-bottom:12px; }
   .sc-g > div{ border:1px solid var(--line); border-radius:12px; padding:9px 11px; background:var(--surface); } .sc-g span{ display:block; font-size:11.5px; opacity:.7; font-weight:600; } .sc-g b{ font-size:18px; } .sc-g small{ display:block; font-size:11px; opacity:.7; }
   .mom{ font-size:11px; font-weight:800; color:#E0A800; }
+  .ta-b{ font-size:11px; font-weight:800; } .ta-aligned{ color:#22AB94; } .ta-pullback{ color:#E0A800; } .ta-turning{ color:#2962FF; } .ta-conflict{ color:#F23645; } .ta-two-sided{ color:var(--muted); }
+  .ta-tf{ width:100%; border-collapse:collapse; font-size:13px; margin:8px 0; } .ta-tf td,.ta-tf th{ padding:5px 6px; border-bottom:1px solid var(--line); text-align:left; }
   .an-kpi{ display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; margin-bottom:12px; }
   .an-kpi > div{ border:1px solid var(--line); border-radius:12px; padding:9px 11px; background:var(--surface); } .an-kpi span{ display:block; font-size:11.5px; opacity:.7; font-weight:600; } .an-kpi b{ font-size:18px; font-variant-numeric:tabular-nums; }
   .an-sec{ margin:16px 0 8px; font-size:15px; font-weight:800; }
@@ -5410,7 +5412,7 @@ function renderFA(){
     <div class="fc-bar">${fcCcyChips()}<div class="seg" role="group" aria-label="Sort" style="margin-left:auto">${[['pair','Pair order'],['gap','Biggest gap'],['conv','Conviction']].map(([v, l]) => `<button type="button" data-fasort="${v}" aria-pressed="${sortBy===v}">${l}</button>`).join('')}</div></div>
     ${rows.length ? `<div class="fa-grid">${rows.map(({ p, r, cks, g }) => { const bias = r?.bias || cks.at(-1)?.x?.bias, [tl, tc] = BIAS_TAG(bias);
       return `<button class="fa-card" data-fa="${p}"><div class="fa-top"><b>${p}</b><span class="fa-gap ${g>0 ? 'pos' : g<0 ? 'neg' : ''}">${g==null ? '–' : (g>0 ? '+' : '') + g}</span></div>
-        <div class="fa-sub"><span class="fc-tag ${tc}">${tl}</span>${r?.conviction ? ` <span class="muted">· ${esc(r.conviction)}</span>` : ''}</div>${(() => { const n = r?.bias ? scAgainst(p, r.bias, y, w) : 0; return n >= 2 ? `<div class="mom" title="The last ${n} completed weeks moved against this bias">↯ ${n} wk against</div>` : ''; })()}</button>`; }).join('')}</div>`
+        <div class="fa-sub"><span class="fc-tag ${tc}">${tl}</span>${r?.conviction ? ` <span class="muted">· ${esc(r.conviction)}</span>` : ''}</div>${(() => { const n = r?.bias ? scAgainst(p, r.bias, y, w) : 0; return n >= 2 ? `<div class="mom" title="The last ${n} completed weeks moved against this bias">↯ ${n} wk against</div>` : ''; })()}${(() => { const t = S.ta?.pairs?.[p], fw = S.ta?.fundamentals || ''; if(!t || !fw.startsWith(`${y}-W${String(w).padStart(2, '0')}`)) return ''; const [ic, lb] = TA_LBL[t.status] || ['•', t.status]; return `<div class="ta-b ta-${t.status}" title="${esc(t.headline)}">${ic} ${esc(lb)}</div>`; })()}</button>`; }).join('')}</div>`
       : `<div class="card fc-empty"><p>Nothing imported for this week yet. The weekly analysis and the daily checks arrive automatically.</p></div>`}`;
   fcBindCcy();
   document.querySelectorAll('[data-fasort]').forEach(b => b.onclick = () => { ls.set('do_fa_sort', b.dataset.fasort); renderMain(); });
@@ -5424,7 +5426,7 @@ function openPairFA(p, y, w, tab){
   tab = tab || (st?.text ? 'wk' : 'dc'); let sub = 'art', ci = cks.length - 1;
   const paint = () => {
     const c = cks[ci];
-    const body = tab==='wk'
+    const body = tab==='ta' ? taHtml(p) : tab==='wk'
       ? (st?.text ? `${st.kit ? `<div class="seg" role="group" style="margin-bottom:10px"><button type="button" data-fsub="art" aria-pressed="${sub==='art'}">📖 Article</button><button type="button" data-fsub="tv" aria-pressed="${sub==='tv'}">📈 TV</button></div>` : ''}
           ${sub==='tv' && st.kit ? kitHtml(st.kit) : `${st.title ? `<p style="font-weight:700;margin:0 0 8px">${esc(st.title)}</p>` : ''}<div class="fc-post">${bb2html(fcClean(st.text))}</div>`}`
         : `<p class="muted">No weekly story imported for this pair in week ${w}.</p>`)
@@ -5432,10 +5434,10 @@ function openPairFA(p, y, w, tab){
           <div class="flex items-center gap-2" style="flex-wrap:wrap;margin-bottom:8px"><span class="fc-tag ${stCls(c.x.status)}">${esc(c.x.status||'')}</span>${c.x.read ? `<span class="muted" style="font-size:12.5px;font-weight:600">${esc(c.x.read)}</span>` : ''}${c.x.flag ? `<span class="muted" style="font-size:12.5px">· chart flag ${esc(c.x.flag)}</span>` : ''}</div>
           <div class="fc-post">${bb2html(fcClean(c.x.note||''))}</div>`
         : `<p class="muted">No daily check imported for this pair in week ${w}.</p>`);
-    const copies = tab==='wk' ? (st?.text ? [['Copy title', st.title||p], ['Copy post', st.text]] : []) : (c ? [['Copy note', c.x.note||'']] : []);
+    const copies = tab==='ta' ? [] : tab==='wk' ? (st?.text ? [['Copy title', st.title||p], ['Copy post', st.text]] : []) : (c ? [['Copy note', c.x.note||'']] : []);
     d.innerHTML = `<div class="dlg-head"><div class="flex items-center gap-2" style="flex-wrap:wrap"><h2 style="margin:0">${esc(p)}</h2><span class="fc-tag ${tc}">${tl}${r?.conviction ? ' · ' + esc(r.conviction) : ''}</span>${g!=null ? `<span class="fa-gap ${g>0 ? 'pos' : g<0 ? 'neg' : ''}" style="font-size:15px">gap ${(g>0 ? '+' : '') + g}</span>` : ''}</div>
         <p class="muted" style="margin-top:4px;font-weight:600">Week ${w} · ${wkSpan(y, w)}</p></div>
-      <div class="seg" role="tablist" style="margin:0 20px 8px"><button type="button" data-ftab="wk" aria-pressed="${tab==='wk'}">📖 Weekly fundamental</button><button type="button" data-ftab="dc" aria-pressed="${tab==='dc'}">📍 Daily check${cks.length ? ' (' + cks.length + ')' : ''}</button></div>
+      <div class="seg" role="tablist" style="margin:0 20px 8px"><button type="button" data-ftab="wk" aria-pressed="${tab==='wk'}">📖 Weekly fundamental</button><button type="button" data-ftab="dc" aria-pressed="${tab==='dc'}">📍 Daily check${cks.length ? ' (' + cks.length + ')' : ''}</button><button type="button" data-ftab="ta" aria-pressed="${tab==='ta'}">🔎 Price</button></div>
       <div class="dlg-body" style="max-height:62vh;overflow:auto">${body}</div>
       <div class="dlg-foot">${copies.map((c2, n) => `<button class="btn ${n===copies.length-1 ? 'btn-primary' : ''}" data-cp="${n}">${esc(c2[0])}</button>`).join('')}<button class="btn" id="stClose">Close</button></div>`;
     d.querySelectorAll('[data-ftab]').forEach(b => b.onclick = () => { tab = b.dataset.ftab; paint(); });
@@ -9366,6 +9368,20 @@ document.getElementById('csvFile').onchange = async ev => {
 /* imports/index.json = { "files": [ { "id": "...", "file": "imports/....json", "kind": "fundamentals" | "check" } ] }
    each file is imported once; the list of imported ids is kept in do_settings.auto_imports (shared by all devices) */
 let autoImpBusy = false;
+/* ===== technical read (GitHub Action "Technical read": exports/ta-latest.json, same site) ===== */
+const TA_LBL = { aligned:['✅','Price agrees'], pullback:['⏳','Pullback, D1 agrees'], turning:['↻','Early turn'], conflict:['❌','Price disagrees'], 'two-sided':['◆','No fundamental lean'] };
+async function loadTA(){ try{ const r = await fetch('exports/ta-latest.json?t=' + Date.now(), { cache:'no-store' }); if(r.ok){ S.ta = await r.json(); if(S.view==='history') renderMain(); } }catch(e){ /* optional */ } }
+function taHtml(p){
+  const x = S.ta?.pairs?.[p]; if(!x) return `<p class="muted">No technical read for ${esc(p)} yet. It is computed automatically several times a day.</p>`;
+  const [ic, lb] = TA_LBL[x.status] || ['•', x.status], arrow = d => d==='up' ? '▲ up' : d==='down' ? '▼ down' : '– unclear';
+  const ev = e => e ? `${esc(e.type)} ${e.dir==='up' ? '▲' : '▼'} at ${esc(String(e.level))} · ${esc(new Date(e.at).toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit', timeZone:'Europe/Bucharest' }))}` : '–';
+  return `<p style="margin:0 0 6px;font-weight:800" class="ta-b ta-${x.status}"><span style="font-size:15px">${ic} ${esc(lb)}</span></p>
+    <p style="margin:0 0 8px;font-weight:600">${esc(x.headline)}</p>
+    <ul style="margin:0 0 6px 18px;padding:0;font-size:13.5px">${x.detail.map(d => `<li>${esc(d)}</li>`).join('')}</ul>
+    <table class="ta-tf"><tr><th></th><th>Structure</th><th>Swings</th><th>Last break</th></tr>
+      ${[['D1', x.d1], ['H4', x.h4], ['H1', x.h1]].map(([k, v]) => `<tr><td><b>${k}</b></td><td>${arrow(v.structure)}</td><td>${esc(v.trend)}</td><td>${ev(v.last)}</td></tr>`).join('')}</table>
+    <p class="muted" style="font-size:12px;margin:6px 0 0">Price ${esc(String(x.price))} · ${esc(new Date(x.price_time).toLocaleString('en-GB', { weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit', timeZone:'Europe/Bucharest' }))} · bias from ${esc(S.ta.fundamentals || '–')} · computed ${esc(new Date(S.ta.generated_at).toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit', timeZone:'Europe/Bucharest' }))}.<br>${esc(S.ta.source)} Context only, never a trade signal; price never changes a fundamental score.</p>`;
+}
 async function autoImports(){
   if(autoImpBusy || !location.protocol.startsWith('http')) return; autoImpBusy = true;
   try{
@@ -9407,7 +9423,7 @@ async function autoImports(){
     try{ await loadAll(); }catch(e){ console.error(e); toast('Could not load data: ' + e.message); }
   }
   render(); splashDone();
-  if(CONFIGURED && !SUAPP){ autoImports().finally(() => renderHealth(true)); setInterval(() => renderHealth(true), 30*60*1000); setInterval(autoImports, 10*60*1000); document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible') autoImports(); }); }
+  if(CONFIGURED && !SUAPP){ loadTA(); setInterval(loadTA, 15*60*1000); autoImports().finally(() => renderHealth(true)); setInterval(() => renderHealth(true), 30*60*1000); setInterval(autoImports, 10*60*1000); document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible') autoImports(); }); }
   if(CONFIGURED){ const tz = Intl.DateTimeFormat().resolvedOptions().timeZone; if(tz && S.settings && S.settings.tz!==tz) saveSettingKey('tz', tz);
     /* address of this site, for the "Setups" button in phone notifications */
     const site = location.origin + location.pathname; if(location.protocol.startsWith('http') && S.settings && S.settings.site_url!==site) saveSettingKey('site_url', site);
