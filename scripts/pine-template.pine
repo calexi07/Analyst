@@ -130,6 +130,8 @@ string cv = hasRec ? str.substring(rec, 1, 2) : "-"
 float  g  = hasRec and str.length(rec) > 2 ? f_num(str.substring(rec, 2)) : na
 
 bgcolor(showBg and hasRec ? color.new(f_col(b), f_tr(cv)) : na, title = "Week bias")
+// the week's published gap for the Setup Planner indicator (Settings → Bias Engine link); not drawn on the chart
+plot(hasRec ? g : na, "Bias gap (for Setup Planner)", color = color.new(neutC, 100), display = display.data_window)
 
 float atrPad = ta.atr(14) * 0.5
 // highest high of the bars currently visible (labels go above it)

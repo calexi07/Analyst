@@ -1,0 +1,149 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Setup Planner — up to 3 setups you are watching, written in Settings and shown on the chart.
+// You set everything by hand (name, direction, entry line, invalidation, status). Optional link to the Bias Engine
+// indicator warns when a setup goes against the weekly fundamental bias. Not a trade signal.
+//@version=6
+indicator("Setup Planner", shorttitle = "Setups", overlay = true, max_lines_count = 50, max_labels_count = 50)
+
+// ───────── look ─────────
+string theme   = input.string("Auto", "Theme", options = ["Auto", "Light", "Dark"], group = "Look", tooltip = "Auto follows the chart background.")
+string layout  = input.string("Desktop", "Layout", options = ["Desktop", "Mobile (compact)"], group = "Look")
+string txtSz   = input.string("Small", "Text size", options = ["Tiny", "Small", "Normal"], group = "Look")
+string tbPos   = input.string("Bottom right", "Card position", options = ["Bottom right", "Top right", "Bottom left", "Top left"], group = "Look")
+bool   showCard = input.bool(true, "Show the setup card", group = "Look")
+bool   showLine = input.bool(true, "Show the entry lines", group = "Look")
+color  longC   = input.color(#22AB94, "Long",  group = "Look")
+color  shortC  = input.color(#F23645, "Short", group = "Look")
+
+// ───────── link to Bias Engine (optional) ─────────
+bool   useBias = input.bool(false, "Check against the Bias Engine", group = "Bias Engine link", tooltip = "Add the Bias Engine indicator to the same chart, tick this, and choose \"Bias Engine: Bias gap (for Setup Planner)\" below.")
+float  biasGap = input.source(close, "Bias Engine gap", group = "Bias Engine link")
+
+// ───────── the setups ─────────
+bool   on1  = input.bool(true, "Setup 1", inline = "s1a", group = "Setup 1")
+string nm1  = input.string("Setup 1", "", inline = "s1a", group = "Setup 1")
+string dir1 = input.string("Long", "Direction", options = ["Long", "Short"], group = "Setup 1")
+float  px1  = input.price(0.0, "Entry line", confirm = true, group = "Setup 1", tooltip = "On desktop: click the price on the chart when you add the indicator, or drag the line later. On mobile: type the price.")
+string st1  = input.string("⏳ Waiting for the sweep", "Status", options = ["⏳ Waiting for the sweep", "💧 Liquidity taken", "📐 Fractal break, limit placed", "✅ Triggered", "✖ Cancelled", "🏁 Done"], group = "Setup 1")
+string inv1 = input.text_area("", "Invalidation", group = "Setup 1")
+
+bool   on2  = input.bool(false, "Setup 2", inline = "s2a", group = "Setup 2")
+string nm2  = input.string("Setup 2", "", inline = "s2a", group = "Setup 2")
+string dir2 = input.string("Short", "Direction", options = ["Long", "Short"], group = "Setup 2")
+float  px2  = input.price(0.0, "Entry line", group = "Setup 2")
+string st2  = input.string("⏳ Waiting for the sweep", "Status", options = ["⏳ Waiting for the sweep", "💧 Liquidity taken", "📐 Fractal break, limit placed", "✅ Triggered", "✖ Cancelled", "🏁 Done"], group = "Setup 2")
+string inv2 = input.text_area("", "Invalidation", group = "Setup 2")
+
+bool   on3  = input.bool(false, "Setup 3", inline = "s3a", group = "Setup 3")
+string nm3  = input.string("Setup 3", "", inline = "s3a", group = "Setup 3")
+string dir3 = input.string("Long", "Direction", options = ["Long", "Short"], group = "Setup 3")
+float  px3  = input.price(0.0, "Entry line", group = "Setup 3")
+string st3  = input.string("⏳ Waiting for the sweep", "Status", options = ["⏳ Waiting for the sweep", "💧 Liquidity taken", "📐 Fractal break, limit placed", "✅ Triggered", "✖ Cancelled", "🏁 Done"], group = "Setup 3")
+string inv3 = input.text_area("", "Invalidation", group = "Setup 3")
+
+bool   alertOn = input.bool(true, "Alert when price touches an entry line", group = "Alerts", tooltip = "Create one alert on this indicator with the condition \"Any alert() function call\".")
+
+// ───────── helpers ─────────
+float bgLum = (0.299 * color.r(chart.bg_color) + 0.587 * color.g(chart.bg_color) + 0.114 * color.b(chart.bg_color)) / 255
+bool  dark  = theme == "Dark" or (theme == "Auto" and bgLum < 0.5)
+bool  mob   = layout == "Mobile (compact)"
+color tBg   = dark ? #1E222D : #FFFFFF
+color tHd   = dark ? #131722 : #F0F3FA
+color tBd   = dark ? #363A45 : #D1D4DC
+color tTx   = dark ? #D1D4DC : #131722
+color tMu   = dark ? #8C8F99 : #6A6D78
+string TS   = txtSz == "Tiny" ? size.tiny : txtSz == "Normal" ? size.normal : size.small
+
+f_pos(string p) => p == "Top right" ? position.top_right : p == "Bottom right" ? position.bottom_right : p == "Top left" ? position.top_left : position.bottom_left
+f_dirC(string d) => d == "Long" ? longC : shortC
+f_live(string st) => not (str.startswith(st, "✖") or str.startswith(st, "🏁"))
+f_wrap(string txt, int n) =>
+    string[] words = str.split(str.replace_all(txt, "\n", " "), " ")
+    string out = ""
+    string ln = ""
+    for w in words
+        if w != ""
+            if ln != "" and str.length(ln) + str.length(w) + 1 > n
+                out := out == "" ? ln : out + "\n" + ln
+                ln := w
+            else
+                ln := ln == "" ? w : ln + " " + w
+    out == "" ? ln : out + "\n" + ln
+// bias check: +1 = with the bias, -1 = against, 0 = pair two-sided, na = no link
+f_biasFit(string d, float gap) =>
+    na(gap) ? na : math.abs(gap) <= 2 ? 0 : (gap > 0) == (d == "Long") ? 1 : -1
+f_biasTxt(float fit, float gap) =>
+    na(fit) ? "" : fit == 1 ? "✔ with the weekly bias (gap " + str.tostring(gap) + ")" : fit == -1 ? "⚠ AGAINST the weekly bias (gap " + str.tostring(gap) + ")" : "◆ pair two-sided this week (gap " + str.tostring(gap) + ")"
+
+float gapNow = useBias ? biasGap : na
+
+// ───────── entry lines (redrawn on the last bar) ─────────
+var line[]  lns = array.new<line>()
+var label[] lbs = array.new<label>()
+f_draw(bool on, string nm, string dir, float px, string st, string inv) =>
+    if on and px > 0
+        color c = f_dirC(dir)
+        bool live = f_live(st)
+        string sty = str.startswith(st, "📐") or str.startswith(st, "✅") ? line.style_solid : line.style_dashed
+        line l = line.new(bar_index - 40, px, bar_index, px, extend = extend.right, color = color.new(c, live ? 0 : 70), style = sty, width = live ? 2 : 1)
+        float fit = f_biasFit(dir, gapNow)
+        string tip = nm + " · " + dir + " @ " + str.tostring(px, format.mintick) + "\n" + st + (inv == "" ? "" : "\n\nInvalidation:\n" + f_wrap(inv, 50)) + (na(fit) ? "" : "\n\n" + f_biasTxt(fit, gapNow))
+        string txt = (dir == "Long" ? "▲ " : "▼ ") + nm + (mob ? "" : " · " + st) + (not na(fit) and fit == -1 ? "  ⚠" : "")
+        label lb = label.new(bar_index + 3, px, txt, style = label.style_label_left, color = color.new(c, live ? 10 : 70), textcolor = color.white, size = mob ? size.tiny : TS, tooltip = tip)
+        array.push(lns, l)
+        array.push(lbs, lb)
+
+if barstate.islast and showLine
+    for l in lns
+        line.delete(l)
+    for lb in lbs
+        label.delete(lb)
+    array.clear(lns)
+    array.clear(lbs)
+    f_draw(on1, nm1, dir1, px1, st1, inv1)
+    f_draw(on2, nm2, dir2, px2, st2, inv2)
+    f_draw(on3, nm3, dir3, px3, st3, inv3)
+
+// ───────── setup card ─────────
+var table tb = na
+f_row(int r, bool on, string nm, string dir, float px, string st, string inv) =>
+    int used = 0
+    if on and px > 0
+        color c = f_dirC(dir)
+        bool live = f_live(st)
+        float fit = f_biasFit(dir, gapNow)
+        color rowBg = not na(fit) and fit == -1 ? color.new(#FF9800, dark ? 70 : 82) : tBg
+        table.cell(tb, 0, r, (dir == "Long" ? "▲ " : "▼ ") + nm, text_color = color.white, bgcolor = color.new(c, live ? 0 : 60), text_size = TS, text_halign = text.align_left)
+        table.cell(tb, 1, r, str.tostring(px, format.mintick) + "  ·  " + st + (na(fit) ? "" : "\n" + f_biasTxt(fit, gapNow)), text_color = tTx, bgcolor = rowBg, text_size = TS, text_halign = text.align_left)
+        used := 1
+        if inv != "" and not mob
+            table.cell(tb, 0, r + 1, "Invalidation", text_color = tMu, bgcolor = rowBg, text_size = TS, text_halign = text.align_left)
+            table.cell(tb, 1, r + 1, f_wrap(inv, 46), text_color = tTx, bgcolor = rowBg, text_size = TS, text_halign = text.align_left)
+            used := 2
+    used
+
+if barstate.islast and showCard
+    table.delete(tb)
+    tb := table.new(f_pos(tbPos), 2, 7, bgcolor = tBg, frame_color = tBd, frame_width = 1, border_color = tBd, border_width = 1)
+    table.cell(tb, 0, 0, "Setups", text_color = tMu, bgcolor = tHd, text_size = TS, text_halign = text.align_left)
+    table.cell(tb, 1, 0, syminfo.ticker + (useBias and not na(gapNow) ? "  ·  weekly gap " + str.tostring(gapNow) : ""), text_color = tMu, bgcolor = tHd, text_size = TS, text_halign = text.align_left)
+    int r = 1
+    r += f_row(r, on1, nm1, dir1, px1, st1, inv1)
+    r += f_row(r, on2, nm2, dir2, px2, st2, inv2)
+    r += f_row(r, on3, nm3, dir3, px3, st3, inv3)
+    if r == 1
+        table.cell(tb, 0, 1, "–", text_color = tMu, text_size = TS)
+        table.cell(tb, 1, 1, "No active setup. Open Settings to add one.", text_color = tMu, text_size = TS, text_halign = text.align_left)
+
+// ───────── alerts ─────────
+f_touch(bool on, float px, string st) => on and px > 0 and f_live(st) and low <= px and high >= px and not (low[1] <= px and high[1] >= px)
+bool tc1 = f_touch(on1, px1, st1)
+bool tc2 = f_touch(on2, px2, st2)
+bool tc3 = f_touch(on3, px3, st3)
+if alertOn
+    if tc1
+        alert(syminfo.ticker + " · " + nm1 + " (" + dir1 + "): price at the entry line " + str.tostring(px1, format.mintick), alert.freq_once_per_bar)
+    if tc2
+        alert(syminfo.ticker + " · " + nm2 + " (" + dir2 + "): price at the entry line " + str.tostring(px2, format.mintick), alert.freq_once_per_bar)
+    if tc3
+        alert(syminfo.ticker + " · " + nm3 + " (" + dir3 + "): price at the entry line " + str.tostring(px3, format.mintick), alert.freq_once_per_bar)
