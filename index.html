@@ -105,6 +105,15 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .wl-pairs button{ font:inherit; font-size:12.5px; font-weight:700; padding:5px 10px; border-radius:999px; border:1px solid var(--line); background:var(--surface-2); color:var(--muted); cursor:pointer; }
   .wl-pairs button[aria-pressed="true"]{ background:var(--ink, #131722); color:var(--surface, #fff); border-color:transparent; }
   .wl-pairs button b{ display:inline-block; min-width:16px; margin-left:5px; padding:0 5px; border-radius:999px; background:#22AB94; color:#fff; font-size:11px; }
+  .de-cols{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; } @media (max-width:900px){ .de-cols{ grid-template-columns:1fr; } }
+  .de-col{ border:1px solid var(--line); border-radius:14px; padding:12px; background:var(--surface); display:grid; gap:8px; align-content:start; }
+  .de-col h3{ margin:0; font-size:15px; font-weight:800; }
+  .de-ev{ display:flex; gap:8px; align-items:flex-start; font-size:13.5px; padding:6px 8px; border-radius:10px; background:var(--surface-2); }
+  .de-ev .tg{ font-weight:800; white-space:nowrap; } .de-ev .tx{ flex:1; white-space:pre-wrap; } .de-ev button{ font:inherit; border:0; background:none; color:var(--muted); cursor:pointer; }
+  .de-types{ display:flex; flex-wrap:wrap; gap:5px; } .de-types button{ font:inherit; font-size:12px; font-weight:700; padding:3px 8px; border-radius:999px; border:1px solid var(--line); background:var(--surface-2); color:var(--muted); cursor:pointer; }
+  .de-types button[aria-pressed="true"]{ background:var(--ink,#131722); color:var(--surface,#fff); border-color:transparent; }
+  .de-ctx{ display:flex; flex-wrap:wrap; gap:8px; font-size:12.5px; font-weight:700; margin:0 0 12px; }
+  .de-ctx span{ padding:3px 9px; border-radius:999px; background:var(--surface-2); }
   .wl-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px; }
   .wl-card{ display:flex; flex-direction:column; gap:8px; padding:14px; border-radius:16px; border:1px solid var(--line); background:var(--surface); }
   .wl-card.off{ opacity:.62; }
@@ -2579,7 +2588,7 @@ const ICONS = {
 const ico = (k, s = 18) => `<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]||''}</svg>`;
 const NAV = [
   [null, [['today','Today','home']]],
-  ['Fundamental Analyse', [['journal','Calendar','calendar'],['history','Check','trend'],['watch','Watchlist','target'],['backtest','Trades','flask'],['analyst','Analyst','radar']]],
+  ['Fundamental Analyse', [['journal','Calendar','calendar'],['history','Check','trend'],['watch','Watchlist','target'],['devents','Daily events','spark'],['backtest','Trades','flask'],['analyst','Analyst','radar']]],
   ['Money', [['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target']]],
   ['Tools', [['health','Health','radar'],['prompts','Prompts','spark']]],
 ];
@@ -2744,7 +2753,7 @@ function render(){
 function openMore(){
   const d = document.getElementById('moreDlg'), light = document.documentElement.dataset.theme === 'light';
   d.innerHTML = `<div class="dlg-head"><h2>More</h2></div><div class="dlg-body more-g">
-    ${[['watch','Watchlist','target'],['analyst','Analyst','radar'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['health','Health','radar'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
+    ${[['watch','Watchlist','target'],['devents','Daily events','spark'],['analyst','Analyst','radar'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['health','Health','radar'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
     <button class="more-i" data-ma="share">${ico('share', 22)}<span>Share</span></button>
     <button class="more-i" data-ma="data">${ico('swap', 22)}<span>Import / export</span></button>
     <button class="more-i" data-ma="theme">${ico(light ? 'moon' : 'sun', 22)}<span>${light ? 'Dark' : 'Light'} theme</span></button></div>`;
@@ -2837,6 +2846,7 @@ function renderMain(){
   else if(S.view === 'backtest') renderBacktest();
   else if(S.view === 'analyst') renderAnalyst();
   else if(S.view === 'watch') renderWatch();
+  else if(S.view === 'devents') renderDevents();
   else if(S.view === 'health') renderHealth();
   else if(S.view === 'trades') renderTrades();
   else if(S.view === 'setups') renderSetups();
@@ -5210,6 +5220,54 @@ const wlAll = () => Object.entries(S.settings || {}).filter(([k, v]) => k.starts
   .sort((a, b) => (b.created || '').localeCompare(a.created || ''));
 const WL_ST = { active:['Watching','#2962FF'], taken:['Trade taken','#22AB94'], invalid:['Invalidated','#F23645'] };
 function wlBias(pair){ const r = biasRaw(pair, new Date()); return r ? { bias:r.bias, conv:r.conviction, d:det(r) } : null; }
+/* ===== Daily events: what happened on D1 / H4 / H1 per pair and day, plus what to watch tomorrow (do_settings dev:<day>:<pair>) ===== */
+const DE_TF = [['D','Daily'],['H4','4 hour'],['H1','1 hour']];
+const DE_TYPES = ['BOS ▲','BOS ▼','CHoCH ▲','CHoCH ▼','Sweep BSL','Sweep SSL','FVG','Supply hit','Demand hit','Rejection','Range','Other'];
+const deKey = (d, p) => `dev:${d}:${p}`;
+const deGet = (d, p) => S.settings?.[deKey(d, p)] || null;
+const deCount = x => x ? DE_TF.reduce((n, [k]) => n + (x.tf?.[k]?.length || 0), 0) + (x.tomorrow ? 1 : 0) : 0;
+function dePrevDay(d){ const x = parseISO(d); do{ x.setDate(x.getDate() - 1); } while([0, 6].includes(x.getDay())); return iso(x); }
+function deNextDay(d){ const x = parseISO(d); do{ x.setDate(x.getDate() + 1); } while([0, 6].includes(x.getDay())); return iso(x); }
+async function deSave(d, p, x){ x.updated = new Date().toISOString(); await saveSettingKey(deKey(d, p), x); }
+function renderDevents(){
+  const m = document.getElementById('main'), pairs = [...PAIRS, 'XAUUSD'];
+  let d = ls.get('do_de_day', null); const today = iso(new Date()); if(!d || d > deNextDay(today)) d = [0, 6].includes(new Date().getDay()) ? dePrevDay(today) : today;
+  const p = ls.get('do_de_pair', 'EURUSD');
+  const x = deGet(d, p) || { pair:p, day:d, tf:{ D:[], H4:[], H1:[] }, tomorrow:'' };
+  const prev = deGet(dePrevDay(d), p);
+  /* context for the pair: weekly bias, latest daily check, automatic technical read */
+  const w = isoWeek(parseISO(d)), r = S.weekly.get(wk(p, w.year, w.week)), [tl] = BIAS_TAG(r?.bias);
+  const ck = (() => { for(const sl of ['evening','morning']){ const j = S.settings?.[`fcheck:${d}:${sl}`]; const z = j?.pairs?.find(v => normPair(v.pair)===p); if(z) return `${z.status} (${sl})`; } return null; })();
+  const ta = S.ta?.pairs?.[p];
+  const sel = ls.get('do_de_type', {});
+  m.innerHTML = `<header class="hp-top"><div><div class="pairtitle">Daily events</div><div class="muted" style="font-weight:600;font-size:12px">What price did today on D1, 4h and 1h · what you watch tomorrow</div></div></header>
+    <div class="fc-bar"><button class="btn" id="dePrev">‹</button><input type="date" class="inp" id="deDay" value="${d}" style="width:auto"><button class="btn" id="deNext">›</button>
+      <b style="font-size:15px">${esc(fmtDayShort(d))}</b><span class="muted" style="font-size:12.5px;font-weight:600">${(n => n===1 ? '1 pair' : n + ' pairs')(pairs.filter(q => deCount(deGet(d, q))).length)} with notes this day</span></div>
+    <div class="wl-pairs" role="group" aria-label="Pair">${pairs.map(q => { const n = deCount(deGet(d, q)); return `<button type="button" data-dep="${q}" aria-pressed="${q===p}">${q}${n ? `<b>${n}</b>` : ''}</button>`; }).join('')}</div>
+    <div class="de-ctx"><span>${esc(p)}</span><span>Week ${w.week}: ${esc(tl)}${r?.conviction ? ' · ' + esc(r.conviction) : ''}</span>${ck ? `<span>Check: ${esc(ck)}</span>` : ''}${ta ? `<span title="${esc(ta.headline)}">Auto price read: ${esc((TA_LBL[ta.status] || ['', ta.status]).join(' '))}</span>` : ''}</div>
+    ${prev?.tomorrow ? `<div class="card" style="margin-bottom:12px;padding:10px 12px"><b style="font-size:13px">Your plan from ${esc(fmtDayShort(dePrevDay(d)))}:</b><div style="white-space:pre-wrap;font-size:13.5px;margin-top:4px">${esc(prev.tomorrow)}</div></div>` : ''}
+    <div class="de-cols">${DE_TF.map(([k, lb]) => `<section class="de-col" data-detf="${k}"><h3>${lb}</h3>
+      ${(x.tf[k] || []).map((e, i) => `<div class="de-ev"><span class="tg">${esc(e.type)}</span><span class="tx">${e.time ? `<b>${esc(e.time)}</b> ` : ''}${esc(e.text || '')}</span><button type="button" data-dedel="${k}:${i}" aria-label="Remove">✕</button></div>`).join('') || '<p class="muted" style="margin:0;font-size:12.5px">Nothing noted yet.</p>'}
+      <div class="de-types">${DE_TYPES.map(t => `<button type="button" data-det="${k}" data-v="${esc(t)}" aria-pressed="${sel[k]===t}">${esc(t)}</button>`).join('')}</div>
+      <div style="display:flex;gap:6px">${k==='D' ? '' : `<input class="inp" type="time" data-detime="${k}" style="width:auto" aria-label="Time (RO)">`}<input class="inp" data-detext="${k}" placeholder="Level, detail (optional)" style="flex:1"><button type="button" class="btn btn-primary" data-deadd="${k}">Add</button></div>
+    </section>`).join('')}</div>
+    <div class="card" style="margin-top:12px"><label><span class="lbl" style="font-weight:800">👀 What I watch tomorrow (${esc(fmtDayShort(deNextDay(d)))})</span>
+      <textarea class="inp" id="deTom" rows="3" placeholder="e.g. sweep of the Asia high, then a 15m break down; avoid before US retail sales 15:30">${esc(x.tomorrow || '')}</textarea></label>
+      <div style="display:flex;justify-content:flex-end;margin-top:8px"><button type="button" class="btn btn-primary" id="deTomSave">Save</button></div></div>`;
+  const go = v => { ls.set('do_de_day', v); renderDevents(); };
+  m.querySelector('#dePrev').onclick = () => go(dePrevDay(d));
+  m.querySelector('#deNext').onclick = () => go(deNextDay(d));
+  m.querySelector('#deDay').onchange = e => e.target.value && go(e.target.value);
+  m.querySelectorAll('[data-dep]').forEach(b => b.onclick = () => { ls.set('do_de_pair', b.dataset.dep); renderDevents(); });
+  m.querySelectorAll('[data-det]').forEach(b => b.onclick = () => { const k = b.dataset.det, t = ls.get('do_de_type', {}); t[k] = t[k]===b.dataset.v ? null : b.dataset.v; ls.set('do_de_type', t);
+    m.querySelectorAll(`[data-det="${k}"]`).forEach(o => o.setAttribute('aria-pressed', String(t[k]===o.dataset.v))); });
+  m.querySelectorAll('[data-deadd]').forEach(b => b.onclick = async () => { const k = b.dataset.deadd, t = ls.get('do_de_type', {})[k], text = m.querySelector(`[data-detext="${k}"]`).value.trim(), time = m.querySelector(`[data-detime="${k}"]`)?.value || '';
+    if(!t && !text) return toast('Pick an event type or write what happened');
+    x.tf[k] = [...(x.tf[k] || []), { type:t || 'Note', text, time }]; const tt = ls.get('do_de_type', {}); tt[k] = null; ls.set('do_de_type', tt); await deSave(d, p, x); renderDevents(); });
+  m.querySelectorAll('[data-detext]').forEach(inp => inp.onkeydown = e => { if(e.key==='Enter'){ e.preventDefault(); m.querySelector(`[data-deadd="${inp.dataset.detext}"]`).click(); } });
+  m.querySelectorAll('[data-dedel]').forEach(b => b.onclick = async () => { const [k, i] = b.dataset.dedel.split(':'); x.tf[k].splice(+i, 1); await deSave(d, p, x); renderDevents(); });
+  m.querySelector('#deTomSave').onclick = async () => { x.tomorrow = m.querySelector('#deTom').value.trim(); await deSave(d, p, x); toast('Saved'); renderDevents(); };
+}
 function renderWatch(){
   const m = document.getElementById('main'), all = wlAll(), flt = ls.get('do_wl_f', 'active'), pf = ls.get('do_wl_p', 'All');
   const cnt = p => all.filter(x => x.status==='active' && (p==='All' || x.pair===p)).length;
