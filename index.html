@@ -2474,12 +2474,40 @@ async function fetchAll(table){
   return out;
 }
 S.bt = { rows:new Map(), missing:false, run:'all', pair:'all' };
+/* ===== less Supabase traffic (Nov 2026: the free plan's egress quota was exceeded) =====
+   The daily checks and trade reviews are big JSON documents that already live in the repo (imports/*.json, served by GitHub Pages).
+   They are read from there; Supabase only sends the small settings, plus any check that was imported by hand and is not in the repo. */
+async function loadSettingsLight(){
+  const out = []; const size = 1000;
+  for(let from = 0; ; from += size){
+    const { data, error } = await sb.from('do_settings').select('*').not('key', 'like', 'fcheck:%').not('key', 'like', 'treview:%').range(from, from + size - 1);
+    if(error) throw error; out.push(...data); if(data.length < size) break;
+  }
+  return out;
+}
+async function loadRepoDocs(){
+  const got = new Set();
+  try{
+    const list = location.protocol.startsWith('http') ? ((await fetch('imports/index.json?t=' + Math.floor(Date.now() / 6e5)).then(r => r.ok ? r.json() : { files:[] })).files || []) : [];
+    const files = [...new Set(list.filter(f => f && f.file && /\/(check-|trade-review-)/.test(f.file)).map(f => f.file))];
+    const docs = await Promise.all(files.map(f => fetch(f).then(r => r.ok ? r.json() : null).catch(() => null)));
+    for(const j of docs){ if(!j) continue;
+      if(j.format==='daily-observer-check' && j.date && j.slot){ const k = `fcheck:${j.date}:${j.slot}`; S.settings[k] = j; got.add(k); }
+      else if(j.format==='daily-observer-trade-review' && j.week?.year){ const k = `treview:${j.week.year}-W${String(j.week.week).padStart(2, '0')}`; S.settings[k] = j; got.add(k); } }
+  }catch(e){ console.warn('repo docs', e); }
+  /* checks or reviews that exist only in Supabase (imported by hand): list the keys (tiny), then fetch only the missing ones */
+  try{
+    const { data } = await sb.from('do_settings').select('key').or('key.like.fcheck:%,key.like.treview:%').limit(2000);
+    const miss = (data || []).map(r => r.key).filter(k => !got.has(k));
+    for(let i = 0; i < miss.length; i += 50){ const { data:d2 } = await sb.from('do_settings').select('key,value').in('key', miss.slice(i, i + 50)); (d2 || []).forEach(r => S.settings[r.key] = r.value); }
+  }catch(e){ console.warn('settings docs', e); }
+}
 async function loadAll(){
   /* everything at once (was one table after another); the Setups app skips what it never shows */
   const lite = SUAPP_EARLY(), none = () => Promise.resolve([]), soft = t => fetchAll(t).catch(e => { console.warn(e); return []; });
   splash('Loading your data…', 18);
   const P = { d: lite ? none() : fetchAll('do_daily'), w: fetchAll('do_weekly'), n: lite ? none() : fetchAll('do_news'), a: soft('do_accounts'),
-    g: lite ? none() : soft('do_goals'), bk: lite ? none() : soft('do_bank'), st: soft('do_settings'), hd: lite ? Promise.resolve([]) : fetchAll('do_holdings').catch(() => null),
+    g: lite ? none() : soft('do_goals'), bk: lite ? none() : soft('do_bank'), st: loadSettingsLight().catch(e => { console.warn(e); return []; }), hd: lite ? Promise.resolve([]) : fetchAll('do_holdings').catch(() => null),
     tr: fetchAll('do_trades').then(x => x, e => ({ err:e })), bt: lite ? Promise.resolve([]) : fetchAll('do_backtests').catch(e => ({ err:e })) };
   const [d, w, n, a] = await Promise.all([P.d, P.w, P.n, P.a]);
   splash('Bias, accounts, trades…', 38);
@@ -2493,6 +2521,7 @@ async function loadAll(){
   /* daily_pips exists only after migration-daily-pips.sql — never send it before that */
   S.hasPips = d.length ? d.some(r => 'daily_pips' in r) : lite ? false : await sb.from('do_daily').select('daily_pips').limit(1).then(r => !r.error, () => false);
   S.settings = Object.fromEntries(st.map(r => [r.key, r.value]));
+  if(!lite) await loadRepoDocs();
   S.bank.rows = new Map(bk.map(r => [r.id, r]));
   { const hd = await P.hd; S.hold = new Map((hd || []).map(r => [r.id, r])); S.holdOK = hd!==null; }
   S.goals = new Map(g.map(r => [r.id, r]));
@@ -2504,7 +2533,7 @@ async function loadAll(){
   S.trades = new Map(tr.map(t => [t.id, t]));
   d.forEach(r => { TR_ALL_F.forEach(f => delete r[f]); });   /* day rows carry observations only */
   splash('Signals and candles…', 58);
-  await loadSignals();
+  if(SUAPP) await loadSignals(); else { S.signals = S.signals || []; S.setupMarks = S.setupMarks || new Map(); }
   splash('Building setups…', 90);
   S.daily = new Map(d.map(r => [dk(r.pair, r.day), r]));
   S.weekly = new Map(w.map(r => [wk(r.pair, r.year, r.week), r]));
@@ -6501,7 +6530,7 @@ async function loadSignals(){
     return;
   }
   if(!S.signalsMissing) await loadCandles();
-  try{ const { data } = await sb.from('do_settings').select('*').range(0, 999); (data || []).forEach(r => { if(['engine','hb_1m','hb_15m','hb_1H','hb_4H','pair_override','bank_hidden','mfx_accounts','mfx_hidden','stk_quotes'].includes(r.key)) S.settings[r.key] = r.value; }); }catch(e){ /* keep what we have */ }
+  try{ const { data } = await sb.from('do_settings').select('key,value').in('key', ['engine','hb_1m','hb_15m','hb_1H','hb_4H','pair_override','bank_hidden','mfx_accounts','mfx_hidden','stk_quotes']); (data || []).forEach(r => { S.settings[r.key] = r.value; }); }catch(e){ /* keep what we have */ }
 }
 /* the server engine (tv-signal) is running → it does the auto-take / auto-close; the browser only shows */
 const engineOn = () => { const at = S.settings?.engine?.at; return !!at && Date.now() - tms(at) < 40*60e3; };
@@ -8219,18 +8248,19 @@ function suWatchChanges(silent){
 }
 async function liveRefresh(){
   if(!CONFIGURED || S.liveBusy) return;
-  const vis = document.visibilityState==='visible';   /* in the background too: the tab badge and the sounds keep working */
+  const vis = document.visibilityState==='visible';   /* Setups app: in the background too (tab badge and sounds) */
+  if(!SUAPP){ if(!vis || Date.now() - (S.liveLast || 0) < 5*60e3) return; S.liveLast = Date.now(); }   /* main app: visible page only, every 5 min */
   S.liveBusy = true;
   try{
-    await loadSignals();
+    if(SUAPP) await loadSignals();
     /* trades opened / closed by the server engine */
-    if(!S.legacyTrades){ try{ const tr = await fetchAll('do_trades'); const sig = m => [...m.values()].map(t => t.id + (t.updated_at || '') + (t.result || '')).sort().join();
+    if(!S.legacyTrades && (SUAPP || ['today','trades'].includes(S.view))){ try{ const tr = await fetchAll('do_trades'); const sig = m => [...m.values()].map(t => t.id + (t.updated_at || '') + (t.result || '')).sort().join();
       const fresh = new Map(tr.map(t => [t.id, t])); if(sig(fresh)!==sig(S.trades)){ S.trades = fresh; S.liveTrades = true; } }catch(e){ /* keep what we have */ } }
     /* portfolio purchases added on another device */
-    try{ const hd = await fetchAll('do_holdings'); const sigH = m => [...m.values()].map(h => h.id + h.qty + h.price + h.buy_date).sort().join(); const fh = new Map(hd.map(r => [r.id, r]));
+    if(SUAPP || S.view==='portfolio') try{ const hd = await fetchAll('do_holdings'); const sigH = m => [...m.values()].map(h => h.id + h.qty + h.price + h.buy_date).sort().join(); const fh = new Map(hd.map(r => [r.id, r]));
       if(sigH(fh)!==sigH(S.hold)){ S.hold = fh; S.holdOK = true; S.liveTrades = true; } }catch(e){ /* table missing or offline */ }
     /* accounts: live balance / equity written by the Myfxbook sync, and accounts it adds */
-    try{ const ac = await fetchAll('do_accounts'); const sigA = m => [...m.values()].map(a => a.id + (a.live_at || '') + (a.live_balance ?? '') + (a.live_equity ?? '') + (a.payout_date || '') + (a.status || '')).sort().join();
+    if(SUAPP || ['accounts','today','portfolio'].includes(S.view)) try{ const ac = await fetchAll('do_accounts'); const sigA = m => [...m.values()].map(a => a.id + (a.live_at || '') + (a.live_balance ?? '') + (a.live_equity ?? '') + (a.payout_date || '') + (a.status || '')).sort().join();
       const freshA = new Map(ac.map(r => [r.id, r])); if(sigA(freshA)!==sigA(S.accounts)){ S.accounts = freshA; S.liveTrades = true; } }catch(e){ /* keep what we have */ }
     suWatchChanges(false);
     try{ acctEligNotify(); }catch(e){}
