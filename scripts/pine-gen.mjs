@@ -46,18 +46,25 @@ function addCheck(j){
   checks.set(k, C);
 }
 
-// 1) history from Daily Observer (if the Supabase secrets are present)
+// 0) saved history (pine/history.json) so a Daily Observer outage never shrinks the indicator's data
+if(existsSync('pine/history.json')){ try{ const h = JSON.parse(readFileSync('pine/history.json', 'utf8'));
+  for(const W of h.weeks || []) weeks.set(wkKey(W.y, W.w), W);
+  for(const C of h.checks || []) checks.set(`${C.date}:${C.slot}`, C); }catch(e){ console.error('history.json unreadable', e.message); } }
+let supaOk = false;
+// 1) history from Daily Observer (if the Supabase secrets are present) — only the fields the indicator needs, to keep traffic small
 if(URL_ && KEY){
   const H = { apikey:KEY, Authorization:`Bearer ${KEY}` };
-  const r1 = await fetch(`${URL_}/rest/v1/do_weekly?select=pair,year,week,bias,conviction,details&limit=20000`, { headers:H });
-  if(r1.ok){ for(const r of await r1.json()){
+  const r1 = await fetch(`${URL_}/rest/v1/do_weekly?select=pair,year,week,bias,conviction,base_score:details->base_score,quote_score:details->quote_score&limit=20000`, { headers:H });
+  if(r1.ok){ supaOk = true; for(const r of await r1.json()){
     const p = norm(r.pair); if(!PAIRS.includes(p)) continue;
-    const d = (r.details && typeof r.details === 'object') ? r.details : {}, W = getWeek(r.year, r.week);
+    const d = r, W = getWeek(r.year, r.week);
     const bs = d.base_score != null ? Number(d.base_score) : null, qs = d.quote_score != null ? Number(d.quote_score) : null;
     W.pairs[p] = { b:biasCode(r.bias), c:convCode(r.conviction), bs, qs };
     if(bs != null) W.ccy[p.slice(0, 3)] ??= bs; if(qs != null) W.ccy[p.slice(3, 6)] ??= qs;
   } } else console.error('do_weekly', r1.status, await r1.text());
-  const r2 = await fetch(`${URL_}/rest/v1/do_settings?select=key,value&key=like.fcheck:*&limit=5000`, { headers:H });
+  // only checks newer than the saved history are fetched
+  const known = [...checks.keys()].map(k => k.split(':')[0]).sort().at(-1) || '2000-01-01';
+  const r2 = await fetch(`${URL_}/rest/v1/do_settings?select=key,value&key=gte.fcheck:${known}&key=like.fcheck:*&limit=500`, { headers:H });
   if(r2.ok){ for(const r of await r2.json()) addCheck(r.value); } else console.error('fcheck', r2.status, await r2.text());
 } else console.log('No Supabase secrets: using repo imports only');
 
@@ -121,5 +128,8 @@ const tpl = readFileSync('scripts/pine-template.pine', 'utf8')
   .replace('{{STAMP}}', gen);
 mkdirSync('pine', { recursive:true });
 writeFileSync('pine/bias-engine.pine', tpl);
+writeFileSync('pine/history.json', JSON.stringify({ saved_at:gen, daily_observer:supaOk ? 'ok' : 'unavailable (history kept from the last good run)',
+  weeks:[...weeks.values()].filter(W => Object.keys(W.pairs).length).sort((a, b) => a.y - b.y || a.w - b.w),
+  checks:[...checks.values()].sort((a, b) => (a.date + a.slot).localeCompare(b.date + b.slot)) }));
 writeFileSync('pine/bias-engine.json', JSON.stringify({ generated_at:gen, weeks:wl.map(W => wkKey(W.y, W.w) + (W.phase ? ' ' + W.phase : '')), checks:cl.map(C => `${C.date} ${C.slot}`), chars:tpl.length }, null, 1));
 console.log(`pine/bias-engine.pine: ${wl.length} weeks, ${cl.length} checks, ${tpl.length} chars`);
