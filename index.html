@@ -2473,14 +2473,19 @@ function splashDone(){
 }
 /* Setups app with a saved screen: the splash steps aside quickly and a small "Updating" pill stays until the data is in */
 function SUAPP_EARLY(){ return /[?&]app=setups/.test(location.search) && !/[?&]screen=accounts/.test(location.search); }
+/* paged reads need a stable order: without it Postgres may return the same row on two pages and skip another
+   (seen Nov 2026: random do_daily days missing their close in the calendar). Order by the primary key, then dedupe. */
 async function fetchAll(table){
-  const out = []; const size = 1000;
+  const out = []; const size = 1000; let ord = 'id';
   for(let from = 0; ; from += size){
-    const { data, error } = await sb.from(table).select('*').range(from, from+size-1);
+    let q = sb.from(table).select('*'); if(ord) q = q.order(ord, { ascending:true });
+    let { data, error } = await q.range(from, from+size-1);
+    if(error && ord && from===0 && /column|does not exist|42703/i.test(error.message || error.code || '')){ ord = null; ({ data, error } = await sb.from(table).select('*').range(0, size-1)); }
     if(error) throw error;
     out.push(...data); if(data.length < size) break;
   }
-  return out;
+  if(!out.length || !('id' in out[0])) return out;
+  const seen = new Set(); return out.filter(r => seen.has(r.id) ? false : (seen.add(r.id), true));
 }
 S.bt = { rows:new Map(), missing:false, run:'all', pair:'all' };
 /* ===== less Supabase traffic (Nov 2026: the free plan's egress quota was exceeded) =====
@@ -2489,7 +2494,7 @@ S.bt = { rows:new Map(), missing:false, run:'all', pair:'all' };
 async function loadSettingsLight(){
   const out = []; const size = 1000;
   for(let from = 0; ; from += size){
-    const { data, error } = await sb.from('do_settings').select('*').not('key', 'like', 'fcheck:%').not('key', 'like', 'treview:%').range(from, from + size - 1);
+    const { data, error } = await sb.from('do_settings').select('*').not('key', 'like', 'fcheck:%').not('key', 'like', 'treview:%').order('key').range(from, from + size - 1);
     if(error) throw error; out.push(...data); if(data.length < size) break;
   }
   return out;
@@ -8309,6 +8314,10 @@ async function liveRefresh(){
     /* trades opened / closed by the server engine */
     if(!S.legacyTrades && (SUAPP || ['today','trades'].includes(S.view))){ try{ const tr = await fetchAll('do_trades'); const sig = m => [...m.values()].map(t => t.id + (t.updated_at || '') + (t.result || '')).sort().join();
       const fresh = new Map(tr.map(t => [t.id, t])); if(sig(fresh)!==sig(S.trades)){ S.trades = fresh; S.liveTrades = true; } }catch(e){ /* keep what we have */ } }
+    /* daily closes written by the TradingView indicator after the app was opened: last 10 days only (small) */
+    if(!SUAPP && sb) try{ const since = iso(new Date(Date.now() - 10*864e5)); const { data } = await sb.from('do_daily').select('*').gte('day', since).order('id').limit(2000);
+      let ch = 0; (data || []).forEach(r => { TR_ALL_F.forEach(f => delete r[f]); const k = dk(r.pair, r.day), o = S.daily.get(k); if(!o || o.daily_change!==r.daily_change || o.updated_at!==r.updated_at){ S.daily.set(k, o ? { ...o, ...r } : r); ch++; } });
+      if(ch && S.view==='journal' && !document.querySelector('dialog[open]') && !S.drawerOpen && !document.activeElement?.matches?.('input,textarea,select')) renderCalendar?.(); }catch(e){ /* offline */ }
     /* portfolio purchases added on another device */
     if(SUAPP || S.view==='portfolio') try{ const hd = await fetchAll('do_holdings'); const sigH = m => [...m.values()].map(h => h.id + h.qty + h.price + h.buy_date).sort().join(); const fh = new Map(hd.map(r => [r.id, r]));
       if(sigH(fh)!==sigH(S.hold)){ S.hold = fh; S.holdOK = true; S.liveTrades = true; } }catch(e){ /* table missing or offline */ }
