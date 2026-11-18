@@ -105,6 +105,13 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .wl-pairs button{ font:inherit; font-size:12.5px; font-weight:700; padding:5px 10px; border-radius:999px; border:1px solid var(--line); background:var(--surface-2); color:var(--muted); cursor:pointer; }
   .wl-pairs button[aria-pressed="true"]{ background:var(--ink, #131722); color:var(--surface, #fff); border-color:transparent; }
   .wl-pairs button b{ display:inline-block; min-width:16px; margin-left:5px; padding:0 5px; border-radius:999px; background:#22AB94; color:#fff; font-size:11px; }
+  .sess-k{ font:inherit; text-align:left; cursor:pointer; color:inherit; } .sess-k b{ font-size:17px !important; line-height:1.2; }
+  .sess-k.s-main{ box-shadow:inset 0 0 0 2px rgba(34,171,148,.55); } .sess-k.s-sec{ box-shadow:inset 0 0 0 2px rgba(242,196,135,.5); } .sess-k.s-roll{ box-shadow:inset 0 0 0 2px rgba(240,97,109,.5); }
+  .sess-dlg{ border:1px solid var(--line); border-radius:16px; background:var(--surface); color:inherit; padding:16px; max-width:760px; width:94vw; }
+  .sess-dlg::backdrop{ background:rgba(0,0,0,.55); }
+  .sess-h{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:15px; }
+  .sess-t{ width:100%; border-collapse:collapse; font-size:13px; } .sess-t th{ text-align:left; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); padding:6px 8px; }
+  .sess-t td{ padding:6px 8px; border-top:1px solid var(--line); white-space:nowrap; } .sess-t tr.me td{ background:var(--surface-2); font-weight:700; }
   .de-cols{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; } @media (max-width:900px){ .de-cols{ grid-template-columns:1fr; } }
   .de-col{ border:1px solid var(--line); border-radius:14px; padding:12px; background:var(--surface); display:grid; gap:8px; align-content:start; }
   .de-col h3{ margin:0; font-size:15px; font-weight:800; }
@@ -3010,8 +3017,45 @@ function renderCalendar(){
   }
   cal.innerHTML = h;
   const ms = document.getElementById('mStats'); if(ms) ms.textContent = monthStats();
-  const jh = document.getElementById('jrHero'); if(jh){ jh.innerHTML = journalHero(p); jh.querySelectorAll('[data-jhw]').forEach(b => b.onclick = () => { const [y, w] = b.dataset.jhw.split('|').map(Number); goTo(p, { type:'week', y, w }); }); }
+  const jh = document.getElementById('jrHero'); if(jh){ jh.innerHTML = journalHero(p); jh.querySelectorAll('[data-jhw]').forEach(b => b.onclick = () => { const [y, w] = b.dataset.jhw.split('|').map(Number); goTo(p, { type:'week', y, w }); }); jh.querySelector('[data-sess]')?.addEventListener('click', () => openSessions(p)); }
   renderStrip();
+}
+/* ===== Trading windows per pair (Romania time, valid Nov 2026 – Mar 2027; US/EU summer time shifts NY by an hour for ~2 weeks in March) ===== */
+const PSESS = {
+ EURUSD:['15:00-18:00','09:00-12:00','after 19:00 the move fades'], GBPUSD:['09:00-12:00','15:00-18:00','UK data at 09:00'],
+ USDJPY:['15:00-18:00','01:30-04:00','Tokyo can give the sweep'], USDCHF:['15:00-18:00','09:00-11:00',''],
+ USDCAD:['15:00-18:00','','Canada data at 15:30'], AUDUSD:['15:00-18:00','01:30-04:00','AU data at 02:30'],
+ NZDUSD:['15:00-18:00','00:00-03:00','NZ data early morning'], EURGBP:['09:00-12:00','','dead outside London'],
+ EURJPY:['09:00-12:00','15:00-17:00',''], EURCHF:['09:00-11:30','','slow pair, rare setups'],
+ EURAUD:['09:00-12:00','01:30-04:00',''], EURNZD:['09:00-12:00','00:30-03:00','wide spread in Asia'],
+ EURCAD:['15:00-18:00','09:00-11:00',''], GBPJPY:['09:00-12:00','15:00-17:00','volatile: mind the minimum SL'],
+ GBPCHF:['09:00-12:00','',''], GBPAUD:['09:00-12:00','01:30-04:00',''], GBPNZD:['09:00-12:00','','wide spread outside London'],
+ GBPCAD:['15:00-18:00','09:00-11:00',''], AUDJPY:['01:30-04:30','09:00-11:00','Asia is the main session'],
+ AUDCHF:['09:00-11:00','01:30-04:00',''], AUDNZD:['00:30-04:00','09:00-10:30','slow, mostly Asia'],
+ AUDCAD:['15:00-18:00','01:30-03:30',''], NZDJPY:['00:30-04:00','09:00-11:00','Asia is the main session'],
+ NZDCHF:['09:00-11:00','00:30-03:00',''], NZDCAD:['15:00-18:00','',''], CADJPY:['15:00-18:00','01:30-04:00',''],
+ CADCHF:['15:00-18:00','09:00-11:00',''], CHFJPY:['09:00-12:00','01:30-04:00',''], XAUUSD:['15:00-18:00','09:00-11:00','US data at 15:30'] };
+const sessMin = t => { const [h, m] = t.split(':').map(Number); return h*60 + m; };
+function roNow(d = new Date()){ const f = new Intl.DateTimeFormat('en-GB', { timeZone:'Europe/Bucharest', weekday:'short', hour:'2-digit', minute:'2-digit', hourCycle:'h23' }).formatToParts(d);
+  const g = k => f.find(x => x.type===k)?.value; return { wd:g('weekday'), min:Number(g('hour'))*60 + Number(g('minute')) }; }
+/* state of a pair's window right now: main / sec / rollover / off, with the next window */
+function sessState(p, d = new Date()){
+  const w = PSESS[p]; if(!w) return null; const { wd, min } = roNow(d);
+  const wins = [[w[0], 'main'], [w[1], 'sec']].filter(x => x[0]).map(([r, k]) => { const [a, b] = r.split('-'); return { k, a:sessMin(a), b:sessMin(b), r }; }).sort((x, y) => x.a - y.a);
+  if(wd==='Sat' || wd==='Sun' || (wd==='Fri' && min >= 18*60)) return { k:'off', lbl:'Weekend', sub:'next: Monday', note:w[2] };
+  if(min >= 23*60 + 30 || min < 90) return { k:'roll', lbl:'Rollover', sub:'spread is wide until 01:30', note:w[2] };
+  const cur = wins.find(x => min >= x.a && min < x.b);
+  if(cur){ const left = cur.b - min; return { k:cur.k, lbl:cur.k==='main' ? 'Main window' : 'Secondary window', sub:`until ${cur.r.split('-')[1]} · ${left >= 60 ? Math.floor(left/60) + 'h ' : ''}${left % 60}m left`, note:w[2] }; }
+  const nx = wins.find(x => x.a > min); return { k:'off', lbl:'Outside window', sub: nx ? `next: ${nx.r.split('-')[0]} (${nx.k==='main' ? 'main' : 'secondary'})` : `next: ${wins[0].r.split('-')[0]} tomorrow`, note:w[2] };
+}
+const SESS_IC = { main:'🟢', sec:'🟡', roll:'⛔', off:'⚪' };
+function openSessions(cur){
+  let d = document.getElementById('sessDlg'); if(!d){ d = document.createElement('dialog'); d.id = 'sessDlg'; d.className = 'sess-dlg'; document.body.appendChild(d); }
+  const rows = [...PAIRS, 'XAUUSD'].map(p => { const w = PSESS[p], st = sessState(p); return `<tr class="${p===cur ? 'me' : ''}"><td><b>${p}</b></td><td>${w[0]}</td><td>${w[1] || '—'}</td><td>${SESS_IC[st.k]} ${esc(st.lbl)}</td><td class="muted">${esc(w[2] || '')}</td></tr>`; }).join('');
+  d.innerHTML = `<div class="sess-h"><b>Trading windows · Romania time</b><button class="btn" data-x>✕</button></div>
+    <div style="overflow:auto"><table class="sess-t"><thead><tr><th>Pair</th><th>Main</th><th>Secondary</th><th>Now</th><th>Note</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="muted" style="font-size:12px;margin:10px 0 0">For everyone: no entries 23:30–01:30 (rollover spread), none in the 30 min before HIGH/CRITICAL news on either currency, none on Friday after 18:00. Mid-March, when the US moves its clocks two weeks before Europe, New York and US data come one hour earlier (overlap 14:00–17:00, data 14:30).</p>`;
+  d.querySelector('[data-x]').onclick = () => d.close(); d.onclick = e => { if(e.target===d) d.close(); }; d.showModal();
 }
 /* journal header: this week's bias for the pair + the month at a glance */
 function journalHero(p){
@@ -3035,6 +3079,7 @@ function journalHero(p){
       <div class="ab-k ${es.length >= wd && wd ? 'up' : ''}"><span>Observed · ${MONTHS[m].slice(0, 3)}</span><b>${es.length}<em>/${wd}</em></b><small>weekdays logged</small></div>
       <div class="ab-k ${tr.length ? (R >= 0 ? 'up' : 'dn') : ''}"><span>Trades · ${MONTHS[m].slice(0, 3)}</span><b>${tr.length ? `${R >= 0 ? '+' : ''}${fmt(R, 2)}R` : '–'}</b><small>${tr.length ? `${W}W / ${L}L · ${pips > 0 ? '+' : ''}${fmt(pips, 1)} pips` : 'no closed trades'}</small></div>
       <div class="ab-k ${open.length ? (oR >= 0 ? 'up' : 'dn') : ''}"><span>Open now</span><b>${open.length ? (olv.length ? `${oR >= 0 ? '+' : ''}${fmt(oR, 2)}R` : open.length) : 'Flat'}</b><small>${open.length ? `${open.length} position${open.length > 1 ? 's' : ''} on ${p}` : 'no position on this pair'}</small></div>
+      ${(st => st ? `<button type="button" class="ab-k sess-k s-${st.k}" data-sess title="${esc(st.note || 'Trading windows for all pairs')}"><span>Trade window · now</span><b>${SESS_IC[st.k]} ${esc(st.lbl)}</b><small>${esc(st.sub)}</small></button>` : '')(sessState(p))}
       <div class="ab-k ${checked.length ? (hits / checked.length >= .5 ? 'up' : 'dn') : ''}"><span>Bias hit · 8 wks</span><b>${checked.length ? Math.round(hits / checked.length * 100) + '%' : '–'}</b><small>
         <span class="jh-dots">${hist.map(h => `<button class="jh-d ${h.hit==null ? '' : h.hit ? 'ok' : 'no'}" data-jhw="${h.kk.year}|${h.kk.week}" title="W${h.kk.week}: ${h.bias ? BIAS_LBL[h.bias] : 'no bias'}${h.re ? ' · ' + pct(h.re.sum) : ''}"></button>`).join('')}</span></small></div>
     </div></section>`;
@@ -5247,7 +5292,7 @@ function renderDevents(){
     <div class="fc-bar"><button class="btn" id="dePrev">‹</button><input type="date" class="inp" id="deDay" value="${d}" style="width:auto"><button class="btn" id="deNext">›</button>
       <b style="font-size:15px">${esc(fmtDayShort(d))}</b><span class="muted" style="font-size:12.5px;font-weight:600">${(n => n===1 ? '1 pair' : n + ' pairs')(pairs.filter(q => deCount(deGet(d, q))).length)} with notes this day</span></div>
     <div class="wl-pairs" role="group" aria-label="Pair">${pairs.map(q => { const n = deCount(deGet(d, q)); return `<button type="button" data-dep="${q}" aria-pressed="${q===p}">${q}${n ? `<b>${n}</b>` : ''}</button>`; }).join('')}</div>
-    <div class="de-ctx"><span>${esc(p)}</span><span>Week ${w.week}: ${esc(tl)}${r?.conviction ? ' · ' + esc(r.conviction) : ''}</span>${ck ? `<span>Check: ${esc(ck)}</span>` : ''}${ta ? `<span title="${esc(ta.headline)}">Auto price read: ${esc((TA_LBL[ta.status] || ['', ta.status]).join(' '))}</span>` : ''}</div>
+    <div class="de-ctx"><span>${esc(p)}</span><span>Week ${w.week}: ${esc(tl)}${r?.conviction ? ' · ' + esc(r.conviction) : ''}</span>${ck ? `<span>Check: ${esc(ck)}</span>` : ''}${(st => st ? `<span role="button" tabindex="0" data-sess style="cursor:pointer" title="${esc(st.note || '')}">${SESS_IC[st.k]} ${esc(st.lbl)} · ${esc(st.sub)}</span>` : '')(sessState(p))}${ta ? `<span title="${esc(ta.headline)}">Auto price read: ${esc((TA_LBL[ta.status] || ['', ta.status]).join(' '))}</span>` : ''}</div>
     ${prev?.tomorrow ? `<div class="card" style="margin-bottom:12px;padding:10px 12px"><b style="font-size:13px">Your plan from ${esc(fmtDayShort(dePrevDay(d)))}:</b><div style="white-space:pre-wrap;font-size:13.5px;margin-top:4px">${esc(prev.tomorrow)}</div></div>` : ''}
     <div class="de-cols">${DE_TF.map(([k, lb]) => `<section class="de-col" data-detf="${k}"><h3>${lb}</h3>
       ${(x.tf[k] || []).map((e, i) => `<div class="de-ev">${e.type && e.type!=='Note' ? `<span class="tg">${esc(e.type)}</span>` : ''}<span class="tx">${e.time ? `<b>${esc(e.time)}</b> ` : ''}${esc(e.text || '')}</span><button type="button" data-dedel="${k}:${i}" aria-label="Remove">✕</button></div>`).join('') || '<p class="muted" style="margin:0;font-size:12.5px">Nothing noted yet.</p>'}
@@ -5266,6 +5311,7 @@ function renderDevents(){
     x.tf[k] = [...(x.tf[k] || []), { text, at:new Date().toISOString() }]; await deSave(d, p, x); renderDevents(); });
   m.querySelectorAll('[data-detext]').forEach(inp => inp.onkeydown = e => { if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); m.querySelector(`[data-deadd="${inp.dataset.detext}"]`).click(); } });
   m.querySelectorAll('[data-dedel]').forEach(b => b.onclick = async () => { const [k, i] = b.dataset.dedel.split(':'); x.tf[k].splice(+i, 1); await deSave(d, p, x); renderDevents(); });
+  m.querySelector('[data-sess]')?.addEventListener('click', () => openSessions(p));
   m.querySelector('#deTomSave').onclick = async () => { x.tomorrow = m.querySelector('#deTom').value.trim(); await deSave(d, p, x); toast('Saved'); renderDevents(); };
 }
 function renderWatch(){
@@ -5280,7 +5326,7 @@ function renderWatch(){
     return `<article class="wl-card ${x.status==='active' ? '' : 'off'}" data-wl="${esc(x.key)}">
       <div class="wl-h"><span class="p">${esc(x.pair)}</span><span class="wl-tag" style="background:${L ? '#22AB94' : '#F23645'};color:#fff">${L ? '▲ Long' : '▼ Short'}</span>
         <span class="wl-tag" style="background:color-mix(in srgb,${st[1]} 16%,transparent);color:${st[1]}">${st[0]}</span></div>
-      <div>${bTag}</div>
+      <div>${bTag}${x.status==='active' ? (st2 => st2 ? ` <span class="wl-tag" data-sessw title="${esc(st2.sub)}" style="cursor:pointer;background:var(--surface-2)">${SESS_IC[st2.k]} ${esc(st2.lbl)}</span>` : '')(sessState(x.pair)) : ''}</div>
       ${img ? `<img class="wl-img" src="${esc(img)}" alt="TradingView chart for ${esc(x.pair)}" loading="lazy" data-wlimg="${esc(x.img)}">` : x.img ? `<a href="${esc(x.img)}" target="_blank" rel="noopener" class="muted" style="font-size:12.5px">Open the chart ↗</a>` : ''}
       ${x.text ? `<div style="font-size:13.5px;white-space:pre-wrap">${esc(x.text)}</div>` : ''}
       ${x.valid ? `<div class="wl-box wl-v"><b>✅ Validation</b>\n${esc(x.valid)}</div>` : ''}
@@ -5306,6 +5352,7 @@ function renderWatch(){
     const upd = async patch => { await saveSettingKey(k, { ...S.settings[k], ...patch }); renderWatch(); };
     c.querySelector('[data-wled]').onclick = () => openWatch(k);
     c.querySelector('[data-wlimg]')?.addEventListener('click', e => window.open(e.target.dataset.wlimg, '_blank', 'noopener'));
+    c.querySelector('[data-sessw]')?.addEventListener('click', () => openSessions(c.querySelector('.p')?.textContent));
     c.querySelector('[data-wlinv]')?.addEventListener('click', () => { const bx = c.querySelector('[data-wlinvbox]'); bx.hidden = !bx.hidden; bx.querySelector('input').focus(); });
     c.querySelector('[data-wlinvgo]')?.addEventListener('click', () => upd({ status:'invalid', reason:c.querySelector('[data-wlreason]').value.trim() || null, closed:new Date().toISOString() }).then(() => toast('Setup invalidated')));
     c.querySelector('[data-wlre]')?.addEventListener('click', () => upd({ status:'active', reason:null, closed:null, trade_id:null }));
@@ -8337,6 +8384,8 @@ async function liveRefresh(){
   } finally { S.liveBusy = false; }
 }
 setInterval(liveRefresh, 120000);
+setInterval(() => { const k = document.querySelector('#jrHero .sess-k'); if(!k || !S.pair) return; const st = sessState(S.pair); if(!st) return;
+  k.className = `ab-k sess-k s-${st.k}`; k.querySelector('b').textContent = `${SESS_IC[st.k]} ${st.lbl}`; k.querySelector('small').textContent = st.sub; }, 30000);
 if(KIOSK){
   document.body.classList.add('kiosk');
   setInterval(() => { const c = document.getElementById('ksClock'); if(c) c.textContent = new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' }); }, 15000);
