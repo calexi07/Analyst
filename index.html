@@ -112,6 +112,14 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .sess-h{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:15px; }
   .sess-t{ width:100%; border-collapse:collapse; font-size:13px; } .sess-t th{ text-align:left; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); padding:6px 8px; }
   .sess-t td{ padding:6px 8px; border-top:1px solid var(--line); white-space:nowrap; } .sess-t tr.me td{ background:var(--surface-2); font-weight:700; }
+  .arm-p{ border:1px solid var(--line); border-radius:16px; padding:12px 14px; margin:0 0 12px; background:var(--surface); }
+  .arm-h{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; } .arm-h b{ font-size:15px; } .arm-h .muted{ font-size:12.5px; flex:1; min-width:220px; }
+  .arm-g{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:10px; margin-top:10px; }
+  .arm-c{ border:1px solid var(--line); border-radius:12px; padding:10px 12px; display:grid; gap:6px; background:var(--surface-2); } .arm-c.off{ opacity:.6; }
+  .arm-t{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; } .arm-t b{ font-size:15px; } .arm-l{ font-size:13px; } .arm-b{ display:flex; gap:6px; justify-content:flex-end; }
+  .arm-f{ display:grid; gap:12px; } .arm-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; } .arm-f label{ display:grid; gap:4px; font-size:12.5px; font-weight:700; }
+  .arm-acc{ display:grid; gap:6px; margin-top:6px; } .arm-ck{ display:flex !important; gap:8px; align-items:center; font-weight:600 !important; font-size:13px !important; }
+  .arm-chk{ list-style:none; margin:0; padding:0; display:grid; gap:4px; font-size:12.5px; font-weight:600; } .arm-ok{ color:#22AB94; } .arm-warn{ color:#F2A33A; } .arm-bad{ color:#F23645; }
   .de-cols{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; } @media (max-width:900px){ .de-cols{ grid-template-columns:1fr; } }
   .de-col{ border:1px solid var(--line); border-radius:14px; padding:12px; background:var(--surface); display:grid; gap:8px; align-content:start; }
   .de-col h3{ margin:0; font-size:15px; font-weight:800; }
@@ -7624,7 +7632,7 @@ function lvRow(s){
       act = `<button class="bt" data-sutakex="${s.key}">Cancel</button><button class="btn btn-primary" data-sutakeok="${s.key}">✓ Open trade</button>`;
     } else
     if(s.stage==='wickfail') act = `${chart}<button class="bt lvr-fx" data-sutk="${s.key}" title="Open the trade now at the current price, without waiting for the retest">⚡ Take now</button><button class="bt" data-suwx="${s.key}|drop" title="The setup goes to History as invalid">✗ Invalidate</button><button class="btn btn-primary" data-suwx="${s.key}|more" title="Wait for one more candle to close beyond the line">+1 candle</button>${back(3, 'Back to Step 2')}`;
-    else act = `${chart}<button class="bt lvr-fx" data-sutk="${s.key}" title="Open the trade now at the current price (on the break), without waiting for the retest">⚡ Take now</button>${s.stage==='formed' ? `<button class="bt lvr-w" data-suwatch="${s.key}" title="Keep this zone for later: no trade, a Telegram message when price comes back">☆ Watchlist</button>` : ''}${back(3, 'Back to Step 2 to change Wick / Body or the prices')}${skip}`;
+    else act = `${chart}${s.val || s.stage==='formed' ? `<button class="btn btn-primary" data-suarm="${s.key}" title="Hand this 1H setup to the MT5 executor">⚡ ARM</button>` : ''}<button class="bt lvr-fx" data-sutk="${s.key}" title="Open the trade now at the current price (on the break), without waiting for the retest">⚡ Take now</button>${s.stage==='formed' ? `<button class="bt lvr-w" data-suwatch="${s.key}" title="Keep this zone for later: no trade, a Telegram message when price comes back">☆ Watchlist</button>` : ''}${back(3, 'Back to Step 2 to change Wick / Body or the prices')}${skip}`;
   } else if(col==='done'){
     const t = S.trades.get(s.trade_id), W = t.result==='W', R = t.r_multiple!=null ? Number(t.r_multiple) : null;
     mid = `<div class="lvr-live ${W ? 'up' : t.result==='L' ? 'dn' : ''}"><b>${R!=null ? `${R > 0 ? '+' : ''}${fmt(R, R % 1 ? 2 : 0)}R` : esc(t.result)}</b><small>${{ W:'Take profit', L:'Stop loss', BE:'Break-even' }[t.result] || ''}${t.pips!=null ? ` · ${Number(t.pips) > 0 ? '+' : ''}${fmt(Number(t.pips), 1)} pips` : ''}</small></div>`
@@ -7669,6 +7677,78 @@ function lvRow(s){
 const TF_RANK = { '1M':9, '1W':8, '1D':7, 'D1':7, '8H':6, '4H':5, '2H':4, '1H':3, '30m':2, '15m':1, '5m':0, '3m':-1, '1m':-2 };
 function suTfs(all){ return [...new Set(['1H', ...all.map(x => x.tf).filter(f => f==='1H' || !TF_MS[f])])].sort((a,b) => (TF_RANK[b] ?? -1) - (TF_RANK[a] ?? -1)); }
 const SX_COLS = [['forming','Forming','Liquidity taken, waiting for the fractal break'],['validate','Validation','Break alert in. Check the liquidity and the fractal line'],['formed','Formed','Validated, waiting for price to come to the line'],['trade','Trades','Price hit the line, trade running live']];
+/* ===== ARM: a validated 1H setup handed to the MT5 executor (do_settings arm:<id>).
+   The EA (to come) polls the armed list, watches the zone for a 5m BOS / CHoCH in the direction, puts the limit at the 0.5 fib of that move,
+   SL at its origin, 90% out at 2R, the rest at break-even to the 1H 2R target. Nothing is sent to MT5 from here yet. ===== */
+const ARM_ST = { armed:['⚡ Armed', '#2962FF'], waiting:['⏳ Waiting for 5m break', '#F2A33A'], confirm:['🔔 Confirm to shoot', '#E040FB'], filled:['✅ In trade', '#22AB94'], done:['🏁 Closed', '#787B86'], cancelled:['✕ Disarmed', '#787B86'], expired:['⌛ Expired', '#787B86'], invalid:['❌ Invalidated', '#F23645'] };
+function armAll(){ return Object.entries(S.settings || {}).filter(([k]) => k.startsWith('arm:')).map(([key, v]) => ({ key, ...v })).map(a => ({ ...a, st: ['armed','waiting','confirm'].includes(a.status) && a.until && Date.now() > Date.parse(a.until) ? 'expired' : (a.status || 'armed') })).sort((a, b) => (b.created || '').localeCompare(a.created || '')); }
+const armLive = () => armAll().filter(a => ['armed','waiting','confirm','filled'].includes(a.st));
+const armAccts = () => [...S.accounts.values()].filter(a => (a.status || 'active')==='active').sort((a, b) => String(a.name).localeCompare(String(b.name)));
+function armChecks(x){
+  const out = [], ccy = [x.pair.slice(0, 3), x.pair.slice(3, 6)];
+  const b = wlBias(x.pair); if(!b || !['bullish','bearish'].includes(b.bias)) out.push(['warn', `No directional weekly bias on ${x.pair} (${b?.bias || 'none'})`]);
+  else if((b.bias==='bullish') !== (x.dir==='Long')) out.push(['bad', `Against the ${b.bias} weekly bias`]);
+  else out.push(['ok', `With the ${b.bias} bias${b.conv ? ' · ' + b.conv + ' conviction' : ''}`]);
+  const clash = armLive().filter(a => a.key!==x.key && [a.pair.slice(0, 3), a.pair.slice(3, 6)].some(c => ccy.includes(c) && c!=='XAU'));
+  if(clash.length) out.push(['warn', `Same currency already armed or open: ${clash.map(a => a.pair).join(', ')} (rule: one trade per currency)`]); 
+  const top = Number(x.zone_top), bot = Number(x.zone_bottom), inv = Number(x.invalid);
+  if(!(top > bot)) out.push(['bad', 'Zone: top must be above bottom']);
+  else if(inv && (x.dir==='Long' ? inv > bot : inv < top)) out.push(['warn', `Invalidation should be ${x.dir==='Long' ? 'at or below the zone bottom' : 'at or above the zone top'}`]);
+  const st = sessState(x.pair); if(st) out.push([['main','sec','ext'].includes(st.k) ? 'ok' : 'warn', `Window now: ${st.lbl} · ${st.sub}`]);
+  const ft = armAccts().filter(a => (x.accounts || []).includes(a.id) && /ftmo/i.test(`${a.firm || ''} ${a.name || ''}`) && /fund/i.test(a.phase || ''));
+  const ftSum = ft.reduce((t, a) => t + (Number(a.size) || 0), 0); if(ftSum > 400000) out.push(['bad', `FTMO funded accounts on the same trade: $${fmt(ftSum, 0)} > $400k limit`]);
+  if(!(x.accounts || []).length) out.push(['warn', 'No account selected']);
+  return out; }
+function armPanel(){
+  const L = armAll().filter(a => ['armed','waiting','confirm','filled'].includes(a.st) || Date.now() - Date.parse(a.updated || a.created || 0) < 2*864e5);
+  return `<section class="arm-p"><div class="arm-h"><b>⚡ Armed for MT5</b><span class="muted">The EA watches the zone for a 5m BOS / CHoCH, enters at 0.5, SL at the move's origin, 90% at 2R, the rest to the 1H target. EA not connected yet: armed setups wait.</span><button class="btn btn-primary" data-armnew>＋ ARM</button></div>
+    ${L.length ? `<div class="arm-g">${L.map(a => { const [lb, col] = ARM_ST[a.st] || ARM_ST.armed, acc = (a.accounts || []).map(id => S.accounts.get(id)?.name).filter(Boolean);
+      return `<article class="arm-c ${['cancelled','expired','done','invalid'].includes(a.st) ? 'off' : ''}"><div class="arm-t"><b>${esc(a.pair)}</b><span class="wl-tag" style="background:${a.dir==='Long' ? '#22AB94' : '#F23645'};color:#fff">${a.dir==='Long' ? '▲ Long' : '▼ Short'}</span><span class="wl-tag" style="background:color-mix(in srgb,${col} 18%,transparent);color:${col}">${lb}</span><span class="muted" style="margin-left:auto;font-size:12px">${a.mode==='confirm' ? '🔔 confirm' : '🤖 auto'}</span></div>
+        <div class="arm-l">Zone <b>${esc(String(a.zone_bottom))} – ${esc(String(a.zone_top))}</b> · invalid ${a.dir==='Long' ? 'below' : 'above'} <b>${esc(String(a.invalid || (a.dir==='Long' ? a.zone_bottom : a.zone_top)))}</b></div>
+        <div class="arm-l">Risk <b>${esc(String(a.risk))}%</b> · ${acc.length ? esc(acc.join(', ')) : '<span style="color:#F23645">no account</span>'}${a.until ? ` · until ${esc(new Date(a.until).toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit', timeZone:'Europe/Bucharest' }))}` : ''}</div>
+        ${a.note ? `<div class="arm-l muted">${esc(a.note)}</div>` : ''}
+        <div class="arm-b">${['armed','waiting','confirm'].includes(a.st) ? `<button class="bt" data-armedit="${esc(a.key)}">Edit</button><button class="bt" data-armoff="${esc(a.key)}">✕ Disarm</button>${a.st==='confirm' ? `<button class="btn btn-primary" data-armshoot="${esc(a.key)}">🎯 SHOOT</button>` : ''}` : `<button class="bt" data-armdel="${esc(a.key)}">Remove</button>`}</div></article>`; }).join('')}</div>` : '<p class="muted" style="margin:8px 0 0;font-size:13px">Nothing armed. Validate a 1H setup, then ARM it from its card or with ＋ ARM.</p>'}</section>`; }
+function armBind(m){
+  m.querySelector('[data-armnew]')?.addEventListener('click', () => openArm(null));
+  m.querySelectorAll('[data-suarm]').forEach(b => b.onclick = e => { e.stopPropagation(); const x = deriveSetups().find(s => s.key===b.dataset.suarm); if(!x) return;
+    const line = Number(x.val?.line ?? x.bos?.level ?? x.bos?.price), ext = Number(x.liq?.extreme ?? x.liq?.level), hi = Math.max(line, ext), lo = Math.min(line, ext);
+    openArm(null, { pair:x.pair, dir:x.dir, zone_top:isFinite(hi) ? hi : '', zone_bottom:isFinite(lo) ? lo : '', invalid:isFinite(ext) ? ext : '', setup_key:x.key }); });
+  m.querySelectorAll('[data-armedit]').forEach(b => b.onclick = () => openArm(b.dataset.armedit));
+  const setSt = async (k, status) => { await saveSettingKey(k, { ...S.settings[k], status, updated:new Date().toISOString() }); renderMain(); };
+  m.querySelectorAll('[data-armoff]').forEach(b => b.onclick = () => setSt(b.dataset.armoff, 'cancelled'));
+  m.querySelectorAll('[data-armshoot]').forEach(b => b.onclick = () => setSt(b.dataset.armshoot, 'shoot'));
+  m.querySelectorAll('[data-armdel]').forEach(b => b.onclick = async () => { const k = b.dataset.armdel; try{ await sb.from('do_settings').delete().eq('key', k); }catch(e){} delete S.settings[k]; renderMain(); });
+}
+function openArm(key, pre){
+  const x = key ? { ...S.settings[key] } : { pair:pre?.pair || ls.get('do_pair', 'EURUSD'), dir:pre?.dir || 'Long', zone_top:pre?.zone_top ?? '', zone_bottom:pre?.zone_bottom ?? '', invalid:pre?.invalid ?? '', risk:ls.get('do_arm_risk', 1), mode:ls.get('do_arm_mode', 'auto'),
+    accounts:ls.get('do_arm_acc', []), hours:8, entry:'fib50', tf:'5m', tp1_r:2, tp1_pct:90, runner:'1h2r', setup_key:pre?.setup_key || null, note:'' };
+  let d = document.getElementById('armDlg'); if(!d){ d = document.createElement('dialog'); d.id = 'armDlg'; d.className = 'sess-dlg'; document.body.appendChild(d); }
+  const accs = armAccts();
+  d.innerHTML = `<form method="dialog" class="arm-f"><div class="sess-h"><b>⚡ ${key ? 'Edit armed setup' : 'ARM a 1H setup'}</b><button class="btn" value="x" formnovalidate>✕</button></div>
+    <div class="arm-row"><label>Pair<select class="inp" name="pair">${[...PAIRS, 'XAUUSD'].map(p => `<option ${p===x.pair ? 'selected' : ''}>${p}</option>`).join('')}</select></label>
+      <label>Direction<select class="inp" name="dir"><option ${x.dir==='Long' ? 'selected' : ''}>Long</option><option ${x.dir==='Short' ? 'selected' : ''}>Short</option></select></label></div>
+    <div class="arm-row"><label>1H zone top<input class="inp" name="zone_top" inputmode="decimal" value="${esc(String(x.zone_top ?? ''))}" required></label>
+      <label>1H zone bottom<input class="inp" name="zone_bottom" inputmode="decimal" value="${esc(String(x.zone_bottom ?? ''))}" required></label>
+      <label title="A 1H close beyond this price cancels the setup">Invalidation (1H close)<input class="inp" name="invalid" inputmode="decimal" value="${esc(String(x.invalid ?? ''))}"></label></div>
+    <div class="arm-row"><label>Risk % per account<input class="inp" name="risk" inputmode="decimal" value="${esc(String(x.risk ?? 1))}"></label>
+      <label>Valid for (hours)<input class="inp" name="hours" inputmode="numeric" value="${esc(String(x.hours ?? 8))}"></label>
+      <label>Mode<select class="inp" name="mode"><option value="auto" ${x.mode!=='confirm' ? 'selected' : ''}>🤖 Auto: EA enters on the 5m break</option><option value="confirm" ${x.mode==='confirm' ? 'selected' : ''}>🔔 Confirm: notify me, I press SHOOT</option></select></label></div>
+    <div><span class="lbl" style="font-weight:800">Accounts</span><div class="arm-acc">${accs.length ? accs.map(a => `<label class="arm-ck"><input type="checkbox" name="acc" value="${esc(a.id)}" ${(x.accounts || []).includes(a.id) ? 'checked' : ''}> ${esc(a.name)} <span class="muted">${esc([a.firm, a.phase, a.size ? '$' + fmt(a.size, 0) : ''].filter(Boolean).join(' · '))}</span></label>`).join('') : '<span class="muted">No active accounts in Accounts.</span>'}</div></div>
+    <div class="muted" style="font-size:12.5px">Execution plan: 5m BOS / CHoCH inside the zone in your direction → limit at 0.5 of that move · SL at its origin · 90% closed at 2R · 10% to break-even, target = 2R measured from the 1H zone.</div>
+    <label>Note<input class="inp" name="note" value="${esc(x.note || '')}" placeholder="optional"></label>
+    <ul class="arm-chk" id="armChk"></ul>
+    <div style="display:flex;justify-content:flex-end;gap:8px"><button class="btn" value="x" formnovalidate>Cancel</button><button class="btn btn-primary" value="ok" id="armOk">⚡ ${key ? 'Save' : 'ARM'}</button></div></form>`;
+  const f = d.querySelector('form'), read = () => { const g = n => f.elements[n].value.trim(); return { ...x, pair:g('pair'), dir:g('dir'), zone_top:parseNum(g('zone_top')), zone_bottom:parseNum(g('zone_bottom')), invalid:parseNum(g('invalid')), risk:parseNum(g('risk')) ?? 1, hours:parseNum(g('hours')) ?? 8, mode:g('mode'), note:g('note'), accounts:[...f.querySelectorAll('[name=acc]:checked')].map(i => i.value), key }; };
+  const draw = () => { const c = armChecks(read()); d.querySelector('#armChk').innerHTML = c.map(([k, t]) => `<li class="arm-${k}">${k==='ok' ? '✓' : k==='warn' ? '!' : '✕'} ${esc(t)}</li>`).join(''); d.querySelector('#armOk').disabled = c.some(([k]) => k==='bad'); };
+  f.addEventListener('input', draw); f.addEventListener('change', draw); draw();
+  f.addEventListener('submit', async e => { if(e.submitter?.value!=='ok') return; e.preventDefault(); const v = read(); if(armChecks(v).some(([k]) => k==='bad')) return;
+    const now = new Date(), k = key || `arm:${now.getTime().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    const row = { pair:v.pair, dir:v.dir, zone_top:v.zone_top, zone_bottom:v.zone_bottom, invalid:v.invalid ?? (v.dir==='Long' ? v.zone_bottom : v.zone_top), risk:v.risk, hours:v.hours, mode:v.mode, accounts:v.accounts, note:v.note,
+      tf:'5m', entry:'fib50', sl:'move_origin', tp1_r:2, tp1_pct:90, runner:'be_after_tp1_to_1h_2r', setup_key:v.setup_key || null,
+      status:key ? (S.settings[key]?.status || 'armed') : 'armed', created:x.created || now.toISOString(), updated:now.toISOString(), until:new Date(now.getTime() + v.hours*3600e3).toISOString() };
+    ls.set('do_arm_risk', v.risk); ls.set('do_arm_mode', v.mode); ls.set('do_arm_acc', v.accounts);
+    await saveSettingKey(k, row); d.close(); toast(key ? 'Saved' : `⚡ ${v.pair} armed`); renderMain(); });
+  d.showModal(); }
 function renderSetups(){
   const m = document.getElementById('main');
   if(S.signalsMissing){ m.innerHTML = `<div class="pairtitle">Auto-trader <span class="beta">beta</span></div><div class="card" style="margin-top:16px"><p>Run <b>migration-signals.sql</b> in Supabase, then reload. The signals table doesn't exist yet.</p></div>`; return; }
@@ -7699,6 +7779,7 @@ function renderSetups(){
       <div class="sx-top-r">${sxStatus()}${fresh.length ? `<button class="btn sx-allseen" id="suAllSeen" title="Mark every new card as seen">✓ ${fresh.length} new, mark seen</button>` : ''}<span class="sx-live-at" id="suLive" title="The page refreshes itself every 30 seconds">${liveAgo()}</span><button class="btn" id="suRefresh" title="Load the latest signals now">↻</button></div>
     </header>
     ${pairPanel()}
+    ${armPanel()}
     <nav class="sx-nav" role="tablist" aria-label="Setups pages">
       <button role="tab" data-supage="live" aria-selected="${page==='live'}"><i class="sx-nav-dot ${toVal ? 'warn' : act.length ? 'on' : ''}"></i>Live board<em>${act.length}</em>${toVal ? `<b class="sx-nav-v">${toVal} to validate</b>` : ''}</button>
       <button role="tab" data-supage="history" aria-selected="${page==='history'}">History<em>${takenN}</em></button>
@@ -7736,7 +7817,7 @@ function renderSetups(){
     <section class="sx-tools card">
       <div class="sx-tool">${tool==='history' ? sxHistory(all) : tool==='plan' ? alertPlan() : tool==='sim' ? simPanel() : sxGuide()}</div>
     </section>`}`;
-  bindSetups(m, all);
+  bindSetups(m, all); armBind(m);
   suWatchChanges(true);
 }
 /* compact live status: engine + heartbeat per timeframe */
