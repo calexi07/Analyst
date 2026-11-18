@@ -32,7 +32,7 @@ cFvgBear = input.color(color.new(#FF5252, 82), "Bear FVG", group = G3)
 fvgLen   = input.int(15, "FVG box length (bars)", minval = 3, maxval = 200, group = G3)
 
 G4 = "Daily Observer (webhook)"
-sendOn   = input.bool(true, "Send breaks to Daily Observer", group = G4, tooltip = "Create ONE alert on this indicator with the condition 'Any alert() function call', once per bar close, and put the Daily Observer address in Webhook URL.")
+sendOn   = input.bool(true, "Alert on every POC (bull and bear)", group = G4, tooltip = "One single alert covers everything: create ONE alert on this indicator with the condition 'Any alert() function call'. Add the Daily Observer address in Webhook URL when it is ready.")
 sendWhat = input.string("BOS + CHoCH", "Send", options = ["BOS + CHoCH", "CHoCH only", "BOS only"], group = G4)
 token    = input.string("", "Token", group = G4, tooltip = "The token from Daily Observer, so only your alerts are accepted.")
 
@@ -136,7 +136,3 @@ if bearBrk
                 break
     if sendOn and f_want(isCH)
         alert(f_json("bear", isCH, slP, slT, oT, oP), alert.freq_once_per_bar_close)
-
-// classic alerts too (no webhook text)
-alertcondition(bullBrk, "Bull BOS / CHoCH", "{{ticker}} {{interval}}: bullish break")
-alertcondition(bearBrk, "Bear BOS / CHoCH", "{{ticker}} {{interval}}: bearish break")
