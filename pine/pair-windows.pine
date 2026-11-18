@@ -1,0 +1,221 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © FX Before Coffee · Measured Pair Windows (Romania time, Europe/Bucharest)
+// Windows = hours whose average 1h range is above the pair's own daily average.
+// Source: Yahoo Finance 1h bars, winter 2025-11-03..2026-03-06 + 2026-11-02..18 (75 days/hour),
+// summer 2026-04-06..2026-09-25 (100 days/hour). Rollover hours excluded.
+// Season Auto follows Romania's clock change (last Sunday of March / October). For 2-3 weeks in
+// March and November the US is already on the other clock: New York windows then come 1h earlier.
+//@version=6
+indicator("Pair Windows · FX Before Coffee", "Windows", overlay = true, max_lines_count = 500, max_labels_count = 500)
+
+TZ = "Europe/Bucharest"
+
+// ───────── Inputs ─────────
+G1 = "Windows"
+pairIn   = input.string("Auto", "Pair", options = ["Auto", "EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD"], group = G1, tooltip = "Auto reads the pair from the chart symbol.")
+seasonIn = input.string("Auto", "Season", options = ["Auto", "Winter", "Summer"], group = G1, tooltip = "Auto: summer from the last Sunday of March to the last Sunday of October (Romania clock).")
+maxTF    = input.int(60, "Show on timeframes up to (minutes)", minval = 1, maxval = 240, group = G1)
+
+G2 = "On the chart"
+showBg    = input.bool(true, "Background", group = G2)
+showLines = input.bool(true, "Dotted start / stop lines", group = G2)
+showLbl   = input.bool(true, "Small window label at start", group = G2)
+showNext  = input.bool(true, "Show upcoming windows (dotted, ahead of price)", group = G2)
+
+G3 = "Dashboard"
+showDash  = input.bool(true, "Show dashboard", group = G3)
+dashPosIn = input.string("Top right", "Position", options = ["Top right", "Top center", "Top left", "Bottom right", "Bottom left"], group = G3)
+
+G4 = "Colours (dark chart)"
+perSess = input.bool(true, "Colour by session", group = G4, tooltip = "Asia = windows starting before 08:00, Europe = 08:00–12:59, New York = 13:00 or later.")
+cAsia   = input.color(#4FB3BF, "Asia", group = G4)
+cEu     = input.color(#5B8DEF, "Europe", group = G4)
+cNy     = input.color(#7C83FD, "New York", group = G4)
+cOne    = input.color(#5B8DEF, "Single colour (if not by session)", group = G4)
+bgTr    = input.int(93, "Background transparency", minval = 80, maxval = 98, group = G4)
+lnTr    = input.int(45, "Line transparency", minval = 0, maxval = 90, group = G4)
+cTxt    = input.color(#8A8F98, "Label / dashboard text", group = G4)
+
+// ───────── Windows per pair (measured, Romania time) ─────────
+f_win(string p, bool summer) =>
+    switch p
+        "EURUSD" => summer ? "0900-1200,1300-2100"           : "0900-1200,1400-2000"
+        "GBPUSD" => summer ? "0900-2100"                     : "0900-2000"
+        "USDJPY" => summer ? "0300-0500,0900-1200,1500-1900" : "0200-0500,0800-1200,1500-1900"
+        "USDCHF" => summer ? "0900-1300,1400-1900"           : "0900-1300,1400-1900"
+        "USDCAD" => summer ? "0900-1200,1400-2000,2100-2200" : "1000-1100,1400-2000"
+        "AUDUSD" => summer ? "0300-0500,0900-1200,1400-1900" : "0200-0500,0900-1200,1500-2000"
+        "NZDUSD" => summer ? "0300-0500,0900-1200,1400-1900" : "0200-0500,0900-1200,1500-2000"
+        "EURGBP" => "0900-1900"
+        "EURJPY" => summer ? "0300-0400,0900-1400,1500-1900" : "0200-0400,0900-1200,1500-1900"
+        "EURCHF" => "0900-1900"
+        "EURAUD" => summer ? "0300-0600,0900-1200,1500-1900" : "0200-0600,0900-1200,1500-1900"
+        "EURNZD" => summer ? "0300-0700,0900-1200,1500-1900" : "0200-0500,0900-1200,1500-1900"
+        "EURCAD" => summer ? "0900-1200,1300-2000"           : "0900-1200,1400-2000"
+        "GBPJPY" => summer ? "0300-0400,0900-1900"           : "0200-0400,0900-1200,1400-1900"
+        "GBPCHF" => "0900-1900"
+        "GBPAUD" => summer ? "0400-0500,0900-1200,1500-1900" : "0200-0400,0900-1200,1400-1900"
+        "GBPNZD" => summer ? "0400-0500,0900-1200,1500-1900" : "0300-0500,0900-1200,1500-1900"
+        "GBPCAD" => summer ? "0900-1200,1300-2000"           : "0900-1900"
+        "AUDJPY" => summer ? "0300-0500,0900-1200,1500-1900" : "0200-0500,0900-1200,1500-1900"
+        "AUDCHF" => summer ? "0300-0500,0900-1300,1500-1900" : "0200-0400,0900-1200,1500-1900"
+        "AUDNZD" => summer ? "0300-0600,1500-1800"           : "0200-0600,1000-1100,1500-1800"
+        "AUDCAD" => summer ? "0300-0500,0900-1200,1400-1900" : "0200-0600,0900-1200,1500-1900"
+        "NZDJPY" => summer ? "0300-0600,0900-1200,1500-1900" : "0200-0500,0900-1200,1500-1900"
+        "NZDCHF" => summer ? "1500-1600,1700-1800"           : "1500-1800"
+        "NZDCAD" => summer ? "0400-0500,1100-1200,1400-1900" : "0200-0400,1000-1100,1500-1900"
+        "CADJPY" => summer ? "0300-0400,0900-1300,1400-1900" : "0200-0400,0900-1200,1500-1900"
+        "CADCHF" => summer ? "0900-2000"                     : "0900-1300,1400-1900"
+        "CHFJPY" => summer ? "0300-0400,0900-1300,1500-1900" : "0200-0400,0900-1300,1500-1900"
+        "XAUUSD" => summer ? "0300-0600,0800-0900,1400-1900" : "0300-0500,0700-0800,1500-1900"
+        => ""
+
+// ───────── Pair & season ─────────
+f_autoPair() =>
+    string s = str.upper(syminfo.basecurrency + syminfo.currency)
+    string t = str.upper(syminfo.ticker)
+    str.contains(t, "XAU") or str.contains(t, "GOLD") ? "XAUUSD" : s
+
+f_lastSun(int y, int m, int d) =>
+    // last Sunday on or before day d of month m (d = last day of that month)
+    int dow = dayofweek(timestamp("UTC", y, m, d, 12, 0), "UTC")   // 1 = Sunday
+    d - (dow - 1)
+
+f_isSummer(int t) =>
+    int y = year(t, TZ)
+    int m = month(t, TZ)
+    int d = dayofmonth(t, TZ)
+    int sM = f_lastSun(y, 3, 31)
+    int sO = f_lastSun(y, 10, 31)
+    (m > 3 and m < 10) or (m == 3 and d >= sM) or (m == 10 and d < sO)
+
+string pair   = pairIn == "Auto" ? f_autoPair() : pairIn
+bool   summer = seasonIn == "Summer" ? true : seasonIn == "Winter" ? false : f_isSummer(time)
+string sess   = f_win(pair, summer)
+bool   known  = sess != ""
+bool   tfOk   = timeframe.isintraday and timeframe.in_seconds() <= maxTF * 60
+
+// ───────── Helpers ─────────
+f_hhmm(int mins) =>
+    str.tostring(int(math.floor(mins / 60)), "00") + ":" + str.tostring(mins % 60, "00")
+
+f_col(int startMin) =>
+    not perSess ? cOne : startMin < 8 * 60 ? cAsia : startMin < 13 * 60 ? cEu : cNy
+
+// window list as minutes since midnight: [s1, e1, s2, e2, ...]
+f_parse(string s) =>
+    array<int> out = array.new<int>()
+    if s != ""
+        for w in str.split(s, ",")
+            out.push(int(str.tonumber(str.substring(w, 0, 2))) * 60 + int(str.tonumber(str.substring(w, 2, 4))))
+            out.push(int(str.tonumber(str.substring(w, 5, 7))) * 60 + int(str.tonumber(str.substring(w, 7, 9))))
+    out
+
+array<int> W = f_parse(sess)
+int nW = int(W.size() / 2)
+
+// ───────── State ─────────
+bool inW   = known and not na(time(timeframe.period, sess, TZ))
+bool start = inW and not inW[1]
+bool stop  = not inW and inW[1]
+
+int nowMin = hour(time, TZ) * 60 + minute(time, TZ)
+
+// current window (start/end) for this bar
+f_cur(int m) =>
+    int s = na
+    int e = na
+    if nW > 0
+        for i = 0 to nW - 1
+            if m >= W.get(i * 2) and m < W.get(i * 2 + 1)
+                s := W.get(i * 2)
+                e := W.get(i * 2 + 1)
+    [s, e]
+
+[curS, curE] = f_cur(nowMin)
+var color winCol = cEu
+if start and not na(curS)
+    winCol := f_col(curS)
+
+// ───────── Background ─────────
+bgcolor(tfOk and showBg and inW ? color.new(winCol, bgTr) : na, title = "Window background")
+
+// ───────── Dotted lines + labels on history ─────────
+if tfOk and showLines and start
+    line.new(time, low, time, high, xloc.bar_time, extend.both, color.new(winCol, lnTr), line.style_dotted, 1)
+if tfOk and showLines and stop
+    line.new(time, low, time, high, xloc.bar_time, extend.both, color.new(winCol, lnTr), line.style_dotted, 1)
+if tfOk and showLbl and start and not na(curS)
+    label.new(time, high, f_hhmm(curS) + "–" + f_hhmm(curE), xloc.bar_time, yloc.abovebar, color(na), label.style_none, color.new(winCol, 20), size.tiny)
+
+// ───────── Upcoming windows (ahead of price) ─────────
+var array<line>  fl = array.new<line>()
+var array<label> fb = array.new<label>()
+
+f_dayStart(int t) =>
+    timestamp(TZ, year(t, TZ), month(t, TZ), dayofmonth(t, TZ), 0, 0)
+
+f_nextTradingDay(int t) =>
+    int n = t + 86400000
+    while dayofweek(n, TZ) == dayofweek.saturday or dayofweek(n, TZ) == dayofweek.sunday
+        n += 86400000
+    n
+
+if barstate.islast
+    for l in fl
+        l.delete()
+    for b in fb
+        b.delete()
+    fl.clear()
+    fb.clear()
+    if tfOk and showNext and known and nW > 0
+        int d0 = f_dayStart(time)
+        int d1 = f_dayStart(f_nextTradingDay(d0 + 43200000))
+        bool today = dayofweek(time, TZ) != dayofweek.saturday and dayofweek(time, TZ) != dayofweek.sunday
+        for k = 0 to 1
+            int base = k == 0 ? d0 : d1
+            if k == 1 or today
+                for i = 0 to nW - 1
+                    int sM = W.get(i * 2)
+                    int eM = W.get(i * 2 + 1)
+                    int ts = base + sM * 60000
+                    int te = base + eM * 60000
+                    color c = color.new(f_col(sM), lnTr)
+                    if ts > time
+                        fl.push(line.new(ts, low, ts, high, xloc.bar_time, extend.both, c, line.style_dotted, 1))
+                        if showLbl
+                            fb.push(label.new(ts, high, f_hhmm(sM) + "–" + f_hhmm(eM), xloc.bar_time, yloc.abovebar, color(na), label.style_none, color.new(f_col(sM), 20), size.tiny))
+                    if te > time
+                        fl.push(line.new(te, low, te, high, xloc.bar_time, extend.both, c, line.style_dotted, 1))
+
+// ───────── Dashboard ─────────
+f_pos(string p) =>
+    switch p
+        "Top center"   => position.top_center
+        "Top left"     => position.top_left
+        "Bottom right" => position.bottom_right
+        "Bottom left"  => position.bottom_left
+        => position.top_right
+
+var table dash = table.new(f_pos(dashPosIn), 1, 2, bgcolor = color.new(#0F1115, 15), border_width = 0, frame_color = color.new(#262A33, 0), frame_width = 1)
+
+f_next(int m) =>
+    int n = na
+    if nW > 0
+        for i = 0 to nW - 1
+            if na(n) and W.get(i * 2) > m
+                n := W.get(i * 2)
+    na(n) and nW > 0 ? W.get(0) : n
+
+if barstate.islast and showDash
+    if not known
+        table.cell(dash, 0, 0, "Windows · " + pair + " not in list", text_color = cTxt, text_size = size.small)
+    else
+        string head = pair + " · " + (summer ? "Summer" : "Winter")
+        string body = inW ? "● ACTIVE  " + f_hhmm(curS) + "–" + f_hhmm(curE) : "○ next " + f_hhmm(f_next(nowMin))
+        table.cell(dash, 0, 0, head, text_color = cTxt, text_size = size.tiny, text_halign = text.align_left)
+        table.cell(dash, 0, 1, body, text_color = inW ? winCol : cTxt, text_size = size.small, text_halign = text.align_left)
+
+// ───────── Alerts ─────────
+alertcondition(start, "Window start", "{{ticker}} trading window started")
+alertcondition(stop,  "Window end",   "{{ticker}} trading window ended")
