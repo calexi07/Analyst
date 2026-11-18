@@ -106,7 +106,7 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .wl-pairs button[aria-pressed="true"]{ background:var(--ink, #131722); color:var(--surface, #fff); border-color:transparent; }
   .wl-pairs button b{ display:inline-block; min-width:16px; margin-left:5px; padding:0 5px; border-radius:999px; background:#22AB94; color:#fff; font-size:11px; }
   .sess-k{ font:inherit; text-align:left; cursor:pointer; color:inherit; } .sess-k b{ font-size:17px !important; line-height:1.2; }
-  .sess-k.s-main{ box-shadow:inset 0 0 0 2px rgba(34,171,148,.55); } .sess-k.s-sec{ box-shadow:inset 0 0 0 2px rgba(242,196,135,.5); } .sess-k.s-roll{ box-shadow:inset 0 0 0 2px rgba(240,97,109,.5); }
+  .sess-k.s-main{ box-shadow:inset 0 0 0 2px rgba(34,171,148,.55); } .sess-k.s-sec{ box-shadow:inset 0 0 0 2px rgba(242,196,135,.5); } .sess-k.s-ext{ box-shadow:inset 0 0 0 2px rgba(41,98,255,.45); } .sess-k.s-lunch{ box-shadow:inset 0 0 0 2px rgba(255,152,0,.5); } .sess-k.s-roll{ box-shadow:inset 0 0 0 2px rgba(240,97,109,.5); }
   .sess-dlg{ border:1px solid var(--line); border-radius:16px; background:var(--surface); color:inherit; padding:16px; max-width:760px; width:94vw; }
   .sess-dlg::backdrop{ background:rgba(0,0,0,.55); }
   .sess-h{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; font-size:15px; }
@@ -3044,18 +3044,34 @@ function sessState(p, d = new Date()){
   const wins = [[w[0], 'main'], [w[1], 'sec']].filter(x => x[0]).map(([r, k]) => { const [a, b] = r.split('-'); return { k, a:sessMin(a), b:sessMin(b), r }; }).sort((x, y) => x.a - y.a);
   if(wd==='Sat' || wd==='Sun' || (wd==='Fri' && min >= 18*60)) return { k:'off', lbl:'Weekend', sub:'next: Monday', note:w[2] };
   if(min >= 23*60 + 30 || min < 90) return { k:'roll', lbl:'Rollover', sub:'spread is wide until 01:30', note:w[2] };
+  if(twMode()==='ext'){
+    const ext = twExt(p).map(r => { const [a, b] = r.split('-'); return { a:sessMin(a), b:sessMin(b), r }; });
+    const cur = ext.find(x => min >= x.a && min < x.b), best = wins.find(x => min >= x.a && min < x.b);
+    if(cur){ const left = cur.b - min, lt = `${left >= 60 ? Math.floor(left/60) + 'h ' : ''}${left % 60}m left`;
+      if(best) return { k:best.k, lbl:best.k==='main' ? 'Best · main window' : 'Best · secondary', sub:`until ${best.r.split('-')[1]} · window to ${cur.r.split('-')[1]}`, note:w[2] };
+      if(cur.r==='09:00-18:00' && min >= 12*60 && min < 15*60) return { k:'lunch', lbl:'Caution · London lunch', sub:`only setups already formed · ${lt}`, note:w[2] };
+      return { k:'ext', lbl:'Extended window', sub:`until ${cur.r.split('-')[1]} · ${lt}`, note:w[2] }; }
+    const nx = ext.find(x => x.a > min); return { k:'off', lbl:'Outside window', sub: nx ? `next: ${nx.r.split('-')[0]}` : `next: ${ext[0].r.split('-')[0]} tomorrow`, note:w[2] };
+  }
   const cur = wins.find(x => min >= x.a && min < x.b);
   if(cur){ const left = cur.b - min; return { k:cur.k, lbl:cur.k==='main' ? 'Main window' : 'Secondary window', sub:`until ${cur.r.split('-')[1]} · ${left >= 60 ? Math.floor(left/60) + 'h ' : ''}${left % 60}m left`, note:w[2] }; }
   const nx = wins.find(x => x.a > min); return { k:'off', lbl:'Outside window', sub: nx ? `next: ${nx.r.split('-')[0]} (${nx.k==='main' ? 'main' : 'secondary'})` : `next: ${wins[0].r.split('-')[0]} tomorrow`, note:w[2] };
 }
-const SESS_IC = { main:'🟢', sec:'🟡', roll:'⛔', off:'⚪' };
+const SESS_IC = { main:'🟢', sec:'🟡', ext:'🔵', lunch:'🟠', roll:'⛔', off:'⚪' };
+const twMode = () => ls.get('do_tw_mode', 'ext');
+const twIsB = p => /JPY|AUD|NZD/.test(p);
+const twExt = p => twIsB(p) ? ['01:30-04:00', '09:00-18:00'] : ['09:00-18:00'];
 function openSessions(cur){
   let d = document.getElementById('sessDlg'); if(!d){ d = document.createElement('dialog'); d.id = 'sessDlg'; d.className = 'sess-dlg'; document.body.appendChild(d); }
-  const rows = [...PAIRS, 'XAUUSD'].map(p => { const w = PSESS[p], st = sessState(p); return `<tr class="${p===cur ? 'me' : ''}"><td><b>${p}</b></td><td>${w[0]}</td><td>${w[1] || '—'}</td><td>${SESS_IC[st.k]} ${esc(st.lbl)}</td><td class="muted">${esc(w[2] || '')}</td></tr>`; }).join('');
-  d.innerHTML = `<div class="sess-h"><b>Trading windows · Romania time</b><button class="btn" data-x>✕</button></div>
-    <div style="overflow:auto"><table class="sess-t"><thead><tr><th>Pair</th><th>Main</th><th>Secondary</th><th>Now</th><th>Note</th></tr></thead><tbody>${rows}</tbody></table></div>
+  const ext = twMode()==='ext';
+  const rows = [...PAIRS, 'XAUUSD'].map(p => { const w = PSESS[p], st = sessState(p); return `<tr class="${p===cur ? 'me' : ''}"><td><b>${p}</b></td>${ext ? `<td>${twExt(p).join(' + ')}</td>` : ''}<td>${w[0]}</td><td>${w[1] || '—'}</td><td>${SESS_IC[st.k]} ${esc(st.lbl)}</td><td class="muted">${esc(w[2] || '')}</td></tr>`; }).join('');
+  d.innerHTML = `<div class="sess-h"><b>Trading windows · Romania time</b><span style="display:flex;gap:6px;align-items:center"><span class="wl-pairs" style="margin:0"><button type="button" data-twm="strict" aria-pressed="${!ext}">Strict</button><button type="button" data-twm="ext" aria-pressed="${ext}">Extended</button></span><button class="btn" data-x>✕</button></span></div>
+    ${ext ? '<p class="muted" style="font-size:12px;margin:0 0 8px">Extended: London + New York 09:00–18:00 for every pair, plus Asia 01:30–04:00 for pairs with JPY, AUD or NZD. 🟠 12:00–15:00 is the London lunch: enter only setups already formed. Main and secondary stay the best moments inside.</p>' : ''}
+    <div style="overflow:auto"><table class="sess-t"><thead><tr><th>Pair</th>${ext ? '<th>Extended</th>' : ''}<th>${ext ? 'Best · main' : 'Main'}</th><th>${ext ? 'Best · 2nd' : 'Secondary'}</th><th>Now</th><th>Note</th></tr></thead><tbody>${rows}</tbody></table></div>
     <p class="muted" style="font-size:12px;margin:10px 0 0">For everyone: no entries 23:30–01:30 (rollover spread), none in the 30 min before HIGH/CRITICAL news on either currency, none on Friday after 18:00. Mid-March, when the US moves its clocks two weeks before Europe, New York and US data come one hour earlier (overlap 14:00–17:00, data 14:30).</p>`;
-  d.querySelector('[data-x]').onclick = () => d.close(); d.onclick = e => { if(e.target===d) d.close(); }; d.showModal();
+  d.querySelector('[data-x]').onclick = () => d.close(); d.onclick = e => { if(e.target===d) d.close(); };
+  d.querySelectorAll('[data-twm]').forEach(b => b.onclick = () => { ls.set('do_tw_mode', b.dataset.twm); d.close(); openSessions(cur); try{ if(S.view==='journal') renderCalendar(); else renderMain(); }catch(e){} });
+  if(!d.open) d.showModal();
 }
 /* journal header: this week's bias for the pair + the month at a glance */
 function journalHero(p){

@@ -10,6 +10,8 @@ TZ = "Europe/Bucharest"
 // ───────── Inputs ─────────
 G1 = "Windows"
 pairIn   = input.string("Auto", "Pair", options = ["Auto", "EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD"], group = G1, tooltip = "Auto reads the pair from the chart symbol.")
+modeIn   = input.string("Extended", "Windows", options = ["Strict", "Extended"], group = G1, tooltip = "Strict: only the best window(s) per pair.\nExtended: London + New York 09:00–18:00 for every pair, plus Asia 01:30–04:00 for pairs with JPY, AUD or NZD. The London lunch 12:00–15:00 is marked as caution. The strict windows stay shaded inside as the best moments.")
+showLunch = input.bool(true, "Mark the London lunch 12:00–15:00 as caution (Extended)", group = G1)
 showMain = input.bool(true, "Main window", group = G1)
 showSec  = input.bool(true, "Secondary window", group = G1)
 showRoll = input.bool(true, "Rollover no-trade zone (23:30–01:30)", group = G1)
@@ -31,6 +33,8 @@ themeIn = input.string("Auto", "Theme", options = ["Auto", "Light", "Dark"], gro
 cMain   = input.color(#22AB94, "Main window", group = G4)
 cSec    = input.color(#F2A33A, "Secondary window", group = G4)
 cRoll   = input.color(#F23645, "Rollover", group = G4)
+cExt    = input.color(#2962FF, "Extended window", group = G4)
+cLunch  = input.color(#9598A1, "London lunch (caution)", group = G4)
 shadeTr = input.int(90, "Shade transparency", minval = 50, maxval = 98, group = G4)
 
 // ───────── Windows per pair (HHMM-HHMM, Romania time) ─────────
@@ -94,7 +98,8 @@ f_sec(string k) =>
         "XAUUSD" => "0900-1100"
         => ""
 
-ROLL = "2330-0130"
+ROLL  = "2330-0130"
+LUNCH = "1200-1500"
 
 // ───────── Helpers ─────────
 f_startMin(string s) => int(str.tonumber(str.substring(s, 0, 2))) * 60 + int(str.tonumber(str.substring(s, 2, 4)))
@@ -120,6 +125,10 @@ KEY     = pairIn == "Auto" ? autoKey : pairIn
 sMain   = f_main(KEY)
 sSec    = f_sec(KEY)
 known   = sMain != ""
+EXTMODE = modeIn == "Extended"
+isB     = str.contains(KEY, "JPY") or str.contains(KEY, "AUD") or str.contains(KEY, "NZD")
+sAsia   = isB ? "0130-0400" : ""
+sDay    = "0900-1800"
 
 // ───────── Theme ─────────
 isDark = themeIn == "Dark" or (themeIn == "Auto" and color.r(chart.bg_color) + color.g(chart.bg_color) + color.b(chart.bg_color) < 300)
@@ -134,8 +143,11 @@ intra = timeframe.isintraday and timeframe.in_seconds() <= 3600
 inMain = known and showMain and f_in(sMain, "23456")
 inSec  = known and showSec and f_in(sSec, "23456")
 inRoll = showRoll and f_in(ROLL, "1234567")
+inDay  = known and EXTMODE and f_in(sDay, "23456")
+inAsia = known and EXTMODE and isB and f_in(sAsia, "23456")
+inLun  = EXTMODE and showLunch and inDay and f_in(LUNCH, "23456")
 
-bgcolor(intra and showBg ? (inMain ? color.new(cMain, shadeTr) : inSec ? color.new(cSec, shadeTr) : inRoll ? color.new(cRoll, shadeTr) : na) : na, title = "Window shade")
+bgcolor(intra and showBg ? (inMain ? color.new(cMain, shadeTr) : inSec ? color.new(cSec, shadeTr) : inLun ? color.new(cLunch, math.min(98, shadeTr + 2)) : (inDay or inAsia) ? color.new(cExt, math.min(98, shadeTr + 4)) : inRoll ? color.new(cRoll, shadeTr) : na) : na, title = "Window shade")
 
 var array<line>  lns = array.new<line>()
 var array<label> lbs = array.new<label>()
@@ -160,10 +172,16 @@ f_drawWin(string s, color c, string name) =>
         array.push(lbs, label.new(t1, yy, "■ " + f_hhmm(em), xloc = xloc.bar_time, style = label.style_label_right, color = color.new(c, 55), textcolor = color.white, size = size.small))
 
 if intra and recent
-    if inMain and not inMain[1]
-        f_drawWin(sMain, cMain, "MAIN")
-    if inSec and not inSec[1]
-        f_drawWin(sSec, cSec, "2ND")
+    if EXTMODE
+        if inDay and not inDay[1]
+            f_drawWin(sDay, cExt, "OPEN")
+        if inAsia and not inAsia[1]
+            f_drawWin(sAsia, cExt, "ASIA")
+    else
+        if inMain and not inMain[1]
+            f_drawWin(sMain, cMain, "MAIN")
+        if inSec and not inSec[1]
+            f_drawWin(sSec, cSec, "2ND")
 
 while array.size(lns) > daysBack * 4
     line.delete(array.shift(lns))
@@ -182,15 +200,20 @@ if barstate.islast
         rollNow = showRoll and (nowMin >= 23 * 60 + 30 or nowMin < 90)
         mOn = showMain and not weekend and nowMin >= f_startMin(sMain) and nowMin < f_endMin(sMain)
         sOn = showSec and sSec != "" and not weekend and nowMin >= f_startMin(sSec) and nowMin < f_endMin(sSec)
-        active = (mOn or sOn) and not rollNow
+        dOn = EXTMODE and not weekend and nowMin >= f_startMin(sDay) and nowMin < f_endMin(sDay)
+        aOn = EXTMODE and isB and not weekend and nowMin >= f_startMin("0130-0400") and nowMin < f_endMin("0130-0400")
+        lOn = EXTMODE and showLunch and dOn and nowMin >= 12 * 60 and nowMin < 15 * 60
+        active = (mOn or sOn or dOn or aOn) and not rollNow
         sz = f_size(sizeIn)
         if active
-            w    = mOn ? sMain : sSec
-            c    = mOn ? cMain : cSec
+            w    = EXTMODE ? (dOn ? sDay : "0130-0400") : (mOn ? sMain : sSec)
+            c    = mOn ? cMain : sOn ? cSec : lOn ? cLunch : cExt
             left = f_endMin(w) - nowMin
-            table.cell(dash, 0, 0, "● ACTIVE", text_color = color.white, bgcolor = c, text_size = sz, text_halign = text.align_center)
-            table.cell(dash, 0, 1, KEY + " · " + (mOn ? "Main " : "Secondary ") + f_range(w), text_color = cTx, text_size = size.small)
-            table.cell(dash, 0, 2, (left >= 60 ? str.tostring(math.floor(left / 60)) + "h " : "") + str.tostring(left % 60) + "m left", text_color = cSub, text_size = size.small)
+            head = lOn ? "● ACTIVE · CAUTION" : "● ACTIVE"
+            what = mOn ? "best: Main " + f_range(sMain) : sOn ? "best: Secondary " + f_range(sSec) : lOn ? "London lunch: setups already formed only" : "extended " + f_range(w)
+            table.cell(dash, 0, 0, head, text_color = color.white, bgcolor = c, text_size = sz, text_halign = text.align_center)
+            table.cell(dash, 0, 1, KEY + " · " + what, text_color = cTx, text_size = size.small)
+            table.cell(dash, 0, 2, (left >= 60 ? str.tostring(math.floor(left / 60)) + "h " : "") + str.tostring(left % 60) + "m left" + (EXTMODE ? " in the window" : ""), text_color = cSub, text_size = size.small)
         else if not onlyActive
             // next window: the first start later today, else the earliest one (next trading day)
             mS = showMain ? f_startMin(sMain) : 9999
@@ -202,9 +225,11 @@ if barstate.islast
                 nextTxt := "next: Secondary " + f_hhmm(sS)
             else
                 nextTxt := "next: " + (mS < sS ? "Main " + f_hhmm(mS) : "Secondary " + f_hhmm(sS)) + " (next session)"
+            if EXTMODE
+                nextTxt := isB and nowMin < 90 ? "next: Asia 01:30" : isB and nowMin < 4 * 60 ? "next: London 09:00" : nowMin < 9 * 60 ? "next: London 09:00" : isB ? "next: Asia 01:30 (next session)" : "next: London 09:00 (next session)"
             head = weekend ? "WEEKEND" : rollNow ? "⛔ ROLLOVER" : "○ INACTIVE"
             table.cell(dash, 0, 0, head, text_color = rollNow ? color.white : cTx, bgcolor = rollNow ? cRoll : cBg, text_size = sz, text_halign = text.align_center)
-            table.cell(dash, 0, 1, KEY + " · Main " + f_range(sMain) + (sSec != "" ? " · 2nd " + f_range(sSec) : ""), text_color = cTx, text_size = size.small)
+            table.cell(dash, 0, 1, KEY + (EXTMODE ? " · " + (isB ? "01:30–04:00 + " : "") + "09:00–18:00" : " · Main " + f_range(sMain) + (sSec != "" ? " · 2nd " + f_range(sSec) : "")), text_color = cTx, text_size = size.small)
             table.cell(dash, 0, 2, weekend ? "next: Monday" : nextTxt, text_color = cSub, text_size = size.small)
     else if showDash and not known
         table.cell(dash, 0, 0, "Pair not in the list: " + autoKey + " — pick it in Settings", text_color = cTx, text_size = size.small)
@@ -213,3 +238,4 @@ if barstate.islast
 alertcondition(inMain and not inMain[1], "Main window starts", "{{ticker}}: main trading window started")
 alertcondition(inSec and not inSec[1], "Secondary window starts", "{{ticker}}: secondary trading window started")
 alertcondition(not inMain and inMain[1], "Main window ends", "{{ticker}}: main trading window ended")
+alertcondition((inDay and not inDay[1]) or (inAsia and not inAsia[1]), "Extended window starts", "{{ticker}}: extended trading window started")
