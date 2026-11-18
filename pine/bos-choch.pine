@@ -1,0 +1,140 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © FX Before Coffee · BOS / CHoCH (market structure) with a Daily Observer webhook
+// Swing points from pivots (bars left / right), BOS = break in the trend's direction, CHoCH = first break against it.
+// Each break can send one JSON alert to Daily Observer with the candle times, so MT5 can rebuild the same move on broker prices.
+//@version=6
+indicator("BOS / CHoCH · FX Before Coffee", "BOS/CHoCH", overlay = true, max_lines_count = 500, max_labels_count = 500, max_boxes_count = 200, max_bars_back = 1000)
+
+// ───────── Inputs ─────────
+G1 = "Settings"
+lb       = input.int(5, "Pivot lb", minval = 1, group = G1, inline = "piv")
+rb       = input.int(5, "Pivot rb", minval = 1, group = G1, inline = "piv", tooltip = "Bars to the left / right that define a swing high or low.")
+conf     = input.string("H/L", "Breakout confirmation", options = ["H/L", "Close"], group = G1, tooltip = "H/L: the wick breaking the swing is enough.\nClose: the candle has to close beyond the swing.")
+showHHLL = input.bool(false, "Show HH/LL", group = G1, inline = "sw")
+showHLLH = input.bool(false, "Show HL/LH", group = G1, inline = "sw")
+showBOS  = input.bool(true, "Show BOS", group = G1)
+showCH   = input.bool(true, "Show CHoCH", group = G1)
+
+G2 = "Styles"
+swingAs = input.string("HH/LL", "Show swing points as", options = ["HH/LL", "Dots"], group = G2)
+cTop    = input.color(#4CAF50, "Top swing point", group = G2)
+cBot    = input.color(#FF5252, "Bottom swing point", group = G2)
+cBull   = input.color(#4CAF50, "Bull BOS/CHoCH line", group = G2)
+cBear   = input.color(#FF5252, "Bear BOS/CHoCH line", group = G2)
+lineW   = input.int(1, "Line width", minval = 1, maxval = 4, group = G2)
+
+G3 = "Fair value gaps"
+showFvg  = input.bool(false, "Show FVG after BOS/CHoCH", group = G3, tooltip = "The first fair value gap inside the move that made the break.")
+cFvgBull = input.color(color.new(#4CAF50, 82), "Bull FVG", group = G3)
+cFvgBear = input.color(color.new(#FF5252, 82), "Bear FVG", group = G3)
+fvgLen   = input.int(15, "FVG box length (bars)", minval = 3, maxval = 200, group = G3)
+
+G4 = "Daily Observer (webhook)"
+sendOn   = input.bool(true, "Send breaks to Daily Observer", group = G4, tooltip = "Create ONE alert on this indicator with the condition 'Any alert() function call', once per bar close, and put the Daily Observer address in Webhook URL.")
+sendWhat = input.string("BOS + CHoCH", "Send", options = ["BOS + CHoCH", "CHoCH only", "BOS only"], group = G4)
+token    = input.string("", "Token", group = G4, tooltip = "The token from Daily Observer, so only your alerts are accepted.")
+
+KEY = str.upper(syminfo.basecurrency + syminfo.currency)
+
+// ───────── Swing points ─────────
+ph = ta.pivothigh(high, lb, rb)
+pl = ta.pivotlow(low, lb, rb)
+
+var float shP      = na
+var int   shB      = na
+var int   shT      = na
+var bool  shBroken = true
+var float slP      = na
+var int   slB      = na
+var int   slT      = na
+var bool  slBroken = true
+var int   trend    = 0
+var float prevH    = na
+var float prevL    = na
+
+if not na(ph)
+    pb   = bar_index - rb
+    isHH = na(prevH) or ph > prevH
+    if (isHH and showHHLL) or (not isHH and showHLLH)
+        if swingAs == "HH/LL"
+            label.new(pb, ph, isHH ? "HH" : "LH", style = label.style_label_down, color = color.new(cTop, 100), textcolor = cTop, size = size.small)
+        else
+            label.new(pb, ph, "", style = label.style_circle, color = cTop, size = size.tiny)
+    prevH    := ph
+    shP      := ph
+    shB      := pb
+    shT      := time[rb]
+    shBroken := false
+
+if not na(pl)
+    pb   = bar_index - rb
+    isLL = na(prevL) or pl < prevL
+    if (isLL and showHHLL) or (not isLL and showHLLH)
+        if swingAs == "HH/LL"
+            label.new(pb, pl, isLL ? "LL" : "HL", style = label.style_label_up, color = color.new(cBot, 100), textcolor = cBot, size = size.small)
+        else
+            label.new(pb, pl, "", style = label.style_circle, color = cBot, size = size.tiny)
+    prevL    := pl
+    slP      := pl
+    slB      := pb
+    slT      := time[rb]
+    slBroken := false
+
+// ───────── Breaks ─────────
+bullBrk = not shBroken and not na(shP) and (conf == "H/L" ? high > shP : close > shP)
+bearBrk = not slBroken and not na(slP) and (conf == "H/L" ? low < slP : close < slP)
+
+f_want(bool isCH) => sendWhat == "BOS + CHoCH" or (sendWhat == "CHoCH only" and isCH) or (sendWhat == "BOS only" and not isCH)
+
+f_json(string dir, bool isCH, float lvl, int swingT, int originT, float originP) =>
+    '{"src":"do-bos","token":"' + token + '","pair":"' + KEY + '","tf":"' + timeframe.period + '","dir":"' + dir + '","type":"' + (isCH ? "CHOCH" : "BOS") + '","conf":"' + conf + '"' + ',"level":' + str.tostring(lvl, format.mintick) + ',"swing_time":' + str.tostring(swingT) + ',"break_time":' + str.tostring(time) + ',"origin_time":' + str.tostring(originT) + ',"origin_price":' + str.tostring(originP, format.mintick) + ',"break_high":' + str.tostring(high, format.mintick) + ',"break_low":' + str.tostring(low, format.mintick) + ',"close":' + str.tostring(close, format.mintick) + '}'
+
+if bullBrk
+    isCH     = trend == -1
+    trend    := 1
+    shBroken := true
+    // origin of the move: the lowest low between the broken swing high and this candle
+    n  = math.min(bar_index - shB, 900)
+    oP = low
+    oT = time
+    for k = 0 to n
+        if low[k] < oP
+            oP := low[k]
+            oT := time[k]
+    if isCH ? showCH : showBOS
+        line.new(shB, shP, bar_index, shP, color = cBull, width = lineW, style = isCH ? line.style_dashed : line.style_solid)
+        label.new(int(math.round((shB + bar_index) / 2)), shP, isCH ? "CHoCH" : "BOS", style = label.style_label_down, color = color.new(cBull, 100), textcolor = cBull, size = size.small)
+    if showFvg and n >= 2
+        for k = 0 to math.min(n, 300) - 2
+            if low[k] > high[k + 2]
+                box.new(bar_index - k - 1, low[k], bar_index - k - 1 + fvgLen, high[k + 2], border_color = color.new(cBull, 70), bgcolor = cFvgBull)
+                break
+    if sendOn and f_want(isCH)
+        alert(f_json("bull", isCH, shP, shT, oT, oP), alert.freq_once_per_bar_close)
+
+if bearBrk
+    isCH     = trend == 1
+    trend    := -1
+    slBroken := true
+    // origin of the move: the highest high between the broken swing low and this candle
+    n  = math.min(bar_index - slB, 900)
+    oP = high
+    oT = time
+    for k = 0 to n
+        if high[k] > oP
+            oP := high[k]
+            oT := time[k]
+    if isCH ? showCH : showBOS
+        line.new(slB, slP, bar_index, slP, color = cBear, width = lineW, style = isCH ? line.style_dashed : line.style_solid)
+        label.new(int(math.round((slB + bar_index) / 2)), slP, isCH ? "CHoCH" : "BOS", style = label.style_label_up, color = color.new(cBear, 100), textcolor = cBear, size = size.small)
+    if showFvg and n >= 2
+        for k = 0 to math.min(n, 300) - 2
+            if high[k] < low[k + 2]
+                box.new(bar_index - k - 1, low[k + 2], bar_index - k - 1 + fvgLen, high[k], border_color = color.new(cBear, 70), bgcolor = cFvgBear)
+                break
+    if sendOn and f_want(isCH)
+        alert(f_json("bear", isCH, slP, slT, oT, oP), alert.freq_once_per_bar_close)
+
+// classic alerts too (no webhook text)
+alertcondition(bullBrk, "Bull BOS / CHoCH", "{{ticker}} {{interval}}: bullish break")
+alertcondition(bearBrk, "Bear BOS / CHoCH", "{{ticker}} {{interval}}: bearish break")
