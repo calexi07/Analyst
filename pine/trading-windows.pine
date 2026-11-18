@@ -1,0 +1,215 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © FX Before Coffee · Pair Trading Windows (Romania time, Europe/Bucharest)
+// Windows valid Nov 2026 – Mar 2027. Mid-March, when the US moves its clocks two weeks before Europe,
+// New York and US data come one hour earlier in Romania time for about two weeks.
+//@version=6
+indicator("Trading Windows · FX Before Coffee", "Windows", overlay = true, max_lines_count = 500, max_labels_count = 500)
+
+TZ = "Europe/Bucharest"
+
+// ───────── Inputs ─────────
+G1 = "Windows"
+pairIn   = input.string("Auto", "Pair", options = ["Auto", "EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD"], group = G1, tooltip = "Auto reads the pair from the chart symbol.")
+showMain = input.bool(true, "Main window", group = G1)
+showSec  = input.bool(true, "Secondary window", group = G1)
+showRoll = input.bool(true, "Rollover no-trade zone (23:30–01:30)", group = G1)
+
+G2 = "On the chart"
+showBg    = input.bool(true, "Shade the windows", group = G2)
+showLines = input.bool(true, "Start / stop lines", group = G2)
+showLbl   = input.bool(true, "Start / stop labels", group = G2)
+daysBack  = input.int(10, "Draw lines for the last N days", minval = 1, maxval = 60, group = G2)
+
+G3 = "Dashboard"
+showDash   = input.bool(true, "Show dashboard", group = G3)
+onlyActive = input.bool(true, "Show only when ACTIVE", group = G3)
+dashPosIn  = input.string("Top right", "Position", options = ["Top right", "Top center", "Top left", "Middle right", "Bottom right", "Bottom left"], group = G3)
+sizeIn     = input.string("Normal", "Text size", options = ["Small", "Normal", "Large"], group = G3)
+
+G4 = "Colours"
+themeIn = input.string("Auto", "Theme", options = ["Auto", "Light", "Dark"], group = G4)
+cMain   = input.color(#22AB94, "Main window", group = G4)
+cSec    = input.color(#F2A33A, "Secondary window", group = G4)
+cRoll   = input.color(#F23645, "Rollover", group = G4)
+shadeTr = input.int(90, "Shade transparency", minval = 50, maxval = 98, group = G4)
+
+// ───────── Windows per pair (HHMM-HHMM, Romania time) ─────────
+f_main(string k) =>
+    switch k
+        "EURUSD" => "1500-1800"
+        "GBPUSD" => "0900-1200"
+        "USDJPY" => "1500-1800"
+        "USDCHF" => "1500-1800"
+        "USDCAD" => "1500-1800"
+        "AUDUSD" => "1500-1800"
+        "NZDUSD" => "1500-1800"
+        "EURGBP" => "0900-1200"
+        "EURJPY" => "0900-1200"
+        "EURCHF" => "0900-1130"
+        "EURAUD" => "0900-1200"
+        "EURNZD" => "0900-1200"
+        "EURCAD" => "1500-1800"
+        "GBPJPY" => "0900-1200"
+        "GBPCHF" => "0900-1200"
+        "GBPAUD" => "0900-1200"
+        "GBPNZD" => "0900-1200"
+        "GBPCAD" => "1500-1800"
+        "AUDJPY" => "0130-0430"
+        "AUDCHF" => "0900-1100"
+        "AUDNZD" => "0030-0400"
+        "AUDCAD" => "1500-1800"
+        "NZDJPY" => "0030-0400"
+        "NZDCHF" => "0900-1100"
+        "NZDCAD" => "1500-1800"
+        "CADJPY" => "1500-1800"
+        "CADCHF" => "1500-1800"
+        "CHFJPY" => "0900-1200"
+        "XAUUSD" => "1500-1800"
+        => ""
+
+f_sec(string k) =>
+    switch k
+        "EURUSD" => "0900-1200"
+        "GBPUSD" => "1500-1800"
+        "USDJPY" => "0130-0400"
+        "USDCHF" => "0900-1100"
+        "AUDUSD" => "0130-0400"
+        "NZDUSD" => "0000-0300"
+        "EURJPY" => "1500-1700"
+        "EURAUD" => "0130-0400"
+        "EURNZD" => "0030-0300"
+        "EURCAD" => "0900-1100"
+        "GBPJPY" => "1500-1700"
+        "GBPAUD" => "0130-0400"
+        "GBPCAD" => "0900-1100"
+        "AUDJPY" => "0900-1100"
+        "AUDCHF" => "0130-0400"
+        "AUDNZD" => "0900-1030"
+        "AUDCAD" => "0130-0330"
+        "NZDJPY" => "0900-1100"
+        "NZDCHF" => "0030-0300"
+        "CADJPY" => "0130-0400"
+        "CADCHF" => "0900-1100"
+        "CHFJPY" => "0130-0400"
+        "XAUUSD" => "0900-1100"
+        => ""
+
+ROLL = "2330-0130"
+
+// ───────── Helpers ─────────
+f_startMin(string s) => int(str.tonumber(str.substring(s, 0, 2))) * 60 + int(str.tonumber(str.substring(s, 2, 4)))
+f_endMin(string s)   => int(str.tonumber(str.substring(s, 5, 7))) * 60 + int(str.tonumber(str.substring(s, 7, 9)))
+f_hhmm(int m)        => str.format("{0,number,00}:{1,number,00}", math.floor(m / 60), m % 60)
+f_range(string s)    => f_hhmm(f_startMin(s)) + "–" + f_hhmm(f_endMin(s))
+f_in(string s, string days) => s != "" and not na(time(timeframe.period, s + ":" + days, TZ))
+
+f_pos(string p) =>
+    switch p
+        "Top center"   => position.top_center
+        "Top left"     => position.top_left
+        "Middle right" => position.middle_right
+        "Bottom right" => position.bottom_right
+        "Bottom left"  => position.bottom_left
+        => position.top_right
+
+f_size(string s) => s == "Small" ? size.small : s == "Large" ? size.large : size.normal
+
+// ───────── Pair ─────────
+autoKey = str.upper(syminfo.basecurrency + syminfo.currency)
+KEY     = pairIn == "Auto" ? autoKey : pairIn
+sMain   = f_main(KEY)
+sSec    = f_sec(KEY)
+known   = sMain != ""
+
+// ───────── Theme ─────────
+isDark = themeIn == "Dark" or (themeIn == "Auto" and color.r(chart.bg_color) + color.g(chart.bg_color) + color.b(chart.bg_color) < 300)
+cBg    = isDark ? #131722 : #FFFFFF
+cTx    = isDark ? #D1D4DC : #131722
+cSub   = isDark ? #9598A1 : #6A6D78
+cEdge  = isDark ? #2A2E39 : #E0E3EB
+
+// ───────── On the chart (intraday, up to 1h) ─────────
+intra = timeframe.isintraday and timeframe.in_seconds() <= 3600
+
+inMain = known and showMain and f_in(sMain, "23456")
+inSec  = known and showSec and f_in(sSec, "23456")
+inRoll = showRoll and f_in(ROLL, "1234567")
+
+bgcolor(intra and showBg ? (inMain ? color.new(cMain, shadeTr) : inSec ? color.new(cSec, shadeTr) : inRoll ? color.new(cRoll, shadeTr) : na) : na, title = "Window shade")
+
+var array<line>  lns = array.new<line>()
+var array<label> lbs = array.new<label>()
+atrv   = ta.atr(14)
+recent = time >= timenow - daysBack * 86400000
+
+f_drawWin(string s, color c, string name) =>
+    sm = f_startMin(s)
+    em = f_endMin(s)
+    y  = year(time, TZ)
+    mo = month(time, TZ)
+    d  = dayofmonth(time, TZ)
+    t0 = timestamp(TZ, y, mo, d, math.floor(sm / 60), sm % 60)
+    t1 = timestamp(TZ, y, mo, d, math.floor(em / 60), em % 60)
+    t1 := t1 <= t0 ? t1 + 86400000 : t1
+    if showLines
+        array.push(lns, line.new(t0, low, t0, high, xloc = xloc.bar_time, extend = extend.both, color = color.new(c, 30), style = line.style_dashed, width = 1))
+        array.push(lns, line.new(t1, low, t1, high, xloc = xloc.bar_time, extend = extend.both, color = color.new(c, 55), style = line.style_dotted, width = 1))
+    if showLbl
+        yy = high + atrv * 1.2
+        array.push(lbs, label.new(t0, yy, "▶ " + name + " " + f_hhmm(sm), xloc = xloc.bar_time, style = label.style_label_left, color = color.new(c, 15), textcolor = color.white, size = size.small))
+        array.push(lbs, label.new(t1, yy, "■ " + f_hhmm(em), xloc = xloc.bar_time, style = label.style_label_right, color = color.new(c, 55), textcolor = color.white, size = size.small))
+
+if intra and recent
+    if inMain and not inMain[1]
+        f_drawWin(sMain, cMain, "MAIN")
+    if inSec and not inSec[1]
+        f_drawWin(sSec, cSec, "2ND")
+
+while array.size(lns) > daysBack * 4
+    line.delete(array.shift(lns))
+while array.size(lbs) > daysBack * 4
+    label.delete(array.shift(lbs))
+
+// ───────── Dashboard (clock-based, works on any timeframe) ─────────
+var table dash = table.new(f_pos(dashPosIn), 1, 3, bgcolor = cBg, border_color = cEdge, border_width = 1, frame_color = cEdge, frame_width = 1)
+
+if barstate.islast
+    table.clear(dash, 0, 0, 0, 2)
+    if showDash and known
+        nowMin = hour(timenow, TZ) * 60 + minute(timenow, TZ)
+        dow    = dayofweek(timenow, TZ)
+        weekend = dow == dayofweek.saturday or dow == dayofweek.sunday or (dow == dayofweek.friday and nowMin >= 18 * 60)
+        rollNow = showRoll and (nowMin >= 23 * 60 + 30 or nowMin < 90)
+        mOn = showMain and not weekend and nowMin >= f_startMin(sMain) and nowMin < f_endMin(sMain)
+        sOn = showSec and sSec != "" and not weekend and nowMin >= f_startMin(sSec) and nowMin < f_endMin(sSec)
+        active = (mOn or sOn) and not rollNow
+        sz = f_size(sizeIn)
+        if active
+            w    = mOn ? sMain : sSec
+            c    = mOn ? cMain : cSec
+            left = f_endMin(w) - nowMin
+            table.cell(dash, 0, 0, "● ACTIVE", text_color = color.white, bgcolor = c, text_size = sz, text_halign = text.align_center)
+            table.cell(dash, 0, 1, KEY + " · " + (mOn ? "Main " : "Secondary ") + f_range(w), text_color = cTx, text_size = size.small)
+            table.cell(dash, 0, 2, (left >= 60 ? str.tostring(math.floor(left / 60)) + "h " : "") + str.tostring(left % 60) + "m left", text_color = cSub, text_size = size.small)
+        else if not onlyActive
+            // next window: the first start later today, else the earliest one (next trading day)
+            mS = showMain ? f_startMin(sMain) : 9999
+            sS = showSec and sSec != "" ? f_startMin(sSec) : 9999
+            nextTxt = ""
+            if mS > nowMin and (sS <= nowMin or mS < sS)
+                nextTxt := "next: Main " + f_hhmm(mS)
+            else if sS > nowMin and sS < 9999
+                nextTxt := "next: Secondary " + f_hhmm(sS)
+            else
+                nextTxt := "next: " + (mS < sS ? "Main " + f_hhmm(mS) : "Secondary " + f_hhmm(sS)) + " (next session)"
+            head = weekend ? "WEEKEND" : rollNow ? "⛔ ROLLOVER" : "○ INACTIVE"
+            table.cell(dash, 0, 0, head, text_color = rollNow ? color.white : cTx, bgcolor = rollNow ? cRoll : cBg, text_size = sz, text_halign = text.align_center)
+            table.cell(dash, 0, 1, KEY + " · Main " + f_range(sMain) + (sSec != "" ? " · 2nd " + f_range(sSec) : ""), text_color = cTx, text_size = size.small)
+            table.cell(dash, 0, 2, weekend ? "next: Monday" : nextTxt, text_color = cSub, text_size = size.small)
+    else if showDash and not known
+        table.cell(dash, 0, 0, "Pair not in the list: " + autoKey + " — pick it in Settings", text_color = cTx, text_size = size.small)
+
+// alerts
+alertcondition(inMain and not inMain[1], "Main window starts", "{{ticker}}: main trading window started")
+alertcondition(inSec and not inSec[1], "Secondary window starts", "{{ticker}}: secondary trading window started")
+alertcondition(not inMain and inMain[1], "Main window ends", "{{ticker}}: main trading window ended")
