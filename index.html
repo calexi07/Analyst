@@ -2270,7 +2270,7 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   <div class="sp-b"><b id="spB"></b></div>
 </div>
 </div>
-<script>(function(){var u=/[?&]app=setups/.test(location.search);if(u)document.getElementById('spT').textContent='Setups';
+<script>(function(){var u=/[?&]app=setups/.test(location.search);if(u)document.getElementById('spT').textContent='Auto-trader';
 /* Setups app: show the last screen right away (read-only) while fresh data loads */
 if(u){try{var h=localStorage.getItem('do_sa_snap');if(h){document.body.classList.add('sa-snap','suapp','su-home');document.write('<div id="saSnap">'+h+'</div>');
 setTimeout(function(){var sp=document.getElementById('splash');if(!sp||!document.getElementById('saSnap'))return;sp.classList.add('out');var d=document.createElement('div');d.id='saUpd';d.innerHTML='<i></i>Updating…';document.body.appendChild(d);},650);}}catch(e){}}})();</script>
@@ -2595,17 +2595,18 @@ const ICONS = {
   pie:'<path d="M21 12a9 9 0 1 1-9-9v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/>',
   bank:'<path d="M3 10l9-6 9 6"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/><path d="M3 21h18"/>',
   radar:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6-6"/><circle cx="12" cy="12" r="1.2"/>',
+  bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
   spark:'<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
 };
 const ico = (k, s = 18) => `<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]||''}</svg>`;
 const NAV = [
   [null, [['today','Today','home']]],
-  ['Fundamental Analyse', [['journal','Calendar','calendar'],['history','Check','trend'],['watch','Watchlist','target'],['devents','Daily events','spark'],['backtest','Trades','flask'],['analyst','Analyst','radar']]],
+  ['Fundamental Analyse', [['journal','Calendar','calendar'],['history','Check','trend'],['watch','Watchlist','target'],['devents','Daily events','spark'],['setups','Auto-trader','bolt'],['backtest','Trades','flask'],['analyst','Analyst','radar']]],
   ['Money', [['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target']]],
   ['Tools', [['health','Health','radar'],['prompts','Prompts','spark']]],
 ];
 const navActive = v => S.view===v || (v==='history' && ['overview','analysis'].includes(S.view));
-const GONE_VIEWS = ['trades','setups','analysis'];   /* Trades and Setups were removed from the app (Nov 2026); Backtest replaces trades */
+const GONE_VIEWS = ['trades','analysis'];   /* Trades was removed from the app (Nov 2026); Backtest replaces trades. Setups came back as the Auto-trader (18 Nov 2026) */
 /* ===== notifications in the Setups app (Web Push) — the server sends every alert here instead of Telegram ===== */
 const VAPID_PUBLIC = 'BAOgsdSJNvxen175cWjqvGRMSR9Hk-iBm7cyNcxtDF0ZgxW445gRNcaVvXKfQDqQfUD6kqK_k7MGaEUmJa2yWuw';
 const PUSH = { st: 'checking' };   /* on · off · blocked · unsupported · checking · busy */
@@ -2659,7 +2660,7 @@ async function pushToggle(){
     let sub = await r.pushManager.getSubscription();
     if(!sub) sub = await r.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
     PUSH.st = (await pushSave(sub)) ? 'on' : 'off'; pushPaint();
-    if(PUSH.st === 'on'){ toast('Notifications on — alerts now come here'); r.showNotification('Daily Observer · Setups', { body: 'Notifications are on. Setup alerts, entries and TP / SL will arrive here.', icon: 'icon-setups-192.png', badge: 'badge-setups.png', tag: 'do-on' }); }
+    if(PUSH.st === 'on'){ toast('Notifications on — alerts now come here'); r.showNotification('Daily Observer · Auto-trader', { body: 'Notifications are on. Setup alerts, entries and TP / SL will arrive here.', icon: 'icon-setups-192.png', badge: 'badge-setups.png', tag: 'do-on' }); }
   }catch(e){ PUSH.st = 'off'; pushPaint(); toast('Could not turn on: ' + (e?.message || e)); }
 }
 /* ===== Setups app (phone) — "Aurora Pipeline" layout; the cards and their buttons are the same as on the site ===== */
@@ -2690,7 +2691,7 @@ function suAppHtml(o){
   const R = live.length ? `${liveR >= 0 ? '+' : '−'}${fmt(Math.abs(liveR), 1)}R` : '—';
   return `<div class="sa">
     <header class="sa-top">
-      <div class="sa-ttl"><h1>Setups</h1><p>W${wk} · ${pairs} pair${pairs===1 ? '' : 's'} active · live ${hm}</p></div>
+      <div class="sa-ttl"><h1>Auto-trader</h1><p>W${wk} · ${pairs} pair${pairs===1 ? '' : 's'} active · live ${hm}</p></div>
       <div class="sa-open ${live.length ? (liveR >= 0 ? 'up' : 'dn') : ''}"><span>Open</span><b>${R}</b></div>
       <button class="sa-ib" id="suRefresh" aria-label="Refresh"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></button>
       ${pushBtnHtml()}
@@ -2740,7 +2741,7 @@ function render(){
         </div>
       </aside>
       <div class="shell-main">
-        <header class="mtop">${SUAPP && S.view!=='setups' ? `<button class="pushbtn" data-view="setups">‹ Setups</button>` : ''}<div class="brand"><span class="mark" aria-hidden="true"></span>${SUAPP ? (S.view==='setups' ? 'Setups' : cur ? cur[1] : 'Setups') : cur ? cur[1] : 'Daily Observer'}</div>
+        <header class="mtop">${SUAPP && S.view!=='setups' ? `<button class="pushbtn" data-view="setups">‹ Auto-trader</button>` : ''}<div class="brand"><span class="mark" aria-hidden="true"></span>${SUAPP ? (S.view==='setups' ? 'Auto-trader' : cur ? cur[1] : 'Auto-trader') : cur ? cur[1] : 'Daily Observer'}</div>
           ${SUAPP ? pushBtnHtml() : ''}<button class="iconbtn" id="searchBtnM" aria-label="Search">${ico('search', 18)}</button></header>
         ${board ? '<nav class="pairs" id="pairs" aria-label="Pairs by this week\'s bias"></nav>' : ''}
         <main id="main" class="wrap"></main>
@@ -2765,7 +2766,7 @@ function render(){
 function openMore(){
   const d = document.getElementById('moreDlg'), light = document.documentElement.dataset.theme === 'light';
   d.innerHTML = `<div class="dlg-head"><h2>More</h2></div><div class="dlg-body more-g">
-    ${[['watch','Watchlist','target'],['devents','Daily events','spark'],['analyst','Analyst','radar'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['health','Health','radar'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
+    ${[['watch','Watchlist','target'],['devents','Daily events','spark'],['setups','Auto-trader','bolt'],['analyst','Analyst','radar'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['health','Health','radar'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
     <button class="more-i" data-ma="share">${ico('share', 22)}<span>Share</span></button>
     <button class="more-i" data-ma="data">${ico('swap', 22)}<span>Import / export</span></button>
     <button class="more-i" data-ma="theme">${ico(light ? 'moon' : 'sun', 22)}<span>${light ? 'Dark' : 'Light'} theme</span></button></div>`;
@@ -2861,7 +2862,7 @@ function renderMain(){
   else if(S.view === 'devents') renderDevents();
   else if(S.view === 'health') renderHealth();
   else if(S.view === 'trades') renderTrades();
-  else if(S.view === 'setups') renderSetups();
+  else if(S.view === 'setups'){ if(!SUAPP && !S.sigLoaded){ S.sigLoaded = true; loadSignals().then(() => { if(S.view==='setups') renderMain(); }); } renderSetups(); }
   else renderJournal();
   if(SUAPP){ document.body.classList.toggle('su-home', S.view==='setups'); pushWire(); }
   syncDrawer();
@@ -7670,7 +7671,7 @@ function suTfs(all){ return [...new Set(['1H', ...all.map(x => x.tf).filter(f =>
 const SX_COLS = [['forming','Forming','Liquidity taken, waiting for the fractal break'],['validate','Validation','Break alert in. Check the liquidity and the fractal line'],['formed','Formed','Validated, waiting for price to come to the line'],['trade','Trades','Price hit the line, trade running live']];
 function renderSetups(){
   const m = document.getElementById('main');
-  if(S.signalsMissing){ m.innerHTML = `<div class="pairtitle">Setups <span class="beta">beta</span></div><div class="card" style="margin-top:16px"><p>Run <b>migration-signals.sql</b> in Supabase, then reload. The signals table doesn't exist yet.</p></div>`; return; }
+  if(S.signalsMissing){ m.innerHTML = `<div class="pairtitle">Auto-trader <span class="beta">beta</span></div><div class="card" style="margin-top:16px"><p>Run <b>migration-signals.sql</b> in Supabase, then reload. The signals table doesn't exist yet.</p></div>`; return; }
   const all = deriveSetups(), tf = S.su.tf || 'all';
   const inTf = x => tf==='all' || x.tf===tf;
   const colOf = x => suFinished(x) ? 'done' : x.stage==='watch' ? 'watch' : suOpenTrade(x) ? 'trade' : x.stage==='retest' ? 'trade' : x.stage==='validate' || (x.stage==='forming' && x.val) ? 'validate' : ['wickwait','wickfail'].includes(x.stage) ? 'formed' : ['forming','formed'].includes(x.stage) ? x.stage : null;
@@ -7693,7 +7694,7 @@ function renderSetups(){
     return; }
   m.innerHTML = `
     <header class="sx-top">
-      <div><h1 class="pairtitle">Setups <span class="beta">beta</span></h1>
+      <div><h1 class="pairtitle">Auto-trader <span class="beta">beta</span></h1>
         <p class="sx-sub">Bias, liquidity, break, retest, trade. Only setups in the direction of your weekly bias.</p></div>
       <div class="sx-top-r">${sxStatus()}${fresh.length ? `<button class="btn sx-allseen" id="suAllSeen" title="Mark every new card as seen">✓ ${fresh.length} new, mark seen</button>` : ''}<span class="sx-live-at" id="suLive" title="The page refreshes itself every 30 seconds">${liveAgo()}</span><button class="btn" id="suRefresh" title="Load the latest signals now">↻</button></div>
     </header>
@@ -8373,7 +8374,7 @@ async function liveRefresh(){
   if(!SUAPP){ if(!vis || Date.now() - (S.liveLast || 0) < 5*60e3) return; S.liveLast = Date.now(); }   /* main app: visible page only, every 5 min */
   S.liveBusy = true;
   try{
-    if(SUAPP) await loadSignals();
+    if(SUAPP || S.view==='setups') await loadSignals();
     /* trades opened / closed by the server engine */
     if(!S.legacyTrades && (SUAPP || ['today','trades'].includes(S.view))){ try{ const tr = await fetchAll('do_trades'); const sig = m => [...m.values()].map(t => t.id + (t.updated_at || '') + (t.result || '')).sort().join();
       const fresh = new Map(tr.map(t => [t.id, t])); if(sig(fresh)!==sig(S.trades)){ S.trades = fresh; S.liveTrades = true; } }catch(e){ /* keep what we have */ } }
@@ -8702,7 +8703,7 @@ function renderToday(){
       ${kpi2('Observations', todayCov!=null ? `${todayCov}/${tr.length}` : due ? Math.round(done/due*100) + '%' : '–', todayCov!=null ? `today · week ${due ? Math.round(done/due*100) : 0}%` : 'this week', todayCov!=null && todayCov===tr.length ? 'up' : '', 'data-act="gap"')}
     </div>
     <div class="td2-main">
-      ${card('⚡ Live now', link('Setups', 'data-view2="setups"'), live.length ? `<div class="td2-live">${live.map(({ t, lv }) => { const accN = tradeAccts(t).map(x => S.accounts.get(x.id)?.name).filter(Boolean);
+      ${card('⚡ Live now', link('Auto-trader', 'data-view2="setups"'), live.length ? `<div class="td2-live">${live.map(({ t, lv }) => { const accN = tradeAccts(t).map(x => S.accounts.get(x.id)?.name).filter(Boolean);
           return `<div class="td2-tr ${lv ? (lv.R >= 0 ? 'up' : 'dn') : ''}">
             <div class="td2-trh"><span class="tj-dir ${t.direction.toLowerCase()}">${t.direction==='Long' ? '▲' : '▼'}</span><b>${t.pair.slice(0,3)}<em>${t.pair.slice(3)}</em></b><span class="tfl">${esc(t.setup_tf || '')}</span>
               <span class="muted td2-since">since ${fmtDayShort(t.day)}${t.entry_time ? ' ' + esc(t.entry_time) : ''}${accN.length ? ' · 👤 ' + esc(accN.map(shortAcc).join(', ')) : ''}</span>
