@@ -7364,7 +7364,7 @@ function openAddSetup(step0 = 'forming'){
   const dtl = ms => { const d = new Date(ms); return `${iso(d)}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
   const floorTf = (ms, tf) => { const d = new Date(ms); d.setMinutes(0, 0, 0); if(tf==='4H') d.setHours(d.getHours() - d.getHours() % 4); return d.getTime(); };
   const now = Date.now(), A = { step: step0==='trade' ? 'trade' : step0, pair: S.su.addPair || S.pair || 'EURUSD', tf: '1H', dir: 'Long', type: '' };
-  const STEPS = [['forming','1 · Liquidity'],['validate','2 · Fractal'],['formed','3 · Setup formed'],['armed','4 · Arm'],['trade','5 · Trade'],['watch','★ Watchlist']];
+  const STEPS = [['forming','1 · Liquidity'],['validate','2 · Fractal'],['formed','3 · Setup formed'],['armed','4 · Arm'],['watch','★ Watchlist']];
   const draw = () => {
     const n = { forming:1, validate:2, formed:3, trade:4, watch:3 }[A.step], wr = biasAt(A.pair, new Date()), b = wr?.bias, L = A.dir==='Long';
     const against = b && !((b==='bullish' && L) || (b==='bearish' && !L));
@@ -7543,7 +7543,7 @@ function suCard(s){
   </article>`;
 }
 /* ---- live board: compact rows, one per setup ---- */
-const LV_ORDER = ['forming','validate','formed','armed','trade','done'];
+const LV_ORDER = ['forming','validate','formed','armed'];   /* Trade and Finished were dropped (18 Nov 2026): trades live on the Trades page, closed setups in History */
 const LV_LBL = {
   forming:['Step 1 · Liquidity','Liquidity taken in the bias direction, waiting for your fractal alert','No sweep in the bias direction right now.','Liquidity'],
   validate:['Step 2 · Fractal','Your fractal alert fired: pick Wick or Body and check the prices','Nothing to check. When your fractal alert fires, the setup comes here.','Fractal'],
@@ -7782,7 +7782,7 @@ function renderSetups(){
   const d30 = Date.now() - 30*864e5, done = all.filter(s => s.stage==='taken' && tms(s.startAt) >= d30).map(s => S.trades.get(s.trade_id)).filter(t => t?.result);
   const wins = done.filter(t => t.result==='W').length, netR = done.reduce((a, t) => a + (Number(t.r_multiple) || 0), 0);
   const stage = S.su.stage || (toVal ? 'validate' : cols.trade.length ? 'trade' : cols.formed.length ? 'formed' : 'forming');
-  const lvt = S.su.lvt==='watch' ? 'formed' : S.su.lvt || 'all', VALS = suValid();
+  const lvt = S.su.lvt==='watch' ? 'formed' : LV_ORDER.includes(S.su.lvt) ? S.su.lvt : 'all', VALS = suValid();
   const page = S.su.page || 'live', takenN = all.filter(x => x.stage==='taken' && !suOpenTrade(x) && !suFinished(x)).length;
   const tool = page==='live' ? null : page;
   if(SUAPP){ m.innerHTML = suAppHtml({ all, cols, act, toVal, live, liveR }); bindSetups(m, all); suAppBind(m); suWatchChanges(true);
@@ -7813,7 +7813,7 @@ function renderSetups(){
     </div>
     <div class="lv-tabs" role="tablist" aria-label="Stages">
       <button class="lv-add" data-suadd="${lvt==='all' ? 'forming' : lvt}" title="Add a pair by hand, at any step">＋ Add manually</button>
-      <button role="tab" data-lvt="all" aria-selected="${lvt==='all'}">All<em>${act.length}</em></button>
+      <button role="tab" data-lvt="all" aria-selected="${lvt==='all'}">All<em>${LV_ORDER.reduce((t, k) => t + cols[k].length, 0)}</em></button>
       ${LV_ORDER.map((k, n) => `<button role="tab" class="t-${k}" data-lvt="${k}" aria-selected="${lvt===k}"><i></i><span class="lv-n">${n+1}</span>${LV_LBL[k][3]}<em>${cols[k].length}</em>${k==='formed' && cols.watch.length ? `<em title="Watchlist">★ ${cols.watch.length}</em>` : ''}${newIn(k) + (k==='formed' ? newIn('watch') : 0) ? `<b>${newIn(k) + (k==='formed' ? newIn('watch') : 0)} new</b>` : ''}${k==='trade' && live.length ? `<span class="${liveR >= 0 ? 'pos' : 'neg'}">${liveR >= 0 ? '+' : ''}${fmt(liveR, 2)}R</span>` : ''}</button>`).join('')}
     </div>
     <div class="lv">
