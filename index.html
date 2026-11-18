@@ -6805,6 +6805,7 @@ function applyValid(x, v){
   }
   if(v.sl!=null && isFinite(Number(v.sl)) && Number(v.sl) > 0) x.liq = { ...x.liq, extreme:Number(v.sl), slSet:true };   /* your stop loss */
 }
+const suAlertsOn = () => S.settings?.su_alerts===true;
 function deriveSetups(){
   const win = suWin(), H = 3600e3, now = Date.now(), all = [], open = new Map(), VAL = suValid(), vFrom = suValidFrom();
   const close = () => {};   /* setups never expire — they end only on invalidation, Take or Skip */
@@ -6812,7 +6813,9 @@ function deriveSetups(){
   /* candles join the replay as events at their CLOSE time (for retests, and for breaks in "candles only" mode) */
   const cev = [...S.candles.values()].filter(c => TF_MS[c.tf]).map(c => ({ kind:'candle', pair:c.pair, tf:c.tf, at:new Date(c.t + TF_MS[c.tf]).toISOString(), cnd:c }));
   const sigs = [...S.signals, ...cev].sort((a,b) => tms(a.at) - tms(b.at) || (a.cnd && b.cnd ? (TF_MS[a.cnd.tf] || 0) - (TF_MS[b.cnd.tf] || 0) : 0));
+  const alertsOn = suAlertsOn();
   for(const g of sigs){
+    if((g.kind==='liq' || g.kind==='bos') && !g.raw?.manual && !alertsOn) continue;   /* manual mode (default): Liquidity and Fractal come only from you, TradingView alerts are ignored */
     const k = g.pair, t = tms(g.at), list = (open.get(k) || []);   /* per pair: the break may come on a lower timeframe than the sweep */
     list.forEach(s => close(s, t));
     const live = list.filter(s => ['forming','validate','wickwait','wickfail','formed','retest','watch'].includes(s.stage)); open.set(k, live);
@@ -7587,14 +7590,14 @@ function lvRow(s){
     if(S.su.act===s.key){   /* activate the fractal by hand: no break alert needed → straight to Step 3 */
       const slv = s.liq.extreme ?? s.liq.level;
       mid = `<div class="sx-val lvr-val dirty" data-actfor="${s.key}">
-          <span class="lvr-when">⚡ Activate fractal</span>
+          <span class="lvr-when">Step 2 · Fractal (by hand)</span>
           <label><span>Liquidity</span><input class="inp" inputmode="decimal" autocomplete="off" data-aliq value="${lvl(s.liq.level ?? slv)}"></label>
-          <label><span>Fractal line</span><input class="inp" inputmode="decimal" autocomplete="off" data-aline value="" placeholder="entry price"></label>
-          <label class="sl"><span>Stop loss</span><input class="inp" inputmode="decimal" autocomplete="off" data-asl value="${lvl(slv)}"></label>
+          <label><span>Fractal line = entry</span><input class="inp" inputmode="decimal" autocomplete="off" data-aline value="" placeholder="price of the fractal line"></label>
+          <label class="sl"><span>Stop loss · sweep candle</span><input class="inp" inputmode="decimal" autocomplete="off" data-asl value="${lvl(slv)}"></label>
           <span class="sx-val-msg neg"></span></div>`;
       act = `<button class="bt" data-suactx="${s.key}">Cancel</button><button class="btn btn-primary" data-suactok="${s.key}">✓ To Step 3</button>`;
     } else
-    act = `<button class="bt lvr-fx" data-suact="${s.key}" title="Don't wait for the break alert: set the fractal line yourself and go straight to Step 3 · Setup formed">⚡ Activate fractal</button><div class="lvr-prio" role="group" aria-label="Priority">${[['high','High'],['med','Mid'],['low','Low']].map(([k, l]) => `<button class="p-${k}" data-suprio="${s.key}|${k}" aria-pressed="${pr===k}" title="${l} priority${pr===k ? ' (click again to clear)' : ''}">${l}</button>`).join('')}</div>${chart}${skip}`;
+    act = `<button class="bt lvr-fx" data-suact="${s.key}" title="Enter the fractal line yourself: it becomes the entry, the sweep candle the stop, TP at 2R → Step 3 · Setup formed">＋ Fractal</button><div class="lvr-prio" role="group" aria-label="Priority">${[['high','High'],['med','Mid'],['low','Low']].map(([k, l]) => `<button class="p-${k}" data-suprio="${s.key}|${k}" aria-pressed="${pr===k}" title="${l} priority${pr===k ? ' (click again to clear)' : ''}">${l}</button>`).join('')}</div>${chart}${skip}`;
   } else if(col==='validate'){
     if(s.stage==='validate'){
       const last = suValid()[s.key]?.last || {}, liq = last.liq ?? s.liq.level0 ?? s.liq.level, line = last.line ?? s.prop?.line ?? s.line, ty = last.type || '', slv = last.sl ?? s.liq.extreme ?? s.liq.level;
@@ -7626,7 +7629,7 @@ function lvRow(s){
         + `<p class="lvr-note warn-n">⚠️ The ${hm(s.pend?.failed?.t)} candle closed ${lvl(s.pend?.failed?.c)}, not ${L ? 'above' : 'below'} ${lvl(s.line)}. Invalidate it or wait one more candle?</p>`;
     } else {
       mid = kv('Liquidity', sxPx(s.liq.level), s.liq.at ? hm(candleOpen(s.liq.at, s.liq.tf || s.tf))+' candle' : '') + kv('Fractal', sxPx(s.line), `${how ? how+' · ' : ''}${s.bos ? hm(s.bos.candle ? s.bos.candle.t : candleOpen(s.bos.at, s.tf))+' candle' : ''}`)
-        + (pl ? kv(`Limit ${L ? 'buy' : 'sell'}`, sxPx(pl.entry), '', 'e') + kv('SL', sxPx(pl.sl), '', 'sl') + kv('TP 2R', sxPx(pl.tp), '', 'tp') : `<p class="lvr-note">${nx.text}</p>`);
+        + (pl ? kv(`Entry · limit ${L ? 'buy' : 'sell'}`, sxPx(pl.entry), 'fractal line', 'e') + kv('SL 1H', sxPx(pl.sl), 'sweep candle', 'sl') + kv('TP 2R', sxPx(pl.tp), `${fmt(Math.abs(pl.entry - pl.sl) * (pl.entry >= 20 ? 100 : 10000) * 2, 1)} pips`, 'tp') : `<p class="lvr-note">${nx.text}</p>`);
     }
     if(S.su.take===s.key){   /* take it now (on the break), at the current price — no waiting for the retest */
       const px = lastPx(s.pair), sl0 = pl?.sl ?? s.val?.sl ?? s.liq.extreme ?? s.liq.level;
@@ -7809,6 +7812,7 @@ function renderSetups(){
         <label class="sx-sw" title="When the heartbeat sees price back at the line, the trade is logged: entry at the line, stop at the sweep wick, target 2R"><input type="checkbox" id="suAuto" ${suAuto() ? 'checked' : ''}><i></i>Auto-take at retest</label>
         <label class="sx-sw" title="Setup trades close by themselves at the target (+2R) or the stop (−1R)"><input type="checkbox" id="suAutoClose" ${suAutoClose() ? 'checked' : ''}><i></i>Auto-close at TP / SL</label>
         <label class="sx-sw" title="A sound on this device when something changes: Step 2 to check, entry, TP, SL, watchlist touch, new liquidity"><input type="checkbox" id="suSound" ${sndOn() ? 'checked' : ''}><i></i>🔔 Sounds</label>
+        <label class="sx-sw" title="Off (default): Liquidity and Fractal are entered by you only. On: TradingView liquidity and break alerts also create setups"><input type="checkbox" id="suAlerts" ${suAlertsOn() ? 'checked' : ''}><i></i>📡 TradingView alerts</label>
       </div>
     </div>
     <div class="lv-tabs" role="tablist" aria-label="Stages">
@@ -8266,7 +8270,7 @@ function bindSetups(m, all){
   m.querySelectorAll('[data-suopen]').forEach(r => r.onclick = ev => { if(ev.target.closest('button,a')) return; openTradeModal(r.dataset.suopen); });
   /* Validate: tick the proposed levels, or correct them first */
   m.querySelectorAll('.sx-val').forEach(p => {
-    const btn = p.querySelector('[data-suval]'), ins = [...p.querySelectorAll('input')];
+    const btn = p.querySelector('[data-suval]'), ins = [...p.querySelectorAll('input')]; if(!btn) return;   /* the "＋ Fractal" panel shares the class but has its own button */
     const sync = () => { const ch = ins.some(i => i.value.trim()!==i.dataset.orig); ins.forEach(i => i.classList.toggle('changed', i.value.trim()!==i.dataset.orig));
       p.classList.toggle('dirty', ch); btn.textContent = ch ? '✓ Save and validate' : '✓ Validate'; p.querySelector('.sx-val-msg').textContent = ''; };
     ins.forEach(i => { i.oninput = sync; i.onkeydown = e => { if(e.key==='Enter') btn.click(); }; });
@@ -8400,6 +8404,7 @@ function bindSetups(m, all){
   });
   m.querySelectorAll('[data-apw]').forEach(b => b.onclick = () => { S.su.apw = b.dataset.apw; renderMain(); });
   m.querySelector('#suAuto')?.addEventListener('change', async e => { ls.set('do_su_auto', e.target.checked); await saveSettingKey('su_auto', e.target.checked); if(e.target.checked) await autoRun(); renderMain(); });
+  m.querySelector('#suAlerts')?.addEventListener('change', async e => { await saveSettingKey('su_alerts', e.target.checked); renderMain(); });
   m.querySelector('#suAutoClose')?.addEventListener('change', async e => { ls.set('do_su_autoclose', e.target.checked); await saveSettingKey('su_autoclose', e.target.checked); if(e.target.checked) await autoRun(); renderMain(); });
   m.querySelectorAll('[data-simc]').forEach(b => b.onclick = async () => {
     const [how, way] = b.dataset.simc.split('|'), tf = stf.value, len = TF_MS[tf];
