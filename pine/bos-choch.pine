@@ -22,6 +22,8 @@ cBot    = input.color(#FF5252, "Bottom swing point", group = G2)
 cBull   = input.color(#4CAF50, "Bull BOS/CHoCH line", group = G2)
 cBear   = input.color(#FF5252, "Bear BOS/CHoCH line", group = G2)
 lineW   = input.int(1, "Line width", minval = 1, maxval = 4, group = G2)
+brkTxt  = input.string("POC", "Break label", group = G2, tooltip = "Text written on every break. Default POC for both BOS and CHoCH.")
+splitTx = input.bool(false, "Write BOS / CHoCH instead", group = G2)
 
 G3 = "Fair value gaps"
 showFvg  = input.bool(false, "Show FVG after BOS/CHoCH", group = G3, tooltip = "The first fair value gap inside the move that made the break.")
@@ -87,7 +89,7 @@ bearBrk = not slBroken and not na(slP) and (conf == "H/L" ? low < slP : close < 
 f_want(bool isCH) => sendWhat == "BOS + CHoCH" or (sendWhat == "CHoCH only" and isCH) or (sendWhat == "BOS only" and not isCH)
 
 f_json(string dir, bool isCH, float lvl, int swingT, int originT, float originP) =>
-    '{"src":"do-bos","token":"' + token + '","pair":"' + KEY + '","tf":"' + timeframe.period + '","dir":"' + dir + '","type":"' + (isCH ? "CHOCH" : "BOS") + '","conf":"' + conf + '"' + ',"level":' + str.tostring(lvl, format.mintick) + ',"swing_time":' + str.tostring(swingT) + ',"break_time":' + str.tostring(time) + ',"origin_time":' + str.tostring(originT) + ',"origin_price":' + str.tostring(originP, format.mintick) + ',"break_high":' + str.tostring(high, format.mintick) + ',"break_low":' + str.tostring(low, format.mintick) + ',"close":' + str.tostring(close, format.mintick) + '}'
+    '{"src":"do-bos","token":"' + token + '","pair":"' + KEY + '","tf":"' + timeframe.period + '","dir":"' + dir + '","type":"POC","kind":"' + (isCH ? "CHOCH" : "BOS") + '","conf":"' + conf + '"' + ',"level":' + str.tostring(lvl, format.mintick) + ',"swing_time":' + str.tostring(swingT) + ',"break_time":' + str.tostring(time) + ',"origin_time":' + str.tostring(originT) + ',"origin_price":' + str.tostring(originP, format.mintick) + ',"break_high":' + str.tostring(high, format.mintick) + ',"break_low":' + str.tostring(low, format.mintick) + ',"close":' + str.tostring(close, format.mintick) + '}'
 
 if bullBrk
     isCH     = trend == -1
@@ -103,7 +105,7 @@ if bullBrk
             oT := time[k]
     if isCH ? showCH : showBOS
         line.new(shB, shP, bar_index, shP, color = cBull, width = lineW, style = isCH ? line.style_dashed : line.style_solid)
-        label.new(int(math.round((shB + bar_index) / 2)), shP, isCH ? "CHoCH" : "BOS", style = label.style_label_down, color = color.new(cBull, 100), textcolor = cBull, size = size.small)
+        label.new(int(math.round((shB + bar_index) / 2)), shP, splitTx ? (isCH ? "CHoCH" : "BOS") : brkTxt, style = label.style_label_down, color = color.new(cBull, 100), textcolor = cBull, size = size.small)
     if showFvg and n >= 2
         for k = 0 to math.min(n, 300) - 2
             if low[k] > high[k + 2]
@@ -126,7 +128,7 @@ if bearBrk
             oT := time[k]
     if isCH ? showCH : showBOS
         line.new(slB, slP, bar_index, slP, color = cBear, width = lineW, style = isCH ? line.style_dashed : line.style_solid)
-        label.new(int(math.round((slB + bar_index) / 2)), slP, isCH ? "CHoCH" : "BOS", style = label.style_label_up, color = color.new(cBear, 100), textcolor = cBear, size = size.small)
+        label.new(int(math.round((slB + bar_index) / 2)), slP, splitTx ? (isCH ? "CHoCH" : "BOS") : brkTxt, style = label.style_label_up, color = color.new(cBear, 100), textcolor = cBear, size = size.small)
     if showFvg and n >= 2
         for k = 0 to math.min(n, 300) - 2
             if high[k] < low[k + 2]
