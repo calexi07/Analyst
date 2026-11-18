@@ -7631,8 +7631,8 @@ function lvRow(s){
           <span class="sx-val-msg neg"></span></div>`;
       act = `<button class="bt" data-sutakex="${s.key}">Cancel</button><button class="btn btn-primary" data-sutakeok="${s.key}">✓ Open trade</button>`;
     } else
-    if(s.stage==='wickfail') act = `${chart}<button class="bt lvr-fx" data-sutk="${s.key}" title="Open the trade now at the current price, without waiting for the retest">⚡ Take now</button><button class="bt" data-suwx="${s.key}|drop" title="The setup goes to History as invalid">✗ Invalidate</button><button class="btn btn-primary" data-suwx="${s.key}|more" title="Wait for one more candle to close beyond the line">+1 candle</button>${back(3, 'Back to Step 2')}`;
-    else act = `${chart}${s.val || s.stage==='formed' ? `<button class="btn btn-primary" data-suarm="${s.key}" title="Hand this 1H setup to the MT5 executor">⚡ ARM</button>` : ''}<button class="bt lvr-fx" data-sutk="${s.key}" title="Open the trade now at the current price (on the break), without waiting for the retest">⚡ Take now</button>${s.stage==='formed' ? `<button class="bt lvr-w" data-suwatch="${s.key}" title="Keep this zone for later: no trade, a Telegram message when price comes back">☆ Watchlist</button>` : ''}${back(3, 'Back to Step 2 to change Wick / Body or the prices')}${skip}`;
+    if(s.stage==='wickfail') act = `${chart}${armable(s) ? (armFor(s.key) ? `<span class="wl-tag" style="background:rgba(41,98,255,.16);color:#5B8DEF">⚡ Armed</span>` : `<button class="btn btn-primary" data-suarm="${s.key}" title="Hand this formed 1H setup to the MT5 executor">⚡ ARM</button>`) : ''}<button class="bt lvr-fx" data-sutk="${s.key}" title="Open the trade now at the current price, without waiting for the retest">⚡ Take now</button><button class="bt" data-suwx="${s.key}|drop" title="The setup goes to History as invalid">✗ Invalidate</button><button class="btn btn-primary" data-suwx="${s.key}|more" title="Wait for one more candle to close beyond the line">+1 candle</button>${back(3, 'Back to Step 2')}`;
+    else act = `${chart}${armable(s) ? (armFor(s.key) ? `<span class="wl-tag" style="background:rgba(41,98,255,.16);color:#5B8DEF">⚡ Armed</span>` : `<button class="btn btn-primary" data-suarm="${s.key}" title="Hand this formed 1H setup to the MT5 executor">⚡ ARM</button>`) : ''}<button class="bt lvr-fx" data-sutk="${s.key}" title="Open the trade now at the current price (on the break), without waiting for the retest">⚡ Take now</button>${s.stage==='formed' ? `<button class="bt lvr-w" data-suwatch="${s.key}" title="Keep this zone for later: no trade, a Telegram message when price comes back">☆ Watchlist</button>` : ''}${back(3, 'Back to Step 2 to change Wick / Body or the prices')}${skip}`;
   } else if(col==='done'){
     const t = S.trades.get(s.trade_id), W = t.result==='W', R = t.r_multiple!=null ? Number(t.r_multiple) : null;
     mid = `<div class="lvr-live ${W ? 'up' : t.result==='L' ? 'dn' : ''}"><b>${R!=null ? `${R > 0 ? '+' : ''}${fmt(R, R % 1 ? 2 : 0)}R` : esc(t.result)}</b><small>${{ W:'Take profit', L:'Stop loss', BE:'Break-even' }[t.result] || ''}${t.pips!=null ? ` · ${Number(t.pips) > 0 ? '+' : ''}${fmt(Number(t.pips), 1)} pips` : ''}</small></div>`
@@ -7681,11 +7681,28 @@ const SX_COLS = [['forming','Forming','Liquidity taken, waiting for the fractal 
    The EA (to come) polls the armed list, watches the zone for a 5m BOS / CHoCH in the direction, puts the limit at the 0.5 fib of that move,
    SL at its origin, 90% out at 2R, the rest at break-even to the 1H 2R target. Nothing is sent to MT5 from here yet. ===== */
 const ARM_ST = { armed:['⚡ Armed', '#2962FF'], waiting:['⏳ Waiting for 5m break', '#F2A33A'], confirm:['🔔 Confirm to shoot', '#E040FB'], filled:['✅ In trade', '#22AB94'], done:['🏁 Closed', '#787B86'], cancelled:['✕ Disarmed', '#787B86'], expired:['⌛ Expired', '#787B86'], invalid:['❌ Invalidated', '#F23645'] };
+/* only a setup in the "Setup formed" column can be armed: validated 1H liquidity + fractal break, waiting for price */
+const armable = x => !!x && ['formed','wickwait','wickfail'].includes(x.stage) && !suOpenTrade(x) && !suFinished(x);
+const armFor = key => armLive().find(a => a.setup_key===key);
+function armSetupPre(x){ const line = Number(x.val?.line ?? x.bos?.level ?? x.bos?.price), ext = Number(x.liq?.extreme ?? x.liq?.level), hi = Math.max(line, ext), lo = Math.min(line, ext);
+  return { pair:x.pair, dir:x.dir, zone_top:isFinite(hi) ? hi : '', zone_bottom:isFinite(lo) ? lo : '', invalid:isFinite(ext) ? ext : '', setup_key:x.key, tf:x.tf }; }
+function armPick(){
+  const L = deriveSetups().filter(x => armable(x) && !armFor(x.key));
+  let d = document.getElementById('armPick'); if(!d){ d = document.createElement('dialog'); d.id = 'armPick'; d.className = 'sess-dlg'; document.body.appendChild(d); }
+  d.innerHTML = `<div class="sess-h"><b>⚡ ARM · pick a formed setup</b><button class="btn" data-x>✕</button></div>
+    ${L.length ? `<div style="display:grid;gap:8px">${L.map(x => `<button class="arm-c" style="text-align:left;cursor:pointer;font:inherit;color:inherit" data-pick="${esc(x.key)}"><div class="arm-t"><b>${esc(x.pair)}</b><span class="wl-tag" style="background:${x.dir==='Long' ? '#22AB94' : '#F23645'};color:#fff">${x.dir==='Long' ? '▲ Long' : '▼ Short'}</span><span class="muted" style="font-size:12px">${esc(x.tf || '1H')} · formed</span></div><div class="arm-l">Line ${esc(String(x.val?.line ?? '–'))} · sweep ${esc(String(x.liq?.extreme ?? x.liq?.level ?? '–'))}</div></button>`).join('')}</div>`
+      : '<p class="muted" style="margin:0">No setup in “Setup formed” right now. A setup reaches it after the 1H liquidity sweep and the fractal break are validated.</p>'}`;
+  d.querySelector('[data-x]').onclick = () => d.close();
+  d.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { const x = L.find(y => y.key===b.dataset.pick); d.close(); openArm(null, armSetupPre(x)); });
+  d.showModal(); }
 function armAll(){ return Object.entries(S.settings || {}).filter(([k]) => k.startsWith('arm:')).map(([key, v]) => ({ key, ...v })).map(a => ({ ...a, st: ['armed','waiting','confirm'].includes(a.status) && a.until && Date.now() > Date.parse(a.until) ? 'expired' : (a.status || 'armed') })).sort((a, b) => (b.created || '').localeCompare(a.created || '')); }
 const armLive = () => armAll().filter(a => ['armed','waiting','confirm','filled'].includes(a.st));
 const armAccts = () => [...S.accounts.values()].filter(a => (a.status || 'active')==='active').sort((a, b) => String(a.name).localeCompare(String(b.name)));
 function armChecks(x){
   const out = [], ccy = [x.pair.slice(0, 3), x.pair.slice(3, 6)];
+  if(!x.key){ const su = x.setup_key ? deriveSetups().find(s => s.key===x.setup_key) : null;
+    if(!armable(su)) out.push(['bad', 'Only a setup in “Setup formed” can be armed']);
+    else if(armFor(su.key)) out.push(['bad', 'This setup is already armed']); }
   const b = wlBias(x.pair); if(!b || !['bullish','bearish'].includes(b.bias)) out.push(['warn', `No directional weekly bias on ${x.pair} (${b?.bias || 'none'})`]);
   else if((b.bias==='bullish') !== (x.dir==='Long')) out.push(['bad', `Against the ${b.bias} weekly bias`]);
   else out.push(['ok', `With the ${b.bias} bias${b.conv ? ' · ' + b.conv + ' conviction' : ''}`]);
@@ -7707,12 +7724,10 @@ function armPanel(){
         <div class="arm-l">Zone <b>${esc(String(a.zone_bottom))} – ${esc(String(a.zone_top))}</b> · invalid ${a.dir==='Long' ? 'below' : 'above'} <b>${esc(String(a.invalid || (a.dir==='Long' ? a.zone_bottom : a.zone_top)))}</b></div>
         <div class="arm-l">Risk <b>${esc(String(a.risk))}%</b> · ${acc.length ? esc(acc.join(', ')) : '<span style="color:#F23645">no account</span>'}${a.until ? ` · until ${esc(new Date(a.until).toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit', timeZone:'Europe/Bucharest' }))}` : ''}</div>
         ${a.note ? `<div class="arm-l muted">${esc(a.note)}</div>` : ''}
-        <div class="arm-b">${['armed','waiting','confirm'].includes(a.st) ? `<button class="bt" data-armedit="${esc(a.key)}">Edit</button><button class="bt" data-armoff="${esc(a.key)}">✕ Disarm</button>${a.st==='confirm' ? `<button class="btn btn-primary" data-armshoot="${esc(a.key)}">🎯 SHOOT</button>` : ''}` : `<button class="bt" data-armdel="${esc(a.key)}">Remove</button>`}</div></article>`; }).join('')}</div>` : '<p class="muted" style="margin:8px 0 0;font-size:13px">Nothing armed. Validate a 1H setup, then ARM it from its card or with ＋ ARM.</p>'}</section>`; }
+        <div class="arm-b">${['armed','waiting','confirm'].includes(a.st) ? `<button class="bt" data-armedit="${esc(a.key)}">Edit</button><button class="bt" data-armoff="${esc(a.key)}">✕ Disarm</button>${a.st==='confirm' ? `<button class="btn btn-primary" data-armshoot="${esc(a.key)}">🎯 SHOOT</button>` : ''}` : `<button class="bt" data-armdel="${esc(a.key)}">Remove</button>`}</div></article>`; }).join('')}</div>` : '<p class="muted" style="margin:8px 0 0;font-size:13px">Nothing armed. Only setups in “Setup formed” can be armed: use ⚡ ARM on the card, or ＋ ARM to pick one.</p>'}</section>`; }
 function armBind(m){
-  m.querySelector('[data-armnew]')?.addEventListener('click', () => openArm(null));
-  m.querySelectorAll('[data-suarm]').forEach(b => b.onclick = e => { e.stopPropagation(); const x = deriveSetups().find(s => s.key===b.dataset.suarm); if(!x) return;
-    const line = Number(x.val?.line ?? x.bos?.level ?? x.bos?.price), ext = Number(x.liq?.extreme ?? x.liq?.level), hi = Math.max(line, ext), lo = Math.min(line, ext);
-    openArm(null, { pair:x.pair, dir:x.dir, zone_top:isFinite(hi) ? hi : '', zone_bottom:isFinite(lo) ? lo : '', invalid:isFinite(ext) ? ext : '', setup_key:x.key }); });
+  m.querySelector('[data-armnew]')?.addEventListener('click', () => armPick());
+  m.querySelectorAll('[data-suarm]').forEach(b => b.onclick = e => { e.stopPropagation(); const x = deriveSetups().find(s => s.key===b.dataset.suarm); if(!armable(x)) return toast('Only a formed setup can be armed'); openArm(null, armSetupPre(x)); });
   m.querySelectorAll('[data-armedit]').forEach(b => b.onclick = () => openArm(b.dataset.armedit));
   const setSt = async (k, status) => { await saveSettingKey(k, { ...S.settings[k], status, updated:new Date().toISOString() }); renderMain(); };
   m.querySelectorAll('[data-armoff]').forEach(b => b.onclick = () => setSt(b.dataset.armoff, 'cancelled'));
@@ -7724,9 +7739,9 @@ function openArm(key, pre){
     accounts:ls.get('do_arm_acc', []), hours:8, entry:'fib50', tf:'5m', tp1_r:2, tp1_pct:90, runner:'1h2r', setup_key:pre?.setup_key || null, note:'' };
   let d = document.getElementById('armDlg'); if(!d){ d = document.createElement('dialog'); d.id = 'armDlg'; d.className = 'sess-dlg'; document.body.appendChild(d); }
   const accs = armAccts();
-  d.innerHTML = `<form method="dialog" class="arm-f"><div class="sess-h"><b>⚡ ${key ? 'Edit armed setup' : 'ARM a 1H setup'}</b><button class="btn" value="x" formnovalidate>✕</button></div>
-    <div class="arm-row"><label>Pair<select class="inp" name="pair">${[...PAIRS, 'XAUUSD'].map(p => `<option ${p===x.pair ? 'selected' : ''}>${p}</option>`).join('')}</select></label>
-      <label>Direction<select class="inp" name="dir"><option ${x.dir==='Long' ? 'selected' : ''}>Long</option><option ${x.dir==='Short' ? 'selected' : ''}>Short</option></select></label></div>
+  d.innerHTML = `<form method="dialog" class="arm-f"><div class="sess-h"><b>⚡ ${key ? 'Edit armed setup' : 'ARM a formed 1H setup'}</b><button class="btn" value="x" formnovalidate>✕</button></div>
+    <div class="arm-row"><label>Pair<select class="inp" name="pair" disabled>${[...PAIRS, 'XAUUSD'].map(p => `<option ${p===x.pair ? 'selected' : ''}>${p}</option>`).join('')}</select></label>
+      <label>Direction<select class="inp" name="dir" disabled><option ${x.dir==='Long' ? 'selected' : ''}>Long</option><option ${x.dir==='Short' ? 'selected' : ''}>Short</option></select></label></div>
     <div class="arm-row"><label>1H zone top<input class="inp" name="zone_top" inputmode="decimal" value="${esc(String(x.zone_top ?? ''))}" required></label>
       <label>1H zone bottom<input class="inp" name="zone_bottom" inputmode="decimal" value="${esc(String(x.zone_bottom ?? ''))}" required></label>
       <label title="A 1H close beyond this price cancels the setup">Invalidation (1H close)<input class="inp" name="invalid" inputmode="decimal" value="${esc(String(x.invalid ?? ''))}"></label></div>
