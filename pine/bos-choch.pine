@@ -16,18 +16,18 @@ showCH   = input.bool(true, "Show CHoCH", group = G1)
 
 G2 = "Styles"
 swingAs = input.string("HH/LL", "Show swing points as", options = ["HH/LL", "Dots"], group = G2)
-cTop    = input.color(#4CAF50, "Top swing point", group = G2)
-cBot    = input.color(#FF5252, "Bottom swing point", group = G2)
-cBull   = input.color(#4CAF50, "Bull BOS/CHoCH line", group = G2)
-cBear   = input.color(#FF5252, "Bear BOS/CHoCH line", group = G2)
+cTop    = input.color(#3DDC97, "Top swing point", group = G2)
+cBot    = input.color(#F0616D, "Bottom swing point", group = G2)
+cBull   = input.color(#3DDC97, "Bull BOS/CHoCH line", group = G2)
+cBear   = input.color(#F0616D, "Bear BOS/CHoCH line", group = G2)
 lineW   = input.int(1, "Line width", minval = 1, maxval = 4, group = G2)
 brkTxt  = input.string("POC", "Break label", group = G2, tooltip = "Text written on every break. Default POC for both BOS and CHoCH.")
 splitTx = input.bool(false, "Write BOS / CHoCH instead", group = G2)
 
 G3 = "Fair value gaps"
 showFvg  = input.bool(false, "Show FVG after BOS/CHoCH", group = G3, tooltip = "The first fair value gap inside the move that made the break.")
-cFvgBull = input.color(color.new(#4CAF50, 82), "Bull FVG", group = G3)
-cFvgBear = input.color(color.new(#FF5252, 82), "Bear FVG", group = G3)
+cFvgBull = input.color(color.new(#3DDC97, 82), "Bull FVG", group = G3)
+cFvgBear = input.color(color.new(#F0616D, 82), "Bear FVG", group = G3)
 fvgLen   = input.int(15, "FVG box length (bars)", minval = 3, maxval = 200, group = G3)
 
 G4 = "Daily Observer (webhook)"

@@ -30,11 +30,11 @@ sizeIn     = input.string("Normal", "Text size", options = ["Small", "Normal", "
 
 G4 = "Colours"
 themeIn = input.string("Auto", "Theme", options = ["Auto", "Light", "Dark"], group = G4)
-cMain   = input.color(#22AB94, "Main window", group = G4)
-cSec    = input.color(#F2A33A, "Secondary window", group = G4)
-cRoll   = input.color(#F23645, "Rollover", group = G4)
-cExt    = input.color(#2962FF, "Extended window", group = G4)
-cLunch  = input.color(#9598A1, "London lunch (caution)", group = G4)
+cMain   = input.color(#3DDC97, "Main window", group = G4)
+cSec    = input.color(#D9A35B, "Secondary window", group = G4)
+cRoll   = input.color(#F0616D, "Rollover", group = G4)
+cExt    = input.color(#5B8DEF, "Extended window", group = G4)
+cLunch  = input.color(#8A8F98, "London lunch (caution)", group = G4)
 shadeTr = input.int(90, "Shade transparency", minval = 50, maxval = 98, group = G4)
 
 // ───────── Windows per pair (HHMM-HHMM, Romania time) ─────────
@@ -132,10 +132,10 @@ sDay    = "0900-1800"
 
 // ───────── Theme ─────────
 isDark = themeIn == "Dark" or (themeIn == "Auto" and color.r(chart.bg_color) + color.g(chart.bg_color) + color.b(chart.bg_color) < 300)
-cBg    = isDark ? #131722 : #FFFFFF
+cBg    = isDark ? #16181D : #FFFFFF
 cTx    = isDark ? #D1D4DC : #131722
 cSub   = isDark ? #9598A1 : #6A6D78
-cEdge  = isDark ? #2A2E39 : #E0E3EB
+cEdge  = isDark ? #262A33 : #E0E3EB
 
 // ───────── On the chart (intraday, up to 1h) ─────────
 intra = timeframe.isintraday and timeframe.in_seconds() <= 3600
