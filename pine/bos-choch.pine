@@ -7,9 +7,8 @@ indicator("BOS / CHoCH · FX Before Coffee", "BOS/CHoCH", overlay = true, max_li
 
 // ───────── Inputs ─────────
 G1 = "Settings"
-lb       = input.int(5, "Pivot lb", minval = 1, group = G1, inline = "piv")
-rb       = input.int(5, "Pivot rb", minval = 1, group = G1, inline = "piv", tooltip = "Bars to the left / right that define a swing high or low.")
-conf     = input.string("H/L", "Breakout confirmation", options = ["H/L", "Close"], group = G1, tooltip = "H/L: the wick breaking the swing is enough.\nClose: the candle has to close beyond the swing.")
+len      = input.int(5, "Structure length", minval = 2, maxval = 50, group = G1, tooltip = "A swing is confirmed when price makes a new leg after `length` bars (internal structure, like LuxAlgo Price Action Concepts 'Internal 5'). Highs and lows alternate, so small wiggles inside a leg are ignored.")
+conf     = input.string("Close", "Breakout confirmation", options = ["Close", "H/L"], group = G1, tooltip = "Close (recommended, less noise): a candle has to CLOSE beyond the swing.\nH/L: the wick is enough.")
 showHHLL = input.bool(false, "Show HH/LL", group = G1, inline = "sw")
 showHLLH = input.bool(false, "Show HL/LH", group = G1, inline = "sw")
 showBOS  = input.bool(true, "Show BOS", group = G1)
@@ -38,9 +37,14 @@ token    = input.string("", "Token", group = G4, tooltip = "The token from Daily
 
 KEY = str.upper(syminfo.basecurrency + syminfo.currency)
 
-// ───────── Swing points ─────────
-ph = ta.pivothigh(high, lb, rb)
-pl = ta.pivotlow(low, lb, rb)
+// ───────── Swing points (leg logic: highs and lows alternate) ─────────
+// high[len] above every high of the last `len` bars → a bearish leg starts and the top at bar-len is a swing high; mirror for lows
+var int leg = 0
+legHigh = high[len] > ta.highest(len)
+legLow  = low[len] < ta.lowest(len)
+leg := legHigh ? 0 : legLow ? 1 : leg
+newTop = ta.change(leg) != 0 and leg == 0
+newBot = ta.change(leg) != 0 and leg == 1
 
 var float shP      = na
 var int   shB      = na
@@ -54,8 +58,9 @@ var int   trend    = 0
 var float prevH    = na
 var float prevL    = na
 
-if not na(ph)
-    pb   = bar_index - rb
+if newTop
+    pb   = bar_index - len
+    ph   = high[len]
     isHH = na(prevH) or ph > prevH
     if (isHH and showHHLL) or (not isHH and showHLLH)
         if swingAs == "HH/LL"
@@ -65,11 +70,12 @@ if not na(ph)
     prevH    := ph
     shP      := ph
     shB      := pb
-    shT      := time[rb]
+    shT      := time[len]
     shBroken := false
 
-if not na(pl)
-    pb   = bar_index - rb
+if newBot
+    pb   = bar_index - len
+    pl   = low[len]
     isLL = na(prevL) or pl < prevL
     if (isLL and showHHLL) or (not isLL and showHLLH)
         if swingAs == "HH/LL"
@@ -79,12 +85,14 @@ if not na(pl)
     prevL    := pl
     slP      := pl
     slB      := pb
-    slT      := time[rb]
+    slT      := time[len]
     slBroken := false
 
 // ───────── Breaks ─────────
-bullBrk = not shBroken and not na(shP) and (conf == "H/L" ? high > shP : close > shP)
-bearBrk = not slBroken and not na(slP) and (conf == "H/L" ? low < slP : close < slP)
+bullX   = ta.crossover(close, shP)
+bearX   = ta.crossunder(close, slP)
+bullBrk = not shBroken and not na(shP) and (conf == "H/L" ? high > shP : bullX)
+bearBrk = not slBroken and not na(slP) and (conf == "H/L" ? low < slP : bearX)
 
 f_want(bool isCH) => sendWhat == "BOS + CHoCH" or (sendWhat == "CHoCH only" and isCH) or (sendWhat == "BOS only" and not isCH)
 
