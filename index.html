@@ -135,6 +135,8 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .wl-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .wl-h .p{ font-weight:800; font-size:16px; }
   .wl-tag{ font-size:11.5px; font-weight:800; padding:2px 8px; border-radius:999px; }
+  .wl-days{ display:flex; flex-wrap:wrap; gap:6px; } .wl-day{ background:color-mix(in srgb,#2962FF 16%,transparent); color:#5B8DEF; } .wl-day.now{ background:color-mix(in srgb,#22AB94 20%,transparent); color:#22AB94; }
+  .wl-day.exp{ background:color-mix(in srgb,#FF9800 22%,transparent); color:#E08600; } .wl-card:has(.wl-day.exp){ border-color:color-mix(in srgb,#FF9800 55%,var(--line)); }
   .wl-img{ width:100%; border-radius:10px; border:1px solid var(--line); display:block; cursor:zoom-in; }
   .wl-box{ font-size:13px; padding:8px 10px; border-radius:10px; white-space:pre-wrap; }
   .wl-v{ background:color-mix(in srgb,#22AB94 12%,transparent); } .wl-i{ background:color-mix(in srgb,#F23645 10%,transparent); }
@@ -5326,8 +5328,18 @@ const AN_TABS = [['rev','🧾 Weekly review'],['mon','📅 Monthly'],['thr','�
 /* ===== Watchlist: setups you are watching (kept in do_settings as wl:<id>, no schema change) ===== */
 const WL_PAIRS = [...PAIRS, 'XAUUSD'];
 const wlAll = () => Object.entries(S.settings || {}).filter(([k, v]) => k.startsWith('wl:') && v && v.pair).map(([k, v]) => ({ key:k, ...v }))
-  .sort((a, b) => (b.created || '').localeCompare(a.created || ''));
+  .sort((a, b) => (b.status==='active') - (a.status==='active') || (a.status==='active' ? wlDay(a).localeCompare(wlDay(b)) : (b.created || '').localeCompare(a.created || '')));
 const WL_ST = { active:['Watching','#2962FF'], taken:['Trade taken','#22AB94'], invalid:['Invalidated','#F23645'] };
+/* the trading day a setup is for: set in the form; older setups fall back to the day they were written
+   (written from 18:00 on → the next trading day, as after the evening check) */
+const wlNextTD = d => deNextDay(d);
+function wlDefDay(at){ const t = at ? new Date(at) : new Date(), d = iso(t); return t.getHours() >= 18 || [0, 6].includes(t.getDay()) ? wlNextTD(d) : d; }
+function wlExtTo(x){ const t = iso(new Date()), n = wlNextTD(wlDay(x)); return n < t ? ([0, 6].includes(new Date().getDay()) ? wlNextTD(t) : t) : n; }
+const wlDay = x => x.for_day || wlDefDay(x.created);
+function wlDayTag(x){ const d = wlDay(x), today = iso(new Date());
+  if(x.status!=='active') return `<span class="wl-tag wl-day">📅 ${esc(fmtDayShort(d))}</span>`;
+  if(d < today) return `<span class="wl-tag wl-day exp">⏰ Expired · was for ${esc(fmtDayShort(d))}</span>`;
+  return `<span class="wl-tag wl-day ${d===today ? 'now' : ''}">📅 ${d===today ? 'Today' : d===wlNextTD(today) ? 'Tomorrow' : 'For'} · ${esc(fmtDayShort(d))}</span>`; }
 function wlBias(pair){ const r = biasRaw(pair, new Date()); return r ? { bias:r.bias, conv:r.conviction, d:det(r) } : null; }
 /* ===== Daily events: what happened on D1 / H4 / H1 per pair and day, plus what to watch tomorrow (do_settings dev:<day>:<pair>) ===== */
 const DE_TF = [['D','Daily'],['H4','4 hour'],['H1','1 hour']];
@@ -5385,6 +5397,7 @@ function renderWatch(){
     return `<article class="wl-card ${x.status==='active' ? '' : 'off'}" data-wl="${esc(x.key)}">
       <div class="wl-h"><span class="p">${esc(x.pair)}</span><span class="wl-tag" style="background:${L ? '#22AB94' : '#F23645'};color:#fff">${L ? '▲ Long' : '▼ Short'}</span>
         <span class="wl-tag" style="background:color-mix(in srgb,${st[1]} 16%,transparent);color:${st[1]}">${st[0]}</span></div>
+      <div class="wl-days">${wlDayTag(x)}${x.ext?.length ? `<span class="wl-tag" style="background:var(--surface-2);color:var(--muted)" title="${esc(x.ext.map(e => fmtDayShort(e.from) + ' → ' + fmtDayShort(e.to)).join(' · '))}">↻ extended ${x.ext.length}×</span>` : ''}</div>
       <div>${bTag}${x.status==='active' ? (st2 => st2 ? ` <span class="wl-tag" data-sessw title="${esc(st2.sub)}" style="cursor:pointer;background:var(--surface-2)">${SESS_IC[st2.k]} ${esc(st2.lbl)}</span>` : '')(sessState(x.pair)) : ''}</div>
       ${img ? `<img class="wl-img" src="${esc(img)}" alt="TradingView chart for ${esc(x.pair)}" loading="lazy" data-wlimg="${esc(x.img)}">` : x.img ? `<a href="${esc(x.img)}" target="_blank" rel="noopener" class="muted" style="font-size:12.5px">Open the chart ↗</a>` : ''}
       ${x.text ? `<div style="font-size:13.5px;white-space:pre-wrap">${esc(x.text)}</div>` : ''}
@@ -5392,7 +5405,7 @@ function renderWatch(){
       ${x.invalid ? `<div class="wl-box wl-i"><b>✖ Invalidation</b>\n${esc(x.invalid)}</div>` : ''}
       ${x.status==='invalid' && x.reason ? `<div class="muted" style="font-size:12.5px">Invalidated${x.closed ? ' on ' + esc(fmtDayShort(x.closed.slice(0, 10))) : ''}: ${esc(x.reason)}</div>` : ''}
       <div class="wl-foot"><span class="sp">Added ${esc(fmtDayShort((x.created || '').slice(0, 10)))}</span>
-        ${x.status==='active' ? `<button type="button" class="btn btn-primary" data-wltake>Take trade</button><button type="button" class="btn" data-wlinv>Invalidate</button>` : ''}
+        ${x.status==='active' ? `<button type="button" class="btn btn-primary" data-wltake>Take trade</button><button type="button" class="btn ${wlDay(x) < iso(new Date()) ? 'btn-primary' : ''}" data-wlext title="Still valid, not touched: move it to the next trading day">↻ Extend to ${esc(fmtDayShort(wlExtTo(x)))}</button><button type="button" class="btn" data-wlinv>Invalidate</button>` : ''}
         ${x.status==='taken' && tr ? `<button type="button" class="btn" data-wltr>View trade</button>` : ''}
         ${x.status!=='active' ? `<button type="button" class="btn" data-wlre>Watch again</button>` : ''}
         <button type="button" class="btn" data-wled aria-label="Edit setup">Edit</button></div>
@@ -5414,7 +5427,9 @@ function renderWatch(){
     c.querySelector('[data-sessw]')?.addEventListener('click', () => openSessions(c.querySelector('.p')?.textContent));
     c.querySelector('[data-wlinv]')?.addEventListener('click', () => { const bx = c.querySelector('[data-wlinvbox]'); bx.hidden = !bx.hidden; bx.querySelector('input').focus(); });
     c.querySelector('[data-wlinvgo]')?.addEventListener('click', () => upd({ status:'invalid', reason:c.querySelector('[data-wlreason]').value.trim() || null, closed:new Date().toISOString() }).then(() => toast('Setup invalidated')));
-    c.querySelector('[data-wlre]')?.addEventListener('click', () => upd({ status:'active', reason:null, closed:null, trade_id:null }));
+    c.querySelector('[data-wlre]')?.addEventListener('click', () => upd({ status:'active', reason:null, closed:null, trade_id:null, for_day:wlDay(x) < iso(new Date()) ? wlDefDay() : wlDay(x) }));
+    c.querySelector('[data-wlext]')?.addEventListener('click', () => { const from = wlDay(x), to = wlExtTo(x);
+      upd({ for_day:to, ext:[...(x.ext || []), { from, to, at:new Date().toISOString() }] }).then(() => toast(`Extended to ${fmtDayShort(to)}`)); });
     c.querySelector('[data-wltr]')?.addEventListener('click', () => openBacktest(S.bt.rows.get(x.trade_id)));
     c.querySelector('[data-wltake]')?.addEventListener('click', () => openBacktest(null, { pair:x.pair, kind:'live', direction:x.dir, result:'O', day:iso(new Date()), chart_url:x.img || '',
       notes:[x.text, x.valid ? 'Validation: ' + x.valid : '', x.invalid ? 'Invalidation: ' + x.invalid : ''].filter(Boolean).join('\n'),
@@ -5428,6 +5443,8 @@ function openWatch(key, pair){
     <div class="bt-form" style="padding:0 20px 14px">
       <div class="bt-two"><label><span class="lbl">Pair</span><select class="inp" id="wlPair">${WL_PAIRS.map(p => `<option${p===x.pair ? ' selected' : ''}>${p}</option>`).join('')}</select></label>
         <label><span class="lbl">Direction</span><div class="seg bt-ch" role="group"><button type="button" data-wdir="Long" aria-pressed="${dir==='Long'}">▲ Long</button><button type="button" data-wdir="Short" aria-pressed="${dir==='Short'}">▼ Short</button></div></label></div>
+      <label><span class="lbl">Setup for (trading day)</span><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input class="inp" type="date" id="wlDay" value="${wlDay(x)}" style="width:auto">
+        <div class="seg bt-ch" role="group"><button type="button" data-wday="${iso(new Date())}">Today</button><button type="button" data-wday="${wlNextTD(iso(new Date()))}">Next trading day</button></div></div></label>
       <label><span class="lbl">TradingView snapshot link</span><input class="inp" id="wlImg" value="${esc(x.img || '')}" placeholder="https://www.tradingview.com/x/…"></label>
       <div id="wlPrev"></div>
       <label><span class="lbl">What you see</span><textarea class="inp" id="wlText" rows="3" placeholder="The setup in your words">${esc(x.text || '')}</textarea></label>
@@ -5438,6 +5455,8 @@ function openWatch(key, pair){
   const prev = () => { const u = tvImg(dlg.querySelector('#wlImg').value.trim()); dlg.querySelector('#wlPrev').innerHTML = u ? `<img class="wl-img" src="${esc(u)}" alt="Snapshot preview">` : ''; };
   prev(); dlg.querySelector('#wlImg').oninput = prev;
   dlg.querySelectorAll('[data-wdir]').forEach(b => b.onclick = () => { dir = b.dataset.wdir; dlg.querySelectorAll('[data-wdir]').forEach(o => o.setAttribute('aria-pressed', String(o===b))); });
+  const dSync = () => dlg.querySelectorAll('[data-wday]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.wday===dlg.querySelector('#wlDay').value)));
+  dlg.querySelectorAll('[data-wday]').forEach(b => b.onclick = () => { dlg.querySelector('#wlDay').value = b.dataset.wday; dSync(); }); dlg.querySelector('#wlDay').oninput = dSync; dSync();
   dlg.querySelector('#wlCancel').onclick = () => dlg.close();
   dlg.querySelector('#wlDel')?.addEventListener('click', async () => { if(!confirm('Delete this setup?')) return;
     delete S.settings[key]; try{ const { error } = await sb.from('do_settings').delete().eq('key', key); if(error) throw error; }catch(e){ toast('Could not delete: ' + e.message); }
@@ -5445,7 +5464,7 @@ function openWatch(key, pair){
   dlg.querySelector('#wlForm').onsubmit = async ev => { ev.preventDefault();
     const img = dlg.querySelector('#wlImg').value.trim();
     if(img && !/^https?:\/\//i.test(img)) return toast('The chart link must start with https://');
-    const v = { ...x, pair:dlg.querySelector('#wlPair').value, dir, img, text:dlg.querySelector('#wlText').value.trim(), valid:dlg.querySelector('#wlValid').value.trim(), invalid:dlg.querySelector('#wlInv').value.trim(),
+    const v = { ...x, pair:dlg.querySelector('#wlPair').value, dir, img, text:dlg.querySelector('#wlText').value.trim(), valid:dlg.querySelector('#wlValid').value.trim(), invalid:dlg.querySelector('#wlInv').value.trim(), for_day:dlg.querySelector('#wlDay').value || wlDefDay(),
       status:x.status || 'active', created:x.created || new Date().toISOString() };
     const k = key || `wl:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
     await saveSettingKey(k, v); ls.set('do_wl_lastpair', v.pair); dlg.close(); toast('Setup saved'); if(S.view==='watch') renderWatch(); };
