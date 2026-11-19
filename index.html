@@ -834,7 +834,7 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .tf-nav button{ flex:none; border:0; background:none; color:var(--muted); font:inherit; font-size:12.5px; font-weight:800; padding:10px 10px 12px; border-bottom:2px solid transparent; cursor:pointer; display:flex; align-items:center; gap:6px; }
   .tf-nav button:hover{ color:var(--ink); border-bottom-color:var(--accent); }
   .tf-nav i, .tf-tabs i{ width:8px; height:8px; border-radius:50%; background:var(--line); display:inline-block; } .tf-nav i.ok, .tf-tabs i.ok{ background:var(--pos); } .tf-nav i.part{ background:#F2B544; }
-  .tf-body{ flex:1; min-height:0; overflow-y:auto; padding:16px 22px 24px; display:grid; gap:14px; align-content:start; scroll-padding-top:12px; background:var(--surface-2); }
+  .tf-body{ position:relative; flex:1; min-height:0; overflow-y:auto; padding:16px 22px 24px; display:grid; gap:14px; align-content:start; scroll-padding-top:12px; background:var(--surface-2); }
   .tf-sec{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px 18px 18px; display:grid; gap:14px; scroll-margin-top:12px; }
   .tf-sec > header{ display:flex; align-items:center; gap:12px; } .tf-sec h3{ margin:0; font-size:16px; font-weight:800; } .tf-sec header p{ margin:2px 0 0; font-size:12.5px; color:var(--muted); }
   .tf-n{ width:28px; height:28px; flex:none; border-radius:9px; display:grid; place-items:center; font-weight:800; font-size:14px; background:color-mix(in srgb,var(--accent) 22%,transparent); color:var(--ink); }
@@ -6280,7 +6280,7 @@ function openBacktest(row, keep){
   dlg.querySelectorAll('[data-res]').forEach(b => b.onclick = () => { F.result = b.dataset.res; draw(); });
   HTF_TF.forEach(([k]) => { const inp = $('#htfU-' + k), a = $('#htfI-' + k); const pv = () => { const u = inp.value.trim(), im = tvImg(u); a.href = /^https?:\/\//i.test(u) ? u : '#'; a.innerHTML = im ? `<img src="${im}" alt="${k} snapshot" loading="lazy" onerror="this.remove()">` : ''; a.style.display = im ? '' : 'none'; }; inp.addEventListener('input', pv); pv(); });
   $('#btCancel').onclick = () => dlg.close();
-  dlg.querySelectorAll('[data-tfgo]').forEach(b => b.onclick = () => $('#' + b.dataset.tfgo).scrollIntoView({ behavior:'smooth', block:'start' }));
+  dlg.querySelectorAll('[data-tfgo]').forEach(b => b.onclick = () => { const bd = dlg.querySelector('.tf-body'); bd.scrollTo({ top:$('#' + b.dataset.tfgo).offsetTop - 12, behavior:'smooth' }); dlg.scrollTop = 0; });
   dlg.querySelectorAll('[data-htft]').forEach(b => b.onclick = () => { dlg.querySelectorAll('[data-htft]').forEach(x => x.setAttribute('aria-pressed', String(x===b))); dlg.querySelectorAll('[data-htfp]').forEach(p => p.hidden = p.dataset.htfp!==b.dataset.htft); });
   const tfState = () => { const v = id => ($(id)?.value || '').trim(), live = F.kind==='live';
     const htfN = HTF_TF.filter(([k]) => v('#htfU-' + k) || v('#htfN-' + k)).length;
