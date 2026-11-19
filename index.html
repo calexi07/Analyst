@@ -2615,12 +2615,13 @@ const ICONS = {
 const ico = (k, s = 18) => `<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]||''}</svg>`;
 const NAV = [
   [null, [['today','Today','home']]],
-  ['Fundamental Analyse', [['journal','Calendar','calendar'],['history','Check','trend'],['watch','Watchlist','target'],['devents','Daily events','spark'],['setups','Auto-trader','bolt'],['backtest','Trades','flask'],['analyst','Analyst','radar']]],
+  ['Fundamental Analyse', [['journal','Calendar','calendar'],['history','Check','trend'],['watch','Watchlist','target'],['backtest','Trades','flask'],['analyst','Analyst','radar']]],
   ['Money', [['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target']]],
   ['Tools', [['health','Health','radar'],['prompts','Prompts','spark']]],
 ];
 const navActive = v => S.view===v || (v==='history' && ['overview','analysis'].includes(S.view));
-const GONE_VIEWS = ['trades','analysis'];   /* Trades was removed from the app (Nov 2026); Backtest replaces trades. Setups came back as the Auto-trader (18 Nov 2026) */
+const GONE_VIEWS = ['trades','analysis','setups','devents'];   /* setups (Auto-trader) and devents (Daily events) hidden for now (19 Nov 2026); the ?app=setups PWA still opens the Auto-trader */
+/* was: */ //   /* Trades was removed from the app (Nov 2026); Backtest replaces trades. Setups came back as the Auto-trader (18 Nov 2026) */
 /* ===== notifications in the Setups app (Web Push) — the server sends every alert here instead of Telegram ===== */
 const VAPID_PUBLIC = 'BAOgsdSJNvxen175cWjqvGRMSR9Hk-iBm7cyNcxtDF0ZgxW445gRNcaVvXKfQDqQfUD6kqK_k7MGaEUmJa2yWuw';
 const PUSH = { st: 'checking' };   /* on · off · blocked · unsupported · checking · busy */
@@ -2780,7 +2781,7 @@ function render(){
 function openMore(){
   const d = document.getElementById('moreDlg'), light = document.documentElement.dataset.theme === 'light';
   d.innerHTML = `<div class="dlg-head"><h2>More</h2></div><div class="dlg-body more-g">
-    ${[['watch','Watchlist','target'],['devents','Daily events','spark'],['setups','Auto-trader','bolt'],['analyst','Analyst','radar'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['health','Health','radar'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
+    ${[['watch','Watchlist','target'],['analyst','Analyst','radar'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['health','Health','radar'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
     <button class="more-i" data-ma="share">${ico('share', 22)}<span>Share</span></button>
     <button class="more-i" data-ma="data">${ico('swap', 22)}<span>Import / export</span></button>
     <button class="more-i" data-ma="theme">${ico(light ? 'moon' : 'sun', 22)}<span>${light ? 'Dark' : 'Light'} theme</span></button></div>`;
