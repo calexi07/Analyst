@@ -6223,7 +6223,7 @@ function openBacktest(row, keep){
   dlg.innerHTML = `<form id="btForm" method="dialog" class="tf">
     <div class="tf-head">
       <div class="tf-top"><div><h2 id="btTitle"></h2><div class="tf-sum" id="tfSum"></div></div>${chips('kind', [['live','🟢 Live'],['bt','🧪 Backtest']], F.kind)}</div>
-      <nav class="tf-nav" id="tfNav">${[['tfS1','Trade'],['tfS2','Timing'],['tfS3','Prices'],['tfS4','HTF context'],['tfS5','Chart & notes'],['tfS6','Fundamentals']].map(([id, l], i) => `<button type="button" data-tfgo="${id}"><i data-tfdot="${id}"></i>${i + 1}. ${l}</button>`).join('')}</nav>
+      <nav class="tf-nav" id="tfNav">${[['tfS1','Trade'],['tfS4','HTF context'],['tfS2','Timing'],['tfS3','Prices'],['tfS5','Chart & notes'],['tfS6','Fundamentals']].map(([id, l], i) => `<button type="button" data-tfgo="${id}"><i data-tfdot="${id}"></i>${i + 1}. ${l}</button>`).join('')}</nav>
     </div>
     <div class="tf-body">
       <section class="tf-sec" id="tfS1"><header><span class="tf-n">1</span><div><h3>The trade</h3><p>Pair, direction and how it ended</p></div></header>
@@ -6233,7 +6233,13 @@ function openBacktest(row, keep){
           <label class="tf-wide"><span class="lbl">Result <em>*</em></span>${chips('res', [['W','✓ Win (TP)'],['L','✗ Loss (SL)'],['BE','= Break-even'],['O','◷ Still open']], F.result)}</label>
           <label><span class="lbl">R multiple</span><input class="inp num" id="btR" inputmode="decimal" value="${r.r ?? ''}" placeholder="+2 / −1 (auto from result)"></label>
         </div></section>
-      <section class="tf-sec" id="tfS2"><header><span class="tf-n">2</span><div><h3>Timing</h3><p>Romania time · exit day = entry day if left empty</p></div></header>
+      <section class="tf-sec" id="tfS4"><header><span class="tf-n">2</span><div><h3>HTF context</h3><p>A TradingView snapshot and a line on what you saw, per timeframe</p></div></header>
+        <div class="seg tf-tabs" role="tablist">${HTF_TF.map(([k, l], i) => `<button type="button" role="tab" data-htft="${k}" aria-pressed="${i===0}">${l}<i data-htfok="${k}"></i></button>`).join('')}</div>
+        ${HTF_TF.map(([k, l], i) => { const h = btx.htf?.[k] || {}; return `<div class="tf-htf" data-htfp="${k}" ${i ? 'hidden' : ''}>
+          <div class="tf-htf-in"><label><span class="lbl">${l} snapshot link</span><input class="inp" id="htfU-${k}" value="${esc(h.url || '')}" placeholder="https://www.tradingview.com/x/…"></label>
+          <label><span class="lbl">${l} comment</span><textarea class="inp" id="htfN-${k}" rows="3" placeholder="Trend, zone, liquidity, where price is in the range…">${esc(h.note || '')}</textarea></label></div>
+          <a class="htf-img tf-prev" id="htfI-${k}" target="_blank" rel="noopener"></a></div>`; }).join('')}</section>
+      <section class="tf-sec" id="tfS2"><header><span class="tf-n">3</span><div><h3>Timing</h3><p>Romania time · exit day = entry day if left empty</p></div></header>
         <div class="tf-grid g4">
           <label><span class="lbl">Entry day <em>*</em></span><input class="inp" type="date" id="btD" value="${F.day}" required></label>
           <label><span class="lbl">Entry time</span><input class="inp" type="time" id="btT" value="${esc(r.entry_time || '')}"></label>
@@ -6241,19 +6247,13 @@ function openBacktest(row, keep){
           <label><span class="lbl">Exit time</span><input class="inp" type="time" id="btXT" value="${esc(btx.exit_time || '')}"></label>
         </div>
         <div class="tf-dur">⏱ Duration <output id="btDurO">–</output></div></section>
-      <section class="tf-sec" id="tfS3"><header><span class="tf-n">3</span><div><h3>Prices &amp; excursion</h3><p>Optional · how far it went for and against you</p></div></header>
+      <section class="tf-sec" id="tfS3"><header><span class="tf-n">4</span><div><h3>Prices &amp; excursion</h3><p>Optional · how far it went for and against you</p></div></header>
         <div class="tf-grid g4">
           <label><span class="lbl">Entry price</span><input class="inp num" id="btE" inputmode="decimal" value="${r.entry ?? ''}" placeholder="1.08250"></label>
           <label><span class="lbl">Stop loss</span><input class="inp num" id="btS" inputmode="decimal" value="${r.sl ?? ''}" placeholder="1.08100"></label>
           <label><span class="lbl">Max favourable (R)</span><input class="inp num" id="btM" inputmode="decimal" value="${r.mfe_r ?? ''}" placeholder="e.g. 1.6"></label>
           <label><span class="lbl">Max adverse (R)</span><input class="inp num" id="btMae" inputmode="decimal" value="${btx.mae_r ?? ''}" placeholder="e.g. 0.7"></label>
         </div><div id="btExpo"></div></section>
-      <section class="tf-sec" id="tfS4"><header><span class="tf-n">4</span><div><h3>HTF context</h3><p>A TradingView snapshot and a line on what you saw, per timeframe</p></div></header>
-        <div class="seg tf-tabs" role="tablist">${HTF_TF.map(([k, l], i) => `<button type="button" role="tab" data-htft="${k}" aria-pressed="${i===0}">${l}<i data-htfok="${k}"></i></button>`).join('')}</div>
-        ${HTF_TF.map(([k, l], i) => { const h = btx.htf?.[k] || {}; return `<div class="tf-htf" data-htfp="${k}" ${i ? 'hidden' : ''}>
-          <div class="tf-htf-in"><label><span class="lbl">${l} snapshot link</span><input class="inp" id="htfU-${k}" value="${esc(h.url || '')}" placeholder="https://www.tradingview.com/x/…"></label>
-          <label><span class="lbl">${l} comment</span><textarea class="inp" id="htfN-${k}" rows="3" placeholder="Trend, zone, liquidity, where price is in the range…">${esc(h.note || '')}</textarea></label></div>
-          <a class="htf-img tf-prev" id="htfI-${k}" target="_blank" rel="noopener"></a></div>`; }).join('')}</section>
       <section class="tf-sec" id="tfS5"><header><span class="tf-n">5</span><div><h3>Chart &amp; notes</h3><p>Your entry snapshot, confluences and lessons</p></div></header>
         <div class="tf-grid">
           <label class="tf-wide"><span class="lbl" id="btULbl">Chart link</span><input class="inp" id="btU" value="${esc(r.chart_url || '')}" placeholder="TradingView snapshot of the entry"></label>
