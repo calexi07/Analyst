@@ -826,6 +826,7 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   /* trade form (redesign 19 Nov 2026): sticky header with section nav, numbered cards, sticky footer with what is still missing */
   dialog.tf-dlg[open]{ display:flex; flex-direction:column; height:min(92vh,980px); overflow:hidden; }
   .tf{ display:flex; flex-direction:column; min-height:0; height:100%; }
+  dialog.tf-dlg > .dlg-x{ position:absolute !important; top:14px; right:14px; float:none; margin:0; z-index:5; }
   .tf-head{ padding:18px 22px 0; border-bottom:1px solid var(--line); background:var(--surface); }
   .tf-top{ display:flex; align-items:flex-start; gap:12px; flex-wrap:wrap; padding-right:44px; } .tf-top > div:first-child{ flex:1; min-width:220px; }
   .tf-top h2{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:22px; margin:0; } .tf-sum{ color:var(--muted); font-weight:700; font-size:13px; margin-top:3px; }
