@@ -823,6 +823,32 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .bt-t th{ text-align:left; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); padding:8px 10px; border-bottom:1px solid var(--line); }
   .bt-t td{ padding:9px 10px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; } .bt-t tbody tr{ cursor:pointer; } .bt-t tbody tr:hover{ background:var(--hover); }
   .bt-form{ display:grid; gap:14px; } .bt-form label{ display:grid; gap:4px; } .bt-form label.sx-sw{ display:flex; } .bt-two{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  /* trade form (redesign 19 Nov 2026): sticky header with section nav, numbered cards, sticky footer with what is still missing */
+  dialog.tf-dlg[open]{ display:flex; flex-direction:column; height:min(92vh,980px); overflow:hidden; }
+  .tf{ display:flex; flex-direction:column; min-height:0; height:100%; }
+  .tf-head{ padding:18px 22px 0; border-bottom:1px solid var(--line); background:var(--surface); }
+  .tf-top{ display:flex; align-items:flex-start; gap:12px; flex-wrap:wrap; padding-right:44px; } .tf-top > div:first-child{ flex:1; min-width:220px; }
+  .tf-top h2{ font-family:'Bricolage Grotesque',sans-serif; font-weight:800; font-size:22px; margin:0; } .tf-sum{ color:var(--muted); font-weight:700; font-size:13px; margin-top:3px; }
+  .tf-nav{ display:flex; gap:4px; overflow-x:auto; margin:14px -22px 0; padding:0 22px; scrollbar-width:none; }
+  .tf-nav button{ flex:none; border:0; background:none; color:var(--muted); font:inherit; font-size:12.5px; font-weight:800; padding:10px 10px 12px; border-bottom:2px solid transparent; cursor:pointer; display:flex; align-items:center; gap:6px; }
+  .tf-nav button:hover{ color:var(--ink); border-bottom-color:var(--accent); }
+  .tf-nav i, .tf-tabs i{ width:8px; height:8px; border-radius:50%; background:var(--line); display:inline-block; } .tf-nav i.ok, .tf-tabs i.ok{ background:var(--pos); } .tf-nav i.part{ background:#F2B544; }
+  .tf-body{ flex:1; min-height:0; overflow-y:auto; padding:16px 22px 24px; display:grid; gap:14px; align-content:start; scroll-padding-top:12px; background:var(--surface-2); }
+  .tf-sec{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:16px 18px 18px; display:grid; gap:14px; scroll-margin-top:12px; }
+  .tf-sec > header{ display:flex; align-items:center; gap:12px; } .tf-sec h3{ margin:0; font-size:16px; font-weight:800; } .tf-sec header p{ margin:2px 0 0; font-size:12.5px; color:var(--muted); }
+  .tf-n{ width:28px; height:28px; flex:none; border-radius:9px; display:grid; place-items:center; font-weight:800; font-size:14px; background:color-mix(in srgb,var(--accent) 22%,transparent); color:var(--ink); }
+  .tf-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 14px; } .tf-grid.g4{ grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .tf-grid label, .tf-htf label{ display:grid; gap:5px; align-content:start; } .tf-wide{ grid-column:1 / -1; }
+  .tf .lbl em{ color:var(--neg); font-style:normal; font-weight:800; }
+  .tf-dur{ display:inline-flex; align-items:center; gap:8px; justify-self:start; padding:8px 14px; border-radius:999px; background:var(--surface-2); font-size:13px; font-weight:700; color:var(--muted); } .tf-dur output{ color:var(--ink); font-weight:800; }
+  .tf-tabs{ justify-self:start; } .tf-tabs button{ display:inline-flex; align-items:center; gap:7px; min-height:36px; }
+  .tf-htf{ display:grid; grid-template-columns:minmax(0,1fr) 220px; gap:14px; align-items:start; } .tf-htf[hidden]{ display:none; } .tf-htf-in{ display:grid; gap:10px; }
+  .tf-prev img{ width:100%; border-radius:10px; display:block; border:1px solid var(--line); }
+  .tf-checks{ display:flex; flex-wrap:wrap; gap:8px 22px; }
+  .tf-foot{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:12px 22px 16px; border-top:1px solid var(--line); background:var(--surface); }
+  .tf-miss{ margin-right:auto; font-size:13px; color:var(--muted); } .tf-miss b{ color:var(--ink); }
+  @media (max-width:700px){ .tf-grid.g4{ grid-template-columns:repeat(2,minmax(0,1fr)); } .tf-htf{ grid-template-columns:1fr; } .tf-head{ padding:14px 16px 0; } .tf-nav{ margin:10px -16px 0; padding:0 16px; } .tf-body{ padding:12px 12px 20px; } .tf-sec{ padding:14px; } .tf-foot{ padding:10px 14px 14px; } .tf-miss{ flex-basis:100%; } }
+  @media (max-width:420px){ .tf-grid{ grid-template-columns:1fr; } }
   .htf-box{ display:grid; gap:8px; padding:10px; border:1px solid var(--line); border-radius:12px; }
   .htf-row{ display:grid; grid-template-columns:56px minmax(0,1fr) auto; gap:10px; align-items:start; }
   .htf-tf{ font-weight:800; padding-top:9px; } .htf-in{ display:grid; gap:6px; }
@@ -2299,7 +2325,7 @@ setTimeout(function(){var sp=document.getElementById('splash');if(!sp||!document
 <script type="application/json" id="promptData">[{"id": "phase1", "group": "weekly", "step": 1, "title": "Phase 1 — Weekly research", "when": "Saturday / Sunday · attach last week's report", "desc": "The AI rebuilds last week from its own research (scheduled + unscheduled news), re-scores every currency and writes the full report for the coming week, including the Section 12 import block.", "text": "WEEKLY FUNDAMENTAL UPDATE — PHASE 1 (research only)\n\nAttached: your report from last week.\n\nUpdate the full analysis for the coming week using only your own research.\nDo NOT ask for or use price action yet — I will send it after you finish.\n\n1. Rebuild last week (search, do not rely on memory). For USD, EUR, GBP, JPY, CHF, CAD,\n   AUD, NZD and XAU, find everything that happened Mon–Fri plus the weekend:\n   - scheduled data and central-bank decisions/speakers\n   - UNSCHEDULED events: political and fiscal crises (governments, budgets, bond spreads —\n     including big euro-area states like France, Italy, Germany), geopolitics, trade policy,\n     commodity shocks, interventions, haven flows, credit stress\n   Cite a source for every event you use.\n2. Re-score every currency from the evidence. Do not anchor on last week's numbers; every\n   change must be justified.\n3. Produce the complete report in the usual structure, valid for the coming week, including\n   Section 12 \"Daily Observer Import\" with \"valid_week\" set to the NEXT ISO week.\n   Bias rule: if the weekly label is Neutral/Two-sided but the horizon or main driver clearly\n   leans one way, set \"bias\" to that direction with conviction \"low\" and keep the original\n   wording in \"summary\".\n4. State the data cut-off (Friday close plus any weekend news) at the top.\n\nWhen you are done, write: \"PHASE 1 COMPLETE — send the price action.\"\n\n----- Section 12 specification -----\nAt the very end of the report, after the Trader Handoff section, add one more section:\n\"12. Daily Observer Import\".\n\nIt must contain:\n- a short line: \"Copy this block and paste it into Daily Observer → Import / export.\"\n- a \"Copy\" button that copies the block below to the clipboard (navigator.clipboard.writeText)\n- a <pre id=\"dobs-import\"> block containing ONE valid JSON object and nothing else\n\nThe JSON must be strictly valid: double quotes only, no comments, no trailing commas, escape inner quotes.\nIt must only restate what is already in the report — do not add new analysis.\n\nSchema:\n{\n  \"format\": \"daily-observer-fundamentals\",\n  \"version\": 1,\n  \"report_date\": \"YYYY-MM-DD\",\n  \"report_title\": \"Forex Fundamental Bias Engine — Week NN\",\n  \"valid_week\": { \"year\": 2026, \"week\": NN },          // ISO week the analysis is FOR (the trading week that starts the Monday after the report)\n  \"currencies\": {\n    \"USD\": { \"score\": 4, \"state\": \"Strong\", \"note\": \"one-line thesis state\" }\n    // same for EUR, GBP, JPY, CHF, CAD, AUD, NZD, XAU\n  },\n  \"pairs\": [                                            // ALL pairs in the 28-pair matrix + XAUUSD\n    {\n      \"pair\": \"EURUSD\",                                 // 6 letters, no slash\n      \"bias\": \"bearish\",                                // bullish | bearish | two-sided | neutral\n      \"conviction\": \"medium\",                           // low | medium | high\n      \"summary\": \"Bearish (EUR -1 vs USD +4)\",          // same wording as the weekly bias history\n      \"base_state\": \"Weak\",                             // Strong | Improving | Neutral | Weakening | Weak\n      \"base_score\": -1,                                 // number from the scorecard\n      \"quote_state\": \"Strong\",\n      \"quote_score\": 4,\n      \"main_driver\": \"one or two sentences\",\n      \"drivers\": [\"secondary driver 1\", \"secondary driver 2\"],      // [] if none\n      \"catalysts\": [ { \"date\": \"28 Oct\", \"event\": \"FOMC decision\", \"imp\": \"CRITICAL\" } ],  // imp: LOW | MEDIUM | HIGH | CRITICAL\n      \"priced\": \"what is already priced in\",\n      \"invalidation\": \"what would invalidate the thesis\",\n      \"horizon\": \"Swing: mild bearish\",\n      \"alignment\": \"Aligned\",                           // Aligned | Partial conflict | Conflicting | Neutral\n      \"alignment_note\": \"short explanation\",\n      \"changed\": \"what changed vs last week for this pair (both currencies)\"\n    }\n  ],\n  \"news\": [                                             // every dated event from the Catalyst Calendar\n    { \"date\": \"2026-10-28\", \"currency\": \"USD\", \"event\": \"FOMC decision\", \"importance\": \"CRITICAL\" }\n    // ISO dates only; one entry per currency (an event for \"USD, XAU\" becomes one USD entry); skip \"Ongoing\"/undated items\n  ]\n}"}, {"id": "export", "group": "weekly", "step": 2, "title": "Export price action", "when": "after the AI says “PHASE 1 COMPLETE”", "action": "export", "desc": "Copy the daily-close export for the week that just ended. Nothing to paste here — use the button."}, {"id": "phase2", "group": "weekly", "step": 3, "title": "Phase 2 — Price-action confirmation", "when": "send together with the price-action export", "desc": "The AI checks its analysis against what price actually did and re-checks only real anomalies. Price can never flip a bias on its own — only a news item it missed or misweighted can change the analysis.", "text": "WEEKLY FUNDAMENTAL UPDATE — PHASE 2 (price-action confirmation)\n\nAttached: my price-action export for last week (\"daily-observer-price-action\" JSON:\ndaily close % per pair). Use it only to CONFIRM your Phase 1 analysis, not to rebuild it.\nFundamentals describe direction over several weeks — a single week of price against the\nbias is normal and is NOT, by itself, evidence that the analysis is wrong.\n\n1. Treat my logged closes as ground truth; fetch real daily closes for every pair in\n   \"pairs_not_logged\". If closes are not available, use ECB reference rates (state the\n   fixing time) and derive the crosses from them; say clearly which days are missing.\n   Build the realized currency-strength ranking (use the crosses, not only the USD pairs,\n   to isolate each currency).\n2. Flag ANOMALIES only:\n   - a pair whose weekly move against the bias you gave it is larger than ~1.5x its normal\n     weekly range (roughly: >0.8% for EURGBP/EURCHF, >1.2% for majors, >1.8% for GBPJPY/XAU)\n   - a currency whose realized rank differs from its score rank by 3 or more places\n   - a currency that moved against its score consistently on the crosses for 2+ sessions\n3. For each anomaly, run a TARGETED re-check for a concrete fundamental cause, with a source\n   (the country's politics, fiscal news, central-bank speakers, interventions, flows,\n   commodities). Then classify:\n   MISSED NEWS · MISWEIGHTED KNOWN NEWS · ALREADY PRICED · FLOWS/POSITIONING ·\n   TECHNICAL RETRACEMENT · NOISE\n   - Only MISSED NEWS or MISWEIGHTED KNOWN NEWS may change a score or a bias.\n   - ALREADY PRICED, FLOWS/POSITIONING, TECHNICAL RETRACEMENT and NOISE never change the bias.\n   - A single week against the bias with no fundamental cause changes nothing.\n     After 2–3 consecutive weeks against the bias with no cause, lower conviction by ONE\n     level only.\n   - Price alone never flips a bias. Never invent a cause to fit the chart.\n   - For each anomaly, state whether it looks like a retracement inside an intact\n     fundamental trend or an early sign the market is pricing something new — and what\n     would confirm it next week.\n4. Output:\n   - \"0a. Price-Action Check\": hit-rate table (last week's bias vs realized move, every pair)\n     and the realized currency ranking vs scores\n   - \"0b. Self-Correction Log\": each anomaly, what you re-checked, the cause and\n     classification, and what changed (or why nothing changed)\n   - the final report, where only MISSED NEWS / MISWEIGHTED KNOWN NEWS corrections are\n     applied; in every affected pair's \"changed\" field, note that the change came from the\n     Phase 2 check\n   - a NEW Section 12 \"Daily Observer Import\" block reflecting the corrections (same format,\n     same \"valid_week\")\n5. Section 12 quality rules (apply even if nothing was corrected):\n   - Rewrite \"alignment\" and \"alignment_note\" for EVERY pair from the realized price data —\n     never leave Phase 1 \"provisional\" wording in the final block.\n   - \"priced\" must be pair-specific text in every pair — no placeholders and no references\n     to other sections of the report.\n   - Any currency score change of 3 points or more versus last week (from Phase 1 or\n     Phase 2) must be listed in 0b with its source.\nIf nothing needed correcting, say so — but still output Section 12 with the rules above applied."}, {"id": "import", "group": "weekly", "step": 4, "title": "Import into Daily Observer", "when": "copy Section 12 from the Phase 2 answer", "action": "import", "desc": "Paste the Section 12 block, choose the next week, the pairs and the sections."}]</script>
 <dialog id="pfDlg" class="panel" aria-label="Purchase" style="width:min(560px,96vw)"></dialog>
 <dialog id="wlDlg" class="panel" aria-label="Watchlist setup" style="width:min(620px,96vw)"></dialog>
-<dialog id="btDlg" class="panel" aria-label="Backtest trade" style="width:min(680px,96vw)"></dialog>
+<dialog id="btDlg" class="panel tf-dlg" aria-label="Log a trade" style="width:min(860px,96vw)"></dialog>
 <dialog id="bankDlg" class="panel" aria-label="Bank entry" style="width:min(560px,96vw)"></dialog>
 <dialog id="qaDlg" class="panel" aria-label="Quick add trade" style="width:min(520px,94vw)"></dialog>
 <dialog id="trDlg" class="panel" aria-label="Trade" style="width:min(760px,96vw)"></dialog>
@@ -6187,55 +6213,60 @@ function openBacktest(row, keep){
     dlg.querySelector('#btQs')?.addEventListener('change', e => { F.quote_score = parseNum(e.target.value); draw(); });
     ['dir','res','brk','kind'].forEach(k => dlg.querySelectorAll(`[data-${k}]`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset[k]===String({ dir:F.direction, res:F.result, brk:F.break_type, kind:F.kind }[k])))));
     dlg.querySelector('#btTitle').textContent = `${row ? 'Edit' : 'Log'} ${F.kind==='live' ? 'a live trade' : 'a backtest trade'}`;
-    dlg.querySelector('#btRunWrap').style.visibility = F.kind==='live' ? 'hidden' : '';
-    dlg.querySelector('#btULbl').textContent = F.kind==='live' ? 'TradingView snapshot (required)' : 'Chart link';
+    dlg.querySelector('#btRunWrap').style.display = F.kind==='live' ? 'none' : '';
+    dlg.querySelector('#btULbl').innerHTML = F.kind==='live' ? 'Entry snapshot (TradingView) <em>*</em>' : 'Chart link';
     { const box = dlg.querySelector('#btExpo'); if(box){ const me = { id:row?.id ?? '__new', pair:F.pair, direction:F.direction, run:LIVE_RUN, result:'O' };
       box.innerHTML = F.kind==='live' && F.result==='O' ? expoHtml(openLive(me), 'Exposure with this trade included.') : ''; } }
     const rIn = dlg.querySelector('#btR'); if(rIn && !rIn.dataset.touched && F.result) rIn.value = { W:2, L:-1, BE:0 }[F.result] ?? '';
   };
-  dlg.innerHTML = `<form id="btForm" method="dialog">
-    <div class="dlg-head"><h2 id="btTitle"></h2></div>
-    <div class="dlg-body bt-form">
-      <label><span class="lbl">Type</span>${chips('kind', [['live','🟢 Live trade (executed)'],['bt','🧪 Backtest (replay)']], F.kind)}</label>
-      <div class="g3">
-        <label><span class="lbl">Pair</span><select class="inp" id="btP">${[...new Set([...allPairs(), F.pair])].map(p => `<option ${p===F.pair ? 'selected' : ''}>${p}</option>`).join('')}</select></label>
-        <label><span class="lbl">Entry day</span><input class="inp" type="date" id="btD" value="${F.day}" required></label>
-        <label><span class="lbl">Entry time (RO)</span><input class="inp" type="time" id="btT" value="${esc(r.entry_time || '')}"></label>
-      </div>
-      <div class="g3">
-        <label><span class="lbl">Exit day</span><input class="inp" type="date" id="btXD" value="${esc(btx.exit_day || '')}"></label>
-        <label><span class="lbl">Exit time (RO)</span><input class="inp" type="time" id="btXT" value="${esc(btx.exit_time || '')}"></label>
-        <label><span class="lbl">Duration</span><output class="inp" id="btDurO" style="display:flex;align-items:center;font-weight:700">–</output></label>
-      </div>
-      <label><span class="lbl">Direction</span>${chips('dir', [['Long','▲ Long'],['Short','▼ Short']], F.direction)}</label>
-      <div class="htf-box"><span class="lbl">HTF context <span class="muted" style="font-weight:600">(TradingView snapshot + comment, optional)</span></span>
-        ${HTF_TF.map(([k, l]) => { const h = btx.htf?.[k] || {}; return `<div class="htf-row"><b class="htf-tf">${l}</b>
-          <div class="htf-in"><input class="inp" id="htfU-${k}" value="${esc(h.url || '')}" placeholder="TradingView snapshot link (${l})">
-          <textarea class="inp" id="htfN-${k}" rows="2" placeholder="What do you see on the ${l}? Trend, zone, liquidity…">${esc(h.note || '')}</textarea></div>
-          <a class="htf-img" id="htfI-${k}" target="_blank" rel="noopener"></a></div>`; }).join('')}</div>
-      <div class="bt-two">
-        <label><span class="lbl">Result</span>${chips('res', [['W','Win (TP)'],['L','Loss (SL)'],['BE','Break-even'],['O','Open']], F.result)}</label>
-        <label><span class="lbl">R</span><input class="inp num" id="btR" inputmode="decimal" value="${r.r ?? ''}" placeholder="+2 / −1"></label>
-      </div>
-      <div class="g3">
-        <label><span class="lbl">Entry</span><input class="inp num" id="btE" inputmode="decimal" value="${r.entry ?? ''}" placeholder="optional"></label>
-        <label><span class="lbl">Stop loss</span><input class="inp num" id="btS" inputmode="decimal" value="${r.sl ?? ''}" placeholder="optional"></label>
-        <label><span class="lbl">Max favourable (R)</span><input class="inp num" id="btM" inputmode="decimal" value="${r.mfe_r ?? ''}" placeholder="best point, e.g. 1.6"></label>
-        <label><span class="lbl">Max adverse (R)</span><input class="inp num" id="btMae" inputmode="decimal" value="${btx.mae_r ?? ''}" placeholder="worst point, e.g. 0.7"></label>
-      </div>
-      <div id="btExpo"></div>
-      <div id="btCtx" class="bt-cx"></div>
-      <div class="bt-two">
-        <label id="btRunWrap"><span class="lbl">Run (group of backtests)</span><input class="inp" id="btRunIn" list="btRunsL" value="${esc(r.run || '')}" placeholder="e.g. EURUSD Q3 2026"><datalist id="btRunsL">${runs.map(x => `<option>${esc(x)}</option>`).join('')}</datalist></label>
-        <label><span class="lbl" id="btULbl">Chart link</span><input class="inp" id="btU" value="${esc(r.chart_url || '')}" placeholder="TradingView snapshot"></label>
-      </div>
-      ${cfFormHtml(btx)}
-      <label class="sx-sw"><input type="checkbox" id="btOk" ${F.rules_ok ? 'checked' : ''}><i></i>I followed my rules on this one</label>
-      <label class="sx-sw"><input type="checkbox" id="btAp" ${btx.aplus ? 'checked' : ''}><i></i>⭐ A+ setup — add it to my A+ library</label>
-      <label><span class="lbl">Notes</span><textarea class="inp" id="btN" rows="2" placeholder="What did you see? What would you do differently?">${esc(r.notes || '')}</textarea></label>
+  dlg.innerHTML = `<form id="btForm" method="dialog" class="tf">
+    <div class="tf-head">
+      <div class="tf-top"><div><h2 id="btTitle"></h2><div class="tf-sum" id="tfSum"></div></div>${chips('kind', [['live','🟢 Live'],['bt','🧪 Backtest']], F.kind)}</div>
+      <nav class="tf-nav" id="tfNav">${[['tfS1','Trade'],['tfS2','Timing'],['tfS3','Prices'],['tfS4','HTF context'],['tfS5','Chart & notes'],['tfS6','Fundamentals']].map(([id, l], i) => `<button type="button" data-tfgo="${id}"><i data-tfdot="${id}"></i>${i + 1}. ${l}</button>`).join('')}</nav>
     </div>
-    <div class="dlg-foot">${row ? '<button type="button" class="btn btn-danger" id="btDel" style="margin-right:auto">Delete</button>' : ''}<button type="button" class="btn" id="btCancel">Cancel</button>
-      ${row ? '' : '<button type="button" class="btn" id="btNext">Save + next</button>'}<button type="submit" class="btn btn-primary">Save</button></div>
+    <div class="tf-body">
+      <section class="tf-sec" id="tfS1"><header><span class="tf-n">1</span><div><h3>The trade</h3><p>Pair, direction and how it ended</p></div></header>
+        <div class="tf-grid">
+          <label><span class="lbl">Pair <em>*</em></span><select class="inp" id="btP">${[...new Set([...allPairs(), F.pair])].map(p => `<option ${p===F.pair ? 'selected' : ''}>${p}</option>`).join('')}</select></label>
+          <label><span class="lbl">Direction <em>*</em></span>${chips('dir', [['Long','▲ Long'],['Short','▼ Short']], F.direction)}</label>
+          <label class="tf-wide"><span class="lbl">Result <em>*</em></span>${chips('res', [['W','✓ Win (TP)'],['L','✗ Loss (SL)'],['BE','= Break-even'],['O','◷ Still open']], F.result)}</label>
+          <label><span class="lbl">R multiple</span><input class="inp num" id="btR" inputmode="decimal" value="${r.r ?? ''}" placeholder="+2 / −1 (auto from result)"></label>
+        </div></section>
+      <section class="tf-sec" id="tfS2"><header><span class="tf-n">2</span><div><h3>Timing</h3><p>Romania time · exit day = entry day if left empty</p></div></header>
+        <div class="tf-grid g4">
+          <label><span class="lbl">Entry day <em>*</em></span><input class="inp" type="date" id="btD" value="${F.day}" required></label>
+          <label><span class="lbl">Entry time</span><input class="inp" type="time" id="btT" value="${esc(r.entry_time || '')}"></label>
+          <label><span class="lbl">Exit day</span><input class="inp" type="date" id="btXD" value="${esc(btx.exit_day || '')}"></label>
+          <label><span class="lbl">Exit time</span><input class="inp" type="time" id="btXT" value="${esc(btx.exit_time || '')}"></label>
+        </div>
+        <div class="tf-dur">⏱ Duration <output id="btDurO">–</output></div></section>
+      <section class="tf-sec" id="tfS3"><header><span class="tf-n">3</span><div><h3>Prices &amp; excursion</h3><p>Optional · how far it went for and against you</p></div></header>
+        <div class="tf-grid g4">
+          <label><span class="lbl">Entry price</span><input class="inp num" id="btE" inputmode="decimal" value="${r.entry ?? ''}" placeholder="1.08250"></label>
+          <label><span class="lbl">Stop loss</span><input class="inp num" id="btS" inputmode="decimal" value="${r.sl ?? ''}" placeholder="1.08100"></label>
+          <label><span class="lbl">Max favourable (R)</span><input class="inp num" id="btM" inputmode="decimal" value="${r.mfe_r ?? ''}" placeholder="e.g. 1.6"></label>
+          <label><span class="lbl">Max adverse (R)</span><input class="inp num" id="btMae" inputmode="decimal" value="${btx.mae_r ?? ''}" placeholder="e.g. 0.7"></label>
+        </div><div id="btExpo"></div></section>
+      <section class="tf-sec" id="tfS4"><header><span class="tf-n">4</span><div><h3>HTF context</h3><p>A TradingView snapshot and a line on what you saw, per timeframe</p></div></header>
+        <div class="seg tf-tabs" role="tablist">${HTF_TF.map(([k, l], i) => `<button type="button" role="tab" data-htft="${k}" aria-pressed="${i===0}">${l}<i data-htfok="${k}"></i></button>`).join('')}</div>
+        ${HTF_TF.map(([k, l], i) => { const h = btx.htf?.[k] || {}; return `<div class="tf-htf" data-htfp="${k}" ${i ? 'hidden' : ''}>
+          <div class="tf-htf-in"><label><span class="lbl">${l} snapshot link</span><input class="inp" id="htfU-${k}" value="${esc(h.url || '')}" placeholder="https://www.tradingview.com/x/…"></label>
+          <label><span class="lbl">${l} comment</span><textarea class="inp" id="htfN-${k}" rows="3" placeholder="Trend, zone, liquidity, where price is in the range…">${esc(h.note || '')}</textarea></label></div>
+          <a class="htf-img tf-prev" id="htfI-${k}" target="_blank" rel="noopener"></a></div>`; }).join('')}</section>
+      <section class="tf-sec" id="tfS5"><header><span class="tf-n">5</span><div><h3>Chart &amp; notes</h3><p>Your entry snapshot, confluences and lessons</p></div></header>
+        <div class="tf-grid">
+          <label class="tf-wide"><span class="lbl" id="btULbl">Chart link</span><input class="inp" id="btU" value="${esc(r.chart_url || '')}" placeholder="TradingView snapshot of the entry"></label>
+          <label class="tf-wide" id="btRunWrap"><span class="lbl">Run (group of backtests)</span><input class="inp" id="btRunIn" list="btRunsL" value="${esc(r.run || '')}" placeholder="e.g. EURUSD Q3 2026"><datalist id="btRunsL">${runs.map(x => `<option>${esc(x)}</option>`).join('')}</datalist></label>
+        </div>
+        ${cfFormHtml(btx)}
+        <label class="tf-wide" style="display:grid;gap:4px"><span class="lbl">Notes</span><textarea class="inp" id="btN" rows="3" placeholder="What did you see? What would you do differently?">${esc(r.notes || '')}</textarea></label>
+        <div class="tf-checks"><label class="sx-sw"><input type="checkbox" id="btOk" ${F.rules_ok ? 'checked' : ''}><i></i>I followed my rules</label>
+          <label class="sx-sw"><input type="checkbox" id="btAp" ${btx.aplus ? 'checked' : ''}><i></i>⭐ A+ setup (add to my library)</label></div></section>
+      <section class="tf-sec" id="tfS6"><header><span class="tf-n">6</span><div><h3>Fundamentals</h3><p>Filled in from your weekly analysis · edit only if needed</p></div></header>
+        <div id="btCtx" class="bt-cx"></div></section>
+    </div>
+    <div class="tf-foot"><span class="tf-miss" id="tfMiss"></span>${row ? '<button type="button" class="btn btn-danger" id="btDel">Delete</button>' : ''}<button type="button" class="btn" id="btCancel">Cancel</button>
+      ${row ? '' : '<button type="button" class="btn" id="btNext">Save + next</button>'}<button type="submit" class="btn btn-primary">Save trade</button></div>
   </form>`;
   const $ = s => dlg.querySelector(s);
   $('#btP').onchange = e => { F.pair = e.target.value; draw(); };
@@ -6248,6 +6279,18 @@ function openBacktest(row, keep){
   dlg.querySelectorAll('[data-res]').forEach(b => b.onclick = () => { F.result = b.dataset.res; draw(); });
   HTF_TF.forEach(([k]) => { const inp = $('#htfU-' + k), a = $('#htfI-' + k); const pv = () => { const u = inp.value.trim(), im = tvImg(u); a.href = /^https?:\/\//i.test(u) ? u : '#'; a.innerHTML = im ? `<img src="${im}" alt="${k} snapshot" loading="lazy" onerror="this.remove()">` : ''; a.style.display = im ? '' : 'none'; }; inp.addEventListener('input', pv); pv(); });
   $('#btCancel').onclick = () => dlg.close();
+  dlg.querySelectorAll('[data-tfgo]').forEach(b => b.onclick = () => $('#' + b.dataset.tfgo).scrollIntoView({ behavior:'smooth', block:'start' }));
+  dlg.querySelectorAll('[data-htft]').forEach(b => b.onclick = () => { dlg.querySelectorAll('[data-htft]').forEach(x => x.setAttribute('aria-pressed', String(x===b))); dlg.querySelectorAll('[data-htfp]').forEach(p => p.hidden = p.dataset.htfp!==b.dataset.htft); });
+  const tfState = () => { const v = id => ($(id)?.value || '').trim(), live = F.kind==='live';
+    const htfN = HTF_TF.filter(([k]) => v('#htfU-' + k) || v('#htfN-' + k)).length;
+    HTF_TF.forEach(([k]) => { const d = dlg.querySelector(`[data-htfok="${k}"]`); if(d) d.className = v('#htfU-' + k) || v('#htfN-' + k) ? 'ok' : ''; });
+    const done = { tfS1: !!(F.pair && F.direction && F.result), tfS2: !!(v('#btD') && v('#btT')), tfS3: !!(v('#btE') || v('#btS') || v('#btM') || v('#btMae')), tfS4: htfN===3 ? 'ok' : htfN ? 'part' : '',
+      tfS5: !!(/^https?:\/\//i.test(v('#btU')) || v('#btN')), tfS6: true };
+    Object.entries(done).forEach(([k, val]) => { const d = dlg.querySelector(`[data-tfdot="${k}"]`); if(d) d.className = val===true || val==='ok' ? 'ok' : val==='part' ? 'part' : ''; });
+    const miss = [!F.result && 'result', !v('#btD') && 'entry day', live && !/^https?:\/\//i.test(v('#btU')) && 'entry snapshot'].filter(Boolean);
+    $('#tfMiss').innerHTML = miss.length ? `Still needed: <b>${miss.join(' · ')}</b>` : '<span class="pos">✓ Ready to save</span>';
+    $('#tfSum').textContent = `${F.pair} · ${F.direction==='Long' ? '▲ Long' : '▼ Short'} · ${v('#btD') ? fmtDayShort(v('#btD')) : 'no day'}${F.result ? ' · ' + ({ W:'Win', L:'Loss', BE:'Break-even', O:'Open' }[F.result]) : ''}`; };
+  dlg.oninput = tfState; dlg.onclick = () => setTimeout(tfState);
   $('#btDel')?.addEventListener('click', async () => { if(!confirm('Delete this trade?')) return;
     const { error } = await sb.from('do_backtests').delete().eq('id', row.id); if(error) return toast(error.message);
     S.bt.rows.delete(row.id); dlg.close(); renderMain(); toast('Deleted'); });
@@ -6273,8 +6316,9 @@ function openBacktest(row, keep){
   };
   $('#btForm').onsubmit = ev => { ev.preventDefault(); save(false); };
   $('#btNext')?.addEventListener('click', () => save(true));
-  draw();
+  draw(); tfState();
   if(!dlg.open) dlg.showModal();
+  dlg.querySelector('.tf-body').scrollTop = 0;
 }
 function renderPortfolio(){
   const m = document.getElementById('main');
