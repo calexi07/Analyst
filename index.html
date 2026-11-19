@@ -823,6 +823,11 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .bt-t th{ text-align:left; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); padding:8px 10px; border-bottom:1px solid var(--line); }
   .bt-t td{ padding:9px 10px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; } .bt-t tbody tr{ cursor:pointer; } .bt-t tbody tr:hover{ background:var(--hover); }
   .bt-form{ display:grid; gap:14px; } .bt-form label{ display:grid; gap:4px; } .bt-form label.sx-sw{ display:flex; } .bt-two{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .htf-box{ display:grid; gap:8px; padding:10px; border:1px solid var(--line); border-radius:12px; }
+  .htf-row{ display:grid; grid-template-columns:56px minmax(0,1fr) auto; gap:10px; align-items:start; }
+  .htf-tf{ font-weight:800; padding-top:9px; } .htf-in{ display:grid; gap:6px; }
+  .htf-img img{ width:150px; border-radius:8px; display:block; } @media (max-width:640px){ .htf-row{ grid-template-columns:44px minmax(0,1fr); } .htf-img{ grid-column:2; } .htf-img img{ width:100%; } }
+  .htf-mini{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin-top:6px; font-size:12px; } .htf-mini img{ width:100%; border-radius:6px; display:block; margin-bottom:3px; } .htf-mini span{ display:block; color:var(--muted); }
   .cf-wrap{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } @media (max-width:640px){ .cf-wrap{ grid-template-columns:1fr; } }
   .cf-box{ display:grid; gap:6px; padding:10px; border:1px solid var(--line); border-radius:12px; } .cf-chips{ display:flex; flex-wrap:wrap; gap:6px; }
   .cf-chip{ font:inherit; font-size:12px; font-weight:700; padding:4px 9px; border-radius:999px; border:1px solid var(--line); background:var(--surface-2); color:var(--muted); cursor:pointer; }
@@ -5493,7 +5498,7 @@ function btCheckAt(x){
 /* ===== 30. Process goals: habits you control, measured per week ===== */
 const PROC = [['snap','TradingView snapshot attached', x => /^https?:\/\//i.test(x.chart_url||''), 100],
   ['bias','Taken with the weekly bias', x => x.withB==='with', 100],
-  ['sweep','Liquidity time logged', x => !!x.sweep_time, 100],
+  ['htf','HTF context logged (Daily · 4H · 1H)', x => HTF_TF.every(([k]) => x.htf?.[k]?.url || x.htf?.[k]?.note), 80],
   ['rules','“I followed my rules” ticked', x => x.rules_ok!==false, 100],
   ['exc','MFE and MAE filled in', x => x.mfe_r!=null && x.mae_r!=null, 80],
   ['notes','Notes written', x => !!(x.notes && x.notes.trim()), 80]];
@@ -5518,7 +5523,7 @@ function renderLibrary(){
     ${lib.length ? `<div class="fc-grid">${lib.map(x => { const img = tvImg(x.chart_url);
       return `<div class="an-card">${img ? `<a href="${esc(x.chart_url)}" target="_blank" rel="noopener"><img src="${img}" alt="${esc(x.pair)} snapshot" loading="lazy" style="width:100%;border-radius:8px;margin-bottom:6px" onerror="this.remove()"></a>` : x.chart_url ? `<a href="${esc(x.chart_url)}" target="_blank" rel="noopener">Open chart</a>` : ''}
         <div class="an-h"><b>${esc(x.pair)}</b><span class="fc-tag ${x.direction==='Long' ? 'bullish' : 'bearish'}">${x.direction==='Long' ? '▲ Long' : '▼ Short'}</span><span class="muted" style="font-size:12px">${fmtDayShort(x.day)}${x.entry_time ? ' ' + esc(x.entry_time) : ''} · ${esc(x.sess)}${x.run===LIVE_RUN ? ' · live' : ' · backtest'}</span>${x.r!=null ? `<b class="${x.r > 0 ? 'pos' : x.r < 0 ? 'neg' : ''}">${sgR(Number(x.r))}</b>` : ''}</div>
-        <p class="muted" style="font-size:12.5px;margin:4px 0">${x.bias ? 'Bias ' + esc(x.bias) + (x.conviction ? ' · ' + esc(x.conviction) : '') : 'No bias recorded'}${x.sweep_time ? ' · liquidity ' + esc(x.sweep_time) : ''}${x.break_type ? ' · ' + esc(x.break_type) + ' break' : ''}</p>
+        <p class="muted" style="font-size:12.5px;margin:4px 0">${x.bias ? 'Bias ' + esc(x.bias) + (x.conviction ? ' · ' + esc(x.conviction) : '') : 'No bias recorded'}</p>${htfMini(x)}
         ${x.notes ? `<p style="margin:4px 0;font-size:13px">${esc(x.notes)}</p>` : ''}<button class="btn" data-btedit="${x.id}">Edit</button></div>`; }).join('')}</div>` : `<div class="card fc-empty"><p>No A+ setups yet. When a trade is a textbook example of your setup, tick “⭐ A+ setup” in the trade form.</p></div>`}`;
   m.querySelectorAll('[data-btedit]').forEach(b => b.onclick = () => { const r = S.bt.rows.get(b.dataset.btedit) || S.bt.rows.get(Number(b.dataset.btedit)); if(r) openBacktest(r); });
 }
@@ -5966,22 +5971,22 @@ function btDerive(t){
   let swMin = null;
   if(x.sweep_time && t.entry_time){ const a = new Date(`${x.sweep_day || t.day}T${x.sweep_time}:00`), b2 = new Date(`${t.day}T${t.entry_time}:00`); if(!isNaN(a) && !isNaN(b2)) swMin = Math.round((b2 - a) / 60000); }
   return { ...t, withB, edge, dow: d ? WD_SHORT[d.getDay()] : null, sess: t.session || sessionName(t.entry_time) || 'Off-session',
-    newsDay: t.news_day ?? !!(t.news && t.news.length), aplus:!!x.aplus, sweep_day:x.sweep_day || null, sweep_time:x.sweep_time || null, mae_r:x.mae_r ?? null, swMin,
+    newsDay: t.news_day ?? !!(t.news && t.news.length), aplus:!!x.aplus, htf:x.htf || {}, sweep_day:x.sweep_day || null, sweep_time:x.sweep_time || null, mae_r:x.mae_r ?? null, swMin,
     swSess: x.sweep_time ? (sessionName(x.sweep_time) || 'Off-session') : null,
     conf_pro: x.conf_pro || [], conf_con: x.conf_con || [], cfLogged: !!((x.conf_pro && x.conf_pro.length) || (x.conf_con && x.conf_con.length)),
     cfNet: (x.conf_pro || []).length - (x.conf_con || []).length };
 }
 /* ===== optional confluences pro / contra, logged per trade (kept in do_settings btx, no schema change) ===== */
-const CF_PRO = ['With weekly bias','Daily check confirmed','HTF trend','Liquidity sweep','Key level','Order block','FVG','BOS / CHoCH','SMT divergence','Session open','Clean structure'];
-const CF_CON = ['Against weekly bias','Check under pressure','Against HTF trend','News soon','Extended move','Near opposing level','Choppy structure','Low liquidity time','Correlated exposure','Late entry'];
+/* confluences are typed by hand only (no preset list); the ones already on this trade show as chips, tap one to drop it */
 function cfFormHtml(x){
-  const used = side => [...new Set([...(side==='pro' ? CF_PRO : CF_CON), ...[...S.bt.rows.keys()].flatMap(id => S.settings?.[`btx:${id}`]?.[side==='pro' ? 'conf_pro' : 'conf_con'] || [])])];
-  const sel = side => new Set(x[side==='pro' ? 'conf_pro' : 'conf_con'] || []);
-  const blk = (side, lab) => { const on = sel(side), list = used(side);
-    return `<div class="cf-box cf-${side}"><span class="lbl">${lab} <span class="muted" style="font-weight:600">(optional)</span></span><div class="cf-chips">${list.map(v => `<button type="button" class="cf-chip" data-cf="${side}" data-v="${esc(v)}" aria-pressed="${on.has(v)}">${esc(v)}</button>`).join('')}</div>
-      <input class="inp" id="cfX-${side}" placeholder="other, separated by commas" value="${esc([...on].filter(v => !list.includes(v)).join(', '))}"></div>`; };
+  const blk = (side, lab) => { const list = [...new Set(x[side==='pro' ? 'conf_pro' : 'conf_con'] || [])];
+    return `<div class="cf-box cf-${side}"><span class="lbl">${lab} <span class="muted" style="font-weight:600">(optional)</span></span>${list.length ? `<div class="cf-chips">${list.map(v => `<button type="button" class="cf-chip" data-cf="${side}" data-v="${esc(v)}" aria-pressed="true" title="Tap to remove">${esc(v)}</button>`).join('')}</div>` : ''}
+      <input class="inp" id="cfX-${side}" placeholder="type yours, separated by commas" value=""></div>`; };
   return `<div class="cf-wrap">${blk('pro', '✅ Confluences for')}${blk('con', '⛔ Confluences against')}</div>`;
 }
+const HTF_TF = [['d','Daily'],['h4','4H'],['h1','1H']];
+function htfMini(x){ const h = x.htf || {}; const it = HTF_TF.filter(([k]) => h[k]?.url || h[k]?.note); if(!it.length) return '';
+  return `<div class="htf-mini">${it.map(([k, l]) => { const im = tvImg(h[k].url || ''); return `<div>${im ? `<a href="${esc(h[k].url)}" target="_blank" rel="noopener"><img src="${im}" alt="${l}" loading="lazy" onerror="this.remove()"></a>` : ''}<b>${l}</b>${h[k].note ? `<span>${esc(h[k].note)}</span>` : ''}</div>`; }).join('')}</div>`; }
 function cfRead(side){
   const a = [...document.querySelectorAll(`.cf-chip[data-cf="${side}"][aria-pressed="true"]`)].map(b => b.dataset.v);
   const o = (document.getElementById(`cfX-${side}`)?.value || '').split(',').map(v => v.trim()).filter(Boolean);
@@ -6021,10 +6026,6 @@ const BT_DIMS = [
   ['news', 'High-impact news that day', x => x.newsDay ? 'y' : 'n', [['n','Quiet day'],['y','News day']]],
   ['sess', 'Session', x => x.sess, [['Asia','Asia'],['London','London'],['London / New York','London / New York'],['New York','New York'],['Off-session','Off-session']]],
   ['dow', 'Day of the week', x => x.dow, [['Mon','Monday'],['Tue','Tuesday'],['Wed','Wednesday'],['Thu','Thursday'],['Fri','Friday']]],
-  ['brk', 'Fractal break', x => x.break_type || 'na', [['wick','Wick'],['body','Body'],['na','Not set']]],
-  ['swGap', 'Liquidity taken → entry', x => x.swMin==null ? 'na' : x.swMin < 0 ? 'neg' : x.swMin < 60 ? 'a' : x.swMin <= 240 ? 'b' : 'c',
-    [['a','Under 1 hour'],['b','1–4 hours'],['c','Over 4 hours'],['neg','Entry before the sweep (?)'],['na','Not logged']]],
-  ['swSess', 'Session of the liquidity sweep', x => x.swSess || 'na', [['Asia','Asia'],['London','London'],['London / New York','London / New York'],['New York','New York'],['Off-session','Off-session'],['na','Not logged']]],
   ['cf', 'Confluence balance (for − against)', x => !x.cfLogged ? 'na' : x.cfNet >= 3 ? 'p3' : x.cfNet >= 1 ? 'p1' : x.cfNet===0 ? 'z' : 'n',
     [['p3','+3 or more'],['p1','+1 to +2'],['z','Balanced (0)'],['n','More against'],['na','Not logged']]],
   ['rules', 'Rules followed', x => x.rules_ok==null ? 'na' : x.rules_ok ? 'y' : 'n', [['y','Yes'],['n','No'],['na','—']]],
@@ -6195,14 +6196,12 @@ function openBacktest(row, keep){
         <label><span class="lbl">Entry day</span><input class="inp" type="date" id="btD" value="${F.day}" required></label>
         <label><span class="lbl">Entry time (RO)</span><input class="inp" type="time" id="btT" value="${esc(r.entry_time || '')}"></label>
       </div>
-      <div class="bt-two">
-        <label><span class="lbl">Liquidity taken · day</span><input class="inp" type="date" id="btSwD" value="${esc(btx.sweep_day || '')}"></label>
-        <label><span class="lbl">Liquidity taken · time (RO)</span><input class="inp" type="time" id="btSwT" value="${esc(btx.sweep_time || '')}"></label>
-      </div>
-      <div class="bt-two">
-        <label><span class="lbl">Direction</span>${chips('dir', [['Long','▲ Long'],['Short','▼ Short']], F.direction)}</label>
-        <label><span class="lbl">Fractal break</span>${chips('brk', [['wick','Wick'],['body','Body']], F.break_type)}</label>
-      </div>
+      <label><span class="lbl">Direction</span>${chips('dir', [['Long','▲ Long'],['Short','▼ Short']], F.direction)}</label>
+      <div class="htf-box"><span class="lbl">HTF context <span class="muted" style="font-weight:600">(TradingView snapshot + comment, optional)</span></span>
+        ${HTF_TF.map(([k, l]) => { const h = btx.htf?.[k] || {}; return `<div class="htf-row"><b class="htf-tf">${l}</b>
+          <div class="htf-in"><input class="inp" id="htfU-${k}" value="${esc(h.url || '')}" placeholder="TradingView snapshot link (${l})">
+          <textarea class="inp" id="htfN-${k}" rows="2" placeholder="What do you see on the ${l}? Trend, zone, liquidity…">${esc(h.note || '')}</textarea></div>
+          <a class="htf-img" id="htfI-${k}" target="_blank" rel="noopener"></a></div>`; }).join('')}</div>
       <div class="bt-two">
         <label><span class="lbl">Result</span>${chips('res', [['W','Win (TP)'],['L','Loss (SL)'],['BE','Break-even'],['O','Open']], F.result)}</label>
         <label><span class="lbl">R</span><input class="inp num" id="btR" inputmode="decimal" value="${r.r ?? ''}" placeholder="+2 / −1"></label>
@@ -6234,7 +6233,7 @@ function openBacktest(row, keep){
   dlg.querySelectorAll('[data-dir]').forEach(b => b.onclick = () => { F.direction = b.dataset.dir; draw(); });
   dlg.querySelectorAll('[data-kind]').forEach(b => b.onclick = () => { F.kind = b.dataset.kind; ls.set('do_bt_kind', F.kind); draw(); });
   dlg.querySelectorAll('[data-res]').forEach(b => b.onclick = () => { F.result = b.dataset.res; draw(); });
-  dlg.querySelectorAll('[data-brk]').forEach(b => b.onclick = () => { F.break_type = F.break_type===b.dataset.brk ? null : b.dataset.brk; draw(); });
+  HTF_TF.forEach(([k]) => { const inp = $('#htfU-' + k), a = $('#htfI-' + k); const pv = () => { const u = inp.value.trim(), im = tvImg(u); a.href = /^https?:\/\//i.test(u) ? u : '#'; a.innerHTML = im ? `<img src="${im}" alt="${k} snapshot" loading="lazy" onerror="this.remove()">` : ''; a.style.display = im ? '' : 'none'; }; inp.addEventListener('input', pv); pv(); });
   $('#btCancel').onclick = () => dlg.close();
   $('#btDel')?.addEventListener('click', async () => { if(!confirm('Delete this trade?')) return;
     const { error } = await sb.from('do_backtests').delete().eq('id', row.id); if(error) return toast(error.message);
@@ -6252,8 +6251,9 @@ function openBacktest(row, keep){
     const { data, error } = await q; if(error) return toast(/relation|does not exist|schema cache/i.test(error.message) ? 'Run migration-backtest.sql in Supabase first' : error.message);
     S.bt.rows.set(data.id, data); ls.set(BT_RUNS_KEY, { pair:F.pair, run:rec.run || '' });
     if(!row && typeof keep?.onSaved === 'function'){ try{ await keep.onSaved(data); }catch(e){ console.warn(e); } }
-    { const swT = $('#btSwT').value, swD = $('#btSwD').value || (swT ? F.day : ''), mae = parseNum($('#btMae').value), ap = $('#btAp').checked, k = `btx:${data.id}`, cp = cfRead('pro'), cc = cfRead('con');
-      if(swT || swD || mae!=null || ap || cp.length || cc.length || S.settings?.[k]) await saveSettingKey(k, { sweep_day:swD || null, sweep_time:swT || null, mae_r:mae ?? null, aplus:ap, conf_pro:cp, conf_con:cc }); }
+    { const mae = parseNum($('#btMae').value), ap = $('#btAp').checked, k = `btx:${data.id}`, cp = cfRead('pro'), cc = cfRead('con');
+      const htf = Object.fromEntries(HTF_TF.map(([t]) => [t, { url:$('#htfU-' + t).value.trim() || null, note:$('#htfN-' + t).value.trim() || null }]).filter(([, v]) => v.url || v.note));
+      if(mae!=null || ap || cp.length || cc.length || Object.keys(htf).length || S.settings?.[k]) await saveSettingKey(k, { ...(S.settings?.[k] || {}), mae_r:mae ?? null, aplus:ap, conf_pro:cp, conf_con:cc, htf }); }
     if(next){ toast('Saved · next one'); openBacktest(null, { pair:F.pair, run:F.kind==='live' ? '' : rec.run, day:F.day, kind:F.kind }); renderMain(); return; }
     dlg.close(); renderMain(); toast('Saved');
   };
