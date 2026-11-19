@@ -1,0 +1,1464 @@
+{
+  "format": "daily-observer-fundamentals",
+  "version": 1,
+  "report_date": "2026-10-24",
+  "report_title": "Forex Fundamental Bias Engine — Week 44",
+  "valid_week": {
+    "year": 2026,
+    "week": 44
+  },
+  "currencies": {
+    "USD": {
+      "score": 2,
+      "state": "Neutral",
+      "note": "Fed seen holding on 28 Oct (94 of 100 economists) with a December hike near-unanimous; pricing already matches that path. Risk-off regime adds mild haven support."
+    },
+    "EUR": {
+      "score": -5,
+      "state": "Weak",
+      "note": "ECB expected to hold on 29 Oct with softer guidance than the tightening still priced; Moody's kept France at Aa3 negative, but budget votes on 3 and 17 Nov keep risk live."
+    },
+    "GBP": {
+      "score": 1,
+      "state": "Neutral",
+      "note": "September CPI 3.5% and services 3.7% beat, unemployment fell to 4.7%; a 5 Nov BoE hike is 93-96% priced. The 28 Oct Budget is the fiscal test."
+    },
+    "JPY": {
+      "score": 2,
+      "state": "Neutral",
+      "note": "Core CPI 2.1% (in line) and core-core 2.4% (beat); BoJ seen holding on 30 Oct with December in view. Intervention backstop and risk-off support the yen."
+    },
+    "CHF": {
+      "score": -1,
+      "state": "Neutral",
+      "note": "SNB at 0% with no move priced before 10 Dec gives the lowest carry of the eight; haven demand in a risk-off regime offsets part of it."
+    },
+    "CAD": {
+      "score": -2,
+      "state": "Neutral",
+      "note": "Macklem's hawkish turn lifted 28 Oct hike odds to about 80% despite core CPI near 1.85%; oil supports, live US tariffs weigh."
+    },
+    "AUD": {
+      "score": 5,
+      "state": "Strong",
+      "note": "Highest carry at 4.60%; Hauser says the inflation outlook is materially worse, lifting November hike odds to about 56%. Iron ore down 6.5% in a month weighs."
+    },
+    "NZD": {
+      "score": 0,
+      "state": "Neutral",
+      "note": "Q3 CPI mixed (3.7% headline miss, firmer trimmed mean); a 28 Oct hike is largely priced. GDT auctions rose 1.2% and 2.5%; risk-off weighs."
+    },
+    "XAU": {
+      "score": 3,
+      "state": "Neutral",
+      "note": "Gold factor G = +1: US breakevens fell 41bp in four weeks against haven demand and central-bank buying; real yields flat. XAU = G + USD = +3."
+    }
+  },
+  "pairs": [
+    {
+      "pair": "EURUSD",
+      "bias": "bearish",
+      "conviction": "medium",
+      "summary": "Bearish (EUR -5 vs USD +2)",
+      "base_state": "Weak",
+      "base_score": -5,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "USD favored: Fed at 3.75-4.00%, hold expected 28 Oct and a December hike priced (FedWatch ~94% by December); mild haven support in a risk-off regime; EUR: ECB at 2.50% with a hold expected 29 Oct and softer guidance than priced; French budget votes 3 and 17 Nov after Moody's kept Aa3 negative.",
+      "drivers": [
+        "Fed at 3.75-4.00%, hold expected 28 Oct and a December hike priced (FedWatch ~94% by December); mild haven support in a risk-off regime",
+        "ECB at 2.50% with a hold expected 29 Oct and softer guidance than priced; French budget votes 3 and 17 Nov after Moody's kept Aa3 negative"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "FOMC decision (3.75-4.00%, hold expected)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "Warsh press conference",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "29 Oct",
+          "event": "ECB decision (deposit 2.50%, hold expected)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "29 Oct",
+          "event": "Lagarde press conference",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "EUR: partially priced — markets still price further ECB tightening while a 29 Oct hold and softer guidance are expected. USD: largely priced — hold on 28 Oct (~83% per FedWatch, 20 Oct) and a December hike (~94% by December).",
+      "invalidation": "EUR: bullish if a hawkish Lagarde reopening December, or a passed 3 Nov revenue vote with OAT-Bund spreads narrowing. Bearish if budget failure, censure or 49.3 with spreads widening; a dovish ECB. / USD: bullish if Warsh signals a faster path or a hot Q3 PCE (29 Oct) lifts March 2027 pricing. Bearish if a dovish Warsh press conference or soft PCE/ECI that trims December odds.",
+      "horizon": "Swing: bearish",
+      "alignment": "Aligned",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): -0.33% (-0.27 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias bearish (EUR -5 vs USD +5) → v2.1 Week 44 bias bearish (EUR -5 vs USD +2); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "GBPUSD",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (GBP +1 vs USD +2)",
+      "base_state": "Neutral",
+      "base_score": 1,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "Close to a wash — GBP: September CPI 3.5% and services 3.7% beat, unemployment 4.7%; 5 Nov hike 93-96% priced; Budget 28 Oct; USD: Fed at 3.75-4.00%, hold expected 28 Oct and a December hike priced (FedWatch ~94% by December); mild haven support in a risk-off regime.",
+      "drivers": [
+        "September CPI 3.5% and services 3.7% beat, unemployment 4.7%; 5 Nov hike 93-96% priced; Budget 28 Oct",
+        "Fed at 3.75-4.00%, hold expected 28 Oct and a December hike priced (FedWatch ~94% by December); mild haven support in a risk-off regime"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "UK Autumn Budget (Chancellor Healey); time approximate",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "FOMC decision (3.75-4.00%, hold expected)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "Warsh press conference",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "5 Nov",
+          "event": "BoE decision (3.75%, hike 93-96% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "GBP: largely priced — a 5 Nov hike is 93-96% priced and about 100bp over 12 months. USD: largely priced — hold on 28 Oct (~83% per FedWatch, 20 Oct) and a December hike (~94% by December).",
+      "invalidation": "GBP: bullish if a gilt-friendly Budget on 28 Oct that keeps the 5 Nov hike intact. Bearish if a Budget that spooks gilts or signals heavy fiscal tightening that trims BoE pricing. / USD: bullish if Warsh signals a faster path or a hot Q3 PCE (29 Oct) lifts March 2027 pricing. Bearish if a dovish Warsh press conference or soft PCE/ECI that trims December odds.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): +0.29% (+0.24 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias bearish (GBP -1 vs USD +5) → v2.1 Week 44 bias two-sided (GBP +1 vs USD +2); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "USDJPY",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (USD +2 vs JPY +2)",
+      "base_state": "Neutral",
+      "base_score": 2,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "Close to a wash — USD: Fed at 3.75-4.00%, hold expected 28 Oct and a December hike priced (FedWatch ~94% by December); mild haven support in a risk-off regime; JPY: core-core CPI 2.4% beat; BoJ hold 30 Oct with December in view; intervention backstop and haven support.",
+      "drivers": [
+        "Fed at 3.75-4.00%, hold expected 28 Oct and a December hike priced (FedWatch ~94% by December); mild haven support in a risk-off regime",
+        "core-core CPI 2.4% beat; BoJ hold 30 Oct with December in view; intervention backstop and haven support"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "FOMC decision (3.75-4.00%, hold expected)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "Warsh press conference",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "29 Oct",
+          "event": "US Q3 GDP advance and September PCE (release grouping per weekly preview)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "30 Oct",
+          "event": "BoJ decision and Outlook Report (1.25%, hold expected; time unscheduled)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "USD: largely priced — hold on 28 Oct (~83% per FedWatch, 20 Oct) and a December hike (~94% by December). JPY: largely priced — 30 Oct hold expected, December hike widely expected.",
+      "invalidation": "USD: bullish if Warsh signals a faster path or a hot Q3 PCE (29 Oct) lifts March 2027 pricing. Bearish if a dovish Warsh press conference or soft PCE/ECI that trims December odds. / JPY: bullish if a hawkish Outlook Report (30 Oct) or hot Tokyo CPI that firms December; MoF action. Bearish if a dovish Ueda that pushes the next hike into 2027; risk-on rally.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): -0.76% (-0.63 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias bullish (USD +5 vs JPY -1) → v2.1 Week 44 bias two-sided (USD +2 vs JPY +2); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "USDCHF",
+      "bias": "bullish",
+      "conviction": "low",
+      "summary": "Bullish (USD +2 vs CHF -1)",
+      "base_state": "Neutral",
+      "base_score": 2,
+      "quote_state": "Neutral",
+      "quote_score": -1,
+      "main_driver": "USD favored: Fed at 3.75-4.00%, hold expected 28 Oct and a December hike priced (FedWatch ~94% by December); mild haven support in a risk-off regime; CHF: SNB at 0% (lowest carry), no move priced before 10 Dec; haven support in a risk-off regime.",
+      "drivers": [
+        "Fed at 3.75-4.00%, hold expected 28 Oct and a December hike priced (FedWatch ~94% by December); mild haven support in a risk-off regime",
+        "SNB at 0% (lowest carry), no move priced before 10 Dec; haven support in a risk-off regime"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "FOMC decision (3.75-4.00%, hold expected)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "Warsh press conference",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "29 Oct",
+          "event": "US Q3 GDP advance and September PCE (release grouping per weekly preview)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "US midterm elections",
+          "imp": "HIGH"
+        }
+      ],
+      "priced": "USD: largely priced — hold on 28 Oct (~83% per FedWatch, 20 Oct) and a December hike (~94% by December). CHF: no SNB move priced before 10 Dec.",
+      "invalidation": "USD: bullish if Warsh signals a faster path or a hot Q3 PCE (29 Oct) lifts March 2027 pricing. Bearish if a dovish Warsh press conference or soft PCE/ECI that trims December odds. / CHF: bullish if deeper risk-off or French stress lifting haven demand. Bearish if risk-on and higher yields abroad widen the carry gap further.",
+      "horizon": "Swing: mild bullish",
+      "alignment": "Neutral",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): +0.09% (+0.08 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias bullish (USD +5 vs CHF +2) → v2.1 Week 44 bias bullish (USD +2 vs CHF -1); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "USDCAD",
+      "bias": "bullish",
+      "conviction": "low",
+      "summary": "Bullish (USD +2 vs CAD -2)",
+      "base_state": "Neutral",
+      "base_score": 2,
+      "quote_state": "Neutral",
+      "quote_score": -2,
+      "main_driver": "USD favored: Fed at 3.75-4.00%, hold expected 28 Oct and a December hike priced (FedWatch ~94% by December); mild haven support in a risk-off regime; CAD: 28 Oct BoC hike about 80% priced after Macklem despite core CPI near 1.85%; oil support vs live US tariffs.",
+      "drivers": [
+        "Fed at 3.75-4.00%, hold expected 28 Oct and a December hike priced (FedWatch ~94% by December); mild haven support in a risk-off regime",
+        "28 Oct BoC hike about 80% priced after Macklem despite core CPI near 1.85%; oil support vs live US tariffs"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "BoC decision and Monetary Policy Report (2.25%, hike about 80% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "FOMC decision (3.75-4.00%, hold expected)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "Warsh press conference",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "29 Oct",
+          "event": "US Q3 GDP advance and September PCE (release grouping per weekly preview)",
+          "imp": "HIGH"
+        }
+      ],
+      "priced": "USD: largely priced — hold on 28 Oct (~83% per FedWatch, 20 Oct) and a December hike (~94% by December). CAD: largely priced — about 80% for a 28 Oct hike (swaps; 84% per one source on 19 Oct).",
+      "invalidation": "USD: bullish if Warsh signals a faster path or a hot Q3 PCE (29 Oct) lifts March 2027 pricing. Bearish if a dovish Warsh press conference or soft PCE/ECI that trims December odds. / CAD: bullish if a BoC hike with guidance for more; tariff relief from Washington. Bearish if a BoC hold citing soft core inflation; oil falling.",
+      "horizon": "Swing: mild bullish",
+      "alignment": "Partial conflict",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): -1.00% (-0.83 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias bullish (USD +5 vs CAD -2) → v2.1 Week 44 bias bullish (USD +2 vs CAD -2); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "AUDUSD",
+      "bias": "bullish",
+      "conviction": "low",
+      "summary": "Bullish (AUD +5 vs USD +2)",
+      "base_state": "Strong",
+      "base_score": 5,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "AUD favored: RBA at 4.60% (highest carry); Hauser hawkish, November hike about 56% priced; Q3 CPI 28 Oct; iron ore down 6.5%; USD: Fed at 3.75-4.00%, hold expected 28 Oct and a December hike priced (FedWatch ~94% by December); mild haven support in a risk-off regime.",
+      "drivers": [
+        "RBA at 4.60% (highest carry); Hauser hawkish, November hike about 56% priced; Q3 CPI 28 Oct; iron ore down 6.5%",
+        "Fed at 3.75-4.00%, hold expected 28 Oct and a December hike priced (FedWatch ~94% by December); mild haven support in a risk-off regime"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "Australia Q3 CPI incl. trimmed mean (consensus ~1.0% q/q; RBA Aug forecast 0.8%)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "FOMC decision (3.75-4.00%, hold expected)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "Warsh press conference",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "RBA decision (4.60%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "AUD: partially priced — November hike about 56% after Hauser (24% before). USD: largely priced — hold on 28 Oct (~83% per FedWatch, 20 Oct) and a December hike (~94% by December).",
+      "invalidation": "AUD: bullish if Q3 trimmed mean above 1.0% q/q (28 Oct) cementing a 3 Nov hike. Bearish if a soft trimmed mean that removes the November hike; deeper risk-off. / USD: bullish if Warsh signals a faster path or a hot Q3 PCE (29 Oct) lifts March 2027 pricing. Bearish if a dovish Warsh press conference or soft PCE/ECI that trims December odds.",
+      "horizon": "Swing: mild bullish",
+      "alignment": "Aligned",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): +1.29% (+1.08 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias bearish (AUD 0 vs USD +5) → v2.1 Week 44 bias bullish (AUD +5 vs USD +2); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "NZDUSD",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (NZD 0 vs USD +2)",
+      "base_state": "Neutral",
+      "base_score": 0,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "Close to a wash — NZD: RBNZ hike to 3.00% largely priced for 28 Oct after mixed Q3 CPI; dairy prices up; high beta in risk-off; USD: Fed at 3.75-4.00%, hold expected 28 Oct and a December hike priced (FedWatch ~94% by December); mild haven support in a risk-off regime.",
+      "drivers": [
+        "RBNZ hike to 3.00% largely priced for 28 Oct after mixed Q3 CPI; dairy prices up; high beta in risk-off",
+        "Fed at 3.75-4.00%, hold expected 28 Oct and a December hike priced (FedWatch ~94% by December); mild haven support in a risk-off regime"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "RBNZ Monetary Policy Review (OCR 2.75%, hike to 3.00% largely priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "FOMC decision (3.75-4.00%, hold expected)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "Warsh press conference",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "29 Oct",
+          "event": "US Q3 GDP advance and September PCE (release grouping per weekly preview)",
+          "imp": "HIGH"
+        }
+      ],
+      "priced": "NZD: largely priced — a 28 Oct hike to 3.00% mostly priced after Q3 CPI. USD: largely priced — hold on 28 Oct (~83% per FedWatch, 20 Oct) and a December hike (~94% by December).",
+      "invalidation": "NZD: bullish if a hike with a higher OCR track on 28 Oct. Bearish if a hold or a dovish hike; 7 Nov election uncertainty; risk-off. / USD: bullish if Warsh signals a faster path or a hot Q3 PCE (29 Oct) lifts March 2027 pricing. Bearish if a dovish Warsh press conference or soft PCE/ECI that trims December odds.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): +0.83% (+0.69 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias bearish (NZD -2 vs USD +5) → v2.1 Week 44 bias two-sided (NZD 0 vs USD +2); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "EURGBP",
+      "bias": "bearish",
+      "conviction": "medium",
+      "summary": "Bearish (EUR -5 vs GBP +1)",
+      "base_state": "Weak",
+      "base_score": -5,
+      "quote_state": "Neutral",
+      "quote_score": 1,
+      "main_driver": "GBP favored: September CPI 3.5% and services 3.7% beat, unemployment 4.7%; 5 Nov hike 93-96% priced; Budget 28 Oct; EUR: ECB at 2.50% with a hold expected 29 Oct and softer guidance than priced; French budget votes 3 and 17 Nov after Moody's kept Aa3 negative.",
+      "drivers": [
+        "September CPI 3.5% and services 3.7% beat, unemployment 4.7%; 5 Nov hike 93-96% priced; Budget 28 Oct",
+        "ECB at 2.50% with a hold expected 29 Oct and softer guidance than priced; French budget votes 3 and 17 Nov after Moody's kept Aa3 negative"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "UK Autumn Budget (Chancellor Healey); time approximate",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "29 Oct",
+          "event": "ECB decision (deposit 2.50%, hold expected)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "29 Oct",
+          "event": "Lagarde press conference",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "5 Nov",
+          "event": "BoE decision (3.75%, hike 93-96% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "EUR: partially priced — markets still price further ECB tightening while a 29 Oct hold and softer guidance are expected. GBP: largely priced — a 5 Nov hike is 93-96% priced and about 100bp over 12 months.",
+      "invalidation": "EUR: bullish if a hawkish Lagarde reopening December, or a passed 3 Nov revenue vote with OAT-Bund spreads narrowing. Bearish if budget failure, censure or 49.3 with spreads widening; a dovish ECB. / GBP: bullish if a gilt-friendly Budget on 28 Oct that keeps the 5 Nov hike intact. Bearish if a Budget that spooks gilts or signals heavy fiscal tightening that trims BoE pricing.",
+      "horizon": "Swing: bearish",
+      "alignment": "Aligned",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): -0.68% (-0.85 σ on the uncalibrated v1 threshold of 0.8%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias bearish (EUR -5 vs GBP -1) → v2.1 Week 44 bias bearish (EUR -5 vs GBP +1); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "EURJPY",
+      "bias": "bearish",
+      "conviction": "medium",
+      "summary": "Bearish (EUR -5 vs JPY +2)",
+      "base_state": "Weak",
+      "base_score": -5,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "JPY favored: core-core CPI 2.4% beat; BoJ hold 30 Oct with December in view; intervention backstop and haven support; EUR: ECB at 2.50% with a hold expected 29 Oct and softer guidance than priced; French budget votes 3 and 17 Nov after Moody's kept Aa3 negative.",
+      "drivers": [
+        "core-core CPI 2.4% beat; BoJ hold 30 Oct with December in view; intervention backstop and haven support",
+        "ECB at 2.50% with a hold expected 29 Oct and softer guidance than priced; French budget votes 3 and 17 Nov after Moody's kept Aa3 negative"
+      ],
+      "catalysts": [
+        {
+          "date": "29 Oct",
+          "event": "ECB decision (deposit 2.50%, hold expected)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "29 Oct",
+          "event": "Lagarde press conference",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "30 Oct",
+          "event": "BoJ decision and Outlook Report (1.25%, hold expected; time unscheduled)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "French Assembly vote on the 2027 budget revenue part",
+          "imp": "HIGH"
+        }
+      ],
+      "priced": "EUR: partially priced — markets still price further ECB tightening while a 29 Oct hold and softer guidance are expected. JPY: largely priced — 30 Oct hold expected, December hike widely expected.",
+      "invalidation": "EUR: bullish if a hawkish Lagarde reopening December, or a passed 3 Nov revenue vote with OAT-Bund spreads narrowing. Bearish if budget failure, censure or 49.3 with spreads widening; a dovish ECB. / JPY: bullish if a hawkish Outlook Report (30 Oct) or hot Tokyo CPI that firms December; MoF action. Bearish if a dovish Ueda that pushes the next hike into 2027; risk-on rally.",
+      "horizon": "Swing: bearish",
+      "alignment": "Aligned",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): -1.06% (-0.88 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias bearish (EUR -5 vs JPY -1) → v2.1 Week 44 bias bearish (EUR -5 vs JPY +2); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "EURCHF",
+      "bias": "bearish",
+      "conviction": "low",
+      "summary": "Bearish (EUR -5 vs CHF -1)",
+      "base_state": "Weak",
+      "base_score": -5,
+      "quote_state": "Neutral",
+      "quote_score": -1,
+      "main_driver": "CHF favored: SNB at 0% (lowest carry), no move priced before 10 Dec; haven support in a risk-off regime; EUR: ECB at 2.50% with a hold expected 29 Oct and softer guidance than priced; French budget votes 3 and 17 Nov after Moody's kept Aa3 negative.",
+      "drivers": [
+        "SNB at 0% (lowest carry), no move priced before 10 Dec; haven support in a risk-off regime",
+        "ECB at 2.50% with a hold expected 29 Oct and softer guidance than priced; French budget votes 3 and 17 Nov after Moody's kept Aa3 negative"
+      ],
+      "catalysts": [
+        {
+          "date": "29 Oct",
+          "event": "ECB decision (deposit 2.50%, hold expected)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "29 Oct",
+          "event": "Lagarde press conference",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "French Assembly vote on the 2027 budget revenue part",
+          "imp": "HIGH"
+        },
+        {
+          "date": "17 Nov",
+          "event": "French Assembly vote on the whole 2027 budget",
+          "imp": "HIGH"
+        }
+      ],
+      "priced": "EUR: partially priced — markets still price further ECB tightening while a 29 Oct hold and softer guidance are expected. CHF: no SNB move priced before 10 Dec.",
+      "invalidation": "EUR: bullish if a hawkish Lagarde reopening December, or a passed 3 Nov revenue vote with OAT-Bund spreads narrowing. Bearish if budget failure, censure or 49.3 with spreads widening; a dovish ECB. / CHF: bullish if deeper risk-off or French stress lifting haven demand. Bearish if risk-on and higher yields abroad widen the carry gap further.",
+      "horizon": "Swing: mild bearish",
+      "alignment": "Aligned",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): -0.27% (-0.34 σ on the uncalibrated v1 threshold of 0.8%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias bearish (EUR -5 vs CHF +2) → v2.1 Week 44 bias bearish (EUR -5 vs CHF -1); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "EURAUD",
+      "bias": "bearish",
+      "conviction": "high",
+      "summary": "Bearish (EUR -5 vs AUD +5)",
+      "base_state": "Weak",
+      "base_score": -5,
+      "quote_state": "Strong",
+      "quote_score": 5,
+      "main_driver": "AUD favored: RBA at 4.60% (highest carry); Hauser hawkish, November hike about 56% priced; Q3 CPI 28 Oct; iron ore down 6.5%; EUR: ECB at 2.50% with a hold expected 29 Oct and softer guidance than priced; French budget votes 3 and 17 Nov after Moody's kept Aa3 negative.",
+      "drivers": [
+        "RBA at 4.60% (highest carry); Hauser hawkish, November hike about 56% priced; Q3 CPI 28 Oct; iron ore down 6.5%",
+        "ECB at 2.50% with a hold expected 29 Oct and softer guidance than priced; French budget votes 3 and 17 Nov after Moody's kept Aa3 negative"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "Australia Q3 CPI incl. trimmed mean (consensus ~1.0% q/q; RBA Aug forecast 0.8%)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "29 Oct",
+          "event": "ECB decision (deposit 2.50%, hold expected)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "29 Oct",
+          "event": "Lagarde press conference",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "RBA decision (4.60%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "EUR: partially priced — markets still price further ECB tightening while a 29 Oct hold and softer guidance are expected. AUD: partially priced — November hike about 56% after Hauser (24% before).",
+      "invalidation": "EUR: bullish if a hawkish Lagarde reopening December, or a passed 3 Nov revenue vote with OAT-Bund spreads narrowing. Bearish if budget failure, censure or 49.3 with spreads widening; a dovish ECB. / AUD: bullish if Q3 trimmed mean above 1.0% q/q (28 Oct) cementing a 3 Nov hike. Bearish if a soft trimmed mean that removes the November hike; deeper risk-off.",
+      "horizon": "Swing: bearish",
+      "alignment": "Aligned",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): -1.60% (-1.34 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias bearish (EUR -5 vs AUD 0) → v2.1 Week 44 bias bearish (EUR -5 vs AUD +5); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "EURNZD",
+      "bias": "bearish",
+      "conviction": "medium",
+      "summary": "Bearish (EUR -5 vs NZD 0)",
+      "base_state": "Weak",
+      "base_score": -5,
+      "quote_state": "Neutral",
+      "quote_score": 0,
+      "main_driver": "NZD favored: RBNZ hike to 3.00% largely priced for 28 Oct after mixed Q3 CPI; dairy prices up; high beta in risk-off; EUR: ECB at 2.50% with a hold expected 29 Oct and softer guidance than priced; French budget votes 3 and 17 Nov after Moody's kept Aa3 negative.",
+      "drivers": [
+        "RBNZ hike to 3.00% largely priced for 28 Oct after mixed Q3 CPI; dairy prices up; high beta in risk-off",
+        "ECB at 2.50% with a hold expected 29 Oct and softer guidance than priced; French budget votes 3 and 17 Nov after Moody's kept Aa3 negative"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "RBNZ Monetary Policy Review (OCR 2.75%, hike to 3.00% largely priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "29 Oct",
+          "event": "ECB decision (deposit 2.50%, hold expected)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "29 Oct",
+          "event": "Lagarde press conference",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "French Assembly vote on the 2027 budget revenue part",
+          "imp": "HIGH"
+        }
+      ],
+      "priced": "EUR: partially priced — markets still price further ECB tightening while a 29 Oct hold and softer guidance are expected. NZD: largely priced — a 28 Oct hike to 3.00% mostly priced after Q3 CPI.",
+      "invalidation": "EUR: bullish if a hawkish Lagarde reopening December, or a passed 3 Nov revenue vote with OAT-Bund spreads narrowing. Bearish if budget failure, censure or 49.3 with spreads widening; a dovish ECB. / NZD: bullish if a hike with a higher OCR track on 28 Oct. Bearish if a hold or a dovish hike; 7 Nov election uncertainty; risk-off.",
+      "horizon": "Swing: bearish",
+      "alignment": "Aligned",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): -1.10% (-0.91 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias bearish (EUR -5 vs NZD -2) → v2.1 Week 44 bias bearish (EUR -5 vs NZD 0); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "EURCAD",
+      "bias": "bearish",
+      "conviction": "low",
+      "summary": "Bearish (EUR -5 vs CAD -2)",
+      "base_state": "Weak",
+      "base_score": -5,
+      "quote_state": "Neutral",
+      "quote_score": -2,
+      "main_driver": "CAD favored: 28 Oct BoC hike about 80% priced after Macklem despite core CPI near 1.85%; oil support vs live US tariffs; EUR: ECB at 2.50% with a hold expected 29 Oct and softer guidance than priced; French budget votes 3 and 17 Nov after Moody's kept Aa3 negative.",
+      "drivers": [
+        "28 Oct BoC hike about 80% priced after Macklem despite core CPI near 1.85%; oil support vs live US tariffs",
+        "ECB at 2.50% with a hold expected 29 Oct and softer guidance than priced; French budget votes 3 and 17 Nov after Moody's kept Aa3 negative"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "BoC decision and Monetary Policy Report (2.25%, hike about 80% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "29 Oct",
+          "event": "ECB decision (deposit 2.50%, hold expected)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "29 Oct",
+          "event": "Lagarde press conference",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "French Assembly vote on the 2027 budget revenue part",
+          "imp": "HIGH"
+        }
+      ],
+      "priced": "EUR: partially priced — markets still price further ECB tightening while a 29 Oct hold and softer guidance are expected. CAD: largely priced — about 80% for a 28 Oct hike (swaps; 84% per one source on 19 Oct).",
+      "invalidation": "EUR: bullish if a hawkish Lagarde reopening December, or a passed 3 Nov revenue vote with OAT-Bund spreads narrowing. Bearish if budget failure, censure or 49.3 with spreads widening; a dovish ECB. / CAD: bullish if a BoC hike with guidance for more; tariff relief from Washington. Bearish if a BoC hold citing soft core inflation; oil falling.",
+      "horizon": "Swing: mild bearish",
+      "alignment": "Aligned",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): -1.26% (-1.05 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias bearish (EUR -5 vs CAD -2) → v2.1 Week 44 bias bearish (EUR -5 vs CAD -2); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "GBPJPY",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (GBP +1 vs JPY +2)",
+      "base_state": "Neutral",
+      "base_score": 1,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "Close to a wash — GBP: September CPI 3.5% and services 3.7% beat, unemployment 4.7%; 5 Nov hike 93-96% priced; Budget 28 Oct; JPY: core-core CPI 2.4% beat; BoJ hold 30 Oct with December in view; intervention backstop and haven support.",
+      "drivers": [
+        "September CPI 3.5% and services 3.7% beat, unemployment 4.7%; 5 Nov hike 93-96% priced; Budget 28 Oct",
+        "core-core CPI 2.4% beat; BoJ hold 30 Oct with December in view; intervention backstop and haven support"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "UK Autumn Budget (Chancellor Healey); time approximate",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "30 Oct",
+          "event": "BoJ decision and Outlook Report (1.25%, hold expected; time unscheduled)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "30 Oct",
+          "event": "Tokyo October CPI",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "5 Nov",
+          "event": "BoE decision (3.75%, hike 93-96% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "GBP: largely priced — a 5 Nov hike is 93-96% priced and about 100bp over 12 months. JPY: largely priced — 30 Oct hold expected, December hike widely expected.",
+      "invalidation": "GBP: bullish if a gilt-friendly Budget on 28 Oct that keeps the 5 Nov hike intact. Bearish if a Budget that spooks gilts or signals heavy fiscal tightening that trims BoE pricing. / JPY: bullish if a hawkish Outlook Report (30 Oct) or hot Tokyo CPI that firms December; MoF action. Bearish if a dovish Ueda that pushes the next hike into 2027; risk-on rally.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): -0.37% (-0.21 σ on the uncalibrated v1 threshold of 1.8%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias two-sided (GBP -1 vs JPY -1) → v2.1 Week 44 bias two-sided (GBP +1 vs JPY +2); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "GBPCHF",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (GBP +1 vs CHF -1)",
+      "base_state": "Neutral",
+      "base_score": 1,
+      "quote_state": "Neutral",
+      "quote_score": -1,
+      "main_driver": "Close to a wash — GBP: September CPI 3.5% and services 3.7% beat, unemployment 4.7%; 5 Nov hike 93-96% priced; Budget 28 Oct; CHF: SNB at 0% (lowest carry), no move priced before 10 Dec; haven support in a risk-off regime.",
+      "drivers": [
+        "September CPI 3.5% and services 3.7% beat, unemployment 4.7%; 5 Nov hike 93-96% priced; Budget 28 Oct",
+        "SNB at 0% (lowest carry), no move priced before 10 Dec; haven support in a risk-off regime"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "UK Autumn Budget (Chancellor Healey); time approximate",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "5 Nov",
+          "event": "BoE decision (3.75%, hike 93-96% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "10 Dec",
+          "event": "SNB decision (0%)",
+          "imp": "MEDIUM"
+        }
+      ],
+      "priced": "GBP: largely priced — a 5 Nov hike is 93-96% priced and about 100bp over 12 months. CHF: no SNB move priced before 10 Dec.",
+      "invalidation": "GBP: bullish if a gilt-friendly Budget on 28 Oct that keeps the 5 Nov hike intact. Bearish if a Budget that spooks gilts or signals heavy fiscal tightening that trims BoE pricing. / CHF: bullish if deeper risk-off or French stress lifting haven demand. Bearish if risk-on and higher yields abroad widen the carry gap further.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): +0.47% (+0.39 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias bearish (GBP -1 vs CHF +2) → v2.1 Week 44 bias two-sided (GBP +1 vs CHF -1); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "GBPAUD",
+      "bias": "bearish",
+      "conviction": "low",
+      "summary": "Bearish (GBP +1 vs AUD +5)",
+      "base_state": "Neutral",
+      "base_score": 1,
+      "quote_state": "Strong",
+      "quote_score": 5,
+      "main_driver": "AUD favored: RBA at 4.60% (highest carry); Hauser hawkish, November hike about 56% priced; Q3 CPI 28 Oct; iron ore down 6.5%; GBP: September CPI 3.5% and services 3.7% beat, unemployment 4.7%; 5 Nov hike 93-96% priced; Budget 28 Oct.",
+      "drivers": [
+        "RBA at 4.60% (highest carry); Hauser hawkish, November hike about 56% priced; Q3 CPI 28 Oct; iron ore down 6.5%",
+        "September CPI 3.5% and services 3.7% beat, unemployment 4.7%; 5 Nov hike 93-96% priced; Budget 28 Oct"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "Australia Q3 CPI incl. trimmed mean (consensus ~1.0% q/q; RBA Aug forecast 0.8%)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "UK Autumn Budget (Chancellor Healey); time approximate",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "RBA decision (4.60%)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "5 Nov",
+          "event": "BoE decision (3.75%, hike 93-96% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "GBP: largely priced — a 5 Nov hike is 93-96% priced and about 100bp over 12 months. AUD: partially priced — November hike about 56% after Hauser (24% before).",
+      "invalidation": "GBP: bullish if a gilt-friendly Budget on 28 Oct that keeps the 5 Nov hike intact. Bearish if a Budget that spooks gilts or signals heavy fiscal tightening that trims BoE pricing. / AUD: bullish if Q3 trimmed mean above 1.0% q/q (28 Oct) cementing a 3 Nov hike. Bearish if a soft trimmed mean that removes the November hike; deeper risk-off.",
+      "horizon": "Swing: mild bearish",
+      "alignment": "Aligned",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): -0.91% (-0.76 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias two-sided (GBP -1 vs AUD 0) → v2.1 Week 44 bias bearish (GBP +1 vs AUD +5); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "GBPNZD",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (GBP +1 vs NZD 0)",
+      "base_state": "Neutral",
+      "base_score": 1,
+      "quote_state": "Neutral",
+      "quote_score": 0,
+      "main_driver": "Close to a wash — GBP: September CPI 3.5% and services 3.7% beat, unemployment 4.7%; 5 Nov hike 93-96% priced; Budget 28 Oct; NZD: RBNZ hike to 3.00% largely priced for 28 Oct after mixed Q3 CPI; dairy prices up; high beta in risk-off.",
+      "drivers": [
+        "September CPI 3.5% and services 3.7% beat, unemployment 4.7%; 5 Nov hike 93-96% priced; Budget 28 Oct",
+        "RBNZ hike to 3.00% largely priced for 28 Oct after mixed Q3 CPI; dairy prices up; high beta in risk-off"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "RBNZ Monetary Policy Review (OCR 2.75%, hike to 3.00% largely priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "UK Autumn Budget (Chancellor Healey); time approximate",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "5 Nov",
+          "event": "BoE decision (3.75%, hike 93-96% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "7 Nov",
+          "event": "New Zealand general election",
+          "imp": "MEDIUM"
+        }
+      ],
+      "priced": "GBP: largely priced — a 5 Nov hike is 93-96% priced and about 100bp over 12 months. NZD: largely priced — a 28 Oct hike to 3.00% mostly priced after Q3 CPI.",
+      "invalidation": "GBP: bullish if a gilt-friendly Budget on 28 Oct that keeps the 5 Nov hike intact. Bearish if a Budget that spooks gilts or signals heavy fiscal tightening that trims BoE pricing. / NZD: bullish if a hike with a higher OCR track on 28 Oct. Bearish if a hold or a dovish hike; 7 Nov election uncertainty; risk-off.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): -0.47% (-0.39 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias two-sided (GBP -1 vs NZD -2) → v2.1 Week 44 bias two-sided (GBP +1 vs NZD 0); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "GBPCAD",
+      "bias": "bullish",
+      "conviction": "low",
+      "summary": "Bullish (GBP +1 vs CAD -2)",
+      "base_state": "Neutral",
+      "base_score": 1,
+      "quote_state": "Neutral",
+      "quote_score": -2,
+      "main_driver": "GBP favored: September CPI 3.5% and services 3.7% beat, unemployment 4.7%; 5 Nov hike 93-96% priced; Budget 28 Oct; CAD: 28 Oct BoC hike about 80% priced after Macklem despite core CPI near 1.85%; oil support vs live US tariffs.",
+      "drivers": [
+        "September CPI 3.5% and services 3.7% beat, unemployment 4.7%; 5 Nov hike 93-96% priced; Budget 28 Oct",
+        "28 Oct BoC hike about 80% priced after Macklem despite core CPI near 1.85%; oil support vs live US tariffs"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "UK Autumn Budget (Chancellor Healey); time approximate",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "BoC decision and Monetary Policy Report (2.25%, hike about 80% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "5 Nov",
+          "event": "BoE decision (3.75%, hike 93-96% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "GBP: largely priced — a 5 Nov hike is 93-96% priced and about 100bp over 12 months. CAD: largely priced — about 80% for a 28 Oct hike (swaps; 84% per one source on 19 Oct).",
+      "invalidation": "GBP: bullish if a gilt-friendly Budget on 28 Oct that keeps the 5 Nov hike intact. Bearish if a Budget that spooks gilts or signals heavy fiscal tightening that trims BoE pricing. / CAD: bullish if a BoC hike with guidance for more; tariff relief from Washington. Bearish if a BoC hold citing soft core inflation; oil falling.",
+      "horizon": "Swing: mild bullish",
+      "alignment": "Partial conflict",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): -0.60% (-0.50 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias two-sided (GBP -1 vs CAD -2) → v2.1 Week 44 bias bullish (GBP +1 vs CAD -2); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "AUDJPY",
+      "bias": "bullish",
+      "conviction": "low",
+      "summary": "Bullish (AUD +5 vs JPY +2)",
+      "base_state": "Strong",
+      "base_score": 5,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "AUD favored: RBA at 4.60% (highest carry); Hauser hawkish, November hike about 56% priced; Q3 CPI 28 Oct; iron ore down 6.5%; JPY: core-core CPI 2.4% beat; BoJ hold 30 Oct with December in view; intervention backstop and haven support.",
+      "drivers": [
+        "RBA at 4.60% (highest carry); Hauser hawkish, November hike about 56% priced; Q3 CPI 28 Oct; iron ore down 6.5%",
+        "core-core CPI 2.4% beat; BoJ hold 30 Oct with December in view; intervention backstop and haven support"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "Australia Q3 CPI incl. trimmed mean (consensus ~1.0% q/q; RBA Aug forecast 0.8%)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "RBA Governor Bullock speaks (time not verified)",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "30 Oct",
+          "event": "BoJ decision and Outlook Report (1.25%, hold expected; time unscheduled)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "RBA decision (4.60%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "AUD: partially priced — November hike about 56% after Hauser (24% before). JPY: largely priced — 30 Oct hold expected, December hike widely expected.",
+      "invalidation": "AUD: bullish if Q3 trimmed mean above 1.0% q/q (28 Oct) cementing a 3 Nov hike. Bearish if a soft trimmed mean that removes the November hike; deeper risk-off. / JPY: bullish if a hawkish Outlook Report (30 Oct) or hot Tokyo CPI that firms December; MoF action. Bearish if a dovish Ueda that pushes the next hike into 2027; risk-on rally.",
+      "horizon": "Swing: mild bullish",
+      "alignment": "Aligned",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): +0.58% (+0.48 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias two-sided (AUD 0 vs JPY -1) → v2.1 Week 44 bias bullish (AUD +5 vs JPY +2); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "AUDCHF",
+      "bias": "bullish",
+      "conviction": "medium",
+      "summary": "Bullish (AUD +5 vs CHF -1)",
+      "base_state": "Strong",
+      "base_score": 5,
+      "quote_state": "Neutral",
+      "quote_score": -1,
+      "main_driver": "AUD favored: RBA at 4.60% (highest carry); Hauser hawkish, November hike about 56% priced; Q3 CPI 28 Oct; iron ore down 6.5%; CHF: SNB at 0% (lowest carry), no move priced before 10 Dec; haven support in a risk-off regime.",
+      "drivers": [
+        "RBA at 4.60% (highest carry); Hauser hawkish, November hike about 56% priced; Q3 CPI 28 Oct; iron ore down 6.5%",
+        "SNB at 0% (lowest carry), no move priced before 10 Dec; haven support in a risk-off regime"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "Australia Q3 CPI incl. trimmed mean (consensus ~1.0% q/q; RBA Aug forecast 0.8%)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "RBA Governor Bullock speaks (time not verified)",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "3 Nov",
+          "event": "RBA decision (4.60%)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "10 Dec",
+          "event": "SNB decision (0%)",
+          "imp": "MEDIUM"
+        }
+      ],
+      "priced": "AUD: partially priced — November hike about 56% after Hauser (24% before). CHF: no SNB move priced before 10 Dec.",
+      "invalidation": "AUD: bullish if Q3 trimmed mean above 1.0% q/q (28 Oct) cementing a 3 Nov hike. Bearish if a soft trimmed mean that removes the November hike; deeper risk-off. / CHF: bullish if deeper risk-off or French stress lifting haven demand. Bearish if risk-on and higher yields abroad widen the carry gap further.",
+      "horizon": "Swing: bullish",
+      "alignment": "Aligned",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): +1.43% (+1.19 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias two-sided (AUD 0 vs CHF +2) → v2.1 Week 44 bias bullish (AUD +5 vs CHF -1); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "AUDNZD",
+      "bias": "bullish",
+      "conviction": "medium",
+      "summary": "Bullish (AUD +5 vs NZD 0)",
+      "base_state": "Strong",
+      "base_score": 5,
+      "quote_state": "Neutral",
+      "quote_score": 0,
+      "main_driver": "AUD favored: RBA at 4.60% (highest carry); Hauser hawkish, November hike about 56% priced; Q3 CPI 28 Oct; iron ore down 6.5%; NZD: RBNZ hike to 3.00% largely priced for 28 Oct after mixed Q3 CPI; dairy prices up; high beta in risk-off.",
+      "drivers": [
+        "RBA at 4.60% (highest carry); Hauser hawkish, November hike about 56% priced; Q3 CPI 28 Oct; iron ore down 6.5%",
+        "RBNZ hike to 3.00% largely priced for 28 Oct after mixed Q3 CPI; dairy prices up; high beta in risk-off"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "Australia Q3 CPI incl. trimmed mean (consensus ~1.0% q/q; RBA Aug forecast 0.8%)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "RBNZ Monetary Policy Review (OCR 2.75%, hike to 3.00% largely priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "RBA Governor Bullock speaks (time not verified)",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "3 Nov",
+          "event": "RBA decision (4.60%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "AUD: partially priced — November hike about 56% after Hauser (24% before). NZD: largely priced — a 28 Oct hike to 3.00% mostly priced after Q3 CPI.",
+      "invalidation": "AUD: bullish if Q3 trimmed mean above 1.0% q/q (28 Oct) cementing a 3 Nov hike. Bearish if a soft trimmed mean that removes the November hike; deeper risk-off. / NZD: bullish if a hike with a higher OCR track on 28 Oct. Bearish if a hold or a dovish hike; 7 Nov election uncertainty; risk-off.",
+      "horizon": "Swing: bullish",
+      "alignment": "Aligned",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): +0.45% (+0.38 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias two-sided (AUD 0 vs NZD -2) → v2.1 Week 44 bias bullish (AUD +5 vs NZD 0); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "AUDCAD",
+      "bias": "bullish",
+      "conviction": "medium",
+      "summary": "Bullish (AUD +5 vs CAD -2)",
+      "base_state": "Strong",
+      "base_score": 5,
+      "quote_state": "Neutral",
+      "quote_score": -2,
+      "main_driver": "AUD favored: RBA at 4.60% (highest carry); Hauser hawkish, November hike about 56% priced; Q3 CPI 28 Oct; iron ore down 6.5%; CAD: 28 Oct BoC hike about 80% priced after Macklem despite core CPI near 1.85%; oil support vs live US tariffs.",
+      "drivers": [
+        "RBA at 4.60% (highest carry); Hauser hawkish, November hike about 56% priced; Q3 CPI 28 Oct; iron ore down 6.5%",
+        "28 Oct BoC hike about 80% priced after Macklem despite core CPI near 1.85%; oil support vs live US tariffs"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "Australia Q3 CPI incl. trimmed mean (consensus ~1.0% q/q; RBA Aug forecast 0.8%)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "BoC decision and Monetary Policy Report (2.25%, hike about 80% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "RBA Governor Bullock speaks (time not verified)",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "3 Nov",
+          "event": "RBA decision (4.60%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "AUD: partially priced — November hike about 56% after Hauser (24% before). CAD: largely priced — about 80% for a 28 Oct hike (swaps; 84% per one source on 19 Oct).",
+      "invalidation": "AUD: bullish if Q3 trimmed mean above 1.0% q/q (28 Oct) cementing a 3 Nov hike. Bearish if a soft trimmed mean that removes the November hike; deeper risk-off. / CAD: bullish if a BoC hike with guidance for more; tariff relief from Washington. Bearish if a BoC hold citing soft core inflation; oil falling.",
+      "horizon": "Swing: bullish",
+      "alignment": "Aligned",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): +0.31% (+0.26 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias two-sided (AUD 0 vs CAD -2) → v2.1 Week 44 bias bullish (AUD +5 vs CAD -2); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "NZDJPY",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (NZD 0 vs JPY +2)",
+      "base_state": "Neutral",
+      "base_score": 0,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "Close to a wash — NZD: RBNZ hike to 3.00% largely priced for 28 Oct after mixed Q3 CPI; dairy prices up; high beta in risk-off; JPY: core-core CPI 2.4% beat; BoJ hold 30 Oct with December in view; intervention backstop and haven support.",
+      "drivers": [
+        "RBNZ hike to 3.00% largely priced for 28 Oct after mixed Q3 CPI; dairy prices up; high beta in risk-off",
+        "core-core CPI 2.4% beat; BoJ hold 30 Oct with December in view; intervention backstop and haven support"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "RBNZ Monetary Policy Review (OCR 2.75%, hike to 3.00% largely priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "30 Oct",
+          "event": "BoJ decision and Outlook Report (1.25%, hold expected; time unscheduled)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "30 Oct",
+          "event": "Tokyo October CPI",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "7 Nov",
+          "event": "New Zealand general election",
+          "imp": "MEDIUM"
+        }
+      ],
+      "priced": "NZD: largely priced — a 28 Oct hike to 3.00% mostly priced after Q3 CPI. JPY: largely priced — 30 Oct hold expected, December hike widely expected.",
+      "invalidation": "NZD: bullish if a hike with a higher OCR track on 28 Oct. Bearish if a hold or a dovish hike; 7 Nov election uncertainty; risk-off. / JPY: bullish if a hawkish Outlook Report (30 Oct) or hot Tokyo CPI that firms December; MoF action. Bearish if a dovish Ueda that pushes the next hike into 2027; risk-on rally.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): +0.13% (+0.10 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias two-sided (NZD -2 vs JPY -1) → v2.1 Week 44 bias two-sided (NZD 0 vs JPY +2); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "NZDCHF",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (NZD 0 vs CHF -1)",
+      "base_state": "Neutral",
+      "base_score": 0,
+      "quote_state": "Neutral",
+      "quote_score": -1,
+      "main_driver": "Close to a wash — NZD: RBNZ hike to 3.00% largely priced for 28 Oct after mixed Q3 CPI; dairy prices up; high beta in risk-off; CHF: SNB at 0% (lowest carry), no move priced before 10 Dec; haven support in a risk-off regime.",
+      "drivers": [
+        "RBNZ hike to 3.00% largely priced for 28 Oct after mixed Q3 CPI; dairy prices up; high beta in risk-off",
+        "SNB at 0% (lowest carry), no move priced before 10 Dec; haven support in a risk-off regime"
+      ],
+      "catalysts": [
+        {
+          "date": "26 Oct",
+          "event": "China Fifth Plenum opens",
+          "imp": "LOW"
+        },
+        {
+          "date": "28 Oct",
+          "event": "RBNZ Monetary Policy Review (OCR 2.75%, hike to 3.00% largely priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "7 Nov",
+          "event": "New Zealand general election",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "10 Dec",
+          "event": "SNB decision (0%)",
+          "imp": "MEDIUM"
+        }
+      ],
+      "priced": "NZD: largely priced — a 28 Oct hike to 3.00% mostly priced after Q3 CPI. CHF: no SNB move priced before 10 Dec.",
+      "invalidation": "NZD: bullish if a hike with a higher OCR track on 28 Oct. Bearish if a hold or a dovish hike; 7 Nov election uncertainty; risk-off. / CHF: bullish if deeper risk-off or French stress lifting haven demand. Bearish if risk-on and higher yields abroad widen the carry gap further.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): +0.95% (+0.79 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias bearish (NZD -2 vs CHF +2) → v2.1 Week 44 bias two-sided (NZD 0 vs CHF -1); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "NZDCAD",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (NZD 0 vs CAD -2)",
+      "base_state": "Neutral",
+      "base_score": 0,
+      "quote_state": "Neutral",
+      "quote_score": -2,
+      "main_driver": "Close to a wash — NZD: RBNZ hike to 3.00% largely priced for 28 Oct after mixed Q3 CPI; dairy prices up; high beta in risk-off; CAD: 28 Oct BoC hike about 80% priced after Macklem despite core CPI near 1.85%; oil support vs live US tariffs.",
+      "drivers": [
+        "RBNZ hike to 3.00% largely priced for 28 Oct after mixed Q3 CPI; dairy prices up; high beta in risk-off",
+        "28 Oct BoC hike about 80% priced after Macklem despite core CPI near 1.85%; oil support vs live US tariffs"
+      ],
+      "catalysts": [
+        {
+          "date": "26 Oct",
+          "event": "China Fifth Plenum opens",
+          "imp": "LOW"
+        },
+        {
+          "date": "28 Oct",
+          "event": "RBNZ Monetary Policy Review (OCR 2.75%, hike to 3.00% largely priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "BoC decision and Monetary Policy Report (2.25%, hike about 80% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "7 Nov",
+          "event": "New Zealand general election",
+          "imp": "MEDIUM"
+        }
+      ],
+      "priced": "NZD: largely priced — a 28 Oct hike to 3.00% mostly priced after Q3 CPI. CAD: largely priced — about 80% for a 28 Oct hike (swaps; 84% per one source on 19 Oct).",
+      "invalidation": "NZD: bullish if a hike with a higher OCR track on 28 Oct. Bearish if a hold or a dovish hike; 7 Nov election uncertainty; risk-off. / CAD: bullish if a BoC hike with guidance for more; tariff relief from Washington. Bearish if a BoC hold citing soft core inflation; oil falling.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): -0.15% (-0.12 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias two-sided (NZD -2 vs CAD -2) → v2.1 Week 44 bias two-sided (NZD 0 vs CAD -2); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "CADJPY",
+      "bias": "bearish",
+      "conviction": "low",
+      "summary": "Bearish (CAD -2 vs JPY +2)",
+      "base_state": "Neutral",
+      "base_score": -2,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "JPY favored: core-core CPI 2.4% beat; BoJ hold 30 Oct with December in view; intervention backstop and haven support; CAD: 28 Oct BoC hike about 80% priced after Macklem despite core CPI near 1.85%; oil support vs live US tariffs.",
+      "drivers": [
+        "core-core CPI 2.4% beat; BoJ hold 30 Oct with December in view; intervention backstop and haven support",
+        "28 Oct BoC hike about 80% priced after Macklem despite core CPI near 1.85%; oil support vs live US tariffs"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "BoC decision and Monetary Policy Report (2.25%, hike about 80% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "30 Oct",
+          "event": "BoJ decision and Outlook Report (1.25%, hold expected; time unscheduled)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "30 Oct",
+          "event": "Tokyo October CPI",
+          "imp": "MEDIUM"
+        }
+      ],
+      "priced": "CAD: largely priced — about 80% for a 28 Oct hike (swaps; 84% per one source on 19 Oct). JPY: largely priced — 30 Oct hold expected, December hike widely expected.",
+      "invalidation": "CAD: bullish if a BoC hike with guidance for more; tariff relief from Washington. Bearish if a BoC hold citing soft core inflation; oil falling. / JPY: bullish if a hawkish Outlook Report (30 Oct) or hot Tokyo CPI that firms December; MoF action. Bearish if a dovish Ueda that pushes the next hike into 2027; risk-on rally.",
+      "horizon": "Swing: mild bearish",
+      "alignment": "Neutral",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): +0.26% (+0.22 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias two-sided (CAD -2 vs JPY -1) → v2.1 Week 44 bias bearish (CAD -2 vs JPY +2); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "CADCHF",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (CAD -2 vs CHF -1)",
+      "base_state": "Neutral",
+      "base_score": -2,
+      "quote_state": "Neutral",
+      "quote_score": -1,
+      "main_driver": "Close to a wash — CAD: 28 Oct BoC hike about 80% priced after Macklem despite core CPI near 1.85%; oil support vs live US tariffs; CHF: SNB at 0% (lowest carry), no move priced before 10 Dec; haven support in a risk-off regime.",
+      "drivers": [
+        "28 Oct BoC hike about 80% priced after Macklem despite core CPI near 1.85%; oil support vs live US tariffs",
+        "SNB at 0% (lowest carry), no move priced before 10 Dec; haven support in a risk-off regime"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "BoC decision and Monetary Policy Report (2.25%, hike about 80% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "10 Dec",
+          "event": "SNB decision (0%)",
+          "imp": "MEDIUM"
+        }
+      ],
+      "priced": "CAD: largely priced — about 80% for a 28 Oct hike (swaps; 84% per one source on 19 Oct). CHF: no SNB move priced before 10 Dec.",
+      "invalidation": "CAD: bullish if a BoC hike with guidance for more; tariff relief from Washington. Bearish if a BoC hold citing soft core inflation; oil falling. / CHF: bullish if deeper risk-off or French stress lifting haven demand. Bearish if risk-on and higher yields abroad widen the carry gap further.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): +1.14% (+0.95 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias bearish (CAD -2 vs CHF +2) → v2.1 Week 44 bias two-sided (CAD -2 vs CHF -1); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "CHFJPY",
+      "bias": "bearish",
+      "conviction": "low",
+      "summary": "Bearish (CHF -1 vs JPY +2)",
+      "base_state": "Neutral",
+      "base_score": -1,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "JPY favored: core-core CPI 2.4% beat; BoJ hold 30 Oct with December in view; intervention backstop and haven support; CHF: SNB at 0% (lowest carry), no move priced before 10 Dec; haven support in a risk-off regime.",
+      "drivers": [
+        "core-core CPI 2.4% beat; BoJ hold 30 Oct with December in view; intervention backstop and haven support",
+        "SNB at 0% (lowest carry), no move priced before 10 Dec; haven support in a risk-off regime"
+      ],
+      "catalysts": [
+        {
+          "date": "30 Oct",
+          "event": "BoJ decision and Outlook Report (1.25%, hold expected; time unscheduled)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "30 Oct",
+          "event": "Tokyo October CPI",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "10 Dec",
+          "event": "SNB decision (0%)",
+          "imp": "MEDIUM"
+        }
+      ],
+      "priced": "CHF: no SNB move priced before 10 Dec. JPY: largely priced — 30 Oct hold expected, December hike widely expected.",
+      "invalidation": "CHF: bullish if deeper risk-off or French stress lifting haven demand. Bearish if risk-on and higher yields abroad widen the carry gap further. / JPY: bullish if a hawkish Outlook Report (30 Oct) or hot Tokyo CPI that firms December; MoF action. Bearish if a dovish Ueda that pushes the next hike into 2027; risk-on rally.",
+      "horizon": "Swing: mild bearish",
+      "alignment": "Aligned",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): -0.82% (-0.69 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias bullish (CHF +2 vs JPY -1) → v2.1 Week 44 bias bearish (CHF -1 vs JPY +2); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    },
+    {
+      "pair": "XAUUSD",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (XAU +3 vs USD +2)",
+      "base_state": "Neutral",
+      "base_score": 3,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "Close to a wash — XAU: gold factor +1: breakevens down 41bp in four weeks vs haven demand and central-bank buying; USD: Fed at 3.75-4.00%, hold expected 28 Oct and a December hike priced (FedWatch ~94% by December); mild haven support in a risk-off regime.",
+      "drivers": [
+        "gold factor +1: breakevens down 41bp in four weeks vs haven demand and central-bank buying",
+        "Fed at 3.75-4.00%, hold expected 28 Oct and a December hike priced (FedWatch ~94% by December); mild haven support in a risk-off regime"
+      ],
+      "catalysts": [
+        {
+          "date": "28 Oct",
+          "event": "FOMC decision (3.75-4.00%, hold expected)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "28 Oct",
+          "event": "Warsh press conference",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "29 Oct",
+          "event": "US Q3 GDP advance and September PCE (release grouping per weekly preview)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "US midterm elections",
+          "imp": "HIGH"
+        }
+      ],
+      "priced": "XAU: breakeven compression and the December Fed hike are known; flows data are only to end-September. USD: largely priced — hold on 28 Oct (~83% per FedWatch, 20 Oct) and a December hike (~94% by December).",
+      "invalidation": "XAU: bullish if breakevens stabilise and real yields fall after the FOMC; escalation in the Middle East. Bearish if real yields rise on a hawkish Warsh; continued ETF liquidation. / USD: bullish if Warsh signals a faster path or a hot Q3 PCE (29 Oct) lifts March 2027 pricing. Bearish if a dovish Warsh press conference or soft PCE/ECI that trims December odds.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "H1 Dukascopy BID, Fri 16 Oct 20:00 to Fri 23 Oct 20:00 UTC (assumed): -4.08% (-3.40 σ on the uncalibrated v1 threshold of 1.2%); in-sample consistency read, not a test.",
+      "changed": "v1 Week 43 bias bearish (XAU +1 vs USD +5) → v2.1 Week 44 bias two-sided (XAU +3 vs USD +2); first live v2.1 vintage, method changed so scores are not like-for-like. Phase 2 (H1 review): no correction; no N1 or M evidence moved a factor."
+    }
+  ],
+  "news": [
+    {
+      "date": "2026-10-26",
+      "currency": "AUD",
+      "event": "China Fifth Plenum opens",
+      "importance": "LOW"
+    },
+    {
+      "date": "2026-10-26",
+      "currency": "NZD",
+      "event": "China Fifth Plenum opens",
+      "importance": "LOW"
+    },
+    {
+      "date": "2026-10-27",
+      "currency": "EUR",
+      "event": "French social-security budget (PLFSS) in the Senate after Assembly rejection on 23 Oct",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-10-28",
+      "currency": "AUD",
+      "event": "Australia Q3 CPI incl. trimmed mean (consensus ~1.0% q/q; RBA Aug forecast 0.8%)",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-10-28",
+      "currency": "NZD",
+      "event": "RBNZ Monetary Policy Review (OCR 2.75%, hike to 3.00% largely priced)",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-10-28",
+      "currency": "AUD",
+      "event": "RBA Governor Bullock speaks (time not verified)",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-10-28",
+      "currency": "GBP",
+      "event": "UK Autumn Budget (Chancellor Healey); time approximate",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-10-28",
+      "currency": "CAD",
+      "event": "BoC decision and Monetary Policy Report (2.25%, hike about 80% priced)",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-10-28",
+      "currency": "USD",
+      "event": "FOMC decision (3.75-4.00%, hold expected)",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-10-28",
+      "currency": "XAU",
+      "event": "FOMC decision (3.75-4.00%, hold expected)",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-10-28",
+      "currency": "USD",
+      "event": "Warsh press conference",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-10-28",
+      "currency": "XAU",
+      "event": "Warsh press conference",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-10-29",
+      "currency": "USD",
+      "event": "US Q3 GDP advance and September PCE (release grouping per weekly preview)",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-10-29",
+      "currency": "XAU",
+      "event": "US Q3 GDP advance and September PCE (release grouping per weekly preview)",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-10-29",
+      "currency": "EUR",
+      "event": "ECB decision (deposit 2.50%, hold expected)",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-10-29",
+      "currency": "EUR",
+      "event": "Lagarde press conference",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-10-30",
+      "currency": "JPY",
+      "event": "Tokyo October CPI",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-10-30",
+      "currency": "JPY",
+      "event": "BoJ decision and Outlook Report (1.25%, hold expected; time unscheduled)",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-10-30",
+      "currency": "EUR",
+      "event": "Euro-area Q3 GDP flash",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-10-30",
+      "currency": "USD",
+      "event": "US Q3 Employment Cost Index",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-03",
+      "currency": "AUD",
+      "event": "RBA decision (4.60%)",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-11-03",
+      "currency": "EUR",
+      "event": "French Assembly vote on the 2027 budget revenue part",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-03",
+      "currency": "USD",
+      "event": "US midterm elections",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-03",
+      "currency": "XAU",
+      "event": "US midterm elections",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-05",
+      "currency": "GBP",
+      "event": "BoE decision (3.75%, hike 93-96% priced)",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-11-06",
+      "currency": "USD",
+      "event": "US October payrolls (after US clock change 1 Nov)",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-06",
+      "currency": "XAU",
+      "event": "US October payrolls (after US clock change 1 Nov)",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-07",
+      "currency": "NZD",
+      "event": "New Zealand general election",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-17",
+      "currency": "EUR",
+      "event": "French Assembly vote on the whole 2027 budget",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-27",
+      "currency": "EUR",
+      "event": "S&P review of France",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-12-10",
+      "currency": "CHF",
+      "event": "SNB decision (0%)",
+      "importance": "MEDIUM"
+    }
+  ]
+}

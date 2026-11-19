@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Inter;font-weight:400;src:url(../node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2)}
+@font-face{font-family:Inter;font-weight:500;src:url(../node_modules/@fontsource/inter/files/inter-latin-500-normal.woff2)}
+@font-face{font-family:Inter;font-weight:600;src:url(../node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2)}
+@font-face{font-family:Inter;font-weight:700;src:url(../node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2)}
+@font-face{font-family:SG;font-weight:500;src:url(../node_modules/@fontsource/space-grotesk/files/space-grotesk-latin-500-normal.woff2)}
+@font-face{font-family:SG;font-weight:700;src:url(../node_modules/@fontsource/space-grotesk/files/space-grotesk-latin-700-normal.woff2)}
+:root{--bg:#0B0E14;--card:rgba(23,26,33,.86);--line:#2A2F3A;--ink:#EEF0F3;--sub:#9AA3AD;--acc:#5B7CFF;--bull:#2FBF71;--bullT:#6EE7A8;--bear:#EF5350;--bearT:#FF8A80;--amb:#E0B23C;--ambT:#F5CF5F}
+*{box-sizing:border-box}
+body{margin:0;width:1080px;height:1920px;background:var(--bg);color:var(--ink);font-family:Inter,sans-serif;overflow:hidden;position:relative}
+#bg{position:absolute;inset:0;overflow:hidden}
+.glow{position:absolute;width:900px;height:900px;border-radius:50%;filter:blur(140px);opacity:.38}
+#grid{position:absolute;inset:-200px;background-image:linear-gradient(rgba(255,255,255,.035) 2px,transparent 2px),linear-gradient(90deg,rgba(255,255,255,.035) 2px,transparent 2px);background-size:90px 90px}
+.pt{position:absolute;width:6px;height:6px;border-radius:50%;background:#fff}
+#stage{position:absolute;inset:0}
+.sc{position:absolute;inset:0;padding:190px 140px 400px 80px;display:none;flex-direction:column;will-change:transform}
+.sc.on{display:flex}
+.eye{font-size:30px;font-weight:700;color:var(--sub);letter-spacing:3px}
+.mid{flex-grow:1;display:flex;flex-direction:column;justify-content:center;gap:34px}
+.pill{padding:12px 24px;border-radius:999px;font-size:30px;font-weight:700;display:inline-block}
+.card{background:var(--card);border:2px solid var(--line);border-radius:30px;padding:38px;box-shadow:0 30px 80px rgba(0,0,0,.35)}
+.big{font-family:SG;font-weight:700;line-height:1}
+.hl{padding:0 10px;border-radius:10px}
+#hud{position:absolute;left:80px;right:140px;top:96px;display:flex;justify-content:space-between;align-items:center}
+.brand{font-family:SG;font-weight:700;font-size:30px;letter-spacing:4px}
+.dots{display:flex;gap:8px}.dots i{width:34px;height:7px;border-radius:4px;background:#2A2F3A}
+#prog{position:absolute;left:0;bottom:0;height:10px;background:linear-gradient(90deg,var(--acc),#9B7CFF)}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+#sweep{position:absolute;top:-400px;width:260px;height:2800px;background:linear-gradient(90deg,transparent,rgba(120,150,255,.55),rgba(255,255,255,.85),rgba(120,150,255,.55),transparent);transform:rotate(18deg);opacity:0;filter:blur(6px)}
+.stamp{display:inline-block;border:6px solid currentColor;border-radius:18px;padding:10px 30px;font-family:SG;font-weight:700;letter-spacing:4px}
+</style></head><body>
+<div id="bg"><div id="grid"></div><div class="glow" id="g1" style="background:#3550FF"></div><div class="glow" id="g2" style="background:#E0454B"></div><div class="glow" id="g3" style="background:#16A36A"></div></div>
+<div id="stage">
+
+<section class="sc" id="hook">
+ <div class="mid" style="justify-content:flex-start;padding-top:40px;gap:40px">
+  <div data-in="0.35" style="font-size:30px;font-weight:700;color:var(--sub);letter-spacing:3px">MORNING CHECK · THU 12 NOV</div>
+  <div class="big" id="slam" style="font-size:236px;letter-spacing:-6px" data-slam="0.02" data-sfx="impact">EUR/USD</div>
+  <div style="display:flex;flex-direction:column;gap:26px;margin-top:30px">
+   <div data-in="@0" data-sfx="pop" style="display:flex;align-items:center;gap:24px"><span class="big" style="font-size:92px;color:var(--ambT);line-height:1.05">France just caught a break.</span></div>
+   <div data-in="@0+0.4" data-sfx="tick"><span class="pill" style="background:#352C10;color:var(--ambT);font-size:32px">France's borrowing stress: 162 → 142</span></div>
+   <div data-words="@1" style="font-family:SG;font-weight:500;font-size:76px;line-height:1.1">Is the euro finally fighting back?</div>
+   <div data-words="@2" style="font-family:SG;font-weight:500;font-size:76px;line-height:1.1">Or is the <span style="color:var(--bullT)">dollar</span> still the boss?</div>
+  </div>
+ </div>
+</section>
+
+<section class="sc" id="recap">
+ <div class="eye" data-in="0.2">MONDAY'S STORY · WEEK 46</div>
+ <div class="mid">
+  <div data-in="@0" class="big" style="font-size:96px">Rewind to Monday.</div>
+  <div data-stamp="@1+1.2" data-sfx="impact" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap"><span class="stamp" style="color:var(--bearT);font-size:64px">BEARISH</span><span class="pill" style="background:#1D2230;color:var(--ink);font-size:30px">Dollar favoured · strong lean</span></div>
+  <div class="card" data-in="@2" data-sfx="pop" style="display:flex;justify-content:space-between;align-items:center;gap:24px">
+   <div style="min-width:0"><div style="font-size:32px;font-weight:700;color:var(--sub)">EUR · euro</div><div style="font-size:34px;line-height:1.3;margin-top:10px">France's budget worries<br><span style="color:var(--sub);font-size:28px">Investors nervous about lending to France</span></div></div>
+   <div class="big" style="font-size:132px;color:var(--bearT)" data-sign data-count="0|-3|@2+0.6|0.8">0</div>
+  </div>
+  <div class="card" data-in="@3" data-sfx="pop" style="display:flex;justify-content:space-between;align-items:center;gap:24px">
+   <div style="min-width:0"><div style="font-size:32px;font-weight:700;color:var(--sub)">USD · dollar</div><div style="font-size:34px;line-height:1.3;margin-top:10px">Strong US jobs (+165k)<br><span style="color:var(--sub);font-size:28px">The Fed still talks about raising rates</span></div></div>
+   <div class="big" style="font-size:132px;color:var(--bullT)" data-sign data-count="0|7|@3+1.0|0.8">0</div>
+  </div>
+  <div class="card" data-in="@4" data-sfx="whoosh2" style="border-color:var(--acc);display:flex;gap:26px;align-items:center">
+   <svg width="74" height="74" viewBox="0 0 24 24" fill="none" stroke="#6EE7A8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+   <div><div style="font-size:28px;font-weight:700;color:var(--sub)">TUESDAY</div><div style="font-size:36px;line-height:1.3">US prices rose <b style="color:var(--bullT)">faster than expected</b><br><span style="color:var(--sub);font-size:28px">Core inflation +0.3% vs +0.2%</span></div></div>
+  </div>
+ </div>
+</section>
+
+<section class="sc" id="changed">
+ <div class="eye" data-in="0.2">OVERNIGHT</div>
+ <div class="mid">
+  <div data-in="@0" class="big" style="font-size:96px">Two things moved.</div>
+  <div class="card" data-in="@1" data-sfx="pop" style="display:flex;flex-direction:column;gap:22px">
+   <div style="display:flex;justify-content:space-between;align-items:center"><div class="big" style="font-size:54px">EUR</div><span class="pill" style="background:#352C10;color:var(--ambT);font-size:26px">EASING</span></div>
+   <div style="font-size:30px;color:var(--sub)">France's stress meter: extra cost to borrow vs Germany</div>
+   <div class="big" style="font-size:150px;color:var(--ambT)"><span data-count="161.8|142.4|@1+0.6|3.2|1">161.8</span><span style="font-size:60px">bp</span></div>
+   <div style="position:relative;height:22px;border-radius:11px;background:#2A2F3A">
+    <div style="position:absolute;left:0;top:0;bottom:0;border-radius:11px;background:linear-gradient(90deg,#B8861F,var(--ambT));width:100%" data-grow="39|@1+0.6|3.2|100"></div>
+   </div>
+   <div style="display:flex;justify-content:space-between;font-size:26px;color:var(--sub)"><span>130: story flips</span><span>162: recent high</span></div>
+   <div data-in="@2+1.6" data-sfx="tick"><span class="pill" style="background:#3A1717;color:var(--bearT);font-size:28px" data-pulse="@2+1.6">Still in the red zone</span></div>
+  </div>
+  <div class="card" data-in="@3" data-sfx="pop" style="display:flex;align-items:center;gap:34px">
+   <svg width="190" height="190" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="84" fill="none" stroke="#2A2F3A" stroke-width="18"/><circle id="ring" cx="100" cy="100" r="84" fill="none" stroke="#2FBF71" stroke-width="18" stroke-linecap="round" stroke-dasharray="527.8" stroke-dashoffset="527.8" transform="rotate(-90 100 100)" data-ring="0.91|@3+1.4|2.2"/></svg>
+   <div><div class="big" style="font-size:54px">USD</div><div class="big" style="font-size:120px;color:var(--bullT);margin-top:8px"><span data-count="0|91|@3+1.4|2.2">0</span>%</div><div style="font-size:28px;color:var(--sub)">Chance of a US rate hike in December</div></div>
+  </div>
+ </div>
+</section>
+
+<section class="sc" id="today">
+ <div class="eye" data-in="0.2">WHERE THAT LEAVES US</div>
+ <div class="mid">
+  <div data-in="@0" class="big" style="font-size:90px;line-height:1.05">So who's winning?</div>
+  <div data-in="@0+0.4">
+   <div style="position:relative;height:150px;margin-top:70px">
+    <div style="position:absolute;left:0;right:0;top:66px;height:14px;border-radius:7px;background:linear-gradient(90deg,#5a2224,#2A2F3A 50%,#1b4a33)"></div>
+    <div style="position:absolute;left:50%;top:40px;width:4px;height:66px;background:#5A6270"></div>
+    <div style="position:absolute;top:-62px;width:90px;height:90px;margin-left:-45px;border-radius:50%;border:4px dashed var(--ambT);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:26px;color:var(--ambT);left:41.67%" data-ghost="47.22|@2+0.5|1.2">−1?</div>
+    <div style="position:absolute;top:28px;width:90px;height:90px;margin-left:-45px;border-radius:50%;background:var(--bear);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:28px;color:#0B0E14;left:50%;box-shadow:0 0 40px rgba(239,83,80,.6)" data-move="41.67|@0+0.6|1.0">EUR</div>
+    <div style="position:absolute;top:28px;width:90px;height:90px;margin-left:-45px;border-radius:50%;background:var(--bull);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:28px;color:#0B0E14;left:50%;box-shadow:0 0 40px rgba(47,191,113,.6)" data-move="69.44|@0+0.8|1.0">USD</div>
+   </div>
+   <div style="display:flex;justify-content:space-between;font-size:26px;color:var(--sub)"><span>−18 weak</span><span>0</span><span>+18 strong</span></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:26px">
+   <div class="card" data-in="@1" data-sfx="pop"><div style="font-size:28px;font-weight:700;color:var(--sub)">Gap today · dollar ahead</div><div class="big" style="font-size:130px;margin-top:10px" data-sign data-count="0|-10|@1+0.3|0.9">0</div></div>
+   <div class="card" data-in="@2" data-sfx="pop" style="border-color:var(--amb)"><div style="font-size:28px;font-weight:700;color:var(--ambT)">If France keeps calming</div><div class="big" style="font-size:130px;margin-top:10px;color:var(--ambT)" data-sign data-count="-10|-8|@2+0.6|1.0">−10</div></div>
+  </div>
+  <div data-stamp="@3" data-sfx="impact"><span class="stamp" style="color:var(--bearT);font-size:64px">DOLLAR STILL AHEAD</span></div>
+ </div>
+</section>
+
+<section class="sc" id="next">
+ <div class="eye" data-in="0.2">NEXT UP</div>
+ <div class="mid" style="gap:28px">
+  <div data-in="@0" class="big" style="font-size:96px;margin-bottom:10px">What's next?</div>
+  <div class="card" data-in="@1" data-sfx="pop" style="display:flex;gap:28px;align-items:center"><div style="width:140px;text-align:center;background:#1D2230;border-radius:20px;padding:16px 0"><div style="font-size:26px;color:var(--sub)">FRI</div><div class="big" style="font-size:66px">13</div><div style="font-size:26px;color:var(--sub)">NOV</div></div><div><div style="font-size:28px;color:var(--sub)">EUR · 12:00 Bucharest</div><div style="font-size:38px;font-weight:600;line-height:1.25">Europe's growth numbers</div></div></div>
+  <div class="card" data-in="@1+1.5" data-sfx="pop" style="display:flex;gap:28px;align-items:center"><div style="width:140px;text-align:center;background:#1D2230;border-radius:20px;padding:16px 0"><div style="font-size:26px;color:var(--sub)">FRI</div><div class="big" style="font-size:66px">13</div><div style="font-size:26px;color:var(--sub)">NOV</div></div><div><div style="font-size:28px;color:var(--sub)">USD · 15:30 Bucharest</div><div style="font-size:38px;font-weight:600;line-height:1.25">Fresh look at US prices</div></div></div>
+  <div class="card" data-in="@2" data-sfx="pop" style="display:flex;gap:28px;align-items:center"><div style="width:140px;text-align:center;background:#1D2230;border-radius:20px;padding:16px 0"><div style="font-size:26px;color:var(--sub)">FRI</div><div class="big" style="font-size:66px">20</div><div style="font-size:26px;color:var(--sub)">NOV</div></div><div><div style="font-size:28px;color:var(--sub)">EUR</div><div style="font-size:38px;font-weight:600;line-height:1.25">France's Senate debates the budget</div></div></div>
+ </div>
+</section>
+
+<section class="sc" id="outro">
+ <div class="mid">
+  <div style="font-size:30px;font-weight:700;color:var(--sub);letter-spacing:3px" data-in="0.2">EUR/USD · BOTTOM LINE</div>
+  <div class="big" style="font-size:124px;line-height:1.02" data-slam="@0+0.2" data-sfx="impact">The dollar keeps the upper hand.</div>
+  <div class="card" data-in="@1" data-sfx="ding" style="border-color:var(--acc);display:flex;align-items:center;gap:28px">
+   <div style="width:96px;height:96px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;flex-shrink:0" data-pulse="@1+0.4"><svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></div>
+   <div><div style="font-size:46px;font-weight:700">Follow Cristian Trading</div><div style="font-size:30px;color:var(--sub);margin-top:8px">A new check every morning and evening</div></div>
+  </div>
+  <div data-in="@2"><div style="font-size:34px;font-weight:600">Big-picture story, not a trade signal.</div><div style="font-size:26px;color:var(--sub);margin-top:8px">No entries, stops or targets.</div></div>
+ </div>
+</section>
+
+</div>
+<div id="hud"><div class="brand">CRISTIAN TRADING</div><div class="dots" id="dots"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+<div id="sweep"></div><div id="flash"></div><div id="prog"></div>
+<script>
+const IDS=['hook','recap','changed','today','next','outro'];
+let TIM=null, PTS=[];
+const cl=x=>Math.min(1,Math.max(0,x));
+const ease=x=>1-Math.pow(1-cl(x),3);
+const back=x=>{x=cl(x);const c=1.9;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+const sg=(n,dp,plus)=>{const v=dp?n.toFixed(dp):String(Math.round(n));const num=Number(v);return num>0&&plus?'+'+v:num<0?'−'+v.replace('-',''):v};
+function rnd(i){const x=Math.sin(i*127.1)*43758.5453;return x-Math.floor(x)}
+// particles
+for(let i=0;i<26;i++){const d=document.createElement('div');d.className='pt';document.getElementById('bg').appendChild(d);PTS.push(d)}
+document.querySelectorAll('[data-words]').forEach(el=>{const nodes=[...el.childNodes];el.innerHTML='';nodes.forEach(n=>{if(n.nodeType===3){n.textContent.split(/(\s+)/).forEach(w=>{if(!w.trim()){el.appendChild(document.createTextNode(w));return}const s=document.createElement('span');s.textContent=w;s.style.display='inline-block';s.className='w';el.appendChild(s)})}else{n.style.display='inline-block';n.classList.add('w');el.appendChild(n)}})});
+function T(sc,v){v=String(v);if(v[0]!=='@')return +v;const m=v.slice(1).split('+');const k=+m[0];return TIM[sc].lead+TIM[sc].starts[k]+(m[1]?+m[1]:0)}
+function draw(sc,t,mult){
+ const S=document.getElementById(sc);
+ S.querySelectorAll('[data-in]').forEach(el=>{const p=ease((t-T(sc,el.dataset.in))/0.45);el.style.opacity=p;el.style.transform='translateY('+(1-p)*50+'px) scale('+(0.96+0.04*p)+')'});
+ S.querySelectorAll('[data-words]').forEach(el=>{const d=T(sc,el.dataset.words);el.style.opacity=t>=d-0.05?1:0;[...el.querySelectorAll('.w')].forEach((w,i)=>{const p=ease((t-d-i*0.11)/0.3);w.style.opacity=p;w.style.transform='translateY('+(1-p)*30+'px)';w.style.filter='blur('+(1-p)*8+'px)'})});
+ S.querySelectorAll('[data-slam]').forEach(el=>{const d=T(sc,el.dataset.slam);const x=(t-d)/0.32;const p=back(x);el.style.opacity=cl(x*3);el.style.transform='scale('+(1.7-0.7*p)+')';el.style.transformOrigin='left center';const g=Math.max(0,1-(t-d)/0.5);el.style.textShadow=g>0?`${-14*g}px 0 rgba(255,60,80,${.8*g}), ${14*g}px 0 rgba(60,200,255,${.8*g})`:'none'});
+ S.querySelectorAll('[data-stamp]').forEach(el=>{const d=T(sc,el.dataset.stamp);const x=(t-d)/0.25;el.style.opacity=cl(x*2);el.style.transform='scale('+(2.2-1.2*back(x))+') rotate('+(-4*(1-cl(x)))+'deg)';el.style.transformOrigin='left center'});
+ S.querySelectorAll('[data-count]').forEach(el=>{const [a,b,d,du,dp]=el.dataset.count.split('|');const p=ease((t-T(sc,d))/+du);el.textContent=sg(+a+(+b-+a)*p,+(dp||0),el.hasAttribute('data-sign'))});
+ S.querySelectorAll('[data-grow]').forEach(el=>{const [w,d,du,from]=el.dataset.grow.split('|');const p=ease((t-T(sc,d))/+du);const f=from?+from:0;el.style.width=(f+(+w-f)*p)+'%'});
+ S.querySelectorAll('[data-move]').forEach(el=>{const [l,d,du]=el.dataset.move.split('|');const p=back((t-T(sc,d))/+du);el.style.left=(50+(+l-50)*p)+'%'});
+ S.querySelectorAll('[data-ghost]').forEach(el=>{const [l,d,du]=el.dataset.ghost.split('|');const s=T(sc,d);const p=ease((t-s)/+du);el.style.opacity=cl((t-s+0.3)/0.3)*0.95;el.style.left=(41.67+(+l-41.67)*p)+'%'});
+ S.querySelectorAll('[data-ring]').forEach(el=>{const [v,d,du]=el.dataset.ring.split('|');const p=ease((t-T(sc,d))/+du);el.setAttribute('stroke-dashoffset',527.8*(1-v*p))});
+ S.querySelectorAll('[data-pulse]').forEach(el=>{const d=T(sc,el.dataset.pulse);const k=t-d;const s=k>0?1+0.06*Math.sin(k*6)*Math.exp(-k*0.6):1;el.style.transform='scale('+s+')';el.style.boxShadow=k>0?`0 0 0 ${(k*30)%40}px rgba(91,124,255,${0.35*(1-((k*30)%40)/40)})`:''});
+}
+window.cueList=(si)=>{const sc=IDS[si];const S=document.getElementById(sc);const out=[];if(si>0)out.push({t:0.0,type:'whoosh'});
+ S.querySelectorAll('[data-sfx]').forEach(el=>{const v=el.dataset.in||el.dataset.slam||el.dataset.stamp||el.dataset.words;out.push({t:T(sc,v),type:el.dataset.sfx})});
+ S.querySelectorAll('[data-count]').forEach(el=>{const [a,b,d,du]=el.dataset.count.split('|');const s=T(sc,d);for(let k=0;k<+du*0.8;k+=0.08)out.push({t:s+k,type:'tick2'})});
+ if(sc==='hook')out.push({t:0,type:'riserhit'});return out};
+window.setTim=(tim)=>{TIM=tim};
+window.render=(si,t,gt,total)=>{
+ const sc=IDS[si];const TR=0.45;const dur=TIM[sc].dur;
+ IDS.forEach(id=>document.getElementById(id).classList.remove('on'));
+ const cur=document.getElementById(sc);cur.classList.add('on');
+ draw(sc,t);
+ const kb=1+0.025*(t/dur);
+ if(si>0&&t<TR){const p=ease(t/TR);const pv=IDS[si-1];const P=document.getElementById(pv);P.classList.add('on');draw(pv,TIM[pv].dur);
+  P.style.transform=`translateX(${-180*p}px) scale(${1.025+0.1*p})`;P.style.filter=`blur(${14*p}px)`;P.style.opacity=1-p;
+  cur.style.transform=`translateX(${180*(1-p)}px) scale(${0.94+0.06*p})`;cur.style.filter=`blur(${14*(1-p)}px)`;cur.style.opacity=p;
+  const sw=document.getElementById('sweep');sw.style.opacity=Math.sin(Math.PI*cl(t/TR));sw.style.left=(-400+1700*cl(t/TR))+'px';
+ }else{cur.style.transform=`scale(${kb})`;cur.style.filter='none';cur.style.opacity=1;document.getElementById('sweep').style.opacity=0}
+ // hook flash + shake
+ const fl=document.getElementById('flash');
+ if(sc==='hook'){fl.style.opacity=Math.max(0,0.9-t/0.2);const sh=Math.max(0,1-t/0.35);cur.style.transform+=` translate(${(rnd(Math.floor(t*60))-0.5)*36*sh}px,${(rnd(Math.floor(t*60)+9)-0.5)*36*sh}px)`}
+ else if(sc==='outro'||sc==='recap'||sc==='today'){const sel=sc==='outro'?'[data-slam]':'[data-stamp]';const el=cur.querySelector(sel);const d=T(sc,el.dataset.slam||el.dataset.stamp);const k=t-d-0.2;fl.style.opacity=k>0&&k<0.15?0.18*(1-k/0.15):0;const sh=k>0?Math.max(0,1-k/0.25):0;cur.style.transform+=` translate(${(rnd(Math.floor(t*60))-0.5)*20*sh}px,${(rnd(Math.floor(t*60)+5)-0.5)*20*sh}px)`}
+ else fl.style.opacity=0;
+ // background
+ const G=gt;document.getElementById('grid').style.transform=`translate(${(G*14)%90}px,${(G*22)%90}px)`;
+ const g1=document.getElementById('g1'),g2=document.getElementById('g2'),g3=document.getElementById('g3');
+ g1.style.left=(-250+180*Math.sin(G*0.23))+'px';g1.style.top=(100+220*Math.cos(G*0.17))+'px';
+ g2.style.left=(500+160*Math.cos(G*0.19))+'px';g2.style.top=(900+260*Math.sin(G*0.21))+'px';
+ g3.style.left=(300+200*Math.sin(G*0.15+1))+'px';g3.style.top=(1300+160*Math.cos(G*0.25))+'px';g3.style.opacity=0.22;
+ PTS.forEach((d,i)=>{const sp=10+rnd(i)*30;const y=(rnd(i+3)*1920-G*sp)%1920;d.style.left=(rnd(i+7)*1080+30*Math.sin(G*0.5+i))+'px';d.style.top=(y<0?y+1920:y)+'px';d.style.opacity=0.12+0.25*rnd(i+11)});
+ document.querySelectorAll('#dots i').forEach((d,i)=>d.style.background=i<=si?'#5B7CFF':'#2A2F3A');
+ document.getElementById('prog').style.width=(gt/total*100)+'%';
+};
+</script>
+</body></html>

@@ -1,0 +1,1746 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Bias Engine W45 r3</title><style>:root{--bg:#f6f7f5;--card:#fff;--ink:#1c1f1d;--sub:#5e6662;--line:#dfe3df;--soft:#eef1ee;--bull:#1d6b3f;--bull-bg:#e3f2e8;--bear:#a8322a;--bear-bg:#f9e6e3;--neu:#7a6416;--neu-bg:#f6efd8;--acc:#25466e;--crit:#7a1f5c;--crit-bg:#f5e4ef}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#121513;--card:#1a1e1b;--ink:#e6e9e6;--sub:#9aa39e;--line:#2c322e;--soft:#20251f;--bull:#6fcf97;--bull-bg:#173123;--bear:#f08a7e;--bear-bg:#3a1c19;--neu:#e2c46a;--neu-bg:#332b12;--acc:#8fb4e4;--crit:#e59bd0;--crit-bg:#371a2e}}
+:root[data-theme="dark"]{--bg:#121513;--card:#1a1e1b;--ink:#e6e9e6;--sub:#9aa39e;--line:#2c322e;--soft:#20251f;--bull:#6fcf97;--bull-bg:#173123;--bear:#f08a7e;--bear-bg:#3a1c19;--neu:#e2c46a;--neu-bg:#332b12;--acc:#8fb4e4;--crit:#e59bd0;--crit-bg:#371a2e}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:1120px;margin:0 auto;padding:28px 16px 64px}header.top{border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:8px}
+h1{font-size:26px;margin:0 0 4px}h2{font-size:19px;margin:40px 0 10px;padding-top:6px;border-top:1px solid var(--line)}h2 .n{color:var(--sub);font-weight:500;margin-right:6px}h3{font-size:16px;margin:12px 0 6px}
+.sub{color:var(--sub);font-weight:400;font-size:11px}.small{font-size:12px;color:var(--sub)}a{color:var(--acc)}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px 18px;font-size:13px;color:var(--sub);margin-top:10px}.meta b{color:var(--ink)}
+.note{background:var(--soft);border-left:3px solid var(--acc);padding:10px 14px;border-radius:4px;font-size:13.5px;margin:12px 0}.warn{border-left-color:var(--bear)}
+.pending{background:var(--soft);border:1px dashed var(--line);padding:12px 14px;border-radius:6px;color:var(--sub);font-size:13.5px}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;background:var(--neu-bg);color:var(--neu)}
+.tag.bull{background:var(--bull-bg);color:var(--bull)}.tag.bear{background:var(--bear-bg);color:var(--bear)}.tag.crit{background:var(--crit-bg);color:var(--crit)}.tag.hi{background:var(--bear-bg);color:var(--bear)}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:6px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+thead th{background:var(--soft);font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--sub)}table.sc{min-width:980px}
+td.num{text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}td.num .g{display:block;font-size:10.5px;color:var(--sub)}
+.big{font-size:17px;font-weight:700}.big.bull,.bull{color:var(--bull)}.big.bear{color:var(--bear)}.big.neu{color:var(--neu)}
+.s2,.s1,.s0\.5{color:var(--bull);font-weight:700}.s-1,.s-2,.s-0\.5{color:var(--bear);font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.card header{display:flex;justify-content:space-between;align-items:center;gap:8px}.card p{font-size:13.5px;margin:6px 0}.card dl{margin:6px 0 0;font-size:13px}
+.card dt{font-size:11px;text-transform:uppercase;color:var(--sub);margin-top:8px}.card dd{margin:2px 0 0}.card ul{margin:2px 0;padding-left:18px}
+#matrix tbody tr{cursor:pointer}#matrix tbody tr:hover,#matrix tbody tr:focus{background:var(--soft);outline:none}
+.filter input{padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);font-size:14px;width:240px;max-width:100%;margin:8px 0}
+button{padding:7px 14px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);font-weight:600;cursor:pointer}
+.strip{display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--line)}.strip .nm{flex:0 0 70px;font-weight:700;font-size:13px}
+.dots{display:flex;gap:6px;flex-wrap:wrap}.dot{min-width:34px;height:22px;padding:0 4px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:var(--soft);color:var(--sub)}
+.dot.U{background:var(--bull-bg);color:var(--bull)}.dot.D{background:var(--bear-bg);color:var(--bear)}.dot.N{background:var(--neu-bg);color:var(--neu)}.dot.v2{outline:2px solid var(--acc);outline-offset:1px}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:20;padding:30px 12px;overflow-y:auto}.modal.open{display:block}
+.mbox{background:var(--card);color:var(--ink);max-width:700px;margin:0 auto;border-radius:10px;padding:18px 20px;border:1px solid var(--line)}
+.mbox dl{display:grid;grid-template-columns:130px 1fr;gap:6px 12px;font-size:13.5px}.mbox dt{color:var(--sub);font-size:11.5px;text-transform:uppercase}.mbox dd{margin:0}
+pre{background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:12px;font-size:11.5px;max-height:420px;overflow:auto;white-space:pre}
+ul.lim li{margin:4px 0;font-size:13.5px}code{word-break:break-all}footer{margin-top:40px;font-size:12px;color:var(--sub);border-top:1px solid var(--line);padding-top:12px}
+@media (max-width:640px){.mbox dl{grid-template-columns:1fr}h1{font-size:22px}}</style></head><body><div class="wrap">
+<header class="top"><h1>Forex Fundamental Bias Engine — Week 45 · PHASE 1 (r3)</h1><div class="small">Method v2.1 · target week 2–6 Nov 2026 · cutoff 31 Oct 2026 11:05 Bucharest · fundamental bias only, no trade signals</div></header>
+
+<h2><span class="n">1</span>Metadata</h2>
+<div class="meta">
+<div><b>Phase:</b> PHASE 1, run r3 (new file; r1 vintage and r2 report untouched)</div>
+<div><b>Target week:</b> ISO 2026-W45, Mon 2 – Fri 6 Nov 2026</div>
+<div><b>Research cutoff:</b> Sat 31 Oct 2026 11:05 Europe/Bucharest (UTC+2) = 09:05 UTC</div>
+<div><b>Generated:</b> 2026-10-31 · method v2.1</div>
+<div><b>Evaluation baseline:</b> Daily Observer close Fri 30 Oct 2026</div>
+<div><b>Weekend information:</b> yes — ASX pricing (S50) observed 31 Oct and scored; China PMI (S60) dated 31 Oct, context only</div>
+<div><b>Previous vintage:</b> archive/vintage-2026-W44-final.json (hysteresis and §5.5 starting point)</div>
+<div><b>Clock changes:</b> EU/UK ended DST 25 Oct (Bucharest UTC+2, London UTC+0); US/Canada end DST 1 Nov (New York UTC−5); Sydney UTC+11; Wellington UTC+13</div>
+</div>
+<div class="note"><b>Data windows.</b> Completed week = 26–30 Oct 2026 (FOMC, BoC, ECB, BoJ, RBNZ decisions; US GDP/PCE; Australian CPI) — used as scored evidence. Target week = 2–6 Nov 2026 — catalysts only (RBA, BoE, NFP, euro-area HICP, French vote, US midterms).</div>
+<div class="note warn"><b>Run status.</b> A PHASE 1 vintage for W45 already exists (r1, archive/vintage-2026-W45-phase1.json). This r3 run was requested by the user and is saved with an -r3 suffix. The forecast of record must be chosen before the delta check; the other run is marked SUPERSEDED in the calibration log. Note for that choice: the r1 vintage records a cutoff of 15:30 Bucharest although the file was saved at 09:32 Bucharest.</div>
+
+<h2><span class="n">2</span>Executive summary</h2>
+<p><b>Rates still drive the ranking, but the risk regime switched off.</b> AUD stays top (+5) on the highest implied carry and a 3 Nov RBA hike that is ~81% priced; GBP rises to +4 after a Budget that eased fiscal risk; NZD jumps to +3 because the RBNZ's 4-3 hold left December pricing (~41%) below its own tightening bias. CHF (−3) and EUR (−4) are the weak legs: zero carry for the franc, and a French budget vote on 3 Nov with OAT-Bund 29bp wider than on 1 Oct for the euro. USD (+2) and JPY (+2) are unchanged by hysteresis.</p>
+<div class="scroll"><table><thead><tr><th>CCY</th><th>S</th><th>W44</th><th>Bias</th><th>Conviction</th><th>Confidence</th></tr></thead><tbody><tr><td><b>AUD</b></td><td class='num big bull'>+5</td><td class='num'>+5</td><td><span class='tag bull'>bullish</span></td><td>Medium</td><td>High</td></tr><tr><td><b>GBP</b></td><td class='num big bull'>+4</td><td class='num'>+1</td><td><span class='tag bull'>bullish</span></td><td>Medium</td><td>High</td></tr><tr><td><b>NZD</b></td><td class='num big bull'>+3</td><td class='num'>0</td><td><span class='tag bull'>bullish</span></td><td>Low</td><td>Medium</td></tr><tr><td><b>USD</b></td><td class='num big bull'>+2</td><td class='num'>+2</td><td><span class='tag neu'>neutral</span></td><td>Low</td><td>High</td></tr><tr><td><b>JPY</b></td><td class='num big bull'>+2</td><td class='num'>+2</td><td><span class='tag neu'>neutral</span></td><td>Low</td><td>Medium</td></tr><tr><td><b>CAD</b></td><td class='num big bear'>-2</td><td class='num'>-2</td><td><span class='tag neu'>neutral</span></td><td>Low</td><td>Medium</td></tr><tr><td><b>CHF</b></td><td class='num big bear'>-3</td><td class='num'>-1</td><td><span class='tag bear'>bearish</span></td><td>Low</td><td>Medium</td></tr><tr><td><b>EUR</b></td><td class='num big bear'>-4</td><td class='num'>-5</td><td><span class='tag bear'>bearish</span></td><td>Medium</td><td>High</td></tr>
+<tr><td><b>XAU</b></td><td class='num big bull'>+2</td><td class='num'>+3</td><td colspan=3 class='small'>G = 0 (from +1); XAU = G + USD</td></tr></tbody></table></div>
+<p><b>Widest directional pairs:</b> EURAUD bearish (-9, medium), EURGBP bearish (-8, medium), AUDCHF bullish (+8, medium), EURNZD bearish (-7, medium), GBPCHF bullish (+7, medium), AUDCAD bullish (+7, medium). No pair reaches high conviction (largest gap 9).</p>
+<p><b>Week's critical events:</b> RBA 3 Nov (05:30 Bucharest), French revenue vote and US midterms 3 Nov, euro-area HICP 4 Nov, BoE 5 Nov (14:00), US payrolls and Canada jobs 6 Nov (15:30).</p>
+<p class="small">Fundamental direction only — not trade signals.</p>
+
+<h2><span class="n">3</span>Previous forecast, out of sample (W44, from the Phase 3 review)</h2>
+<p>Logged in archive/calibration-log.md (W44 Phase 3): Spearman ρ = <b>−0.12</b> between the W44 scores and realised strength (single-week permutation p = 0.62); top-3 minus bottom-3 = −0.12% (−0.10σu); directional pairs 7 hit / 3 miss / 8 flat (uncalibrated σ). PHASE 1 and FINAL identical. Benchmarks: carry +0.06, equal-weight −0.18. One vintage — <b>insufficient sample</b> for any inference.</p>
+<h2><span class="n">4</span>Same-week consistency check (in-sample)</h2><div class="pending">Pending delta check / Phase 3.</div>
+<h2><span class="n">5</span>Anomalies and corrections</h2><div class="pending">Pending delta check / Phase 3. Phase 3 W44 codes carried as context: NZD N1, CAD N1 (recurring), JPY P/F, AUD P, GBP N1, XAU F+N1.</div>
+
+<h2><span class="n">6</span>Global risk regime</h2>
+<div class="scroll"><table><thead><tr><th>Input</th><th>Value</th><th>Threshold</th><th>Score</th><th>Grade</th><th>Evidence</th></tr></thead><tbody>
+<tr><td>e — S&amp;P 500 4-week change (2 Oct → 30 Oct)</td><td class="num">-1.85%</td><td>&gt; +2% / &lt; −2%</td><td class="num">0</td><td>B</td><td><a href="#S12">S12</a>, <a href="#S13">S13</a></td></tr>
+<tr><td>v — VIX Friday close</td><td class="num">19.42</td><td>&lt; 15 / &gt; 25</td><td class="num">0</td><td>B</td><td><a href="#S14">S14</a></td></tr>
+<tr><td>c — US HY OAS 4-week change</td><td class="num">+2bp (+16bp from 2 Oct)</td><td>&lt; −25 / &gt; +25bp</td><td class="num">0</td><td>B</td><td><a href="#S15">S15</a></td></tr>
+<tr><td><b>Regime</b></td><td colspan="2"></td><td class="num"><b>0</b></td><td></td><td></td></tr></tbody></table></div>
+<p>All G1 scores are 0 this week (W44: regime −1). The equity input sits 0.15pp from its −2% threshold (calibration hypothesis H6: single-input regime flips).</p>
+
+<h2><span class="n">7</span>Currency scorecard</h2>
+<p class="small">Each cell: score, then grade · contribution (9·w·s). Raw = 9·c; published S applies hysteresis 1.0 against the W44 FINAL score. Blocks R/N/G = Rates, Non-rate, Global contributions. All values computed in code.</p>
+<div class="scroll"><table class="sc"><thead><tr><th>CCY</th><th>R1<br><span class='sub'>15%</span></th><th>R2<br><span class='sub'>35%</span></th><th>R3<br><span class='sub'>10%</span></th><th>N1<br><span class='sub'>10%</span></th><th>N2<br><span class='sub'>15%</span></th><th>G1<br><span class='sub'>15%</span></th><th>c</th><th>raw</th><th>W44 S</th><th>S</th><th>Blocks</th><th>Confidence</th><th>Conviction</th><th>State</th><th>Priced-in</th><th>Horizon</th></tr></thead><tbody><tr><td><b>USD</b></td><td class='num'><span class='s1'>+1</span><span class='g'>B · +1.35</span></td><td class='num'><span class='s0'>0</span><span class='g'>B · +0.00</span></td><td class='num'><span class='s1'>+1</span><span class='g'>B · +0.90</span></td><td class='num'><span class='s0'>0</span><span class='g'>A · +0.00</span></td><td class='num'><span class='s0'>0</span><span class='g'>C · +0.00</span></td><td class='num'><span class='s0'>0</span><span class='g'>B · +0.00</span></td><td class='num'>+0.250</td><td class='num'>+2.25</td><td class='num'>+2</td><td class='num big bull' data-ccy='USD'>+2</td><td class='small'>R +2.25<br>N +0.00<br>G +0.00</td><td>High<br><span class='sub'>cov 85%</span></td><td>Low</td><td>Neutral</td><td>Largely priced<br><span class='sub'>O +1</span></td><td>multi-week</td></tr><tr><td><b>EUR</b></td><td class='num'><span class='s0'>0</span><span class='g'>B · +0.00</span></td><td class='num'><span class='s0'>0</span><span class='g'>B · +0.00</span></td><td class='num'><span class='s0'>0</span><span class='g'>B · +0.00</span></td><td class='num'><span class='s-1'>-1</span><span class='g'>B · -0.90</span></td><td class='num'><span class='s-2'>-2</span><span class='g'>B · -2.70</span></td><td class='num'><span class='s0'>0</span><span class='g'>B · +0.00</span></td><td class='num'>-0.400</td><td class='num'>-3.60</td><td class='num'>-5</td><td class='num big bear' data-ccy='EUR'>-4</td><td class='small'>R +0.00<br>N -3.60<br>G +0.00</td><td>High<br><span class='sub'>cov 100%</span></td><td>Medium</td><td>Neutral</td><td>Largely priced<br><span class='sub'>O +1</span></td><td>multi-week</td></tr><tr><td><b>GBP</b></td><td class='num'><span class='s1'>+1</span><span class='g'>B · +1.35</span></td><td class='num'><span class='s0'>0</span><span class='g'>B · +0.00</span></td><td class='num'><span class='s1'>+1</span><span class='g'>C · +0.90</span></td><td class='num'><span class='s0'>0</span><span class='g'>A · +0.00</span></td><td class='num'><span class='s1'>+1</span><span class='g'>B · +1.35</span></td><td class='num'><span class='s0'>0</span><span class='g'>B · +0.00</span></td><td class='num'>+0.400</td><td class='num'>+3.60</td><td class='num'>+1</td><td class='num big bull' data-ccy='GBP'>+4</td><td class='small'>R +2.25<br>N +1.35<br>G +0.00</td><td>High<br><span class='sub'>cov 90%</span></td><td>Medium</td><td>Improving</td><td>Largely priced<br><span class='sub'>O +2</span></td><td>multi-week</td></tr><tr><td><b>JPY</b></td><td class='num'><span class='s-1'>-1</span><span class='g'>B · -1.35</span></td><td class='num'><span class='s1'>+1</span><span class='g'>C · +3.15</span></td><td class='num'><span class='s0'>0</span><span class='g'>B · +0.00</span></td><td class='num'><span class='s-1'>-1</span><span class='g'>B · -0.90</span></td><td class='num'><span class='s1'>+1</span><span class='g'>B · +1.35</span></td><td class='num'><span class='s0'>0</span><span class='g'>B · +0.00</span></td><td class='num'>+0.250</td><td class='num'>+2.25</td><td class='num'>+2</td><td class='num big bull' data-ccy='JPY'>+2</td><td class='small'>R +1.80<br>N +0.45<br>G +0.00</td><td>Medium<br><span class='sub'>cov 65%</span></td><td>Low</td><td>Neutral</td><td>Partially priced<br><span class='sub'>O +1</span></td><td>multi-week</td></tr><tr><td><b>CHF</b></td><td class='num'><span class='s-2'>-2</span><span class='g'>B · -2.70</span></td><td class='num'><span class='s0'>0</span><span class='g'>C · +0.00</span></td><td class='num'><span class='s0'>0</span><span class='g'>C · +0.00</span></td><td class='num'><span class='s0'>0</span><span class='g'>A · +0.00</span></td><td class='num'><span class='s0'>0</span><span class='g'>C · +0.00</span></td><td class='num'><span class='s0'>0</span><span class='g'>B · +0.00</span></td><td class='num'>-0.300</td><td class='num'>-2.70</td><td class='num'>-1</td><td class='num big bear' data-ccy='CHF'>-3</td><td class='small'>R -2.70<br>N +0.00<br>G +0.00</td><td>Medium<br><span class='sub'>cov 40%</span></td><td>Low</td><td>Weakening</td><td>Not applicable<br><span class='sub'>O +0</span></td><td>multi-week</td></tr><tr><td><b>CAD</b></td><td class='num'><span class='s-1'>-1</span><span class='g'>C · -1.35</span></td><td class='num'><span class='s0'>0</span><span class='g'>B · +0.00</span></td><td class='num'><span class='s-1'>-1</span><span class='g'>A · -0.90</span></td><td class='num'><span class='s2'>+2</span><span class='g'>B · +1.80</span></td><td class='num'><span class='s-1'>-1</span><span class='g'>B · -1.35</span></td><td class='num'><span class='s0'>0</span><span class='g'>B · +0.00</span></td><td class='num'>-0.200</td><td class='num'>-1.80</td><td class='num'>-2</td><td class='num big bear' data-ccy='CAD'>-2</td><td class='small'>R -2.25<br>N +0.45<br>G +0.00</td><td>Medium<br><span class='sub'>cov 85%</span></td><td>Low</td><td>Neutral</td><td>Not applicable<br><span class='sub'>O +0</span></td><td>multi-week</td></tr><tr><td><b>AUD</b></td><td class='num'><span class='s2'>+2</span><span class='g'>B · +2.70</span></td><td class='num'><span class='s1'>+1</span><span class='g'>B · +3.15</span></td><td class='num'><span class='s0'>0</span><span class='g'>B · +0.00</span></td><td class='num'><span class='s0'>0</span><span class='g'>B · +0.00</span></td><td class='num'><span class='s0'>0</span><span class='g'>C · +0.00</span></td><td class='num'><span class='s0'>0</span><span class='g'>B · +0.00</span></td><td class='num'>+0.650</td><td class='num'>+5.85</td><td class='num'>+5</td><td class='num big bull' data-ccy='AUD'>+5</td><td class='small'>R +5.85<br>N +0.00<br>G +0.00</td><td>High<br><span class='sub'>cov 85%</span></td><td>Medium</td><td>Strong</td><td>Partially priced<br><span class='sub'>O +1</span></td><td>multi-week</td></tr><tr><td><b>NZD</b></td><td class='num'><span class='s0'>0</span><span class='g'>C · +0.00</span></td><td class='num'><span class='s1'>+1</span><span class='g'>B · +3.15</span></td><td class='num'><span class='s-1'>-1</span><span class='g'>B · -0.90</span></td><td class='num'><span class='s1'>+1</span><span class='g'>B · +0.90</span></td><td class='num'><span class='s0'>0</span><span class='g'>C · +0.00</span></td><td class='num'><span class='s0'>0</span><span class='g'>B · +0.00</span></td><td class='num'>+0.350</td><td class='num'>+3.15</td><td class='num'>0</td><td class='num big bull' data-ccy='NZD'>+3</td><td class='small'>R +2.25<br>N +0.90<br>G +0.00</td><td>Medium<br><span class='sub'>cov 70%</span></td><td>Low</td><td>Improving</td><td>Partially priced<br><span class='sub'>O +0</span></td><td>multi-week</td></tr></tbody></table></div>
+<p class="small">R1 ranking (6-month implied, %): AUD 4.91 · USD ~4.33 · GBP ~4.25 · EUR ~3.00 · NZD (level unavailable; ~four hikes priced by Sep 2027 from 2.75%, S66) · CAD ~2.75 · JPY ~1.66-1.72 · CHF 0.00. NZD and CAD graded C because their order rests on an unquantified NZD path. Hysteresis held USD (raw +2.25), JPY (+2.25), CAD (−1.80) and AUD (+5.85) at their W44 scores.</p>
+<h3>Single judgements that move a published score</h3>
+<div class="scroll"><table><thead><tr><th>CCY</th><th>Factor</th><th>Used</th><th>Alternative</th><th>Alt. raw</th><th>Alt. S</th><th>Published S</th><th>Alternative reading</th></tr></thead><tbody><tr><td>USD</td><td>R2</td><td class='num'>0</td><td class='num'>+1</td><td class='num'>+5.40</td><td class='num'>+5</td><td class='num'>+2</td><td class='small'>if the GDP beat and two dissents were read as a hawkish gap</td></tr><tr><td>EUR</td><td>N2</td><td class='num'>-2</td><td class='num'>-1</td><td class='num'>-2.25</td><td class='num'>-2</td><td class='num'>-4</td><td class='small'>if the spread retracement from the 22 Oct peak were read as easing</td></tr><tr><td>EUR</td><td>R2</td><td class='num'>0</td><td class='num'>-1</td><td class='num'>-6.75</td><td class='num'>-7</td><td class='num'>-4</td><td class='small'>if &#x27;December then pause&#x27; were read as dovish versus two priced hikes by April</td></tr><tr><td>JPY</td><td>R2</td><td class='num'>+1</td><td class='num'>0</td><td class='num'>-0.90</td><td class='num'>-1</td><td class='num'>+2</td><td class='small'>if the single low-reliability pricing source were discarded</td></tr><tr><td>AUD</td><td>R2</td><td class='num'>+1</td><td class='num'>0</td><td class='num'>+2.70</td><td class='num'>+3</td><td class='num'>+5</td><td class='small'>if the ~81% November pricing were judged to have closed the gap</td></tr><tr><td>NZD</td><td>R2</td><td class='num'>+1</td><td class='num'>0</td><td class='num'>+0.00</td><td class='num'>0</td><td class='num'>+3</td><td class='small'>if the 2027 path (four hikes priced) were judged too hawkish</td></tr><tr><td>GBP</td><td>N2</td><td class='num'>+1</td><td class='num'>0</td><td class='num'>+2.25</td><td class='num'>+2</td><td class='num'>+4</td><td class='small'>if thin Budget headroom kept the risk premium neutral</td></tr></tbody></table></div>
+<h2><span class="n">8</span>Per-currency thesis cards</h2><div class="grid"><div class="card"><header><h3>USD <span class="big bull">+2</span></h3><span class="tag neu">neutral · Low</span></header>
+<p>Fed held 3.75-4.00% on 28 Oct with two hike dissents; a December hike is ~76% priced (30 Oct) after a Q3 GDP beat (3.4%). Repricing risk judged balanced.</p><p class="small">R1 +1 (<a href="#S4">S4</a>, <a href="#S5">S5</a>, <a href="#S20">S20</a>) · R2 0 (<a href="#S1">S1</a>, <a href="#S2">S2</a>, <a href="#S3">S3</a>) · R3 +1 (<a href="#S1">S1</a>, <a href="#S7">S7</a>, <a href="#S8">S8</a>) · N1 0 (rule) · N2 0 (<a href="#S11">S11</a>) · G1 0 (<a href="#S12">S12</a>, <a href="#S13">S13</a>, <a href="#S14">S14</a>)</p>
+<dl><dt>Catalysts (target week)</dt><dd><ul><li>11-02 — US ISM manufacturing, Oct (cons. 54.7) <span class='tag '>MEDIUM</span></li><li>11-03 — US midterm elections <span class='tag hi'>HIGH</span></li><li>11-04 — US ADP employment, Oct (cons. +75k) <span class='tag '>MEDIUM</span></li><li>11-04 — US ISM services, Oct (cons. 54.7) <span class='tag '>MEDIUM</span></li><li>11-06 — US October payrolls (cons. +50-65k; UR 4.2%) <span class='tag hi'>HIGH</span></li></ul></dd>
+<dt>Bullish invalidation</dt><dd>Bullish if strong October payrolls (6 Nov) or ISM lift December odds back above ~85%</dd><dt>Bearish invalidation</dt><dd>Weak payrolls or ISM, or Fed talk that trims December pricing.</dd>
+<dt>Disproof question (Phase 3 handoff)</dt><dd><i>With two hike dissents and hot PCE, is December pricing below what data justify (R2 &gt; 0)?</i><br>PCE was in line, not hot (S8); GDP beat (S7). December pricing slid from ~84% to ~76% (S4-S6) because Warsh gave no guidance (S2, S3), while Musalem pushed for &#x27;soon&#x27; (S9). The two lines conflict → R2 0. Sensitivity: +1 would publish +5.</dd></dl></div><div class="card"><header><h3>EUR <span class="big bear">-4</span></h3><span class="tag bear">bearish · Medium</span></header>
+<p>ECB held 2.50% and pointed to December (75-84% priced). French revenue vote 3 Nov with OAT-Bund at 159bp, wider over 4 weeks; Brent +10.9% hurts.</p><p class="small">R1 0 (<a href="#S4">S4</a>, <a href="#S5">S5</a>, <a href="#S20">S20</a>) · R2 0 (<a href="#S16">S16</a>, <a href="#S17">S17</a>, <a href="#S18">S18</a>) · R3 0 (<a href="#S16">S16</a>) · N1 -1 (<a href="#S57">S57</a>) · N2 -2 (<a href="#S23">S23</a>, <a href="#S24">S24</a>) · G1 0 (<a href="#S12">S12</a>, <a href="#S13">S13</a>, <a href="#S14">S14</a>)</p>
+<dl><dt>Catalysts (target week)</dt><dd><ul><li>11-02 — Euro-area and UK final manufacturing PMIs <span class='tag '>MEDIUM</span></li><li>11-03 — French Assembly vote on the 2027 budget revenue part (afternoon Paris) <span class='tag hi'>HIGH</span></li><li>11-04 — Euro-area HICP flash, Oct (cons. 3.9%) <span class='tag hi'>HIGH</span></li></ul></dd>
+<dt>Bullish invalidation</dt><dd>Bullish if the 3 Nov revenue vote passes with OAT-Bund narrowing, or HICP (4 Nov) above 3.9%</dd><dt>Bearish invalidation</dt><dd>The vote fails, censure or 49.3 with spreads widening; soft HICP.</dd>
+<dt>Disproof question (Phase 3 handoff)</dt><dd><i>Did Lagarde&#x27;s exit and &#x27;not pre-committing&#x27; remove the dovish gap, and has OAT-Bund narrowed enough to drop N2?</i><br>Yes on the gap: Lagarde called the December direction &#x27;quite clear&#x27; and 75-84% is priced (S17-S19) → R2 −1 → 0. No on N2: the spread is 159bp versus 130-147bp four weeks ago (S23) with a vote on 3 Nov (S24) → N2 −2 (sensitivity: −1 would publish −2).</dd></dl></div><div class="card"><header><h3>GBP <span class="big bull">+4</span></h3><span class="tag bull">bullish · Medium</span></header>
+<p>Budget passed without gilt stress (10Y -2.1bp). A 5 Nov BoE hike to 4.00% is ~95% priced, with Feb/Jul hikes; economists see less after November.</p><p class="small">R1 +1 (<a href="#S4">S4</a>, <a href="#S5">S5</a>, <a href="#S20">S20</a>) · R2 0 (<a href="#S27">S27</a>, <a href="#S28">S28</a>, <a href="#S29">S29</a>) · R3 +1 (rule) · N1 0 (rule) · N2 +1 (<a href="#S30">S30</a>) · G1 0 (<a href="#S12">S12</a>, <a href="#S13">S13</a>, <a href="#S14">S14</a>)</p>
+<dl><dt>Catalysts (target week)</dt><dd><ul><li>11-02 — Euro-area and UK final manufacturing PMIs <span class='tag '>MEDIUM</span></li><li>11-05 — BoE decision, minutes and MPR (3.75%, hike ~95% priced) <span class='tag crit'>CRITICAL</span></li><li>11-05 — Bailey press conference <span class='tag hi'>HIGH</span></li></ul></dd>
+<dt>Bullish invalidation</dt><dd>Bullish if a 5 Nov hike with hawkish votes or guidance backing the Feb/Jul path</dd><dt>Bearish invalidation</dt><dd>A hold or a one-and-done message; 10Y gilt above 5.40%.</dd>
+<dt>Disproof question (Phase 3 handoff)</dt><dd><i>After a benign Budget and a priced 5 Nov hike, is any repricing gap left?</i><br>No gap: ~95% priced plus February and July (S27, S28). Economists sit below the market after November (S29), a dovish risk around the BoE&#x27;s guidance → R2 0. The Budget easing lifts N2 to +1 (S30).</dd></dl></div><div class="card"><header><h3>JPY <span class="big bull">+2</span></h3><span class="tag neu">neutral · Low</span></header>
+<p>BoJ held 1.25% (8-1) and said underlying inflation is at target; a December hike is only ~57% priced. MoF warned of decisive FX action; Brent +10.9% weighs.</p><p class="small">R1 -1 (<a href="#S4">S4</a>, <a href="#S5">S5</a>, <a href="#S20">S20</a>) · R2 +1 (<a href="#S35">S35</a>, <a href="#S36">S36</a>, <a href="#S37">S37</a>) · R3 0 (<a href="#S35">S35</a>) · N1 -1 (<a href="#S57">S57</a>) · N2 +1 (<a href="#S41">S41</a>) · G1 0 (<a href="#S12">S12</a>, <a href="#S13">S13</a>, <a href="#S14">S14</a>)</p>
+<dl><dt>Catalysts (target week)</dt><dd><ul><li>11-02 — BoJ Outlook Report full text <span class='tag '>LOW</span></li><li>11-04 — BoJ minutes of the September meeting (5 Nov 08:50 JST) <span class='tag '>LOW</span></li><li>11-06 — Ueda speaks, IMF Camdessus Lecture (approx. time) <span class='tag '>MEDIUM</span></li></ul></dd>
+<dt>Bullish invalidation</dt><dd>Bullish if Ueda signals December (IMF lecture 6 Nov) or MoF intervenes</dd><dt>Bearish invalidation</dt><dd>December odds fade further, oil keeps rising, or carry demand returns.</dd>
+<dt>Disproof question (Phase 3 handoff)</dt><dd><i>Does the hawkish BoJ hold support the yen, or did markets fade it?</i><br>Markets faded it: December ~57% after the meeting versus ~75% before (S38, S39), although the BoJ said underlying inflation is at target and raised FY27 forecasts (S35-S37). Communication implies more than priced → R2 +1 at grade C; oil (N1 −1) offsets.</dd></dl></div><div class="card"><header><h3>CHF <span class="big bear">-3</span></h3><span class="tag bear">bearish · Low</span></header>
+<p>SNB at 0% gives the lowest carry; only qualitative talk of an early-2027 hike. Swiss CPI on 3 Nov (1.3% expected by one source) is the week&#x27;s test.</p><p class="small">R1 -2 (<a href="#S4">S4</a>, <a href="#S5">S5</a>, <a href="#S20">S20</a>) · R2 0 (<a href="#S32">S32</a>, <a href="#S34">S34</a>) · R3 0 (rule) · N1 0 (rule) · N2 0 (<a href="#S34">S34</a>) · G1 0 (<a href="#S12">S12</a>, <a href="#S13">S13</a>, <a href="#S14">S14</a>)</p>
+<dl><dt>Catalysts (target week)</dt><dd><ul><li>11-03 — Swiss CPI, Oct (cons. 1.3% y/y, one source) <span class='tag hi'>HIGH</span></li><li>11-05 — Swiss unemployment, Oct (cons. 3.1%; time per one calendar) <span class='tag '>MEDIUM</span></li><li>11-06 — Swiss FX reserves, Oct <span class='tag '>MEDIUM</span></li></ul></dd>
+<dt>Bullish invalidation</dt><dd>Bullish if Swiss CPI (3 Nov) beats 1.3% and lifts SNB pricing, or French stress drives haven demand</dd><dt>Bearish invalidation</dt><dd>Soft CPI and calmer euro-area spreads.</dd>
+<dt>Disproof question (Phase 3 handoff)</dt><dd><i>Is an early-2027 SNB hike now priced, which would change R2?</i><br>Only qualitatively (&#x27;starting to price a possible hike in early 2027&#x27;, S32); no SARON/OIS figure → R2 0 at grade C.</dd></dl></div><div class="card"><header><h3>CAD <span class="big bear">-2</span></h3><span class="tag neu">neutral · Low</span></header>
+<p>BoC hiked to 2.50% but August GDP stalled (0.0% vs +0.2%); a December hike is ~50-57% priced. Brent +10.9% supports; US tariffs weigh.</p><p class="small">R1 -1 (<a href="#S4">S4</a>, <a href="#S5">S5</a>, <a href="#S20">S20</a>) · R2 0 (<a href="#S43">S43</a>, <a href="#S44">S44</a>, <a href="#S45">S45</a>) · R3 -1 (<a href="#S43">S43</a>, <a href="#S45">S45</a>) · N1 +2 (<a href="#S57">S57</a>) · N2 -1 (<a href="#S46">S46</a>) · G1 0 (<a href="#S12">S12</a>, <a href="#S13">S13</a>, <a href="#S14">S14</a>)</p>
+<dl><dt>Catalysts (target week)</dt><dd><ul><li>11-01 — OPEC+ online meeting (output expected unchanged) <span class='tag '>LOW</span></li><li>11-04 — Canada merchandise trade, Sep <span class='tag '>MEDIUM</span></li><li>11-06 — Canada Labour Force Survey, Oct <span class='tag hi'>HIGH</span></li></ul></dd>
+<dt>Bullish invalidation</dt><dd>Bullish if a strong October LFS (6 Nov) revives December, oil stays high, or tariff relief</dd><dt>Bearish invalidation</dt><dd>Weak jobs, an oil reversal, or post-midterm tariff escalation.</dd>
+<dt>Disproof question (Phase 3 handoff)</dt><dd><i>After a hike with hawkish guidance, is low carry (R1 −1) still accurate on a 6-month basis, and is the tariff threat live?</i><br>R1 −1 holds: ~2.75% by January (S44) ranks 6th of 8. The tariff threat is live (S46: limited progress, Section 232 tariffs). The new element is oil: Brent ≥ +10% on settle data lifts N1 to +2 (S57).</dd></dl></div><div class="card"><header><h3>AUD <span class="big bull">+5</span></h3><span class="tag bull">bullish · Medium</span></header>
+<p>RBA hike to 4.85% on 3 Nov is ~81% priced (ASX, 31 Oct); Bullock calls inflation far too high. Highest implied carry (~4.91% by May 2027).</p><p class="small">R1 +2 (<a href="#S4">S4</a>, <a href="#S5">S5</a>, <a href="#S20">S20</a>) · R2 +1 (<a href="#S48">S48</a>, <a href="#S50">S50</a>, <a href="#S51">S51</a>) · R3 0 (<a href="#S48">S48</a>, <a href="#S49">S49</a>) · N1 0 (<a href="#S58">S58</a>) · N2 0 (<a href="#S51">S51</a>, <a href="#S60">S60</a>) · G1 0 (<a href="#S12">S12</a>, <a href="#S13">S13</a>, <a href="#S14">S14</a>)</p>
+<dl><dt>Catalysts (target week)</dt><dd><ul><li>11-03 — RBA decision and SoMP (4.60%, hike ~81% priced) <span class='tag crit'>CRITICAL</span></li><li>11-03 — Bullock press conference <span class='tag hi'>HIGH</span></li><li>11-04 — Australia household spending, Sep <span class='tag '>MEDIUM</span></li></ul></dd>
+<dt>Bullish invalidation</dt><dd>Bullish if the RBA hikes on 3 Nov with upgraded forecasts</dd><dt>Bearish invalidation</dt><dd>A hold (~19% priced) or an insurance-hike, one-and-done message; weak China data.</dd>
+<dt>Disproof question (Phase 3 handoff)</dt><dd><i>With trimmed mean only in line, is a 3 Nov hike still more likely than priced, or is the repricing done?</i><br>The 3 Nov move is ~81% priced (S50), so most of that repricing is done. Bullock&#x27;s &#x27;far too high&#x27; (S52) and inflation above the RBA&#x27;s August track (S48) still imply more than the flat post-November curve, while banks expect a pause (S51). Communication hawkish, data neutral → R2 stays +1.</dd></dl></div><div class="card"><header><h3>NZD <span class="big bull">+3</span></h3><span class="tag bull">bullish · Low</span></header>
+<p>RBNZ held 2.75% (4-3) against hike pricing, but all members see tighter policy as likely; a December hike is ~40.8% priced. GDT +3.7% over two auctions.</p><p class="small">R1 0 (<a href="#S4">S4</a>, <a href="#S5">S5</a>, <a href="#S20">S20</a>) · R2 +1 (<a href="#S53">S53</a>, <a href="#S54">S54</a>, <a href="#S55">S55</a>) · R3 -1 (<a href="#S53">S53</a>) · N1 +1 (<a href="#S59">S59</a>) · N2 0 (<a href="#S56">S56</a>) · G1 0 (<a href="#S12">S12</a>, <a href="#S13">S13</a>, <a href="#S14">S14</a>)</p>
+<dl><dt>Catalysts (target week)</dt><dd><ul><li>11-03 — GDT dairy auction (time not verified) <span class='tag '>MEDIUM</span></li><li>11-03 — NZ Q3 labour market (4 Nov NZ time; UR cons. 5.5%) <span class='tag hi'>HIGH</span></li><li>11-07 — New Zealand general election <span class='tag '>MEDIUM</span></li></ul></dd>
+<dt>Bullish invalidation</dt><dd>Bullish if Q3 jobs (3 Nov UTC) beat and RBNZ talk firms December</dd><dt>Bearish invalidation</dt><dd>Unemployment above 5.5%, a disruptive 7 Nov election result, or falling dairy prices.</dd>
+<dt>Disproof question (Phase 3 handoff)</dt><dd><i>After a 4-3 hold, is RBNZ pricing too hawkish or too dovish relative to the statement?</i><br>Near term too dovish: December ~41% (S54) while all members expect tighter policy and four banks call December (S53, S55) → R2 +1. Further out, Kiwibank and Commerzbank argue the 2027 path is too hawkish — flagged as the largest single judgement (R2 0 would keep NZD at 0).</dd></dl></div></div>
+<h2><span class="n">9</span>Gold model</h2>
+<div class="scroll"><table><thead><tr><th>Factor</th><th>Weight</th><th>Score</th><th>Grade</th><th>Evidence</th><th>W44</th></tr></thead><tbody><tr><td>X1</td><td>35%</td><td class='num'>0</td><td>B</td><td><a href="#S61">S61</a>, <a href="#S1">S1</a>, <a href="#S4">S4</a></td><td class='num'>0</td></tr><tr><td>X2</td><td>20%</td><td class='num'>0</td><td>B</td><td><a href="#S12">S12</a>, <a href="#S13">S13</a>, <a href="#S14">S14</a>, <a href="#S15">S15</a></td><td class='num'>+1</td></tr><tr><td>X3</td><td>20%</td><td class='num'>0</td><td>C</td><td><a href="#S63">S63</a>, <a href="#S64">S64</a>, <a href="#S67">S67</a></td><td class='num'>+1</td></tr><tr><td>X4</td><td>15%</td><td class='num'>0</td><td>C</td><td><a href="#S62">S62</a></td><td class='num'>-2</td></tr><tr><td>X5</td><td>10%</td><td class='num'>0</td><td>C</td><td><a href="#S65">S65</a></td><td class='num'>0</td></tr></tbody></table></div>
+<p>g = +0.00 → 9g = +0.00; previous G = +1; |0 − 1| = 1 is not below 1, so G is republished at <b>0</b>. XAU = G + USD = 0 + 2 = <b>+2</b> (XAUUSD gap = G = 0, two-sided). Confidence Medium (coverage 55%).</p>
+<p class="small">X1: real yields fell 25-33bp in four weeks (S61) while Fed pricing still leans to a December hike (S4-S6); the expected direction is judged flat (0). The X1 cap rule is inactive because USD R2 = 0. X4: breakevens ~+2bp (S62). Disproof: <i>Is there verifiable evidence of October ETF outflows that would set X3 to 0 or −1?</i> Yes, partially: the week to 23 Oct was the first outflow in 14 weeks (S64), led by North America (S67), while central-bank buying was positive to August (S63) → X3 +1 → 0 (grade C).</p>
+
+<h2><span class="n">10</span>Market pricing and critical decisions</h2>
+<div class="scroll"><table><thead><tr><th>CCY</th><th>Bank</th><th>Rate</th><th>Next meeting</th><th>Priced path</th><th>View</th><th>R2</th><th>Evidence</th></tr></thead><tbody><tr><td><b>USD</b></td><td>Fed</td><td>3.75-4.00%</td><td>Dec 2026 (date not verified)</td><td>Dec hike ~76% (69-78%); Mar 2027 ~4.33% weighted</td><td>Communication and data conflict</td><td class='num'>0</td><td class='small'>S4-S6</td></tr><tr><td><b>EUR</b></td><td>ECB</td><td>2.50% depo</td><td>17 Dec</td><td>Dec hike 75-84%; two hikes by Apr 2027</td><td>Communication matches pricing</td><td class='num'>0</td><td class='small'>S18-S20</td></tr><tr><td><b>GBP</b></td><td>BoE</td><td>3.75%</td><td>5 Nov</td><td>Nov hike ~95%; Feb and Jul hikes</td><td>Fully priced; economists below market after Nov</td><td class='num'>0</td><td class='small'>S27-S28</td></tr><tr><td><b>JPY</b></td><td>BoJ</td><td>1.25%</td><td>17-18 Dec</td><td>Dec hike ~57%; ~80% by Jan; 1.66-1.72% Mar-Apr</td><td>Communication more hawkish than priced</td><td class='num'>+1</td><td class='small'>S38-S39</td></tr><tr><td><b>CHF</b></td><td>SNB</td><td>0%</td><td>10 Dec</td><td>Qualitative: possible hike early 2027</td><td>No quantified pricing</td><td class='num'>0</td><td class='small'>S32</td></tr><tr><td><b>CAD</b></td><td>BoC</td><td>2.50%</td><td>9 Dec</td><td>Dec 50-57% (or Jan); ~2.75% by Jan</td><td>Hawkish guidance vs weak GDP</td><td class='num'>0</td><td class='small'>S44</td></tr><tr><td><b>AUD</b></td><td>RBA</td><td>4.60%</td><td>3 Nov</td><td>Nov hike ~81%; 4.85% Dec; 4.91% May 2027</td><td>Communication hawkish vs flat curve after Nov</td><td class='num'>+1</td><td class='small'>S50</td></tr><tr><td><b>NZD</b></td><td>RBNZ</td><td>2.75%</td><td>9 Dec</td><td>Dec hike ~41%; ~four hikes by Sep 2027</td><td>Statement and banks above Dec pricing</td><td class='num'>+1</td><td class='small'>S54, S66</td></tr></tbody></table></div>
+<h3>CRITICAL decisions inside W45</h3>
+<div class="grid">
+<div class="card"><header><h3>RBA — Tue 3 Nov, 03:30 UTC (05:30 Bucharest)</h3><span class="tag crit">CRITICAL</span></header>
+<p><b>Priced:</b> ~81% for +25bp to 4.85% (ASX via rbawatch, 31 Oct, S50); other readings 69-90% (model estimates and pre-cutoff quotes). <b>Dispersion:</b> all big four banks expect a hike; they split on what follows — CBA calls it an insurance hike with holds in Dec/Feb and cuts pencilled for 2027 (S51).</p>
+<p><b>Hawkish surprise</b> (hike with upgraded SoMP inflation path, no pause signal): R3 +1 next week and the flat post-November curve could lift → AUD R2 stays positive. <b>Dovish surprise</b> (hold, ~19% priced; or hike with explicit one-and-done): R3 −1 and R2 likely 0 or below → AUD could drop toward +2/+3.</p></div>
+<div class="card"><header><h3>BoE — Thu 5 Nov, 12:00 UTC (14:00 Bucharest)</h3><span class="tag crit">CRITICAL</span></header>
+<p><b>Priced:</b> ~95% for +25bp to 4.00% (30 Oct; above 90% on 28 Oct, S27); February and July hikes also priced (S28). <b>Dispersion:</b> Reuters poll (15 Oct) 54/63 expect a hike but no majority for more after November (S29); vote consensus 8-0-1 (one calendar source, not scored).</p>
+<p><b>Hawkish surprise</b> (hike with three or more dissents for 50bp or explicit further-hike guidance): limited upside — already priced. <b>Dovish surprise</b> (hold, or a hike with a one-and-done message): R3 −1 and the Feb/Jul path at risk → GBP back toward +1/+2.</p></div></div>
+
+<h2><span class="n">11</span>29-pair matrix</h2>
+<p class="small">Gap = S(base) − S(quote). Click a row for drivers, catalysts, pricing and invalidation for both legs. Caps: evidence, agreement, robustness (§6.2).</p>
+<div class="filter"><input id="pf" placeholder="Filter pairs (e.g. JPY)" aria-label="Filter pairs"></div>
+<div class="scroll"><table id="matrix"><thead><tr><th>Pair</th><th>Gap</th><th>Bias</th><th>Conviction</th><th>Caps</th><th>Block driving</th><th>Summary</th></tr></thead><tbody><tr tabindex='0' data-pair='EURUSD'><td><b>EURUSD</b></td><td class='num'>-6</td><td><span class='tag bear'>bearish</span></td><td>medium</td><td class='small'>—</td><td class='small'>Non-rate</td><td class='small'>Bearish (EUR -4 vs USD +2)</td></tr><tr tabindex='0' data-pair='GBPUSD'><td><b>GBPUSD</b></td><td class='num'>+2</td><td><span class='tag neu'>two-sided</span></td><td>low</td><td class='small'>—</td><td class='small'>—</td><td class='small'>Two-sided (GBP +4 vs USD +2)</td></tr><tr tabindex='0' data-pair='USDJPY'><td><b>USDJPY</b></td><td class='num'>+0</td><td><span class='tag neu'>two-sided</span></td><td>low</td><td class='small'>—</td><td class='small'>—</td><td class='small'>Two-sided (USD +2 vs JPY +2)</td></tr><tr tabindex='0' data-pair='USDCHF'><td><b>USDCHF</b></td><td class='num'>+5</td><td><span class='tag bull'>bullish</span></td><td>medium</td><td class='small'>—</td><td class='small'>Rates</td><td class='small'>Bullish (USD +2 vs CHF -3)</td></tr><tr tabindex='0' data-pair='USDCAD'><td><b>USDCAD</b></td><td class='num'>+4</td><td><span class='tag bull'>bullish</span></td><td>low</td><td class='small'>—</td><td class='small'>Rates</td><td class='small'>Bullish (USD +2 vs CAD -2)</td></tr><tr tabindex='0' data-pair='AUDUSD'><td><b>AUDUSD</b></td><td class='num'>+3</td><td><span class='tag bull'>bullish</span></td><td>low</td><td class='small'>—</td><td class='small'>Rates</td><td class='small'>Bullish (AUD +5 vs USD +2)</td></tr><tr tabindex='0' data-pair='NZDUSD'><td><b>NZDUSD</b></td><td class='num'>+1</td><td><span class='tag neu'>two-sided</span></td><td>low</td><td class='small'>—</td><td class='small'>—</td><td class='small'>Two-sided (NZD +3 vs USD +2)</td></tr><tr tabindex='0' data-pair='EURGBP'><td><b>EURGBP</b></td><td class='num'>-8</td><td><span class='tag bear'>bearish</span></td><td>medium</td><td class='small'>—</td><td class='small'>Non-rate</td><td class='small'>Bearish (EUR -4 vs GBP +4)</td></tr><tr tabindex='0' data-pair='EURJPY'><td><b>EURJPY</b></td><td class='num'>-6</td><td><span class='tag bear'>bearish</span></td><td>medium</td><td class='small'>—</td><td class='small'>Non-rate</td><td class='small'>Bearish (EUR -4 vs JPY +2)</td></tr><tr tabindex='0' data-pair='EURCHF'><td><b>EURCHF</b></td><td class='num'>-1</td><td><span class='tag neu'>two-sided</span></td><td>low</td><td class='small'>—</td><td class='small'>—</td><td class='small'>Two-sided (EUR -4 vs CHF -3)</td></tr><tr tabindex='0' data-pair='EURAUD'><td><b>EURAUD</b></td><td class='num'>-9</td><td><span class='tag bear'>bearish</span></td><td>medium</td><td class='small'>—</td><td class='small'>Rates</td><td class='small'>Bearish (EUR -4 vs AUD +5)</td></tr><tr tabindex='0' data-pair='EURNZD'><td><b>EURNZD</b></td><td class='num'>-7</td><td><span class='tag bear'>bearish</span></td><td>medium</td><td class='small'>—</td><td class='small'>Non-rate</td><td class='small'>Bearish (EUR -4 vs NZD +3)</td></tr><tr tabindex='0' data-pair='EURCAD'><td><b>EURCAD</b></td><td class='num'>-2</td><td><span class='tag neu'>two-sided</span></td><td>low</td><td class='small'>—</td><td class='small'>—</td><td class='small'>Two-sided (EUR -4 vs CAD -2)</td></tr><tr tabindex='0' data-pair='GBPJPY'><td><b>GBPJPY</b></td><td class='num'>+2</td><td><span class='tag neu'>two-sided</span></td><td>low</td><td class='small'>—</td><td class='small'>—</td><td class='small'>Two-sided (GBP +4 vs JPY +2)</td></tr><tr tabindex='0' data-pair='GBPCHF'><td><b>GBPCHF</b></td><td class='num'>+7</td><td><span class='tag bull'>bullish</span></td><td>medium</td><td class='small'>—</td><td class='small'>Rates</td><td class='small'>Bullish (GBP +4 vs CHF -3)</td></tr><tr tabindex='0' data-pair='GBPAUD'><td><b>GBPAUD</b></td><td class='num'>-1</td><td><span class='tag neu'>two-sided</span></td><td>low</td><td class='small'>—</td><td class='small'>—</td><td class='small'>Two-sided (GBP +4 vs AUD +5)</td></tr><tr tabindex='0' data-pair='GBPNZD'><td><b>GBPNZD</b></td><td class='num'>+1</td><td><span class='tag neu'>two-sided</span></td><td>low</td><td class='small'>—</td><td class='small'>—</td><td class='small'>Two-sided (GBP +4 vs NZD +3)</td></tr><tr tabindex='0' data-pair='GBPCAD'><td><b>GBPCAD</b></td><td class='num'>+6</td><td><span class='tag bull'>bullish</span></td><td>medium</td><td class='small'>—</td><td class='small'>Rates</td><td class='small'>Bullish (GBP +4 vs CAD -2)</td></tr><tr tabindex='0' data-pair='AUDJPY'><td><b>AUDJPY</b></td><td class='num'>+3</td><td><span class='tag bull'>bullish</span></td><td>low</td><td class='small'>—</td><td class='small'>Rates</td><td class='small'>Bullish (AUD +5 vs JPY +2)</td></tr><tr tabindex='0' data-pair='AUDCHF'><td><b>AUDCHF</b></td><td class='num'>+8</td><td><span class='tag bull'>bullish</span></td><td>medium</td><td class='small'>—</td><td class='small'>Rates</td><td class='small'>Bullish (AUD +5 vs CHF -3)</td></tr><tr tabindex='0' data-pair='AUDNZD'><td><b>AUDNZD</b></td><td class='num'>+2</td><td><span class='tag neu'>two-sided</span></td><td>low</td><td class='small'>—</td><td class='small'>—</td><td class='small'>Two-sided (AUD +5 vs NZD +3)</td></tr><tr tabindex='0' data-pair='AUDCAD'><td><b>AUDCAD</b></td><td class='num'>+7</td><td><span class='tag bull'>bullish</span></td><td>medium</td><td class='small'>—</td><td class='small'>Rates</td><td class='small'>Bullish (AUD +5 vs CAD -2)</td></tr><tr tabindex='0' data-pair='NZDJPY'><td><b>NZDJPY</b></td><td class='num'>+1</td><td><span class='tag neu'>two-sided</span></td><td>low</td><td class='small'>—</td><td class='small'>—</td><td class='small'>Two-sided (NZD +3 vs JPY +2)</td></tr><tr tabindex='0' data-pair='NZDCHF'><td><b>NZDCHF</b></td><td class='num'>+6</td><td><span class='tag bull'>bullish</span></td><td>medium</td><td class='small'>—</td><td class='small'>Rates</td><td class='small'>Bullish (NZD +3 vs CHF -3)</td></tr><tr tabindex='0' data-pair='NZDCAD'><td><b>NZDCAD</b></td><td class='num'>+5</td><td><span class='tag bull'>bullish</span></td><td>medium</td><td class='small'>—</td><td class='small'>Rates</td><td class='small'>Bullish (NZD +3 vs CAD -2)</td></tr><tr tabindex='0' data-pair='CADJPY'><td><b>CADJPY</b></td><td class='num'>-4</td><td><span class='tag bear'>bearish</span></td><td>low</td><td class='small'>—</td><td class='small'>Rates</td><td class='small'>Bearish (CAD -2 vs JPY +2)</td></tr><tr tabindex='0' data-pair='CADCHF'><td><b>CADCHF</b></td><td class='num'>+1</td><td><span class='tag neu'>two-sided</span></td><td>low</td><td class='small'>—</td><td class='small'>—</td><td class='small'>Two-sided (CAD -2 vs CHF -3)</td></tr><tr tabindex='0' data-pair='CHFJPY'><td><b>CHFJPY</b></td><td class='num'>-5</td><td><span class='tag bear'>bearish</span></td><td>medium</td><td class='small'>—</td><td class='small'>Rates</td><td class='small'>Bearish (CHF -3 vs JPY +2)</td></tr><tr tabindex='0' data-pair='XAUUSD'><td><b>XAUUSD</b></td><td class='num'>+0</td><td><span class='tag neu'>two-sided</span></td><td>low</td><td class='small'>—</td><td class='small'>—</td><td class='small'>Two-sided (XAU +2 vs USD +2)</td></tr></tbody></table></div>
+
+<h2><span class="n">12</span>Catalyst calendar</h2>
+<p class="small">Bucharest = UTC+2 throughout. Dates are UTC dates; the NZ labour release and the BoJ minutes fall on 4-5 Nov local time. "—" = time not verified. Consensus figures only where a source published them.</p>
+<div class="scroll"><table><thead><tr><th>Date</th><th>Bucharest</th><th>UTC</th><th>CCY</th><th>Event</th><th>Importance</th></tr></thead><tbody><tr><td>2026-11-01</td><td>—</td><td>—</td><td>CAD</td><td>OPEC+ online meeting (output expected unchanged)</td><td><span class='tag '>LOW</span></td></tr><tr><td>2026-11-02</td><td>07:00</td><td>05:00</td><td>JPY</td><td>BoJ Outlook Report full text</td><td><span class='tag '>LOW</span></td></tr><tr><td>2026-11-02</td><td>10:50</td><td>08:50-09:30</td><td>EUR, GBP</td><td>Euro-area and UK final manufacturing PMIs</td><td><span class='tag '>MEDIUM</span></td></tr><tr><td>2026-11-02</td><td>17:00</td><td>15:00</td><td>USD</td><td>US ISM manufacturing, Oct (cons. 54.7)</td><td><span class='tag '>MEDIUM</span></td></tr><tr><td>2026-11-03</td><td>05:30</td><td>03:30</td><td>AUD</td><td>RBA decision and SoMP (4.60%, hike ~81% priced)</td><td><span class='tag crit'>CRITICAL</span></td></tr><tr><td>2026-11-03</td><td>06:30</td><td>04:30</td><td>AUD</td><td>Bullock press conference</td><td><span class='tag hi'>HIGH</span></td></tr><tr><td>2026-11-03</td><td>09:30</td><td>07:30</td><td>CHF</td><td>Swiss CPI, Oct (cons. 1.3% y/y, one source)</td><td><span class='tag hi'>HIGH</span></td></tr><tr><td>2026-11-03</td><td>23:45</td><td>21:45</td><td>NZD</td><td>NZ Q3 labour market (4 Nov NZ time; UR cons. 5.5%)</td><td><span class='tag hi'>HIGH</span></td></tr><tr><td>2026-11-03</td><td>—</td><td>—</td><td>NZD</td><td>GDT dairy auction (time not verified)</td><td><span class='tag '>MEDIUM</span></td></tr><tr><td>2026-11-03</td><td>—</td><td>—</td><td>EUR</td><td>French Assembly vote on the 2027 budget revenue part (afternoon Paris)</td><td><span class='tag hi'>HIGH</span></td></tr><tr><td>2026-11-03</td><td>—</td><td>—</td><td>USD, XAU</td><td>US midterm elections</td><td><span class='tag hi'>HIGH</span></td></tr><tr><td>2026-11-04</td><td>02:30</td><td>00:30</td><td>AUD</td><td>Australia household spending, Sep</td><td><span class='tag '>MEDIUM</span></td></tr><tr><td>2026-11-04</td><td>12:00</td><td>10:00</td><td>EUR</td><td>Euro-area HICP flash, Oct (cons. 3.9%)</td><td><span class='tag hi'>HIGH</span></td></tr><tr><td>2026-11-04</td><td>15:15</td><td>13:15</td><td>USD</td><td>US ADP employment, Oct (cons. +75k)</td><td><span class='tag '>MEDIUM</span></td></tr><tr><td>2026-11-04</td><td>15:30</td><td>13:30</td><td>CAD</td><td>Canada merchandise trade, Sep</td><td><span class='tag '>MEDIUM</span></td></tr><tr><td>2026-11-04</td><td>17:00</td><td>15:00</td><td>USD</td><td>US ISM services, Oct (cons. 54.7)</td><td><span class='tag '>MEDIUM</span></td></tr><tr><td>2026-11-04</td><td>01:50 (+1 day)</td><td>23:50</td><td>JPY</td><td>BoJ minutes of the September meeting (5 Nov 08:50 JST)</td><td><span class='tag '>LOW</span></td></tr><tr><td>2026-11-05</td><td>10:00</td><td>08:00</td><td>CHF</td><td>Swiss unemployment, Oct (cons. 3.1%; time per one calendar)</td><td><span class='tag '>MEDIUM</span></td></tr><tr><td>2026-11-05</td><td>14:00</td><td>12:00</td><td>GBP</td><td>BoE decision, minutes and MPR (3.75%, hike ~95% priced)</td><td><span class='tag crit'>CRITICAL</span></td></tr><tr><td>2026-11-05</td><td>14:30</td><td>12:30</td><td>GBP</td><td>Bailey press conference</td><td><span class='tag hi'>HIGH</span></td></tr><tr><td>2026-11-06</td><td>10:00</td><td>08:00</td><td>CHF</td><td>Swiss FX reserves, Oct</td><td><span class='tag '>MEDIUM</span></td></tr><tr><td>2026-11-06</td><td>15:30</td><td>13:30</td><td>USD, XAU</td><td>US October payrolls (cons. +50-65k; UR 4.2%)</td><td><span class='tag hi'>HIGH</span></td></tr><tr><td>2026-11-06</td><td>15:30</td><td>13:30</td><td>CAD</td><td>Canada Labour Force Survey, Oct</td><td><span class='tag hi'>HIGH</span></td></tr><tr><td>2026-11-06</td><td>18:00</td><td>16:00</td><td>JPY</td><td>Ueda speaks, IMF Camdessus Lecture (approx. time)</td><td><span class='tag '>MEDIUM</span></td></tr><tr><td>2026-11-07</td><td>—</td><td>—</td><td>NZD</td><td>New Zealand general election</td><td><span class='tag '>MEDIUM</span></td></tr><tr><td>2026-11-17</td><td>—</td><td>—</td><td>EUR</td><td>French Assembly vote on the whole 2027 budget</td><td><span class='tag hi'>HIGH</span></td></tr><tr><td>2026-11-27</td><td>—</td><td>—</td><td>EUR</td><td>S&amp;P review of France</td><td><span class='tag '>MEDIUM</span></td></tr><tr><td>2026-12-09</td><td>—</td><td>—</td><td>CAD</td><td>BoC decision (2.50%)</td><td><span class='tag crit'>CRITICAL</span></td></tr><tr><td>2026-12-09</td><td>—</td><td>—</td><td>NZD</td><td>RBNZ decision (2.75%)</td><td><span class='tag crit'>CRITICAL</span></td></tr><tr><td>2026-12-10</td><td>10:30</td><td>08:30</td><td>CHF</td><td>SNB decision (0%)</td><td><span class='tag '>MEDIUM</span></td></tr><tr><td>2026-12-17</td><td>—</td><td>—</td><td>EUR</td><td>ECB decision (2.50%, hike 75-84% priced)</td><td><span class='tag crit'>CRITICAL</span></td></tr><tr><td>2026-12-18</td><td>—</td><td>—</td><td>JPY</td><td>BoJ decision (1.25%, hike ~57% priced)</td><td><span class='tag crit'>CRITICAL</span></td></tr></tbody></table></div>
+
+<h2><span class="n">13</span>Scenarios and invalidation (dominant themes)</h2>
+<div class="grid">
+<div class="card"><h3>1 · Antipodean central banks (AUD +5, NZD +3)</h3><p><b>Base:</b> RBA hikes on 3 Nov; NZ unemployment near 5.5%; December RBNZ pricing drifts up from ~41%. <b>Invalidation:</b> an RBA hold or one-and-done hike; NZ unemployment above 5.5%; a disruptive 7 Nov election result. AUDNZD stays two-sided either way (gap +2).</p></div>
+<div class="card"><h3>2 · French fiscal stress (EUR −4)</h3><p><b>Base:</b> the 3 Nov revenue vote is contested; spreads stay wide versus early October. <b>Invalidation:</b> a clean vote with OAT-Bund back near 130-145bp would move N2 toward −1/0 (EUR −2 or better); censure or 49.3 with spreads above the 174.6bp peak would confirm −2.</p></div>
+<div class="card"><h3>3 · Oil shock above +10% (CAD N1 +2, EUR/JPY N1 −1)</h3><p><b>Base:</b> Brent near $113 with Hormuz disruption. <b>Invalidation:</b> Brent back below ~$112.5 (the +10% line versus the 2 Oct settle) by the next cutoff resets CAD to +1 and EUR/JPY to 0 (computed from closes only).</p></div>
+<div class="card"><h3>4 · Fed December odds (USD +2, XAU +2)</h3><p><b>Base:</b> pricing ~70-80% with weak payrolls expected (+50-65k). <b>Invalidation:</b> a strong NFP/ISM pushing December back above ~85% would argue for USD R2 +1 (USD +5 sensitivity); a sub-zero print or rising unemployment would argue for −1.</p></div>
+</div>
+<h2><span class="n">14</span>Momentum overlay (not scored)</h2><div class="pending">Pending Phase 3.</div>
+
+<h2><span class="n">15</span>Changes vs previous report (W44 FINAL)</h2>
+<div class="scroll"><table><thead><tr><th>CCY</th><th>W44 S</th><th>W45 S</th><th>raw</th><th>Rule</th></tr></thead><tbody><tr><td>USD</td><td class='num'>+2</td><td class='num'>+2</td><td class='num'>+2.25</td><td>hysteresis held</td></tr><tr><td>EUR</td><td class='num'>-5</td><td class='num'>-4</td><td class='num'>-3.60</td><td>rounded raw</td></tr><tr><td>GBP</td><td class='num'>+1</td><td class='num'>+4</td><td class='num'>+3.60</td><td>rounded raw</td></tr><tr><td>JPY</td><td class='num'>+2</td><td class='num'>+2</td><td class='num'>+2.25</td><td>hysteresis held</td></tr><tr><td>CHF</td><td class='num'>-1</td><td class='num'>-3</td><td class='num'>-2.70</td><td>rounded raw</td></tr><tr><td>CAD</td><td class='num'>-2</td><td class='num'>-2</td><td class='num'>-1.80</td><td>hysteresis held</td></tr><tr><td>AUD</td><td class='num'>+5</td><td class='num'>+5</td><td class='num'>+5.85</td><td>hysteresis held</td></tr><tr><td>NZD</td><td class='num'>0</td><td class='num'>+3</td><td class='num'>+3.15</td><td>rounded raw</td></tr>
+<tr><td>XAU</td><td class='num'>+3</td><td class='num'>+2</td><td class='num'>G 9g +0.00</td><td>G +1 → 0</td></tr></tbody></table></div>
+<h3>Factor changes (each with evidence and reason)</h3>
+<div class="scroll"><table><thead><tr><th>CCY</th><th>Factor</th><th>Old</th><th>New</th><th>Reason / evidence</th></tr></thead><tbody><tr><td>USD</td><td>R3</td><td class='num'>0</td><td class='num'>+1</td><td class='small'>S7: Q3 GDP 3.4% beat consensus (+1); FOMC hold and PCE in line (0).</td></tr><tr><td>USD</td><td>G1</td><td class='num'>+0.5</td><td class='num'>0</td><td class='small'>S12-S15: regime −1 → 0 (credit spread 4-week change back inside ±25bp).</td></tr><tr><td>EUR</td><td>R2</td><td class='num'>-1</td><td class='num'>0</td><td class='small'>S17/S18: Lagarde says December direction is &#x27;quite clear&#x27;, matching 75-84% pricing; the dovish gap scored in W44 is gone.</td></tr><tr><td>EUR</td><td>N1</td><td class='num'>0</td><td class='num'>-1</td><td class='small'>S57: Brent +10.9% front-to-front (+15.0% same contract), both ≥ +10% → importer −1.</td></tr><tr><td>EUR</td><td>N2</td><td class='num'>-1</td><td class='num'>-2</td><td class='small'>S23/S24: dated binary event (3 Nov revenue vote) and OAT-Bund wider over 4 weeks (+12 to +29bp) → −2 anchor met.</td></tr><tr><td>GBP</td><td>R3</td><td class='num'>+2</td><td class='num'>+1</td><td class='small'>Rule decay: no HIGH UK release; trunc(2/2) = 1.</td></tr><tr><td>GBP</td><td>N2</td><td class='num'>-1</td><td class='num'>+1</td><td class='small'>S30: Budget risk eased (gilts −2.1bp, muted reaction) → +1 anchor (&#x27;previously scored risk easing&#x27;).</td></tr><tr><td>GBP</td><td>G1</td><td class='num'>-0.5</td><td class='num'>0</td><td class='small'>Regime −1 → 0.</td></tr><tr><td>JPY</td><td>R2</td><td class='num'>0</td><td class='num'>+1</td><td class='small'>S35-S38: hawkish hold (underlying inflation at target, FY27 forecasts up) versus December only ~57% priced; data mixed → +1 (grade C).</td></tr><tr><td>JPY</td><td>R3</td><td class='num'>+1</td><td class='num'>0</td><td class='small'>BoJ hold expected and mixed in tone (0); trunc(1/2) = 0.</td></tr><tr><td>JPY</td><td>N1</td><td class='num'>0</td><td class='num'>-1</td><td class='small'>S57: Brent ≥ +10% → importer −1.</td></tr><tr><td>JPY</td><td>G1</td><td class='num'>+1</td><td class='num'>0</td><td class='small'>Regime −1 → 0.</td></tr><tr><td>CHF</td><td>G1</td><td class='num'>+1</td><td class='num'>0</td><td class='small'>Regime −1 → 0.</td></tr><tr><td>CAD</td><td>R3</td><td class='num'>0</td><td class='num'>-1</td><td class='small'>S45: August GDP 0.0% vs +0.2% (−1); BoC hike in line with the majority (0).</td></tr><tr><td>CAD</td><td>N1</td><td class='num'>+1</td><td class='num'>+2</td><td class='small'>S57: Brent ≥ +10% on both measures with settle data → +2 (W44 straddle cap no longer applies).</td></tr><tr><td>CAD</td><td>G1</td><td class='num'>-0.5</td><td class='num'>0</td><td class='small'>Regime −1 → 0.</td></tr><tr><td>AUD</td><td>R3</td><td class='num'>+1</td><td class='num'>0</td><td class='small'>S49: trimmed mean q/q in line (0); trunc(1/2) = 0.</td></tr><tr><td>AUD</td><td>N1</td><td class='num'>-1</td><td class='num'>0</td><td class='small'>S58: iron ore −2.0% in 4 weeks → within ±3% → 0.</td></tr><tr><td>AUD</td><td>G1</td><td class='num'>-1</td><td class='num'>0</td><td class='small'>Regime −1 → 0.</td></tr><tr><td>NZD</td><td>R2</td><td class='num'>0</td><td class='num'>+1</td><td class='small'>S53-S55: all members see tighter policy as likely and four major banks expect December, against ~41% priced; data neutral → +1.</td></tr><tr><td>NZD</td><td>R3</td><td class='num'>0</td><td class='num'>-1</td><td class='small'>S53: RBNZ hold against ~90% hike pricing → −1.</td></tr><tr><td>NZD</td><td>G1</td><td class='num'>-1</td><td class='num'>0</td><td class='small'>Regime −1 → 0.</td></tr><tr><td>XAU</td><td>X2</td><td class='num'>+1</td><td class='num'>0</td><td class='small'>Regime 0 → haven factor 0.</td></tr><tr><td>XAU</td><td>X3</td><td class='num'>+1</td><td class='num'>0</td><td class='small'>S64/S67: first weekly ETF outflow in 14 weeks (North American outflows); central-bank data only to August → mixed, 0.</td></tr><tr><td>XAU</td><td>X4</td><td class='num'>-2</td><td class='num'>0</td><td class='small'>S62: breakeven 4-week change ~+2bp (W44: −41bp) → 0.</td></tr></tbody></table></div>
+<p class="small">No factor carries evidence older than two reports: every scored factor was re-evidenced against the 31 Oct cutoff (§5.5 decay not triggered).</p>
+
+<h2><span class="n">16</span>Model calibration log (hypotheses only; weights frozen, 1 of 26 live vintages evaluated)</h2>
+<ul class="lim">
+<li><b>H1 (CRITICAL meetings inside the target week):</b> RBA (~81% priced, banks unanimous) and BoE (~95%, economists below market after November) are recorded with priced probability, dispersion and surprise paths (section 10).</li>
+<li><b>H2 (haven betas):</b> moot this week (regime 0).</li>
+<li><b>H5 (CAD strength vs negative score):</b> CAD held at −2 by hysteresis (raw −1.80); N1 rose to +2 on oil. Count continues.</li>
+<li><b>H6 (regime cliff-edges):</b> S&amp;P −1.85% vs −2% threshold; HY OAS change depends on start day (+2 or +16bp).</li>
+<li><b>Interpretation decisions this run:</b> EUR N2 applied at −2 by the strict anchor (dated vote + 4-week widening) despite the retracement from the peak; NZD R2 +1 reads the RBNZ statement and bank calls against ~41% December pricing (largest single judgement: NZD 0 without it); JPY R2 +1 rests on one low-reliability pricing source (grade C); MEDIUM classification of Tokyo CPI, euro-area GDP and national CPIs kept consistent with W44 (excluded from R3).</li>
+<li><b>Run governance:</b> two PHASE 1 runs now exist for W45 (r1 and r3); the user designates the record before the delta check.</li>
+</ul>
+
+<h2><span class="n">17</span>Evidence and sources log</h2>
+<p class="small">Every page below was opened during research on 31 Oct 2026. Grades per §4 (A official / pricing tool; B reputable secondary or two consistent C; C single commentary, older or fallback; D missing). Official sites that could not be reached: FRED, CME FedWatch, BLS, ecb.europa.eu, snb.ch, rbnz.govt.nz, ASX tracker, EIA, CFTC (20 and 27 Oct).</p>
+<div class="scroll"><table style="min-width:900px"><thead><tr><th>ID</th><th>CCY</th><th>Factor</th><th>Type</th><th>Grade</th><th>Dates</th><th>Content and source</th></tr></thead><tbody><tr id='S1'><td><b>S1</b></td><td>USD</td><td>R2 (R3 0: in line)</td><td>FACT</td><td><b>A</b></td><td class='small'>2026-10-28<br>pub 2026-10-28</td><td>FOMC held 3.75-4.00%, vote 10-2 (Cook, Hammack for +25bp); activity upgraded to &#x27;strong&#x27;; inflation &#x27;remains elevated&#x27;.<br><span class='small'>Why: Hawkish hold; sets the communication line for R2. · Limits: None.</span><br><a href="https://federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm" target="_blank" rel="noopener">https://federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm</a></td></tr><tr id='S2'><td><b>S2</b></td><td>USD</td><td>R2</td><td>ASSESSMENT</td><td><b>C</b></td><td class='small'>2026-10-28<br>pub 2026-10-28</td><td>Warsh press conference: no forward guidance, will not prejudge meetings; December hike ~85% priced before the presser (Bloomberg data via Yahoo); FedWatch 84% pre-decision.<br><span class='small'>Why: Chair non-committal → communication line neutral, not hawkish. · Limits: Broker summary.</span><br><a href="https://admiralmarkets.com/analytics/traders-blog/warsh-press-conference-october-2026" target="_blank" rel="noopener">https://admiralmarkets.com/analytics/traders-blog/warsh-press-conference-october-2026</a></td></tr><tr id='S3'><td><b>S3</b></td><td>USD</td><td>R2</td><td>ASSESSMENT</td><td><b>B</b></td><td class='small'>2026-10-28<br>pub 2026-10-29</td><td>BofA calls hikes in Dec 2026 and Mar 2027; reads Warsh&#x27;s silence on December as dovish given pricing; 2Y fell ~6bp during the presser.<br><span class='small'>Why: Disproof evidence against a hawkish repricing. · Limits: Bank view.</span><br><a href="https://finance.yahoo.com/economy/policy/articles/bofa-shifts-fed-call-rate-122946057.html" target="_blank" rel="noopener">https://finance.yahoo.com/economy/policy/articles/bofa-shifts-fed-call-rate-122946057.html</a></td></tr><tr id='S4'><td><b>S4</b></td><td>USD</td><td>R2 / R1</td><td>EXPECTATION</td><td><b>C</b></td><td class='small'>2026-10-29<br>pub 2026-10-29</td><td>December hike 78.4% (CME FedWatch as quoted); March 2027 distribution implies ~4.33% probability-weighted (computed).<br><span class='small'>Why: Priced path and 6-month level for R1. · Limits: CME page not opened; no timestamp.</span><br><a href="https://patersoncapital.com/fed-holds-rates-steady-in-october-december-hike-odds-rise-to-78/" target="_blank" rel="noopener">https://patersoncapital.com/fed-holds-rates-steady-in-october-december-hike-odds-rise-to-78/</a></td></tr><tr id='S5'><td><b>S5</b></td><td>USD</td><td>R2 / regime</td><td>EXPECTATION</td><td><b>C</b></td><td class='small'>2026-10-30<br>pub 2026-10-31</td><td>December hike ~76% (CNBC citing FedWatch) at the 30 Oct close; S&amp;P 500 7,580.07 (−1.82%); VIX 19.42; HY OAS 326bp on 29 Oct.<br><span class='small'>Why: Latest priced path (consistent with S4 → B for R2); regime inputs. · Limits: Newsletter.</span><br><a href="https://cappnotes.substack.com/p/closing-look-friday-october-30-2026" target="_blank" rel="noopener">https://cappnotes.substack.com/p/closing-look-friday-october-30-2026</a></td></tr><tr id='S6'><td><b>S6</b></td><td>USD</td><td>R2</td><td>EXPECTATION</td><td><b>C</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>December hike 69.4% / hold 30.6% (FatTail&#x27;s own fed-funds-futures calculation, 17:00 ET); prior close 77.3%.<br><span class='small'>Why: Shows the priced path fading through the week. · Limits: Vendor calculation, not FedWatch.</span><br><a href="https://fattail.ai/ratewatch-december-fed-decision/" target="_blank" rel="noopener">https://fattail.ai/ratewatch-december-fed-decision/</a></td></tr><tr id='S7'><td><b>S7</b></td><td>USD</td><td>R3</td><td>FACT</td><td><b>A</b></td><td class='small'>2026-10-29<br>pub 2026-10-29</td><td>Q3 real GDP advance +3.4% annualised (Q2 +2.2%); consensus 3.0-3.2% (LSEG 3.2%).<br><span class='small'>Why: HIGH release, hawkish beat (+1 in R3). · Limits: Consensus range from two news sources.</span><br><a href="https://www.bea.gov/news/2026/gdp-advance-estimate-3rd-quarter-2026" target="_blank" rel="noopener">https://www.bea.gov/news/2026/gdp-advance-estimate-3rd-quarter-2026</a></td></tr><tr id='S8'><td><b>S8</b></td><td>USD</td><td>R3</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-29<br>pub 2026-10-29</td><td>September PCE 3.6% y/y (prior 3.4%); core 3.1% y/y, +0.3% m/m — in line with LSEG consensus.<br><span class='small'>Why: HIGH release, in line (0 in R3). · Limits: BEA release page blocked; two consistent secondaries.</span><br><a href="https://www.foxbusiness.com/economy/september-2026-pce-inflation" target="_blank" rel="noopener">https://www.foxbusiness.com/economy/september-2026-pce-inflation</a><br><a href="https://tradingeconomics.com/united-states/core-pce-price-index-annual-change/news/596316" target="_blank" rel="noopener">https://tradingeconomics.com/united-states/core-pce-price-index-annual-change/news/596316</a></td></tr><tr id='S9'><td><b>S9</b></td><td>USD</td><td>R2</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>Musalem: additional firming will be necessary, and soon.<br><span class='small'>Why: Hawkish Fed speaker; offsets S2/S3 → communication mixed. · Limits: Single speaker.</span><br><a href="https://1027wbow.com/2026/10/30/feds-musalem-says-a-rate-hike-is-needed-soon/" target="_blank" rel="noopener">https://1027wbow.com/2026/10/30/feds-musalem-says-a-rate-hike-is-needed-soon/</a></td></tr><tr id='S10'><td><b>S10</b></td><td>USD</td><td>R2 (disproof)</td><td>ASSESSMENT</td><td><b>C</b></td><td class='small'>2026-10-29<br>pub 2026-10-29</td><td>Opinion: a December pause deserves serious consideration (energy-driven inflation, Warsh uncommitted).<br><span class='small'>Why: Disproof search for the hawkish-USD thesis. · Limits: Opinion piece.</span><br><a href="https://www.investing.com/analysis/the-fed-is-not-as-hawkish-as-expected-and-december-is-far-from-certain-200690483" target="_blank" rel="noopener">https://www.investing.com/analysis/the-fed-is-not-as-hawkish-as-expected-and-december-is-far-from-certain-200690483</a></td></tr><tr id='S11'><td><b>S11</b></td><td>USD</td><td>N2</td><td>FACT</td><td><b>C</b></td><td class='small'>2026-11-03<br>pub 2026-10-28</td><td>US midterms 3 Nov; polls favour Democrats; no shutdown or new tariff development found.<br><span class='small'>Why: Dated political event without market stress → N2 0. · Limits: Poll aggregation; no spread evidence.</span><br><a href="https://www.yahoo.com/news/politics/article/the-2026-midterms-are-next-week-which-party-has-a-better-chance-of-winning-heres-what-the-latest-polls-say-155319308.html" target="_blank" rel="noopener">https://www.yahoo.com/news/politics/article/the-2026-midterms-are-next-week-which-party-has-a-better-chance-of-winning-heres-what-the-latest-polls-say-155319308.html</a></td></tr><tr id='S12'><td><b>S12</b></td><td>ALL</td><td>G1 regime (e)</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>S&amp;P 500 close 7,580.07 on Fri 30 Oct.<br><span class='small'>Why: 4-week equity change. · Limits: Two consistent secondaries (Yahoo, S5).</span><br><a href="https://finance.yahoo.com/markets/live/stock-market-today-friday-october-30-dow-sp-500-nasdaq-amazon-intel-ai-sell-off-191429143.html" target="_blank" rel="noopener">https://finance.yahoo.com/markets/live/stock-market-today-friday-october-30-dow-sp-500-nasdaq-amazon-intel-ai-sell-off-191429143.html</a></td></tr><tr id='S13'><td><b>S13</b></td><td>ALL</td><td>G1 regime (e)</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-02<br>pub 2026-10-02</td><td>S&amp;P 500 close 7,722.72 on Fri 2 Oct (AP). 4-week change −1.85% → e = 0 (0.15pp from the −2% threshold).<br><span class='small'>Why: 4-week base. · Limits: AP via La Nación.</span><br><a href="https://www.lanacion.com.ar/usa/how-major-us-stock-indexes-fared-friday-1022026-nid02102026/" target="_blank" rel="noopener">https://www.lanacion.com.ar/usa/how-major-us-stock-indexes-fared-friday-1022026-nid02102026/</a></td></tr><tr id='S14'><td><b>S14</b></td><td>ALL</td><td>G1 regime (v)</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>VIX close 19.42 (+12.91%) → v = 0.<br><span class='small'>Why: Volatility input. · Limits: Cboe not opened; Yahoo and S5 agree.</span><br><a href="https://finance.yahoo.com/markets/live/stock-market-today-friday-october-30-dow-sp-500-nasdaq-amazon-intel-ai-sell-off-191429143.html" target="_blank" rel="noopener">https://finance.yahoo.com/markets/live/stock-market-today-friday-october-30-dow-sp-500-nasdaq-amazon-intel-ai-sell-off-191429143.html</a></td></tr><tr id='S15'><td><b>S15</b></td><td>ALL</td><td>G1 regime (c)</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-29<br>pub 2026-10-31</td><td>HY OAS (FRED BAMLH0A0HYM2): 1 Oct 3.24%, 2 Oct 3.10%, 28 Oct 3.14% (FRED mirror); 29 Oct 326bp (S5). 4-week change +2bp (+16bp from 2 Oct) → c = 0.<br><span class='small'>Why: Credit input. · Limits: FRED not reachable; mirror plus newsletter.</span><br><a href="https://equibles.com/economicdata/bamlh0a0hym2" target="_blank" rel="noopener">https://equibles.com/economicdata/bamlh0a0hym2</a><br><a href="https://cappnotes.substack.com/p/closing-look-friday-october-30-2026" target="_blank" rel="noopener">https://cappnotes.substack.com/p/closing-look-friday-october-30-2026</a></td></tr><tr id='S16'><td><b>S16</b></td><td>EUR</td><td>R2 (R3 0: in line)</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-29<br>pub 2026-10-29</td><td>ECB held deposit 2.50% (unanimous); energy poses upside inflation risk; not pre-committing; Lagarde leaves 7 Feb 2027.<br><span class='small'>Why: Expected hold; communication line for R2. · Limits: ecb.europa.eu blocked; reputable news.</span><br><a href="https://www.euronews.com/2026/10/29/ecb-holds-rates-at-25-as-lagarde-announces-early-exit-with-inflation-near-double-the-targe" target="_blank" rel="noopener">https://www.euronews.com/2026/10/29/ecb-holds-rates-at-25-as-lagarde-announces-early-exit-with-inflation-near-double-the-targe</a></td></tr><tr id='S17'><td><b>S17</b></td><td>EUR</td><td>R2</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-29<br>pub 2026-10-29</td><td>Lagarde: barring major developments the direction is &#x27;quite clear&#x27;; Reuters sources: December hike all but certain, then a pause; ECB staff see higher yields already tightening.<br><span class='small'>Why: Communication matches December pricing; argues against more beyond it. · Limits: Sources-based report.</span><br><a href="https://srnnews.com/ecb-keeps-rates-unchanged-but-points-to-mounting-inflation-risk/" target="_blank" rel="noopener">https://srnnews.com/ecb-keeps-rates-unchanged-but-points-to-mounting-inflation-risk/</a></td></tr><tr id='S18'><td><b>S18</b></td><td>EUR</td><td>R2</td><td>EXPECTATION</td><td><b>B</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>December ECB hike ~84% priced, steady through the press conference.<br><span class='small'>Why: Priced path. · Limits: Observation time imprecise.</span><br><a href="https://www.stonex.com/en/insights/how-markets-are-pricing-an-ecb-december-rate-hike-after-the-hold/" target="_blank" rel="noopener">https://www.stonex.com/en/insights/how-markets-are-pricing-an-ecb-december-rate-hike-after-the-hold/</a></td></tr><tr id='S19'><td><b>S19</b></td><td>EUR</td><td>R2</td><td>EXPECTATION</td><td><b>C</b></td><td class='small'>2026-10-29<br>pub 2026-10-29</td><td>December ECB hike ~75% priced.<br><span class='small'>Why: Second pricing source (level conflicts with S18; direction agrees). · Limits: Aggregator.</span><br><a href="https://rallies.ai/news/traders-stick-with-rate-hike-bets-as-markets-set-sights-on-new-look-ecb-bf4f41cbf6460148" target="_blank" rel="noopener">https://rallies.ai/news/traders-stick-with-rate-hike-bets-as-markets-set-sights-on-new-look-ecb-bf4f41cbf6460148</a></td></tr><tr id='S20'><td><b>S20</b></td><td>EUR</td><td>R1</td><td>EXPECTATION</td><td><b>B</b></td><td class='small'>2026-10-29<br>pub 2026-10-30</td><td>Traders fully price two ECB hikes by April 2027 → deposit ~3.00% around 6 months ahead (inferred).<br><span class='small'>Why: R1 level. · Limits: Level inferred from text, not an OIS print.</span><br><a href="https://tradingeconomics.com/euro-area/interest-rate" target="_blank" rel="noopener">https://tradingeconomics.com/euro-area/interest-rate</a></td></tr><tr id='S21'><td><b>S21</b></td><td>EUR</td><td>O only (MEDIUM)</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>Euro-area Q3 GDP flash +0.4% q/q vs 0.2% consensus.<br><span class='small'>Why: Outlook; MEDIUM importance (as in the W44 calendar) so not in R3. · Limits: Eurostat page not opened.</span><br><a href="https://www.eunews.it/en/2026/10/30/eurozone-q3-gdp-up-0-4-per-cent-eu-gdp-up-0-5-per-cent/" target="_blank" rel="noopener">https://www.eunews.it/en/2026/10/30/eurozone-q3-gdp-up-0-4-per-cent-eu-gdp-up-0-5-per-cent/</a></td></tr><tr id='S22'><td><b>S22</b></td><td>EUR</td><td>O only (MEDIUM)</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>October CPI flashes: Germany 2.8% vs 3.1% (miss), Italy 5.4% vs 4.6% and France 3.4% vs 3.2% (beats).<br><span class='small'>Why: Mixed national inflation; euro-area flash due 4 Nov. · Limits: National prints, not the euro-area HICP.</span><br><a href="https://www.euronews.com/2026/10/30/germany-france-italy-and-spain-where-was-inflation-highest-in-october" target="_blank" rel="noopener">https://www.euronews.com/2026/10/30/germany-france-italy-and-spain-where-was-inflation-highest-in-october</a><br><a href="https://www.933thedrive.com/2026/10/30/german-inflation-slows-in-october/" target="_blank" rel="noopener">https://www.933thedrive.com/2026/10/30/german-inflation-slows-in-october/</a></td></tr><tr id='S23'><td><b>S23</b></td><td>EUR</td><td>N2</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-30<br>pub 2026-10-31</td><td>OAT-Bund 10Y spread 159.0bp on 30 Oct vs 130.3bp on 1 Oct (146.9bp on 2 Oct): +12 to +29bp in 4 weeks; peak 174.6bp on 22 Oct.<br><span class='small'>Why: Market confirmation of French fiscal stress. · Limits: Retracing from the 22 Oct peak; source levels differ by ~4-5bp.</span><br><a href="https://www.ideal-investisseur.fr/en/markets/oat-bund-spread.html" target="_blank" rel="noopener">https://www.ideal-investisseur.fr/en/markets/oat-bund-spread.html</a></td></tr><tr id='S24'><td><b>S24</b></td><td>EUR</td><td>N2</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-11-03<br>pub 2026-10-31</td><td>French Assembly solemn vote on the 2027 budget revenue part on Tue 3 Nov; whole-budget vote 17 Nov; 70-day deadline 17 Dec.<br><span class='small'>Why: Dated binary event inside the horizon. · Limits: 49.3 use undecided.</span><br><a href="https://nosparlementaires.fr/actualites/budget-2027-calendrier-assemblee-cinq-semaines" target="_blank" rel="noopener">https://nosparlementaires.fr/actualites/budget-2027-calendrier-assemblee-cinq-semaines</a></td></tr><tr id='S25'><td><b>S25</b></td><td>EUR</td><td>R2 (disproof)</td><td>ASSESSMENT</td><td><b>C</b></td><td class='small'>2026-10-29<br>pub 2026-10-29</td><td>For EUR: December hike &#x27;in the offing&#x27; (ING), euro oversold (Corpay). Against: December probably the end (Deutsche Bank), fade rallies (CIBC).<br><span class='small'>Why: Disproof search for the bearish-EUR thesis. · Limits: Commentary.</span><br><a href="https://www.poundsterlinglive.com/eurusd/23814-euro-to-dollar-post-ecb-jump-flattered-usd-selloff" target="_blank" rel="noopener">https://www.poundsterlinglive.com/eurusd/23814-euro-to-dollar-post-ecb-jump-flattered-usd-selloff</a></td></tr><tr id='S26'><td><b>S26</b></td><td>GBP</td><td>context</td><td>FACT</td><td><b>A</b></td><td class='small'>2026-09-17<br>pub 2026-09-17</td><td>BoE held Bank Rate 3.75% in September, vote 6-3 (Greene, Mann, Pill for 4.00%).<br><span class='small'>Why: Verifies the current rate. · Limits: Older than 15 trading days; context only.</span><br><a href="https://www.bankofengland.co.uk/-/media/boe/files/monetary-policy-summary-and-minutes/2026/monetary-policy-summary-and-minutes-september-2026.pdf" target="_blank" rel="noopener">https://www.bankofengland.co.uk/-/media/boe/files/monetary-policy-summary-and-minutes/2026/monetary-policy-summary-and-minutes-september-2026.pdf</a></td></tr><tr id='S27'><td><b>S27</b></td><td>GBP</td><td>R2</td><td>EXPECTATION</td><td><b>B</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>5 Nov BoE hike ~95% priced (30 Oct); above 90% (28 Oct).<br><span class='small'>Why: Priced path for the CRITICAL decision. · Limits: Two consistent secondaries.</span><br><a href="https://www.thearmchairtrader.com/global-economic-news/market-outlook-us-midterms-and-the-boe-to-raise-interest-rates/" target="_blank" rel="noopener">https://www.thearmchairtrader.com/global-economic-news/market-outlook-us-midterms-and-the-boe-to-raise-interest-rates/</a><br><a href="https://www.tradingnews.com/news/gbpusd-13283-tests-range-floor-after-a-shock-free-budget" target="_blank" rel="noopener">https://www.tradingnews.com/news/gbpusd-13283-tests-range-floor-after-a-shock-free-budget</a></td></tr><tr id='S28'><td><b>S28</b></td><td>GBP</td><td>R1 / R2</td><td>EXPECTATION</td><td><b>B</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>November hike almost fully priced, further hikes in February and July → Bank Rate ~4.25% by end-April 2027 (inferred).<br><span class='small'>Why: R1 level and priced path. · Limits: Level inferred.</span><br><a href="https://tradingeconomics.com/united-kingdom/currency" target="_blank" rel="noopener">https://tradingeconomics.com/united-kingdom/currency</a></td></tr><tr id='S29'><td><b>S29</b></td><td>GBP</td><td>R2</td><td>EXPECTATION</td><td><b>C</b></td><td class='small'>2026-10-14<br>pub 2026-10-15</td><td>Reuters poll: 54/63 expect a 5 Nov hike to 4.00%; no majority for more after November.<br><span class='small'>Why: Economists below market beyond November (dovish risk). · Limits: 13 trading days old.</span><br><a href="https://www.investing.com/news/economy-news/boe-to-raise-rates-to-4-in-november-but-economists-narrowly-expect-hold-from-there-reuters-poll-4950914" target="_blank" rel="noopener">https://www.investing.com/news/economy-news/boe-to-raise-rates-to-4-in-november-but-economists-narrowly-expect-hold-from-there-reuters-poll-4950914</a></td></tr><tr id='S30'><td><b>S30</b></td><td>GBP</td><td>N2</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-28<br>pub 2026-10-28</td><td>Budget: OBR headroom £15bn (from £24bn); 10Y gilt 5.321% (−2.1bp); muted market reaction.<br><span class='small'>Why: Previously scored fiscal risk eased → N2 +1. · Limits: Headroom thin.</span><br><a href="https://www.marketscreener.com/news/gilt-yields-ease-sterling-falls-slightly-in-muted-reaction-to-u-k-budget-update-ce785cd2de8ff526" target="_blank" rel="noopener">https://www.marketscreener.com/news/gilt-yields-ease-sterling-falls-slightly-in-muted-reaction-to-u-k-budget-update-ce785cd2de8ff526</a></td></tr><tr id='S31'><td><b>S31</b></td><td>GBP</td><td>R2 (disproof)</td><td>ASSESSMENT</td><td><b>C</b></td><td class='small'>2026-10-28<br>pub 2026-10-28</td><td>A one-and-done BoE message would leave GBP vulnerable; 10Y gilt above 5.40% would revive a risk premium.<br><span class='small'>Why: Disproof search for the bullish-GBP thesis. · Limits: Commentary.</span><br><a href="https://www.tradingnews.com/news/gbpusd-13283-tests-range-floor-after-a-shock-free-budget" target="_blank" rel="noopener">https://www.tradingnews.com/news/gbpusd-13283-tests-range-floor-after-a-shock-free-budget</a></td></tr><tr id='S32'><td><b>S32</b></td><td>CHF</td><td>R1 / R2</td><td>EXPECTATION</td><td><b>C</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>SNB at 0%; markets &#x27;starting to price a possible hike in early 2027&#x27;; no quantified pricing.<br><span class='small'>Why: Priced path (qualitative only). · Limits: No SARON/OIS figure found.</span><br><a href="https://www.tradingpedia.com/2026/10/30/franc-gains-as-safe-haven-demand-pressures-usd-chf/" target="_blank" rel="noopener">https://www.tradingpedia.com/2026/10/30/franc-gains-as-safe-haven-demand-pressures-usd-chf/</a></td></tr><tr id='S33'><td><b>S33</b></td><td>CHF</td><td>calendar</td><td>EXPECTATION</td><td><b>C</b></td><td class='small'>2026-11-03<br>pub 2026-10-30</td><td>Swiss October CPI due 3 Nov 07:30 UTC; consensus 1.3% y/y (one source); September 1.0%.<br><span class='small'>Why: Target-week catalyst. · Limits: Consensus from one calendar.</span><br><a href="https://forexfundamentals.com/economic-calendar/ch-cpi/2026-10-01" target="_blank" rel="noopener">https://forexfundamentals.com/economic-calendar/ch-cpi/2026-10-01</a></td></tr><tr id='S34'><td><b>S34</b></td><td>CHF</td><td>N2 / disproof</td><td>ASSESSMENT</td><td><b>C</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>CHF bid as a haven on French spread stress despite a 0% policy rate; SNB intervention readiness limits gains.<br><span class='small'>Why: Disproof search for the low-carry CHF view. · Limits: Flows commentary; not scored in N2.</span><br><a href="https://www.investingcube.com/forex/eur-chf-forecast-0-9200-support-faces-france-risk/" target="_blank" rel="noopener">https://www.investingcube.com/forex/eur-chf-forecast-0-9200-support-faces-france-risk/</a></td></tr><tr id='S35'><td><b>S35</b></td><td>JPY</td><td>R2 (R3 0: expected hold)</td><td>FACT</td><td><b>A</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>BoJ held ~1.25%, vote 8-1 (Takata for 1.5%); faster ETF sales from Jan 2027.<br><span class='small'>Why: Hawkish hold. · Limits: No explicit rate guidance.</span><br><a href="https://www.boj.or.jp/en/mopo/mpmdeci/mpr_2026/k261030a.pdf" target="_blank" rel="noopener">https://www.boj.or.jp/en/mopo/mpmdeci/mpr_2026/k261030a.pdf</a></td></tr><tr id='S36'><td><b>S36</b></td><td>JPY</td><td>R2</td><td>FACT</td><td><b>A</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>Outlook Report: FY2027 core CPI 2.6% (+0.2), core-core 2.7% (+0.1); price risks skewed up.<br><span class='small'>Why: Communication implies more tightening. · Limits: Forecasts exclude the planned food tax cut.</span><br><a href="https://www.boj.or.jp/en/mopo/mpmdeci/mpr_2026/k261030b.pdf" target="_blank" rel="noopener">https://www.boj.or.jp/en/mopo/mpmdeci/mpr_2026/k261030b.pdf</a></td></tr><tr id='S37'><td><b>S37</b></td><td>JPY</td><td>R2</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>Ueda: underlying inflation consistent with target; &#x27;won&#x27;t just sit and wait&#x27;; baseline reviewed at the next meeting; pace data-dependent.<br><span class='small'>Why: Hawkish direction, non-committal timing. · Limits: Reuters quotes via a syndication site.</span><br><a href="https://www.933thedrive.com/2026/10/30/boj-governor-uedas-comments-at-news-conference-27/" target="_blank" rel="noopener">https://www.933thedrive.com/2026/10/30/boj-governor-uedas-comments-at-news-conference-27/</a></td></tr><tr id='S38'><td><b>S38</b></td><td>JPY</td><td>R1 / R2</td><td>EXPECTATION</td><td><b>C</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>Implied BoJ path: December hike 57%, cumulative 80.5% by January, ~1.66-1.72% by Mar-Apr 2027.<br><span class='small'>Why: Priced path and R1 level. · Limits: Single aggregator with partly stale content.</span><br><a href="https://centralbank.watch/bank-of-japan/" target="_blank" rel="noopener">https://centralbank.watch/bank-of-japan/</a></td></tr><tr id='S39'><td><b>S39</b></td><td>JPY</td><td>R2</td><td>EXPECTATION</td><td><b>C</b></td><td class='small'>2026-10-26<br>pub 2026-10-26</td><td>BBH: swaps priced 75% odds of a December hike before the meeting.<br><span class='small'>Why: Shows December odds fell after the meeting (if S38 is right). · Limits: Pre-meeting; date inferred from URL.</span><br><a href="https://www.mitrade.com/insights/news/live-news/article-1-2194010-20261026" target="_blank" rel="noopener">https://www.mitrade.com/insights/news/live-news/article-1-2194010-20261026</a></td></tr><tr id='S40'><td><b>S40</b></td><td>JPY</td><td>O only (MEDIUM)</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>Tokyo October core CPI 2.6% (cons. 2.6%); core-core 2.6% vs 2.7% expected (prior 2.9%).<br><span class='small'>Why: Outlook; MEDIUM (as in W44) so not in R3. · Limits: Core-core figure conflicts across sources (2.4% in one).</span><br><a href="https://www.933thedrive.com/2026/10/29/tokyo-core-inflation-exceeds-boj-target-in-october/" target="_blank" rel="noopener">https://www.933thedrive.com/2026/10/29/tokyo-core-inflation-exceeds-boj-target-in-october/</a></td></tr><tr id='S41'><td><b>S41</b></td><td>JPY</td><td>N2</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-27<br>pub 2026-10-27</td><td>Finance Minister Katayama: ready to take decisive action in the FX market, watching with a high sense of urgency.<br><span class='small'>Why: Credible official intervention threat → N2 +1. · Limits: Verbal only.</span><br><a href="https://investinglive.com/forex/japan-finance-minister-katayama-warns-of-decisive-action-as-yen-intervention-risks-linger/" target="_blank" rel="noopener">https://investinglive.com/forex/japan-finance-minister-katayama-warns-of-decisive-action-as-yen-intervention-risks-linger/</a></td></tr><tr id='S42'><td><b>S42</b></td><td>JPY</td><td>R2 (disproof)</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>September IP +2.2% m/m vs +1.3% (beat); retail sales +2.3% y/y vs 3.3% (miss).<br><span class='small'>Why: Data trend mixed → data line neutral in R2. · Limits: MEDIUM releases.</span><br><a href="https://investinglive.com/news/japan-september-factory-output-beats-forecasts-but-retail-sales-disappoint-ahead-of-boj/" target="_blank" rel="noopener">https://investinglive.com/news/japan-september-factory-output-beats-forecasts-but-retail-sales-disappoint-ahead-of-boj/</a></td></tr><tr id='S43'><td><b>S43</b></td><td>CAD</td><td>R2 (R3 0: in line)</td><td>FACT</td><td><b>A</b></td><td class='small'>2026-10-28<br>pub 2026-10-28</td><td>BoC raised to 2.50%; could be a need to increase further, proceeding carefully; CPI ~3.5% by year-end, ~3% in 2027.<br><span class='small'>Why: Hike matched majority expectations (~75% priced). · Limits: No vote published.</span><br><a href="https://www.bankofcanada.ca/?p=256268" target="_blank" rel="noopener">https://www.bankofcanada.ca/?p=256268</a></td></tr><tr id='S44'><td><b>S44</b></td><td>CAD</td><td>R1 / R2</td><td>EXPECTATION</td><td><b>B</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>After GDP: December hike 57% (LSEG, morning); Reuters later: markets expect a December hold, January hike to 2.75%.<br><span class='small'>Why: Priced path (~2.75% by January, inferred level). · Limits: Sources conflict on December.</span><br><a href="https://www.bnnbloomberg.ca/business/economics/2026/10/30/timing-of-next-rate-hike-in-question-after-surprise-stall-in-august-gdp/" target="_blank" rel="noopener">https://www.bnnbloomberg.ca/business/economics/2026/10/30/timing-of-next-rate-hike-in-question-after-surprise-stall-in-august-gdp/</a><br><a href="https://www.kitco.com/news/off-the-wire/2026-10-30/canadas-economy-stalls-again-august-likely-lost-ground-september" target="_blank" rel="noopener">https://www.kitco.com/news/off-the-wire/2026-10-30/canadas-economy-stalls-again-august-likely-lost-ground-september</a></td></tr><tr id='S45'><td><b>S45</b></td><td>CAD</td><td>R3</td><td>FACT</td><td><b>A</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>August GDP 0.0% m/m vs +0.2% consensus; September flash −0.1%; Q3 ~1.3% annualised vs BoC 2%.<br><span class='small'>Why: HIGH release, dovish miss (−1 in R3). · Limits: Consensus from Reuters poll.</span><br><a href="https://www150.statcan.gc.ca/n1/daily-quotidien/261030/dq261030a-eng.htm" target="_blank" rel="noopener">https://www150.statcan.gc.ca/n1/daily-quotidien/261030/dq261030a-eng.htm</a></td></tr><tr id='S46'><td><b>S46</b></td><td>CAD</td><td>N2</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-28<br>pub 2026-10-28</td><td>US-Canada talks show limited progress; Section 232 tariffs (steel up to 50%, autos 25%) remain.<br><span class='small'>Why: Live tariff threat → N2 −1. · Limits: Reuters via Yahoo.</span><br><a href="https://finance.yahoo.com/news/canada-reports-limited-progress-trade-131412397.html" target="_blank" rel="noopener">https://finance.yahoo.com/news/canada-reports-limited-progress-trade-131412397.html</a></td></tr><tr id='S47'><td><b>S47</b></td><td>CAD</td><td>R2 (disproof)</td><td>ASSESSMENT</td><td><b>C</b></td><td class='small'>2026-10-28<br>pub 2026-10-28</td><td>Leveraged funds net short 91k CAD contracts (20 Oct); CAD usually firmer in the week after BoC hikes.<br><span class='small'>Why: Disproof search for the bearish-CAD thesis. · Limits: Broker commentary; positioning not scored.</span><br><a href="https://www.fxempire.com/forecasts/article/premium-usd-cad-eyes-1-3982-as-a-bank-of-canada-hike-buys-the-loonie-a-week-1640935" target="_blank" rel="noopener">https://www.fxempire.com/forecasts/article/premium-usd-cad-eyes-1-3982-as-a-bank-of-canada-hike-buys-the-loonie-a-week-1640935</a></td></tr><tr id='S48'><td><b>S48</b></td><td>AUD</td><td>R2 / R3</td><td>FACT</td><td><b>A</b></td><td class='small'>2026-10-28<br>pub 2026-10-28</td><td>September CPI 4.3% y/y; Q3 headline +1.3% q/q; Q3 trimmed mean +1.0% q/q.<br><span class='small'>Why: Inflation above the RBA&#x27;s August track (~0.8% q/q). · Limits: Quarterly-basis trimmed mean y/y not shown on the ABS page.</span><br><a href="https://www.abs.gov.au/media-centre/media-releases/cpi-rose-43-year-september-2026" target="_blank" rel="noopener">https://www.abs.gov.au/media-centre/media-releases/cpi-rose-43-year-september-2026</a></td></tr><tr id='S49'><td><b>S49</b></td><td>AUD</td><td>R3</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-28<br>pub 2026-10-28</td><td>Trimmed mean 1.0% q/q vs 1.0% consensus (in line); 3.7% y/y vs 3.6%; headline 1.3% vs 1.2%; weighted median 1.0% vs 1.1%.<br><span class='small'>Why: Core q/q in line → R3 0. · Limits: Secondary consensus table.</span><br><a href="https://investinglive.com/news/australia-trimmed-mean-cpi-rises-to-3-7-above-forecasts-as-rba-hike-case-firms/" target="_blank" rel="noopener">https://investinglive.com/news/australia-trimmed-mean-cpi-rises-to-3-7-above-forecasts-as-rba-hike-case-firms/</a></td></tr><tr id='S50'><td><b>S50</b></td><td>AUD</td><td>R1 / R2</td><td>EXPECTATION</td><td><b>B</b></td><td class='small'>2026-10-31<br>pub 2026-10-31</td><td>ASX 30-day futures: 81% hike on 3 Nov; implied 4.85% Dec, 4.92% Mar, 4.91% May 2027.<br><span class='small'>Why: Priced path and the highest R1 level. · Limits: Third-party site citing ASX (official tracker blocked).</span><br><a href="https://rbawatch.com/next-rba-meeting" target="_blank" rel="noopener">https://rbawatch.com/next-rba-meeting</a></td></tr><tr id='S51'><td><b>S51</b></td><td>AUD</td><td>R2 (disproof)</td><td>EXPECTATION</td><td><b>B</b></td><td class='small'>2026-10-28<br>pub 2026-10-28</td><td>All big four banks expect a hike to 4.85% on 3 Nov; CBA calls it an insurance hike and pencils in 2027 cuts.<br><span class='small'>Why: Dispersion for the CRITICAL decision; disproof of further AUD repricing. · Limits: Only three banks detailed.</span><br><a href="https://www.savings.com.au/news/all-big-four-banks-back-november-rate-hike" target="_blank" rel="noopener">https://www.savings.com.au/news/all-big-four-banks-back-november-rate-hike</a></td></tr><tr id='S52'><td><b>S52</b></td><td>AUD</td><td>R2</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-28<br>pub 2026-10-28</td><td>Bullock (Senate): inflation &#x27;far too high&#x27;, difficult to look through supply shocks.<br><span class='small'>Why: Hawkish communication versus a flat priced curve after November. · Limits: Testimony summary.</span><br><a href="https://investinglive.com/central-banks/rba-s-bullock-inflation-is-far-too-high/" target="_blank" rel="noopener">https://investinglive.com/central-banks/rba-s-bullock-inflation-is-far-too-high/</a></td></tr><tr id='S53'><td><b>S53</b></td><td>NZD</td><td>R2 / R3</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-28<br>pub 2026-10-28</td><td>RBNZ held OCR 2.75%, vote 4-3; all members agreed tighter policy is likely to be required; December-quarter inflation forecast 4.4%.<br><span class='small'>Why: Dovish surprise vs ~90% hike pricing (−1 in R3); tightening bias for R2. · Limits: rbnz.govt.nz not reachable.</span><br><a href="https://www.westpaciq.com.au/economics/2026/10/first-impressions-rbnz-monetary-policy-review-october-2026/" target="_blank" rel="noopener">https://www.westpaciq.com.au/economics/2026/10/first-impressions-rbnz-monetary-policy-review-october-2026/</a><br><a href="https://www.actionforex.com/?p=658964" target="_blank" rel="noopener">https://www.actionforex.com/?p=658964</a><br><a href="https://www.newsquawk.com/headlines/week-in-focus-2nd-6th-november-2026-highlights-include-us-midterm-election-nfp-ism-pmis-rba-boe-and-ez-cpi-" target="_blank" rel="noopener">https://www.newsquawk.com/headlines/week-in-focus-2nd-6th-november-2026-highlights-include-us-midterm-election-nfp-ism-pmis-rba-boe-and-ez-cpi-</a></td></tr><tr id='S54'><td><b>S54</b></td><td>NZD</td><td>R2</td><td>EXPECTATION</td><td><b>B</b></td><td class='small'>2026-10-28<br>pub 2026-10-28</td><td>After the hold: December hike 40.8% (LSEG); 2Y −11bp.<br><span class='small'>Why: Priced path. · Limits: Decision-day reading (3 trading days old).</span><br><a href="https://primexbt.com/news/new-zealand-dollar-falls-after-rbnz-holds-rates-at-2-75-in-surprise-decision/" target="_blank" rel="noopener">https://primexbt.com/news/new-zealand-dollar-falls-after-rbnz-holds-rates-at-2-75-in-surprise-decision/</a></td></tr><tr id='S55'><td><b>S55</b></td><td>NZD</td><td>R2</td><td>EXPECTATION</td><td><b>B</b></td><td class='small'>2026-10-28<br>pub 2026-10-28</td><td>BNZ, ASB, ANZ and Westpac expect a December hike; Kiwibank says pricing for a 4% OCR must be unwound.<br><span class='small'>Why: Economists above December pricing; disproof on the far path. · Limits: Bank forecasts, not pricing.</span><br><a href="https://www.interest.co.nz/economy/140863/rbnz%E2%80%99s-christmas-present-nz-will-be-ocr-hike-december-bnz%E2%80%99s-stephen-toplis-says" target="_blank" rel="noopener">https://www.interest.co.nz/economy/140863/rbnz%E2%80%99s-christmas-present-nz-will-be-ocr-hike-december-bnz%E2%80%99s-stephen-toplis-says</a></td></tr><tr id='S56'><td><b>S56</b></td><td>NZD</td><td>N2</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-11-07<br>pub 2026-10-29</td><td>Election 7 Nov; polls split (RNZ-Reid: left bloc majority; 1News-Verian: right bloc 61 seats).<br><span class='small'>Why: Dated political event; no market stress found → N2 0. · Limits: Polls conflict.</span><br><a href="https://thespinoff.co.nz/politics/29-10-2026/rnz-reid-research-poll-national-below-disastrous-2020-result-as-opportunity-surges" target="_blank" rel="noopener">https://thespinoff.co.nz/politics/29-10-2026/rnz-reid-research-poll-national-below-disastrous-2020-result-as-opportunity-surges</a><br><a href="https://www.interest.co.nz/public-policy/140846/national-drops-29-support-latest-1news-verian-poll-still-ahead-labours-27" target="_blank" rel="noopener">https://www.interest.co.nz/public-policy/140846/national-drops-29-support-latest-1news-verian-poll-still-ahead-labours-27</a></td></tr><tr id='S57'><td><b>S57</b></td><td>CAD/EUR/JPY</td><td>N1</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-30<br>pub 2026-10-31</td><td>Brent: January (new front) settled $113.43 on 30 Oct; December settled $102.25 on 2 Oct (front then) → +10.9%; December contract $117.64 at expiry → +15.0%.<br><span class='small'>Why: Oil ≥ +10% on both measures: CAD +2, EUR/JPY −1. · Limits: Spans a contract roll.</span><br><a href="https://www.brecorder.com/news/40446766/oil-jumps-2pc" target="_blank" rel="noopener">https://www.brecorder.com/news/40446766/oil-jumps-2pc</a><br><a href="https://www.newsquawk.com/headlines/crude-wrap-wti-x6-settles-usd-176-lower-at-usd-9111bbl-brent-z6-settles-usd-006-lower-at-usd-10225bbl" target="_blank" rel="noopener">https://www.newsquawk.com/headlines/crude-wrap-wti-x6-settles-usd-176-lower-at-usd-9111bbl-brent-z6-settles-usd-006-lower-at-usd-10225bbl</a></td></tr><tr id='S58'><td><b>S58</b></td><td>AUD</td><td>N1</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>Iron ore MMi 61% Fe CFR Qingdao: $92.35 (2 Oct) → $90.50 (30 Oct) = −2.0%.<br><span class='small'>Why: Within ±3% → AUD N1 0. · Limits: 61% index, not the 62% benchmark.</span><br><a href="https://www.hellenicshippingnews.com/mmi-daily-iron-ore-index-report-october-30-2026/" target="_blank" rel="noopener">https://www.hellenicshippingnews.com/mmi-daily-iron-ore-index-report-october-30-2026/</a><br><a href="https://www.hellenicshippingnews.com/wp-content/uploads/2026/10/iron_ore_daily_20261002_en.pdf" target="_blank" rel="noopener">https://www.hellenicshippingnews.com/wp-content/uploads/2026/10/iron_ore_daily_20261002_en.pdf</a></td></tr><tr id='S59'><td><b>S59</b></td><td>NZD</td><td>N1</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-20<br>pub 2026-10-21</td><td>GDT price index +1.2% (6 Oct) and +2.5% (20 Oct) → +3.7% compounded; next auction 3 Nov.<br><span class='small'>Why: +3% to +10% → NZD N1 +1. · Limits: Secondary reports of GDT results.</span><br><a href="https://ukragroconsult.com/en/news/gdt-dairy-price-index-rises-1-2/" target="_blank" rel="noopener">https://ukragroconsult.com/en/news/gdt-dairy-price-index-rises-1-2/</a><br><a href="https://en.edairynews.com/price-divergence-widens-at-global-dairy-trade-auction/" target="_blank" rel="noopener">https://en.edairynews.com/price-divergence-widens-at-global-dairy-trade-auction/</a><br><a href="https://ahdb.org.uk/dairy/global-dairy-trade-events" target="_blank" rel="noopener">https://ahdb.org.uk/dairy/global-dairy-trade-events</a><br><a href="https://home.nzcity.co.nz/news/article.aspx?id=456391" target="_blank" rel="noopener">https://home.nzcity.co.nz/news/article.aspx?id=456391</a></td></tr><tr id='S60'><td><b>S60</b></td><td>AUD</td><td>context</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-31<br>pub 2026-10-31</td><td>China official PMIs, October: manufacturing 49.3 vs 50.0 expected; non-manufacturing 49.7 vs 50.5.<br><span class='small'>Why: Context for AUD invalidation (dated after the Friday close). · Limits: Not scored (no China factor).</span><br><a href="https://www.newsquawk.com/headlines/chinese-nbs-manufacturing-pmi-oct-493-vs-exp-50-prev-501" target="_blank" rel="noopener">https://www.newsquawk.com/headlines/chinese-nbs-manufacturing-pmi-oct-493-vs-exp-50-prev-501</a></td></tr><tr id='S61'><td><b>S61</b></td><td>XAU</td><td>X1</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-29<br>pub 2026-10-30</td><td>US 10Y TIPS real yield (DFII10): 2.63% on 29 Oct (2.59% on 30 Oct) vs 2.88-2.92% on 1-2 Oct → −25 to −33bp.<br><span class='small'>Why: Real-yield trend falling while Fed pricing leans to hikes → expected direction flat (X1 0). · Limits: FRED not reachable; three consistent secondaries.</span><br><a href="https://portfolio-terminal.com/markets/10-year-tips-real-yield" target="_blank" rel="noopener">https://portfolio-terminal.com/markets/10-year-tips-real-yield</a><br><a href="https://treasuryratewatch.com/daily/tips-real-yields" target="_blank" rel="noopener">https://treasuryratewatch.com/daily/tips-real-yields</a><br><a href="https://tradingeconomics.com/united-states/10-year-tips-yield" target="_blank" rel="noopener">https://tradingeconomics.com/united-states/10-year-tips-yield</a></td></tr><tr id='S62'><td><b>S62</b></td><td>XAU</td><td>X4</td><td>FACT</td><td><b>C</b></td><td class='small'>2026-10-28<br>pub 2026-10-28</td><td>US 10Y breakeven (T10YIE): 2.38% on 28 Oct vs 2.36% on 1-2 Oct → ~+2bp → X4 0.<br><span class='small'>Why: Inflation-hedge input. · Limits: Endpoints from different secondary sources.</span><br><a href="https://govspending.org/series/T10YIE/" target="_blank" rel="noopener">https://govspending.org/series/T10YIE/</a><br><a href="https://convextrade.com/metrics/t10yie" target="_blank" rel="noopener">https://convextrade.com/metrics/t10yie</a></td></tr><tr id='S63'><td><b>S63</b></td><td>XAU</td><td>X3</td><td>FACT</td><td><b>C</b></td><td class='small'>2026-09-30<br>pub 2026-10-07</td><td>WGC: September ETF inflows +US$10bn (+67t); central banks net +39t in August (YTD 170t).<br><span class='small'>Why: Official demand supportive but data older than 15 trading days. · Limits: Q3 Gold Demand Trends not yet published.</span><br><a href="https://www.gold.org/goldhub/research/etf-flows" target="_blank" rel="noopener">https://www.gold.org/goldhub/research/etf-flows</a><br><a href="https://www.gold.org/goldhub/gold-focus/2026/10/central-bank-gold-statistics-central-banks-continue-summer-spree-august" target="_blank" rel="noopener">https://www.gold.org/goldhub/gold-focus/2026/10/central-bank-gold-statistics-central-banks-continue-summer-spree-august</a></td></tr><tr id='S64'><td><b>S64</b></td><td>XAU</td><td>X3</td><td>FACT</td><td><b>C</b></td><td class='small'>2026-10-23<br>pub 2026-10-27</td><td>Gold ETFs: net −US$1.21bn in the week to 23 Oct, the first outflow in 14 weeks.<br><span class='small'>Why: Recent ETF flows turned negative → X3 mixed (0). · Limits: Full 4-week total unavailable.</span><br><a href="https://polandinsight.com/gold-etf-outflows-1-21-billion-october-2026/" target="_blank" rel="noopener">https://polandinsight.com/gold-etf-outflows-1-21-billion-october-2026/</a></td></tr><tr id='S65'><td><b>S65</b></td><td>XAU</td><td>X5</td><td>FACT</td><td><b>C</b></td><td class='small'>2026-10-27<br>pub 2026-10-30</td><td>CFTC managed-money net long 105,562 (27 Oct); 3-year range +34k to +219k → not extreme → X5 0.<br><span class='small'>Why: Positioning stretch. · Limits: Official CFTC page for 27 Oct blocked.</span><br><a href="https://thevaultreport.com/cot" target="_blank" rel="noopener">https://thevaultreport.com/cot</a></td></tr><tr id='S66'><td><b>S66</b></td><td>NZD</td><td>R1</td><td>EXPECTATION</td><td><b>C</b></td><td class='small'>2026-10-28<br>pub 2026-10-28</td><td>Markets still price about four 25bp RBNZ hikes by September 2027 (Commerzbank).<br><span class='small'>Why: Places NZD&#x27;s 6-month level above CAD&#x27;s ~2.75% in the R1 ranking. · Limits: No OIS level; single source.</span><br><a href="https://stockwirex.com/?p=53182" target="_blank" rel="noopener">https://stockwirex.com/?p=53182</a></td></tr><tr id='S68'><td><b>S68</b></td><td>AUD</td><td>R1 / R2</td><td>FACT</td><td><b>B</b></td><td class='small'>2026-10-30<br>pub 2026-10-30</td><td>Current RBA cash rate 4.60% (after four 2026 hikes); model estimate 69.17% for any rise on 3 Nov.<br><span class='small'>Why: Verifies the current rate; lower bound of the pricing range. · Limits: Model estimate, not ASX.</span><br><a href="https://rbaratewatch.com/rba-meeting/november-2026/" target="_blank" rel="noopener">https://rbaratewatch.com/rba-meeting/november-2026/</a></td></tr><tr id='S67'><td><b>S67</b></td><td>XAU</td><td>X3</td><td>FACT</td><td><b>C</b></td><td class='small'>2026-10-26<br>pub 2026-10-27</td><td>WGC weekly monitor (26 Oct): net ETF outflows led by North America, Europe still buying.<br><span class='small'>Why: Confirms S64. · Limits: Secondary report.</span><br><a href="https://www.scrapmonster.com/news/gold/gold-falls-4.2-as-etf-outflows-rise-2026-10-27/100337" target="_blank" rel="noopener">https://www.scrapmonster.com/news/gold/gold-falls-4.2-as-etf-outflows-rise-2026-10-27/100337</a></td></tr></tbody></table></div>
+
+<h2><span class="n">18</span>Limitations and missing data</h2>
+<ul class="lim">
+<li><b>D grades:</b> none — no factor was zeroed for missing evidence.</li>
+<li><b>Grade C factors (weakest inputs):</b> R1 for CAD and NZD (NZD 6-month level unavailable; order versus CAD inferred from ~four hikes priced by Sep 2027); JPY R2 (single aggregator, conflicts with a pre-meeting 75%); CHF R2/R3/N2 (no quantified SNB pricing); GBP R3 (rule decay); USD, AUD, NZD N2 (no live stress found); gold X3, X4, X5.</li>
+<li><b>Official sources blocked:</b> FRED (HY OAS, DFII10, T10YIE taken from mirrors/secondaries), CME FedWatch (quoted via newsletters), ECB and SNB sites, RBNZ site, ASX tracker (via rbawatch), EIA (Brent from news settles), CFTC for 20/27 Oct.</li>
+<li><b>Implied 6-month rates</b> for EUR, GBP and CAD are inferred from descriptions of priced hikes, not OIS prints.</li>
+<li><b>Conflicts recorded:</b> ECB December 75% vs 84%; BoC December 57% vs 'hold, then January'; BoJ December 57% (30 Oct) vs 75% (26 Oct); Tokyo core-core 2.6% vs 2.4%; Fed December 69-78% by source and time.</li>
+<li><b>Brent</b> 4-week change spans a December→January roll; both measures exceed +10%.</li>
+<li><b>Iron ore</b> uses the 61% Fe MMi index; the 62% benchmark was unavailable.</li>
+<li><b>Unavailable:</b> Q3 central-bank gold data (WGC not yet published), October ETF totals, JOLTS and Canada LFS consensus, Caixin PMI and China trade dates, US December FOMC date.</li>
+<li><b>Two W45 PHASE 1 runs exist;</b> neither is the forecast of record until the user chooses.</li>
+</ul>
+
+<h2><span class="n">19</span>Daily Observer import</h2>
+<p>Format daily-observer-fundamentals v1 (schema unchanged). The copy button copies the exact text below; SHA-256 <code>6be4b46798e22d48e2461561d2885142fa7ce4be4583fbedc412f201b1854cfe</code>.</p>
+<button id="copyBtn" type="button">Copy JSON</button> <span id="copyMsg" class="small"></span>
+<pre id="jsonView"></pre>
+<script type="application/json" id="dobs">{
+  "format": "daily-observer-fundamentals",
+  "version": 1,
+  "report_date": "2026-10-31",
+  "report_title": "Forex Fundamental Bias Engine — Week 45",
+  "valid_week": {
+    "year": 2026,
+    "week": 45
+  },
+  "currencies": {
+    "USD": {
+      "score": 2,
+      "state": "Neutral",
+      "note": "Fed held 3.75-4.00% on 28 Oct with two hike dissents; a December hike is ~76% priced (30 Oct) after a Q3 GDP beat (3.4%). Repricing risk judged balanced."
+    },
+    "EUR": {
+      "score": -4,
+      "state": "Neutral",
+      "note": "ECB held 2.50% and pointed to December (75-84% priced). French revenue vote 3 Nov with OAT-Bund at 159bp, wider over 4 weeks; Brent +10.9% hurts."
+    },
+    "GBP": {
+      "score": 4,
+      "state": "Improving",
+      "note": "Budget passed without gilt stress (10Y -2.1bp). A 5 Nov BoE hike to 4.00% is ~95% priced, with Feb/Jul hikes; economists see less after November."
+    },
+    "JPY": {
+      "score": 2,
+      "state": "Neutral",
+      "note": "BoJ held 1.25% (8-1) and said underlying inflation is at target; a December hike is only ~57% priced. MoF warned of decisive FX action; Brent +10.9% weighs."
+    },
+    "CHF": {
+      "score": -3,
+      "state": "Weakening",
+      "note": "SNB at 0% gives the lowest carry; only qualitative talk of an early-2027 hike. Swiss CPI on 3 Nov (1.3% expected by one source) is the week's test."
+    },
+    "CAD": {
+      "score": -2,
+      "state": "Neutral",
+      "note": "BoC hiked to 2.50% but August GDP stalled (0.0% vs +0.2%); a December hike is ~50-57% priced. Brent +10.9% supports; US tariffs weigh."
+    },
+    "AUD": {
+      "score": 5,
+      "state": "Strong",
+      "note": "RBA hike to 4.85% on 3 Nov is ~81% priced (ASX, 31 Oct); Bullock calls inflation far too high. Highest implied carry (~4.91% by May 2027)."
+    },
+    "NZD": {
+      "score": 3,
+      "state": "Improving",
+      "note": "RBNZ held 2.75% (4-3) against hike pricing, but all members see tighter policy as likely; a December hike is ~40.8% priced. GDT +3.7% over two auctions."
+    },
+    "XAU": {
+      "score": 2,
+      "state": "Neutral",
+      "note": "Gold factor G = 0: real yields -25bp offset by flat breakevens, mixed ETF flows and a neutral risk regime. XAU = G + USD = +2."
+    }
+  },
+  "pairs": [
+    {
+      "pair": "EURUSD",
+      "bias": "bearish",
+      "conviction": "medium",
+      "summary": "Bearish (EUR -4 vs USD +2)",
+      "base_state": "Neutral",
+      "base_score": -4,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "USD favored: Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat; EUR: ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%.",
+      "drivers": [
+        "Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat",
+        "ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "French Assembly vote on the 2027 budget revenue part (afternoon Paris)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "US midterm elections",
+          "imp": "HIGH"
+        },
+        {
+          "date": "4 Nov",
+          "event": "Euro-area HICP flash, Oct (cons. 3.9%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "17 Dec",
+          "event": "ECB decision (2.50%, hike 75-84% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "EUR: largely priced — December hike 75-84% and two hikes by April 2027 (29-30 Oct). USD: largely priced — December hike ~76% (FedWatch via CNBC, 30 Oct; 69.4-78.4% across sources).",
+      "invalidation": "EUR: bullish if the 3 Nov revenue vote passes with OAT-Bund narrowing, or HICP (4 Nov) above 3.9%. Bearish if the vote fails, censure or 49.3 with spreads widening; soft HICP. / USD: bullish if strong October payrolls (6 Nov) or ISM lift December odds back above ~85%. Bearish if weak payrolls or ISM, or Fed talk that trims December pricing.",
+      "horizon": "Swing: bearish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bearish (EUR -5 vs USD +2) → W45 PHASE 1 r3 bias bearish (EUR -4 vs USD +2)."
+    },
+    {
+      "pair": "GBPUSD",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (GBP +4 vs USD +2)",
+      "base_state": "Improving",
+      "base_score": 4,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "Close to a wash — GBP: benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced; USD: Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat.",
+      "drivers": [
+        "benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced",
+        "Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "US midterm elections",
+          "imp": "HIGH"
+        },
+        {
+          "date": "5 Nov",
+          "event": "BoE decision, minutes and MPR (3.75%, hike ~95% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "5 Nov",
+          "event": "Bailey press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "6 Nov",
+          "event": "US October payrolls (cons. +50-65k; UR 4.2%)",
+          "imp": "HIGH"
+        }
+      ],
+      "priced": "GBP: largely priced — 5 Nov hike ~95% (30 Oct), further hikes in February and July. USD: largely priced — December hike ~76% (FedWatch via CNBC, 30 Oct; 69.4-78.4% across sources).",
+      "invalidation": "GBP: bullish if a 5 Nov hike with hawkish votes or guidance backing the Feb/Jul path. Bearish if a hold or a one-and-done message; 10Y gilt above 5.40%. / USD: bullish if strong October payrolls (6 Nov) or ISM lift December odds back above ~85%. Bearish if weak payrolls or ISM, or Fed talk that trims December pricing.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (GBP +1 vs USD +2) → W45 PHASE 1 r3 bias two-sided (GBP +4 vs USD +2)."
+    },
+    {
+      "pair": "USDJPY",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (USD +2 vs JPY +2)",
+      "base_state": "Neutral",
+      "base_score": 2,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "Close to a wash — USD: Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat; JPY: BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%.",
+      "drivers": [
+        "Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat",
+        "BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%"
+      ],
+      "catalysts": [
+        {
+          "date": "2 Nov",
+          "event": "US ISM manufacturing, Oct (cons. 54.7)",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "3 Nov",
+          "event": "US midterm elections",
+          "imp": "HIGH"
+        },
+        {
+          "date": "6 Nov",
+          "event": "US October payrolls (cons. +50-65k; UR 4.2%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "18 Dec",
+          "event": "BoJ decision (1.25%, hike ~57% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "USD: largely priced — December hike ~76% (FedWatch via CNBC, 30 Oct; 69.4-78.4% across sources). JPY: partially priced — December hike ~57%, ~80.5% by January (30 Oct, single aggregator).",
+      "invalidation": "USD: bullish if strong October payrolls (6 Nov) or ISM lift December odds back above ~85%. Bearish if weak payrolls or ISM, or Fed talk that trims December pricing. / JPY: bullish if Ueda signals December (IMF lecture 6 Nov) or MoF intervenes. Bearish if December odds fade further, oil keeps rising, or carry demand returns.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (USD +2 vs JPY +2) → W45 PHASE 1 r3 bias two-sided (USD +2 vs JPY +2)."
+    },
+    {
+      "pair": "USDCHF",
+      "bias": "bullish",
+      "conviction": "medium",
+      "summary": "Bullish (USD +2 vs CHF -3)",
+      "base_state": "Neutral",
+      "base_score": 2,
+      "quote_state": "Weakening",
+      "quote_score": -3,
+      "main_driver": "USD favored: Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat; CHF: SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov.",
+      "drivers": [
+        "Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat",
+        "SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov"
+      ],
+      "catalysts": [
+        {
+          "date": "2 Nov",
+          "event": "US ISM manufacturing, Oct (cons. 54.7)",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "3 Nov",
+          "event": "Swiss CPI, Oct (cons. 1.3% y/y, one source)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "US midterm elections",
+          "imp": "HIGH"
+        },
+        {
+          "date": "6 Nov",
+          "event": "US October payrolls (cons. +50-65k; UR 4.2%)",
+          "imp": "HIGH"
+        }
+      ],
+      "priced": "USD: largely priced — December hike ~76% (FedWatch via CNBC, 30 Oct; 69.4-78.4% across sources). CHF: not applicable — no quantified SNB pricing; brokers mention a possible early-2027 hike.",
+      "invalidation": "USD: bullish if strong October payrolls (6 Nov) or ISM lift December odds back above ~85%. Bearish if weak payrolls or ISM, or Fed talk that trims December pricing. / CHF: bullish if Swiss CPI (3 Nov) beats 1.3% and lifts SNB pricing, or French stress drives haven demand. Bearish if soft CPI and calmer euro-area spreads.",
+      "horizon": "Swing: bullish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bullish (USD +2 vs CHF -1) → W45 PHASE 1 r3 bias bullish (USD +2 vs CHF -3)."
+    },
+    {
+      "pair": "USDCAD",
+      "bias": "bullish",
+      "conviction": "low",
+      "summary": "Bullish (USD +2 vs CAD -2)",
+      "base_state": "Neutral",
+      "base_score": 2,
+      "quote_state": "Neutral",
+      "quote_score": -2,
+      "main_driver": "USD favored: Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat; CAD: BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs.",
+      "drivers": [
+        "Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat",
+        "BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "US midterm elections",
+          "imp": "HIGH"
+        },
+        {
+          "date": "6 Nov",
+          "event": "US October payrolls (cons. +50-65k; UR 4.2%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "6 Nov",
+          "event": "Canada Labour Force Survey, Oct",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "BoC decision (2.50%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "USD: largely priced — December hike ~76% (FedWatch via CNBC, 30 Oct; 69.4-78.4% across sources). CAD: not applicable — December hike ~50-57% (LSEG, 30 Oct); Reuters reports a January hike as more likely.",
+      "invalidation": "USD: bullish if strong October payrolls (6 Nov) or ISM lift December odds back above ~85%. Bearish if weak payrolls or ISM, or Fed talk that trims December pricing. / CAD: bullish if a strong October LFS (6 Nov) revives December, oil stays high, or tariff relief. Bearish if weak jobs, an oil reversal, or post-midterm tariff escalation.",
+      "horizon": "Swing: mild bullish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bullish (USD +2 vs CAD -2) → W45 PHASE 1 r3 bias bullish (USD +2 vs CAD -2)."
+    },
+    {
+      "pair": "AUDUSD",
+      "bias": "bullish",
+      "conviction": "low",
+      "summary": "Bullish (AUD +5 vs USD +2)",
+      "base_state": "Strong",
+      "base_score": 5,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "AUD favored: RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish; USD: Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat.",
+      "drivers": [
+        "RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish",
+        "Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "RBA decision and SoMP (4.60%, hike ~81% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "Bullock press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "US midterm elections",
+          "imp": "HIGH"
+        },
+        {
+          "date": "6 Nov",
+          "event": "US October payrolls (cons. +50-65k; UR 4.2%)",
+          "imp": "HIGH"
+        }
+      ],
+      "priced": "AUD: partially priced — 3 Nov hike ~81%, ~4.91% by May 2027 (ASX via rbawatch, 31 Oct). USD: largely priced — December hike ~76% (FedWatch via CNBC, 30 Oct; 69.4-78.4% across sources).",
+      "invalidation": "AUD: bullish if the RBA hikes on 3 Nov with upgraded forecasts. Bearish if a hold (~19% priced) or an insurance-hike, one-and-done message; weak China data. / USD: bullish if strong October payrolls (6 Nov) or ISM lift December odds back above ~85%. Bearish if weak payrolls or ISM, or Fed talk that trims December pricing.",
+      "horizon": "Swing: mild bullish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bullish (AUD +5 vs USD +2) → W45 PHASE 1 r3 bias bullish (AUD +5 vs USD +2)."
+    },
+    {
+      "pair": "NZDUSD",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (NZD +3 vs USD +2)",
+      "base_state": "Improving",
+      "base_score": 3,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "Close to a wash — NZD: RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%; USD: Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat.",
+      "drivers": [
+        "RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%",
+        "Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "US midterm elections",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "NZ Q3 labour market (4 Nov NZ time; UR cons. 5.5%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "6 Nov",
+          "event": "US October payrolls (cons. +50-65k; UR 4.2%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "RBNZ decision (2.75%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "NZD: partially priced — December hike ~40.8% (LSEG, 28 Oct) after the 4-3 hold. USD: largely priced — December hike ~76% (FedWatch via CNBC, 30 Oct; 69.4-78.4% across sources).",
+      "invalidation": "NZD: bullish if Q3 jobs (3 Nov UTC) beat and RBNZ talk firms December. Bearish if unemployment above 5.5%, a disruptive 7 Nov election result, or falling dairy prices. / USD: bullish if strong October payrolls (6 Nov) or ISM lift December odds back above ~85%. Bearish if weak payrolls or ISM, or Fed talk that trims December pricing.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (NZD 0 vs USD +2) → W45 PHASE 1 r3 bias two-sided (NZD +3 vs USD +2)."
+    },
+    {
+      "pair": "EURGBP",
+      "bias": "bearish",
+      "conviction": "medium",
+      "summary": "Bearish (EUR -4 vs GBP +4)",
+      "base_state": "Neutral",
+      "base_score": -4,
+      "quote_state": "Improving",
+      "quote_score": 4,
+      "main_driver": "GBP favored: benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced; EUR: ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%.",
+      "drivers": [
+        "benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced",
+        "ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "French Assembly vote on the 2027 budget revenue part (afternoon Paris)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "4 Nov",
+          "event": "Euro-area HICP flash, Oct (cons. 3.9%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "5 Nov",
+          "event": "BoE decision, minutes and MPR (3.75%, hike ~95% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "17 Dec",
+          "event": "ECB decision (2.50%, hike 75-84% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "EUR: largely priced — December hike 75-84% and two hikes by April 2027 (29-30 Oct). GBP: largely priced — 5 Nov hike ~95% (30 Oct), further hikes in February and July.",
+      "invalidation": "EUR: bullish if the 3 Nov revenue vote passes with OAT-Bund narrowing, or HICP (4 Nov) above 3.9%. Bearish if the vote fails, censure or 49.3 with spreads widening; soft HICP. / GBP: bullish if a 5 Nov hike with hawkish votes or guidance backing the Feb/Jul path. Bearish if a hold or a one-and-done message; 10Y gilt above 5.40%.",
+      "horizon": "Swing: bearish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bearish (EUR -5 vs GBP +1) → W45 PHASE 1 r3 bias bearish (EUR -4 vs GBP +4)."
+    },
+    {
+      "pair": "EURJPY",
+      "bias": "bearish",
+      "conviction": "medium",
+      "summary": "Bearish (EUR -4 vs JPY +2)",
+      "base_state": "Neutral",
+      "base_score": -4,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "JPY favored: BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%; EUR: ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%.",
+      "drivers": [
+        "BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%",
+        "ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "French Assembly vote on the 2027 budget revenue part (afternoon Paris)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "4 Nov",
+          "event": "Euro-area HICP flash, Oct (cons. 3.9%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "17 Dec",
+          "event": "ECB decision (2.50%, hike 75-84% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "18 Dec",
+          "event": "BoJ decision (1.25%, hike ~57% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "EUR: largely priced — December hike 75-84% and two hikes by April 2027 (29-30 Oct). JPY: partially priced — December hike ~57%, ~80.5% by January (30 Oct, single aggregator).",
+      "invalidation": "EUR: bullish if the 3 Nov revenue vote passes with OAT-Bund narrowing, or HICP (4 Nov) above 3.9%. Bearish if the vote fails, censure or 49.3 with spreads widening; soft HICP. / JPY: bullish if Ueda signals December (IMF lecture 6 Nov) or MoF intervenes. Bearish if December odds fade further, oil keeps rising, or carry demand returns.",
+      "horizon": "Swing: bearish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bearish (EUR -5 vs JPY +2) → W45 PHASE 1 r3 bias bearish (EUR -4 vs JPY +2)."
+    },
+    {
+      "pair": "EURCHF",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (EUR -4 vs CHF -3)",
+      "base_state": "Neutral",
+      "base_score": -4,
+      "quote_state": "Weakening",
+      "quote_score": -3,
+      "main_driver": "Close to a wash — EUR: ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%; CHF: SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov.",
+      "drivers": [
+        "ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%",
+        "SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "Swiss CPI, Oct (cons. 1.3% y/y, one source)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "French Assembly vote on the 2027 budget revenue part (afternoon Paris)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "4 Nov",
+          "event": "Euro-area HICP flash, Oct (cons. 3.9%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "17 Dec",
+          "event": "ECB decision (2.50%, hike 75-84% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "EUR: largely priced — December hike 75-84% and two hikes by April 2027 (29-30 Oct). CHF: not applicable — no quantified SNB pricing; brokers mention a possible early-2027 hike.",
+      "invalidation": "EUR: bullish if the 3 Nov revenue vote passes with OAT-Bund narrowing, or HICP (4 Nov) above 3.9%. Bearish if the vote fails, censure or 49.3 with spreads widening; soft HICP. / CHF: bullish if Swiss CPI (3 Nov) beats 1.3% and lifts SNB pricing, or French stress drives haven demand. Bearish if soft CPI and calmer euro-area spreads.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bearish (EUR -5 vs CHF -1) → W45 PHASE 1 r3 bias two-sided (EUR -4 vs CHF -3)."
+    },
+    {
+      "pair": "EURAUD",
+      "bias": "bearish",
+      "conviction": "medium",
+      "summary": "Bearish (EUR -4 vs AUD +5)",
+      "base_state": "Neutral",
+      "base_score": -4,
+      "quote_state": "Strong",
+      "quote_score": 5,
+      "main_driver": "AUD favored: RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish; EUR: ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%.",
+      "drivers": [
+        "RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish",
+        "ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "RBA decision and SoMP (4.60%, hike ~81% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "Bullock press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "French Assembly vote on the 2027 budget revenue part (afternoon Paris)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "17 Dec",
+          "event": "ECB decision (2.50%, hike 75-84% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "EUR: largely priced — December hike 75-84% and two hikes by April 2027 (29-30 Oct). AUD: partially priced — 3 Nov hike ~81%, ~4.91% by May 2027 (ASX via rbawatch, 31 Oct).",
+      "invalidation": "EUR: bullish if the 3 Nov revenue vote passes with OAT-Bund narrowing, or HICP (4 Nov) above 3.9%. Bearish if the vote fails, censure or 49.3 with spreads widening; soft HICP. / AUD: bullish if the RBA hikes on 3 Nov with upgraded forecasts. Bearish if a hold (~19% priced) or an insurance-hike, one-and-done message; weak China data.",
+      "horizon": "Swing: bearish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bearish (EUR -5 vs AUD +5) → W45 PHASE 1 r3 bias bearish (EUR -4 vs AUD +5)."
+    },
+    {
+      "pair": "EURNZD",
+      "bias": "bearish",
+      "conviction": "medium",
+      "summary": "Bearish (EUR -4 vs NZD +3)",
+      "base_state": "Neutral",
+      "base_score": -4,
+      "quote_state": "Improving",
+      "quote_score": 3,
+      "main_driver": "NZD favored: RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%; EUR: ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%.",
+      "drivers": [
+        "RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%",
+        "ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "French Assembly vote on the 2027 budget revenue part (afternoon Paris)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "NZ Q3 labour market (4 Nov NZ time; UR cons. 5.5%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "RBNZ decision (2.75%)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "17 Dec",
+          "event": "ECB decision (2.50%, hike 75-84% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "EUR: largely priced — December hike 75-84% and two hikes by April 2027 (29-30 Oct). NZD: partially priced — December hike ~40.8% (LSEG, 28 Oct) after the 4-3 hold.",
+      "invalidation": "EUR: bullish if the 3 Nov revenue vote passes with OAT-Bund narrowing, or HICP (4 Nov) above 3.9%. Bearish if the vote fails, censure or 49.3 with spreads widening; soft HICP. / NZD: bullish if Q3 jobs (3 Nov UTC) beat and RBNZ talk firms December. Bearish if unemployment above 5.5%, a disruptive 7 Nov election result, or falling dairy prices.",
+      "horizon": "Swing: bearish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bearish (EUR -5 vs NZD 0) → W45 PHASE 1 r3 bias bearish (EUR -4 vs NZD +3)."
+    },
+    {
+      "pair": "EURCAD",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (EUR -4 vs CAD -2)",
+      "base_state": "Neutral",
+      "base_score": -4,
+      "quote_state": "Neutral",
+      "quote_score": -2,
+      "main_driver": "Close to a wash — EUR: ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%; CAD: BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs.",
+      "drivers": [
+        "ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%",
+        "BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "French Assembly vote on the 2027 budget revenue part (afternoon Paris)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "4 Nov",
+          "event": "Euro-area HICP flash, Oct (cons. 3.9%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "BoC decision (2.50%)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "17 Dec",
+          "event": "ECB decision (2.50%, hike 75-84% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "EUR: largely priced — December hike 75-84% and two hikes by April 2027 (29-30 Oct). CAD: not applicable — December hike ~50-57% (LSEG, 30 Oct); Reuters reports a January hike as more likely.",
+      "invalidation": "EUR: bullish if the 3 Nov revenue vote passes with OAT-Bund narrowing, or HICP (4 Nov) above 3.9%. Bearish if the vote fails, censure or 49.3 with spreads widening; soft HICP. / CAD: bullish if a strong October LFS (6 Nov) revives December, oil stays high, or tariff relief. Bearish if weak jobs, an oil reversal, or post-midterm tariff escalation.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bearish (EUR -5 vs CAD -2) → W45 PHASE 1 r3 bias two-sided (EUR -4 vs CAD -2)."
+    },
+    {
+      "pair": "GBPJPY",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (GBP +4 vs JPY +2)",
+      "base_state": "Improving",
+      "base_score": 4,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "Close to a wash — GBP: benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced; JPY: BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%.",
+      "drivers": [
+        "benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced",
+        "BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%"
+      ],
+      "catalysts": [
+        {
+          "date": "2 Nov",
+          "event": "Euro-area and UK final manufacturing PMIs",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "5 Nov",
+          "event": "BoE decision, minutes and MPR (3.75%, hike ~95% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "5 Nov",
+          "event": "Bailey press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "18 Dec",
+          "event": "BoJ decision (1.25%, hike ~57% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "GBP: largely priced — 5 Nov hike ~95% (30 Oct), further hikes in February and July. JPY: partially priced — December hike ~57%, ~80.5% by January (30 Oct, single aggregator).",
+      "invalidation": "GBP: bullish if a 5 Nov hike with hawkish votes or guidance backing the Feb/Jul path. Bearish if a hold or a one-and-done message; 10Y gilt above 5.40%. / JPY: bullish if Ueda signals December (IMF lecture 6 Nov) or MoF intervenes. Bearish if December odds fade further, oil keeps rising, or carry demand returns.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (GBP +1 vs JPY +2) → W45 PHASE 1 r3 bias two-sided (GBP +4 vs JPY +2)."
+    },
+    {
+      "pair": "GBPCHF",
+      "bias": "bullish",
+      "conviction": "medium",
+      "summary": "Bullish (GBP +4 vs CHF -3)",
+      "base_state": "Improving",
+      "base_score": 4,
+      "quote_state": "Weakening",
+      "quote_score": -3,
+      "main_driver": "GBP favored: benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced; CHF: SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov.",
+      "drivers": [
+        "benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced",
+        "SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov"
+      ],
+      "catalysts": [
+        {
+          "date": "2 Nov",
+          "event": "Euro-area and UK final manufacturing PMIs",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "3 Nov",
+          "event": "Swiss CPI, Oct (cons. 1.3% y/y, one source)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "5 Nov",
+          "event": "BoE decision, minutes and MPR (3.75%, hike ~95% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "5 Nov",
+          "event": "Bailey press conference",
+          "imp": "HIGH"
+        }
+      ],
+      "priced": "GBP: largely priced — 5 Nov hike ~95% (30 Oct), further hikes in February and July. CHF: not applicable — no quantified SNB pricing; brokers mention a possible early-2027 hike.",
+      "invalidation": "GBP: bullish if a 5 Nov hike with hawkish votes or guidance backing the Feb/Jul path. Bearish if a hold or a one-and-done message; 10Y gilt above 5.40%. / CHF: bullish if Swiss CPI (3 Nov) beats 1.3% and lifts SNB pricing, or French stress drives haven demand. Bearish if soft CPI and calmer euro-area spreads.",
+      "horizon": "Swing: bullish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (GBP +1 vs CHF -1) → W45 PHASE 1 r3 bias bullish (GBP +4 vs CHF -3)."
+    },
+    {
+      "pair": "GBPAUD",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (GBP +4 vs AUD +5)",
+      "base_state": "Improving",
+      "base_score": 4,
+      "quote_state": "Strong",
+      "quote_score": 5,
+      "main_driver": "Close to a wash — GBP: benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced; AUD: RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish.",
+      "drivers": [
+        "benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced",
+        "RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "RBA decision and SoMP (4.60%, hike ~81% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "Bullock press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "5 Nov",
+          "event": "BoE decision, minutes and MPR (3.75%, hike ~95% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "5 Nov",
+          "event": "Bailey press conference",
+          "imp": "HIGH"
+        }
+      ],
+      "priced": "GBP: largely priced — 5 Nov hike ~95% (30 Oct), further hikes in February and July. AUD: partially priced — 3 Nov hike ~81%, ~4.91% by May 2027 (ASX via rbawatch, 31 Oct).",
+      "invalidation": "GBP: bullish if a 5 Nov hike with hawkish votes or guidance backing the Feb/Jul path. Bearish if a hold or a one-and-done message; 10Y gilt above 5.40%. / AUD: bullish if the RBA hikes on 3 Nov with upgraded forecasts. Bearish if a hold (~19% priced) or an insurance-hike, one-and-done message; weak China data.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bearish (GBP +1 vs AUD +5) → W45 PHASE 1 r3 bias two-sided (GBP +4 vs AUD +5)."
+    },
+    {
+      "pair": "GBPNZD",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (GBP +4 vs NZD +3)",
+      "base_state": "Improving",
+      "base_score": 4,
+      "quote_state": "Improving",
+      "quote_score": 3,
+      "main_driver": "Close to a wash — GBP: benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced; NZD: RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%.",
+      "drivers": [
+        "benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced",
+        "RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "NZ Q3 labour market (4 Nov NZ time; UR cons. 5.5%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "5 Nov",
+          "event": "BoE decision, minutes and MPR (3.75%, hike ~95% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "5 Nov",
+          "event": "Bailey press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "RBNZ decision (2.75%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "GBP: largely priced — 5 Nov hike ~95% (30 Oct), further hikes in February and July. NZD: partially priced — December hike ~40.8% (LSEG, 28 Oct) after the 4-3 hold.",
+      "invalidation": "GBP: bullish if a 5 Nov hike with hawkish votes or guidance backing the Feb/Jul path. Bearish if a hold or a one-and-done message; 10Y gilt above 5.40%. / NZD: bullish if Q3 jobs (3 Nov UTC) beat and RBNZ talk firms December. Bearish if unemployment above 5.5%, a disruptive 7 Nov election result, or falling dairy prices.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (GBP +1 vs NZD 0) → W45 PHASE 1 r3 bias two-sided (GBP +4 vs NZD +3)."
+    },
+    {
+      "pair": "GBPCAD",
+      "bias": "bullish",
+      "conviction": "medium",
+      "summary": "Bullish (GBP +4 vs CAD -2)",
+      "base_state": "Improving",
+      "base_score": 4,
+      "quote_state": "Neutral",
+      "quote_score": -2,
+      "main_driver": "GBP favored: benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced; CAD: BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs.",
+      "drivers": [
+        "benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced",
+        "BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs"
+      ],
+      "catalysts": [
+        {
+          "date": "5 Nov",
+          "event": "BoE decision, minutes and MPR (3.75%, hike ~95% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "5 Nov",
+          "event": "Bailey press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "6 Nov",
+          "event": "Canada Labour Force Survey, Oct",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "BoC decision (2.50%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "GBP: largely priced — 5 Nov hike ~95% (30 Oct), further hikes in February and July. CAD: not applicable — December hike ~50-57% (LSEG, 30 Oct); Reuters reports a January hike as more likely.",
+      "invalidation": "GBP: bullish if a 5 Nov hike with hawkish votes or guidance backing the Feb/Jul path. Bearish if a hold or a one-and-done message; 10Y gilt above 5.40%. / CAD: bullish if a strong October LFS (6 Nov) revives December, oil stays high, or tariff relief. Bearish if weak jobs, an oil reversal, or post-midterm tariff escalation.",
+      "horizon": "Swing: bullish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bullish (GBP +1 vs CAD -2) → W45 PHASE 1 r3 bias bullish (GBP +4 vs CAD -2)."
+    },
+    {
+      "pair": "AUDJPY",
+      "bias": "bullish",
+      "conviction": "low",
+      "summary": "Bullish (AUD +5 vs JPY +2)",
+      "base_state": "Strong",
+      "base_score": 5,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "AUD favored: RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish; JPY: BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%.",
+      "drivers": [
+        "RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish",
+        "BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "RBA decision and SoMP (4.60%, hike ~81% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "Bullock press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "4 Nov",
+          "event": "Australia household spending, Sep",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "18 Dec",
+          "event": "BoJ decision (1.25%, hike ~57% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "AUD: partially priced — 3 Nov hike ~81%, ~4.91% by May 2027 (ASX via rbawatch, 31 Oct). JPY: partially priced — December hike ~57%, ~80.5% by January (30 Oct, single aggregator).",
+      "invalidation": "AUD: bullish if the RBA hikes on 3 Nov with upgraded forecasts. Bearish if a hold (~19% priced) or an insurance-hike, one-and-done message; weak China data. / JPY: bullish if Ueda signals December (IMF lecture 6 Nov) or MoF intervenes. Bearish if December odds fade further, oil keeps rising, or carry demand returns.",
+      "horizon": "Swing: mild bullish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bullish (AUD +5 vs JPY +2) → W45 PHASE 1 r3 bias bullish (AUD +5 vs JPY +2)."
+    },
+    {
+      "pair": "AUDCHF",
+      "bias": "bullish",
+      "conviction": "medium",
+      "summary": "Bullish (AUD +5 vs CHF -3)",
+      "base_state": "Strong",
+      "base_score": 5,
+      "quote_state": "Weakening",
+      "quote_score": -3,
+      "main_driver": "AUD favored: RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish; CHF: SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov.",
+      "drivers": [
+        "RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish",
+        "SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "RBA decision and SoMP (4.60%, hike ~81% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "Bullock press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "Swiss CPI, Oct (cons. 1.3% y/y, one source)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "4 Nov",
+          "event": "Australia household spending, Sep",
+          "imp": "MEDIUM"
+        }
+      ],
+      "priced": "AUD: partially priced — 3 Nov hike ~81%, ~4.91% by May 2027 (ASX via rbawatch, 31 Oct). CHF: not applicable — no quantified SNB pricing; brokers mention a possible early-2027 hike.",
+      "invalidation": "AUD: bullish if the RBA hikes on 3 Nov with upgraded forecasts. Bearish if a hold (~19% priced) or an insurance-hike, one-and-done message; weak China data. / CHF: bullish if Swiss CPI (3 Nov) beats 1.3% and lifts SNB pricing, or French stress drives haven demand. Bearish if soft CPI and calmer euro-area spreads.",
+      "horizon": "Swing: bullish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bullish (AUD +5 vs CHF -1) → W45 PHASE 1 r3 bias bullish (AUD +5 vs CHF -3)."
+    },
+    {
+      "pair": "AUDNZD",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (AUD +5 vs NZD +3)",
+      "base_state": "Strong",
+      "base_score": 5,
+      "quote_state": "Improving",
+      "quote_score": 3,
+      "main_driver": "Close to a wash — AUD: RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish; NZD: RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%.",
+      "drivers": [
+        "RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish",
+        "RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "RBA decision and SoMP (4.60%, hike ~81% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "Bullock press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "NZ Q3 labour market (4 Nov NZ time; UR cons. 5.5%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "RBNZ decision (2.75%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "AUD: partially priced — 3 Nov hike ~81%, ~4.91% by May 2027 (ASX via rbawatch, 31 Oct). NZD: partially priced — December hike ~40.8% (LSEG, 28 Oct) after the 4-3 hold.",
+      "invalidation": "AUD: bullish if the RBA hikes on 3 Nov with upgraded forecasts. Bearish if a hold (~19% priced) or an insurance-hike, one-and-done message; weak China data. / NZD: bullish if Q3 jobs (3 Nov UTC) beat and RBNZ talk firms December. Bearish if unemployment above 5.5%, a disruptive 7 Nov election result, or falling dairy prices.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bullish (AUD +5 vs NZD 0) → W45 PHASE 1 r3 bias two-sided (AUD +5 vs NZD +3)."
+    },
+    {
+      "pair": "AUDCAD",
+      "bias": "bullish",
+      "conviction": "medium",
+      "summary": "Bullish (AUD +5 vs CAD -2)",
+      "base_state": "Strong",
+      "base_score": 5,
+      "quote_state": "Neutral",
+      "quote_score": -2,
+      "main_driver": "AUD favored: RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish; CAD: BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs.",
+      "drivers": [
+        "RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish",
+        "BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "RBA decision and SoMP (4.60%, hike ~81% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "Bullock press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "6 Nov",
+          "event": "Canada Labour Force Survey, Oct",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "BoC decision (2.50%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "AUD: partially priced — 3 Nov hike ~81%, ~4.91% by May 2027 (ASX via rbawatch, 31 Oct). CAD: not applicable — December hike ~50-57% (LSEG, 30 Oct); Reuters reports a January hike as more likely.",
+      "invalidation": "AUD: bullish if the RBA hikes on 3 Nov with upgraded forecasts. Bearish if a hold (~19% priced) or an insurance-hike, one-and-done message; weak China data. / CAD: bullish if a strong October LFS (6 Nov) revives December, oil stays high, or tariff relief. Bearish if weak jobs, an oil reversal, or post-midterm tariff escalation.",
+      "horizon": "Swing: bullish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bullish (AUD +5 vs CAD -2) → W45 PHASE 1 r3 bias bullish (AUD +5 vs CAD -2)."
+    },
+    {
+      "pair": "NZDJPY",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (NZD +3 vs JPY +2)",
+      "base_state": "Improving",
+      "base_score": 3,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "Close to a wash — NZD: RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%; JPY: BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%.",
+      "drivers": [
+        "RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%",
+        "BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "NZ Q3 labour market (4 Nov NZ time; UR cons. 5.5%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "GDT dairy auction (time not verified)",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "9 Dec",
+          "event": "RBNZ decision (2.75%)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "18 Dec",
+          "event": "BoJ decision (1.25%, hike ~57% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "NZD: partially priced — December hike ~40.8% (LSEG, 28 Oct) after the 4-3 hold. JPY: partially priced — December hike ~57%, ~80.5% by January (30 Oct, single aggregator).",
+      "invalidation": "NZD: bullish if Q3 jobs (3 Nov UTC) beat and RBNZ talk firms December. Bearish if unemployment above 5.5%, a disruptive 7 Nov election result, or falling dairy prices. / JPY: bullish if Ueda signals December (IMF lecture 6 Nov) or MoF intervenes. Bearish if December odds fade further, oil keeps rising, or carry demand returns.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (NZD 0 vs JPY +2) → W45 PHASE 1 r3 bias two-sided (NZD +3 vs JPY +2)."
+    },
+    {
+      "pair": "NZDCHF",
+      "bias": "bullish",
+      "conviction": "medium",
+      "summary": "Bullish (NZD +3 vs CHF -3)",
+      "base_state": "Improving",
+      "base_score": 3,
+      "quote_state": "Weakening",
+      "quote_score": -3,
+      "main_driver": "NZD favored: RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%; CHF: SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov.",
+      "drivers": [
+        "RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%",
+        "SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "Swiss CPI, Oct (cons. 1.3% y/y, one source)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "NZ Q3 labour market (4 Nov NZ time; UR cons. 5.5%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "GDT dairy auction (time not verified)",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "9 Dec",
+          "event": "RBNZ decision (2.75%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "NZD: partially priced — December hike ~40.8% (LSEG, 28 Oct) after the 4-3 hold. CHF: not applicable — no quantified SNB pricing; brokers mention a possible early-2027 hike.",
+      "invalidation": "NZD: bullish if Q3 jobs (3 Nov UTC) beat and RBNZ talk firms December. Bearish if unemployment above 5.5%, a disruptive 7 Nov election result, or falling dairy prices. / CHF: bullish if Swiss CPI (3 Nov) beats 1.3% and lifts SNB pricing, or French stress drives haven demand. Bearish if soft CPI and calmer euro-area spreads.",
+      "horizon": "Swing: bullish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (NZD 0 vs CHF -1) → W45 PHASE 1 r3 bias bullish (NZD +3 vs CHF -3)."
+    },
+    {
+      "pair": "NZDCAD",
+      "bias": "bullish",
+      "conviction": "medium",
+      "summary": "Bullish (NZD +3 vs CAD -2)",
+      "base_state": "Improving",
+      "base_score": 3,
+      "quote_state": "Neutral",
+      "quote_score": -2,
+      "main_driver": "NZD favored: RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%; CAD: BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs.",
+      "drivers": [
+        "RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%",
+        "BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "NZ Q3 labour market (4 Nov NZ time; UR cons. 5.5%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "6 Nov",
+          "event": "Canada Labour Force Survey, Oct",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "BoC decision (2.50%)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "9 Dec",
+          "event": "RBNZ decision (2.75%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "NZD: partially priced — December hike ~40.8% (LSEG, 28 Oct) after the 4-3 hold. CAD: not applicable — December hike ~50-57% (LSEG, 30 Oct); Reuters reports a January hike as more likely.",
+      "invalidation": "NZD: bullish if Q3 jobs (3 Nov UTC) beat and RBNZ talk firms December. Bearish if unemployment above 5.5%, a disruptive 7 Nov election result, or falling dairy prices. / CAD: bullish if a strong October LFS (6 Nov) revives December, oil stays high, or tariff relief. Bearish if weak jobs, an oil reversal, or post-midterm tariff escalation.",
+      "horizon": "Swing: bullish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (NZD 0 vs CAD -2) → W45 PHASE 1 r3 bias bullish (NZD +3 vs CAD -2)."
+    },
+    {
+      "pair": "CADJPY",
+      "bias": "bearish",
+      "conviction": "low",
+      "summary": "Bearish (CAD -2 vs JPY +2)",
+      "base_state": "Neutral",
+      "base_score": -2,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "JPY favored: BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%; CAD: BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs.",
+      "drivers": [
+        "BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%",
+        "BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs"
+      ],
+      "catalysts": [
+        {
+          "date": "4 Nov",
+          "event": "Canada merchandise trade, Sep",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "6 Nov",
+          "event": "Canada Labour Force Survey, Oct",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "BoC decision (2.50%)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "18 Dec",
+          "event": "BoJ decision (1.25%, hike ~57% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "CAD: not applicable — December hike ~50-57% (LSEG, 30 Oct); Reuters reports a January hike as more likely. JPY: partially priced — December hike ~57%, ~80.5% by January (30 Oct, single aggregator).",
+      "invalidation": "CAD: bullish if a strong October LFS (6 Nov) revives December, oil stays high, or tariff relief. Bearish if weak jobs, an oil reversal, or post-midterm tariff escalation. / JPY: bullish if Ueda signals December (IMF lecture 6 Nov) or MoF intervenes. Bearish if December odds fade further, oil keeps rising, or carry demand returns.",
+      "horizon": "Swing: mild bearish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bearish (CAD -2 vs JPY +2) → W45 PHASE 1 r3 bias bearish (CAD -2 vs JPY +2)."
+    },
+    {
+      "pair": "CADCHF",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (CAD -2 vs CHF -3)",
+      "base_state": "Neutral",
+      "base_score": -2,
+      "quote_state": "Weakening",
+      "quote_score": -3,
+      "main_driver": "Close to a wash — CAD: BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs; CHF: SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov.",
+      "drivers": [
+        "BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs",
+        "SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "Swiss CPI, Oct (cons. 1.3% y/y, one source)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "4 Nov",
+          "event": "Canada merchandise trade, Sep",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "6 Nov",
+          "event": "Canada Labour Force Survey, Oct",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "BoC decision (2.50%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "CAD: not applicable — December hike ~50-57% (LSEG, 30 Oct); Reuters reports a January hike as more likely. CHF: not applicable — no quantified SNB pricing; brokers mention a possible early-2027 hike.",
+      "invalidation": "CAD: bullish if a strong October LFS (6 Nov) revives December, oil stays high, or tariff relief. Bearish if weak jobs, an oil reversal, or post-midterm tariff escalation. / CHF: bullish if Swiss CPI (3 Nov) beats 1.3% and lifts SNB pricing, or French stress drives haven demand. Bearish if soft CPI and calmer euro-area spreads.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (CAD -2 vs CHF -1) → W45 PHASE 1 r3 bias two-sided (CAD -2 vs CHF -3)."
+    },
+    {
+      "pair": "CHFJPY",
+      "bias": "bearish",
+      "conviction": "medium",
+      "summary": "Bearish (CHF -3 vs JPY +2)",
+      "base_state": "Weakening",
+      "base_score": -3,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "JPY favored: BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%; CHF: SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov.",
+      "drivers": [
+        "BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%",
+        "SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "Swiss CPI, Oct (cons. 1.3% y/y, one source)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "5 Nov",
+          "event": "Swiss unemployment, Oct (cons. 3.1%; time per one calendar)",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "6 Nov",
+          "event": "Swiss FX reserves, Oct",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "18 Dec",
+          "event": "BoJ decision (1.25%, hike ~57% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "CHF: not applicable — no quantified SNB pricing; brokers mention a possible early-2027 hike. JPY: partially priced — December hike ~57%, ~80.5% by January (30 Oct, single aggregator).",
+      "invalidation": "CHF: bullish if Swiss CPI (3 Nov) beats 1.3% and lifts SNB pricing, or French stress drives haven demand. Bearish if soft CPI and calmer euro-area spreads. / JPY: bullish if Ueda signals December (IMF lecture 6 Nov) or MoF intervenes. Bearish if December odds fade further, oil keeps rising, or carry demand returns.",
+      "horizon": "Swing: bearish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bearish (CHF -1 vs JPY +2) → W45 PHASE 1 r3 bias bearish (CHF -3 vs JPY +2)."
+    },
+    {
+      "pair": "XAUUSD",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (XAU +2 vs USD +2)",
+      "base_state": "Neutral",
+      "base_score": 2,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "Close to a wash — XAU: gold factor 0: real yields -25bp against flat breakevens and mixed ETF flows; USD: Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat.",
+      "drivers": [
+        "gold factor 0: real yields -25bp against flat breakevens and mixed ETF flows",
+        "Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat"
+      ],
+      "catalysts": [
+        {
+          "date": "2 Nov",
+          "event": "US ISM manufacturing, Oct (cons. 54.7)",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "3 Nov",
+          "event": "US midterm elections",
+          "imp": "HIGH"
+        },
+        {
+          "date": "4 Nov",
+          "event": "US ADP employment, Oct (cons. +75k)",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "6 Nov",
+          "event": "US October payrolls (cons. +50-65k; UR 4.2%)",
+          "imp": "HIGH"
+        }
+      ],
+      "priced": "XAU: no repricing signal — breakevens flat (+2bp), real yields -25bp, ETF flows mixed. USD: largely priced — December hike ~76% (FedWatch via CNBC, 30 Oct; 69.4-78.4% across sources).",
+      "invalidation": "XAU: bullish if real yields keep falling and ETF outflows reverse. Bearish if strong payrolls lift real yields, or ETF liquidation continues. / USD: bullish if strong October payrolls (6 Nov) or ISM lift December odds back above ~85%. Bearish if weak payrolls or ISM, or Fed talk that trims December pricing.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (XAU +3 vs USD +2) → W45 PHASE 1 r3 bias two-sided (XAU +2 vs USD +2)."
+    }
+  ],
+  "news": [
+    {
+      "date": "2026-11-01",
+      "currency": "CAD",
+      "event": "OPEC+ online meeting (output expected unchanged)",
+      "importance": "LOW"
+    },
+    {
+      "date": "2026-11-02",
+      "currency": "JPY",
+      "event": "BoJ Outlook Report full text",
+      "importance": "LOW"
+    },
+    {
+      "date": "2026-11-02",
+      "currency": "EUR",
+      "event": "Euro-area and UK final manufacturing PMIs",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-02",
+      "currency": "GBP",
+      "event": "Euro-area and UK final manufacturing PMIs",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-02",
+      "currency": "USD",
+      "event": "US ISM manufacturing, Oct (cons. 54.7)",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-03",
+      "currency": "AUD",
+      "event": "RBA decision and SoMP (4.60%, hike ~81% priced)",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-11-03",
+      "currency": "AUD",
+      "event": "Bullock press conference",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-03",
+      "currency": "CHF",
+      "event": "Swiss CPI, Oct (cons. 1.3% y/y, one source)",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-03",
+      "currency": "NZD",
+      "event": "GDT dairy auction (time not verified)",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-03",
+      "currency": "EUR",
+      "event": "French Assembly vote on the 2027 budget revenue part (afternoon Paris)",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-03",
+      "currency": "USD",
+      "event": "US midterm elections",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-03",
+      "currency": "XAU",
+      "event": "US midterm elections",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-03",
+      "currency": "NZD",
+      "event": "NZ Q3 labour market (4 Nov NZ time; UR cons. 5.5%)",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-04",
+      "currency": "AUD",
+      "event": "Australia household spending, Sep",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-04",
+      "currency": "EUR",
+      "event": "Euro-area HICP flash, Oct (cons. 3.9%)",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-04",
+      "currency": "USD",
+      "event": "US ADP employment, Oct (cons. +75k)",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-04",
+      "currency": "CAD",
+      "event": "Canada merchandise trade, Sep",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-04",
+      "currency": "USD",
+      "event": "US ISM services, Oct (cons. 54.7)",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-04",
+      "currency": "JPY",
+      "event": "BoJ minutes of the September meeting (5 Nov 08:50 JST)",
+      "importance": "LOW"
+    },
+    {
+      "date": "2026-11-05",
+      "currency": "CHF",
+      "event": "Swiss unemployment, Oct (cons. 3.1%; time per one calendar)",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-05",
+      "currency": "GBP",
+      "event": "BoE decision, minutes and MPR (3.75%, hike ~95% priced)",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-11-05",
+      "currency": "GBP",
+      "event": "Bailey press conference",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-06",
+      "currency": "CHF",
+      "event": "Swiss FX reserves, Oct",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-06",
+      "currency": "USD",
+      "event": "US October payrolls (cons. +50-65k; UR 4.2%)",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-06",
+      "currency": "XAU",
+      "event": "US October payrolls (cons. +50-65k; UR 4.2%)",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-06",
+      "currency": "CAD",
+      "event": "Canada Labour Force Survey, Oct",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-06",
+      "currency": "JPY",
+      "event": "Ueda speaks, IMF Camdessus Lecture (approx. time)",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-07",
+      "currency": "NZD",
+      "event": "New Zealand general election",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-17",
+      "currency": "EUR",
+      "event": "French Assembly vote on the whole 2027 budget",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-27",
+      "currency": "EUR",
+      "event": "S&P review of France",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-12-09",
+      "currency": "CAD",
+      "event": "BoC decision (2.50%)",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-12-09",
+      "currency": "NZD",
+      "event": "RBNZ decision (2.75%)",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-12-10",
+      "currency": "CHF",
+      "event": "SNB decision (0%)",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-12-17",
+      "currency": "EUR",
+      "event": "ECB decision (2.50%, hike 75-84% priced)",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-12-18",
+      "currency": "JPY",
+      "event": "BoJ decision (1.25%, hike ~57% priced)",
+      "importance": "CRITICAL"
+    }
+  ]
+}</script>
+<h3>Validation (run in code on the decoded copy-button text)</h3>
+<div class="scroll"><table><thead><tr><th>#</th><th>Check</th><th>Result</th><th>Detail</th></tr></thead><tbody><tr><td>1</td><td>Strict JSON parse, UTF-8</td><td><span class='tag bull'>PASS</span></td><td class='small'>67506 bytes, UTF-8, strict parse</td></tr><tr><td>2</td><td>No duplicate keys at any level</td><td><span class='tag bull'>PASS</span></td><td class='small'>none</td></tr><tr><td>3</td><td>Block contains only the JSON, outside HTML comments</td><td><span class='tag bull'>PASS</span></td><td class='small'>script#dobs holds exactly the JSON; the copy button copies its textContent</td></tr><tr><td>4</td><td>Top-level keys, order, format and version</td><td><span class='tag bull'>PASS</span></td><td class='small'>format, version, report_date, report_title, valid_week, currencies, pairs, news</td></tr><tr><td>5</td><td>Nine currencies, integer scores −18…+18, valid state, note ≤ 200 chars</td><td><span class='tag bull'>PASS</span></td><td class='small'>max note 156 chars</td></tr><tr><td>6</td><td>29 pairs, names, order, 17 fields each</td><td><span class='tag bull'>PASS</span></td><td class='small'>29 × 17</td></tr><tr><td>7</td><td>All enums valid</td><td><span class='tag bull'>PASS</span></td><td class='small'>ok</td></tr><tr><td>8</td><td>Dates (ISO, &#x27;D Mon&#x27;, valid_week = ISO week of 2 Nov, report_date ≤ Monday)</td><td><span class='tag bull'>PASS</span></td><td class='small'>valid_week 2026-W45</td></tr><tr><td>9</td><td>Pair legs equal the currencies block</td><td><span class='tag bull'>PASS</span></td><td class='small'>29/29</td></tr><tr><td>10</td><td>Bias and conviction follow §6.2; summary, horizon, changed agree</td><td><span class='tag bull'>PASS</span></td><td class='small'>29/29 recomputed</td></tr><tr><td>11</td><td>XAUUSD gap equals G</td><td><span class='tag bull'>PASS</span></td><td class='small'>gap 0, G 0</td></tr><tr><td>12</td><td>JSON scores = HTML scorecard = page script constants = engine</td><td><span class='tag bull'>PASS</span></td><td class='small'>9/9</td></tr><tr><td>13</td><td>Every number in note, priced, main_driver traces to an evidence ID</td><td><span class='tag bull'>PASS</span></td><td class='small'>all numeric tokens found in S1-S68 (dates, years, vote splits and the derived XAU = G + USD scores excluded)</td></tr><tr><td>14</td><td>SHA-256 of the JSON text recorded in the vintage file</td><td><span class='tag bull'>PASS</span></td><td class='small'>6be4b46798e22d48e2461561d2885142fa7ce4be4583fbedc412f201b1854cfe</td></tr></tbody></table></div>
+<h2>Bias history</h2>
+<p class="legend small">W44 F = archive/vintage-2026-W44-final.json (first live v2.1 week) · W45 r1 = archive/vintage-2026-W45-phase1.json (record status pending) · W45 r3 = this report. Outlined cell = first live v2.1 week. U = bullish (≥ +3), D = bearish (≤ −3), N = neutral/two-sided.</p>
+<h3>Currencies</h3><div class='strip'><span class='nm'>USD</span><div class='dots'><span class='dot N v2' title='W44 F: +2'>+2</span><span class='dot U' title='W45 r1: +5'>+5</span><span class='dot N' title='W45 r3: +2'>+2</span></div></div><div class='strip'><span class='nm'>EUR</span><div class='dots'><span class='dot D v2' title='W44 F: -5'>-5</span><span class='dot N' title='W45 r1: -2'>-2</span><span class='dot D' title='W45 r3: -4'>-4</span></div></div><div class='strip'><span class='nm'>GBP</span><div class='dots'><span class='dot N v2' title='W44 F: +1'>+1</span><span class='dot U' title='W45 r1: +4'>+4</span><span class='dot U' title='W45 r3: +4'>+4</span></div></div><div class='strip'><span class='nm'>JPY</span><div class='dots'><span class='dot N v2' title='W44 F: +2'>+2</span><span class='dot N' title='W45 r1: -1'>-1</span><span class='dot N' title='W45 r3: +2'>+2</span></div></div><div class='strip'><span class='nm'>CHF</span><div class='dots'><span class='dot N v2' title='W44 F: -1'>-1</span><span class='dot D' title='W45 r1: -3'>-3</span><span class='dot D' title='W45 r3: -3'>-3</span></div></div><div class='strip'><span class='nm'>CAD</span><div class='dots'><span class='dot N v2' title='W44 F: -2'>-2</span><span class='dot N' title='W45 r1: -2'>-2</span><span class='dot N' title='W45 r3: -2'>-2</span></div></div><div class='strip'><span class='nm'>AUD</span><div class='dots'><span class='dot U v2' title='W44 F: +5'>+5</span><span class='dot U' title='W45 r1: +5'>+5</span><span class='dot U' title='W45 r3: +5'>+5</span></div></div><div class='strip'><span class='nm'>NZD</span><div class='dots'><span class='dot N v2' title='W44 F: 0'>0</span><span class='dot N' title='W45 r1: 0'>0</span><span class='dot U' title='W45 r3: +3'>+3</span></div></div><div class='strip'><span class='nm'>XAU</span><div class='dots'><span class='dot U v2' title='W44 F: +3'>+3</span><span class='dot U' title='W45 r1: +5'>+5</span><span class='dot N' title='W45 r3: +2'>+2</span></div></div>
+<h3>Pairs</h3><div class='strip'><span class='nm'>EURUSD</span><div class='dots'><span class='dot D v2' title='W44 F'>-7</span><span class='dot D' title='W45 r1'>-7</span><span class='dot D' title='W45 r3'>-6</span></div></div><div class='strip'><span class='nm'>GBPUSD</span><div class='dots'><span class='dot N v2' title='W44 F'>-1</span><span class='dot N' title='W45 r1'>-1</span><span class='dot N' title='W45 r3'>+2</span></div></div><div class='strip'><span class='nm'>USDJPY</span><div class='dots'><span class='dot N v2' title='W44 F'>+0</span><span class='dot U' title='W45 r1'>+6</span><span class='dot N' title='W45 r3'>+0</span></div></div><div class='strip'><span class='nm'>USDCHF</span><div class='dots'><span class='dot U v2' title='W44 F'>+3</span><span class='dot U' title='W45 r1'>+8</span><span class='dot U' title='W45 r3'>+5</span></div></div><div class='strip'><span class='nm'>USDCAD</span><div class='dots'><span class='dot U v2' title='W44 F'>+4</span><span class='dot U' title='W45 r1'>+7</span><span class='dot U' title='W45 r3'>+4</span></div></div><div class='strip'><span class='nm'>AUDUSD</span><div class='dots'><span class='dot U v2' title='W44 F'>+3</span><span class='dot N' title='W45 r1'>+0</span><span class='dot U' title='W45 r3'>+3</span></div></div><div class='strip'><span class='nm'>NZDUSD</span><div class='dots'><span class='dot N v2' title='W44 F'>-2</span><span class='dot D' title='W45 r1'>-5</span><span class='dot N' title='W45 r3'>+1</span></div></div><div class='strip'><span class='nm'>EURGBP</span><div class='dots'><span class='dot D v2' title='W44 F'>-6</span><span class='dot D' title='W45 r1'>-6</span><span class='dot D' title='W45 r3'>-8</span></div></div><div class='strip'><span class='nm'>EURJPY</span><div class='dots'><span class='dot D v2' title='W44 F'>-7</span><span class='dot N' title='W45 r1'>-1</span><span class='dot D' title='W45 r3'>-6</span></div></div><div class='strip'><span class='nm'>EURCHF</span><div class='dots'><span class='dot D v2' title='W44 F'>-4</span><span class='dot N' title='W45 r1'>+1</span><span class='dot N' title='W45 r3'>-1</span></div></div><div class='strip'><span class='nm'>EURAUD</span><div class='dots'><span class='dot D v2' title='W44 F'>-10</span><span class='dot D' title='W45 r1'>-7</span><span class='dot D' title='W45 r3'>-9</span></div></div><div class='strip'><span class='nm'>EURNZD</span><div class='dots'><span class='dot D v2' title='W44 F'>-5</span><span class='dot N' title='W45 r1'>-2</span><span class='dot D' title='W45 r3'>-7</span></div></div><div class='strip'><span class='nm'>EURCAD</span><div class='dots'><span class='dot D v2' title='W44 F'>-3</span><span class='dot N' title='W45 r1'>+0</span><span class='dot N' title='W45 r3'>-2</span></div></div><div class='strip'><span class='nm'>GBPJPY</span><div class='dots'><span class='dot N v2' title='W44 F'>-1</span><span class='dot U' title='W45 r1'>+5</span><span class='dot N' title='W45 r3'>+2</span></div></div><div class='strip'><span class='nm'>GBPCHF</span><div class='dots'><span class='dot N v2' title='W44 F'>+2</span><span class='dot U' title='W45 r1'>+7</span><span class='dot U' title='W45 r3'>+7</span></div></div><div class='strip'><span class='nm'>GBPAUD</span><div class='dots'><span class='dot D v2' title='W44 F'>-4</span><span class='dot N' title='W45 r1'>-1</span><span class='dot N' title='W45 r3'>-1</span></div></div><div class='strip'><span class='nm'>GBPNZD</span><div class='dots'><span class='dot N v2' title='W44 F'>+1</span><span class='dot U' title='W45 r1'>+4</span><span class='dot N' title='W45 r3'>+1</span></div></div><div class='strip'><span class='nm'>GBPCAD</span><div class='dots'><span class='dot U v2' title='W44 F'>+3</span><span class='dot U' title='W45 r1'>+6</span><span class='dot U' title='W45 r3'>+6</span></div></div><div class='strip'><span class='nm'>AUDJPY</span><div class='dots'><span class='dot U v2' title='W44 F'>+3</span><span class='dot U' title='W45 r1'>+6</span><span class='dot U' title='W45 r3'>+3</span></div></div><div class='strip'><span class='nm'>AUDCHF</span><div class='dots'><span class='dot U v2' title='W44 F'>+6</span><span class='dot U' title='W45 r1'>+8</span><span class='dot U' title='W45 r3'>+8</span></div></div><div class='strip'><span class='nm'>AUDNZD</span><div class='dots'><span class='dot U v2' title='W44 F'>+5</span><span class='dot U' title='W45 r1'>+5</span><span class='dot N' title='W45 r3'>+2</span></div></div><div class='strip'><span class='nm'>AUDCAD</span><div class='dots'><span class='dot U v2' title='W44 F'>+7</span><span class='dot U' title='W45 r1'>+7</span><span class='dot U' title='W45 r3'>+7</span></div></div><div class='strip'><span class='nm'>NZDJPY</span><div class='dots'><span class='dot N v2' title='W44 F'>-2</span><span class='dot N' title='W45 r1'>+1</span><span class='dot N' title='W45 r3'>+1</span></div></div><div class='strip'><span class='nm'>NZDCHF</span><div class='dots'><span class='dot N v2' title='W44 F'>+1</span><span class='dot U' title='W45 r1'>+3</span><span class='dot U' title='W45 r3'>+6</span></div></div><div class='strip'><span class='nm'>NZDCAD</span><div class='dots'><span class='dot N v2' title='W44 F'>+2</span><span class='dot N' title='W45 r1'>+2</span><span class='dot U' title='W45 r3'>+5</span></div></div><div class='strip'><span class='nm'>CADJPY</span><div class='dots'><span class='dot D v2' title='W44 F'>-4</span><span class='dot N' title='W45 r1'>-1</span><span class='dot D' title='W45 r3'>-4</span></div></div><div class='strip'><span class='nm'>CADCHF</span><div class='dots'><span class='dot N v2' title='W44 F'>-1</span><span class='dot N' title='W45 r1'>+1</span><span class='dot N' title='W45 r3'>+1</span></div></div><div class='strip'><span class='nm'>CHFJPY</span><div class='dots'><span class='dot D v2' title='W44 F'>-3</span><span class='dot N' title='W45 r1'>-2</span><span class='dot D' title='W45 r3'>-5</span></div></div><div class='strip'><span class='nm'>XAUUSD</span><div class='dots'><span class='dot N v2' title='W44 F'>+1</span><span class='dot N' title='W45 r1'>+0</span><span class='dot N' title='W45 r3'>+0</span></div></div>
+<footer>Forex Fundamental Bias Engine · method v2.1 · PHASE 1 r3 for ISO 2026-W45 · research and fundamental scoring only; not investment advice and not a trade signal.</footer>
+</div>
+<div class="modal" id="modal" role="dialog" aria-modal="true"><div class="mbox"><div style="display:flex;justify-content:space-between;align-items:center"><h3 id="mt" style="margin:0"></h3><button id="mclose" type="button">Close</button></div><dl id="md"></dl></div></div>
+<script>
+const SCORES = {"USD": 2, "EUR": -4, "GBP": 4, "JPY": 2, "CHF": -3, "CAD": -2, "AUD": 5, "NZD": 3, "XAU": 2};
+const raw = document.getElementById('dobs').textContent;
+const D = JSON.parse(raw);
+document.getElementById('jsonView').textContent = raw;
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const m = document.getElementById('copyMsg');
+  try { await navigator.clipboard.writeText(raw); m.textContent = 'Copied.'; }
+  catch (e) { const t = document.createElement('textarea'); t.value = raw; document.body.appendChild(t); t.select();
+    try { document.execCommand('copy'); m.textContent = 'Copied.'; } catch (e2) { m.textContent = 'Copy failed — select the text manually.'; } t.remove(); }
+});
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+const modal = document.getElementById('modal');
+function openPair(name) {
+  const p = D.pairs.find(x => x.pair === name); if (!p) return;
+  document.getElementById('mt').textContent = p.pair + ' — ' + p.summary;
+  const cats = p.catalysts.map(c => esc(c.date + ' · ' + c.event + ' (' + c.imp + ')')).join('<br>');
+  document.getElementById('md').innerHTML =
+    '<dt>Bias</dt><dd>' + esc(p.bias + ' · ' + p.conviction + ' · ' + p.horizon) + '</dd>' +
+    '<dt>Main driver</dt><dd>' + esc(p.main_driver) + '</dd>' +
+    '<dt>Priced</dt><dd>' + esc(p.priced) + '</dd>' +
+    '<dt>Catalysts</dt><dd>' + (cats || '—') + '</dd>' +
+    '<dt>Invalidation</dt><dd>' + esc(p.invalidation) + '</dd>' +
+    '<dt>Alignment</dt><dd>' + esc(p.alignment + ' — ' + p.alignment_note) + '</dd>' +
+    '<dt>Changed</dt><dd>' + esc(p.changed) + '</dd>';
+  modal.classList.add('open');
+}
+document.querySelectorAll('#matrix tbody tr').forEach(tr => {
+  tr.addEventListener('click', () => openPair(tr.dataset.pair));
+  tr.addEventListener('keydown', e => { if (e.key === 'Enter') openPair(tr.dataset.pair); });
+});
+document.getElementById('mclose').addEventListener('click', () => modal.classList.remove('open'));
+modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+document.getElementById('pf').addEventListener('input', e => {
+  const q = e.target.value.trim().toUpperCase();
+  document.querySelectorAll('#matrix tbody tr').forEach(tr => { tr.style.display = tr.dataset.pair.includes(q) ? '' : 'none'; });
+});
+</script></body></html>

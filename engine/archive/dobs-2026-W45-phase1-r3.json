@@ -1,0 +1,1518 @@
+{
+  "format": "daily-observer-fundamentals",
+  "version": 1,
+  "report_date": "2026-10-31",
+  "report_title": "Forex Fundamental Bias Engine — Week 45",
+  "valid_week": {
+    "year": 2026,
+    "week": 45
+  },
+  "currencies": {
+    "USD": {
+      "score": 2,
+      "state": "Neutral",
+      "note": "Fed held 3.75-4.00% on 28 Oct with two hike dissents; a December hike is ~76% priced (30 Oct) after a Q3 GDP beat (3.4%). Repricing risk judged balanced."
+    },
+    "EUR": {
+      "score": -4,
+      "state": "Neutral",
+      "note": "ECB held 2.50% and pointed to December (75-84% priced). French revenue vote 3 Nov with OAT-Bund at 159bp, wider over 4 weeks; Brent +10.9% hurts."
+    },
+    "GBP": {
+      "score": 4,
+      "state": "Improving",
+      "note": "Budget passed without gilt stress (10Y -2.1bp). A 5 Nov BoE hike to 4.00% is ~95% priced, with Feb/Jul hikes; economists see less after November."
+    },
+    "JPY": {
+      "score": 2,
+      "state": "Neutral",
+      "note": "BoJ held 1.25% (8-1) and said underlying inflation is at target; a December hike is only ~57% priced. MoF warned of decisive FX action; Brent +10.9% weighs."
+    },
+    "CHF": {
+      "score": -3,
+      "state": "Weakening",
+      "note": "SNB at 0% gives the lowest carry; only qualitative talk of an early-2027 hike. Swiss CPI on 3 Nov (1.3% expected by one source) is the week's test."
+    },
+    "CAD": {
+      "score": -2,
+      "state": "Neutral",
+      "note": "BoC hiked to 2.50% but August GDP stalled (0.0% vs +0.2%); a December hike is ~50-57% priced. Brent +10.9% supports; US tariffs weigh."
+    },
+    "AUD": {
+      "score": 5,
+      "state": "Strong",
+      "note": "RBA hike to 4.85% on 3 Nov is ~81% priced (ASX, 31 Oct); Bullock calls inflation far too high. Highest implied carry (~4.91% by May 2027)."
+    },
+    "NZD": {
+      "score": 3,
+      "state": "Improving",
+      "note": "RBNZ held 2.75% (4-3) against hike pricing, but all members see tighter policy as likely; a December hike is ~40.8% priced. GDT +3.7% over two auctions."
+    },
+    "XAU": {
+      "score": 2,
+      "state": "Neutral",
+      "note": "Gold factor G = 0: real yields -25bp offset by flat breakevens, mixed ETF flows and a neutral risk regime. XAU = G + USD = +2."
+    }
+  },
+  "pairs": [
+    {
+      "pair": "EURUSD",
+      "bias": "bearish",
+      "conviction": "medium",
+      "summary": "Bearish (EUR -4 vs USD +2)",
+      "base_state": "Neutral",
+      "base_score": -4,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "USD favored: Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat; EUR: ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%.",
+      "drivers": [
+        "Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat",
+        "ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "French Assembly vote on the 2027 budget revenue part (afternoon Paris)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "US midterm elections",
+          "imp": "HIGH"
+        },
+        {
+          "date": "4 Nov",
+          "event": "Euro-area HICP flash, Oct (cons. 3.9%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "17 Dec",
+          "event": "ECB decision (2.50%, hike 75-84% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "EUR: largely priced — December hike 75-84% and two hikes by April 2027 (29-30 Oct). USD: largely priced — December hike ~76% (FedWatch via CNBC, 30 Oct; 69.4-78.4% across sources).",
+      "invalidation": "EUR: bullish if the 3 Nov revenue vote passes with OAT-Bund narrowing, or HICP (4 Nov) above 3.9%. Bearish if the vote fails, censure or 49.3 with spreads widening; soft HICP. / USD: bullish if strong October payrolls (6 Nov) or ISM lift December odds back above ~85%. Bearish if weak payrolls or ISM, or Fed talk that trims December pricing.",
+      "horizon": "Swing: bearish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bearish (EUR -5 vs USD +2) → W45 PHASE 1 r3 bias bearish (EUR -4 vs USD +2)."
+    },
+    {
+      "pair": "GBPUSD",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (GBP +4 vs USD +2)",
+      "base_state": "Improving",
+      "base_score": 4,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "Close to a wash — GBP: benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced; USD: Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat.",
+      "drivers": [
+        "benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced",
+        "Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "US midterm elections",
+          "imp": "HIGH"
+        },
+        {
+          "date": "5 Nov",
+          "event": "BoE decision, minutes and MPR (3.75%, hike ~95% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "5 Nov",
+          "event": "Bailey press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "6 Nov",
+          "event": "US October payrolls (cons. +50-65k; UR 4.2%)",
+          "imp": "HIGH"
+        }
+      ],
+      "priced": "GBP: largely priced — 5 Nov hike ~95% (30 Oct), further hikes in February and July. USD: largely priced — December hike ~76% (FedWatch via CNBC, 30 Oct; 69.4-78.4% across sources).",
+      "invalidation": "GBP: bullish if a 5 Nov hike with hawkish votes or guidance backing the Feb/Jul path. Bearish if a hold or a one-and-done message; 10Y gilt above 5.40%. / USD: bullish if strong October payrolls (6 Nov) or ISM lift December odds back above ~85%. Bearish if weak payrolls or ISM, or Fed talk that trims December pricing.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (GBP +1 vs USD +2) → W45 PHASE 1 r3 bias two-sided (GBP +4 vs USD +2)."
+    },
+    {
+      "pair": "USDJPY",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (USD +2 vs JPY +2)",
+      "base_state": "Neutral",
+      "base_score": 2,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "Close to a wash — USD: Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat; JPY: BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%.",
+      "drivers": [
+        "Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat",
+        "BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%"
+      ],
+      "catalysts": [
+        {
+          "date": "2 Nov",
+          "event": "US ISM manufacturing, Oct (cons. 54.7)",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "3 Nov",
+          "event": "US midterm elections",
+          "imp": "HIGH"
+        },
+        {
+          "date": "6 Nov",
+          "event": "US October payrolls (cons. +50-65k; UR 4.2%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "18 Dec",
+          "event": "BoJ decision (1.25%, hike ~57% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "USD: largely priced — December hike ~76% (FedWatch via CNBC, 30 Oct; 69.4-78.4% across sources). JPY: partially priced — December hike ~57%, ~80.5% by January (30 Oct, single aggregator).",
+      "invalidation": "USD: bullish if strong October payrolls (6 Nov) or ISM lift December odds back above ~85%. Bearish if weak payrolls or ISM, or Fed talk that trims December pricing. / JPY: bullish if Ueda signals December (IMF lecture 6 Nov) or MoF intervenes. Bearish if December odds fade further, oil keeps rising, or carry demand returns.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (USD +2 vs JPY +2) → W45 PHASE 1 r3 bias two-sided (USD +2 vs JPY +2)."
+    },
+    {
+      "pair": "USDCHF",
+      "bias": "bullish",
+      "conviction": "medium",
+      "summary": "Bullish (USD +2 vs CHF -3)",
+      "base_state": "Neutral",
+      "base_score": 2,
+      "quote_state": "Weakening",
+      "quote_score": -3,
+      "main_driver": "USD favored: Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat; CHF: SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov.",
+      "drivers": [
+        "Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat",
+        "SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov"
+      ],
+      "catalysts": [
+        {
+          "date": "2 Nov",
+          "event": "US ISM manufacturing, Oct (cons. 54.7)",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "3 Nov",
+          "event": "Swiss CPI, Oct (cons. 1.3% y/y, one source)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "US midterm elections",
+          "imp": "HIGH"
+        },
+        {
+          "date": "6 Nov",
+          "event": "US October payrolls (cons. +50-65k; UR 4.2%)",
+          "imp": "HIGH"
+        }
+      ],
+      "priced": "USD: largely priced — December hike ~76% (FedWatch via CNBC, 30 Oct; 69.4-78.4% across sources). CHF: not applicable — no quantified SNB pricing; brokers mention a possible early-2027 hike.",
+      "invalidation": "USD: bullish if strong October payrolls (6 Nov) or ISM lift December odds back above ~85%. Bearish if weak payrolls or ISM, or Fed talk that trims December pricing. / CHF: bullish if Swiss CPI (3 Nov) beats 1.3% and lifts SNB pricing, or French stress drives haven demand. Bearish if soft CPI and calmer euro-area spreads.",
+      "horizon": "Swing: bullish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bullish (USD +2 vs CHF -1) → W45 PHASE 1 r3 bias bullish (USD +2 vs CHF -3)."
+    },
+    {
+      "pair": "USDCAD",
+      "bias": "bullish",
+      "conviction": "low",
+      "summary": "Bullish (USD +2 vs CAD -2)",
+      "base_state": "Neutral",
+      "base_score": 2,
+      "quote_state": "Neutral",
+      "quote_score": -2,
+      "main_driver": "USD favored: Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat; CAD: BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs.",
+      "drivers": [
+        "Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat",
+        "BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "US midterm elections",
+          "imp": "HIGH"
+        },
+        {
+          "date": "6 Nov",
+          "event": "US October payrolls (cons. +50-65k; UR 4.2%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "6 Nov",
+          "event": "Canada Labour Force Survey, Oct",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "BoC decision (2.50%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "USD: largely priced — December hike ~76% (FedWatch via CNBC, 30 Oct; 69.4-78.4% across sources). CAD: not applicable — December hike ~50-57% (LSEG, 30 Oct); Reuters reports a January hike as more likely.",
+      "invalidation": "USD: bullish if strong October payrolls (6 Nov) or ISM lift December odds back above ~85%. Bearish if weak payrolls or ISM, or Fed talk that trims December pricing. / CAD: bullish if a strong October LFS (6 Nov) revives December, oil stays high, or tariff relief. Bearish if weak jobs, an oil reversal, or post-midterm tariff escalation.",
+      "horizon": "Swing: mild bullish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bullish (USD +2 vs CAD -2) → W45 PHASE 1 r3 bias bullish (USD +2 vs CAD -2)."
+    },
+    {
+      "pair": "AUDUSD",
+      "bias": "bullish",
+      "conviction": "low",
+      "summary": "Bullish (AUD +5 vs USD +2)",
+      "base_state": "Strong",
+      "base_score": 5,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "AUD favored: RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish; USD: Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat.",
+      "drivers": [
+        "RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish",
+        "Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "RBA decision and SoMP (4.60%, hike ~81% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "Bullock press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "US midterm elections",
+          "imp": "HIGH"
+        },
+        {
+          "date": "6 Nov",
+          "event": "US October payrolls (cons. +50-65k; UR 4.2%)",
+          "imp": "HIGH"
+        }
+      ],
+      "priced": "AUD: partially priced — 3 Nov hike ~81%, ~4.91% by May 2027 (ASX via rbawatch, 31 Oct). USD: largely priced — December hike ~76% (FedWatch via CNBC, 30 Oct; 69.4-78.4% across sources).",
+      "invalidation": "AUD: bullish if the RBA hikes on 3 Nov with upgraded forecasts. Bearish if a hold (~19% priced) or an insurance-hike, one-and-done message; weak China data. / USD: bullish if strong October payrolls (6 Nov) or ISM lift December odds back above ~85%. Bearish if weak payrolls or ISM, or Fed talk that trims December pricing.",
+      "horizon": "Swing: mild bullish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bullish (AUD +5 vs USD +2) → W45 PHASE 1 r3 bias bullish (AUD +5 vs USD +2)."
+    },
+    {
+      "pair": "NZDUSD",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (NZD +3 vs USD +2)",
+      "base_state": "Improving",
+      "base_score": 3,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "Close to a wash — NZD: RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%; USD: Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat.",
+      "drivers": [
+        "RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%",
+        "Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "US midterm elections",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "NZ Q3 labour market (4 Nov NZ time; UR cons. 5.5%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "6 Nov",
+          "event": "US October payrolls (cons. +50-65k; UR 4.2%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "RBNZ decision (2.75%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "NZD: partially priced — December hike ~40.8% (LSEG, 28 Oct) after the 4-3 hold. USD: largely priced — December hike ~76% (FedWatch via CNBC, 30 Oct; 69.4-78.4% across sources).",
+      "invalidation": "NZD: bullish if Q3 jobs (3 Nov UTC) beat and RBNZ talk firms December. Bearish if unemployment above 5.5%, a disruptive 7 Nov election result, or falling dairy prices. / USD: bullish if strong October payrolls (6 Nov) or ISM lift December odds back above ~85%. Bearish if weak payrolls or ISM, or Fed talk that trims December pricing.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (NZD 0 vs USD +2) → W45 PHASE 1 r3 bias two-sided (NZD +3 vs USD +2)."
+    },
+    {
+      "pair": "EURGBP",
+      "bias": "bearish",
+      "conviction": "medium",
+      "summary": "Bearish (EUR -4 vs GBP +4)",
+      "base_state": "Neutral",
+      "base_score": -4,
+      "quote_state": "Improving",
+      "quote_score": 4,
+      "main_driver": "GBP favored: benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced; EUR: ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%.",
+      "drivers": [
+        "benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced",
+        "ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "French Assembly vote on the 2027 budget revenue part (afternoon Paris)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "4 Nov",
+          "event": "Euro-area HICP flash, Oct (cons. 3.9%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "5 Nov",
+          "event": "BoE decision, minutes and MPR (3.75%, hike ~95% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "17 Dec",
+          "event": "ECB decision (2.50%, hike 75-84% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "EUR: largely priced — December hike 75-84% and two hikes by April 2027 (29-30 Oct). GBP: largely priced — 5 Nov hike ~95% (30 Oct), further hikes in February and July.",
+      "invalidation": "EUR: bullish if the 3 Nov revenue vote passes with OAT-Bund narrowing, or HICP (4 Nov) above 3.9%. Bearish if the vote fails, censure or 49.3 with spreads widening; soft HICP. / GBP: bullish if a 5 Nov hike with hawkish votes or guidance backing the Feb/Jul path. Bearish if a hold or a one-and-done message; 10Y gilt above 5.40%.",
+      "horizon": "Swing: bearish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bearish (EUR -5 vs GBP +1) → W45 PHASE 1 r3 bias bearish (EUR -4 vs GBP +4)."
+    },
+    {
+      "pair": "EURJPY",
+      "bias": "bearish",
+      "conviction": "medium",
+      "summary": "Bearish (EUR -4 vs JPY +2)",
+      "base_state": "Neutral",
+      "base_score": -4,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "JPY favored: BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%; EUR: ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%.",
+      "drivers": [
+        "BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%",
+        "ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "French Assembly vote on the 2027 budget revenue part (afternoon Paris)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "4 Nov",
+          "event": "Euro-area HICP flash, Oct (cons. 3.9%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "17 Dec",
+          "event": "ECB decision (2.50%, hike 75-84% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "18 Dec",
+          "event": "BoJ decision (1.25%, hike ~57% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "EUR: largely priced — December hike 75-84% and two hikes by April 2027 (29-30 Oct). JPY: partially priced — December hike ~57%, ~80.5% by January (30 Oct, single aggregator).",
+      "invalidation": "EUR: bullish if the 3 Nov revenue vote passes with OAT-Bund narrowing, or HICP (4 Nov) above 3.9%. Bearish if the vote fails, censure or 49.3 with spreads widening; soft HICP. / JPY: bullish if Ueda signals December (IMF lecture 6 Nov) or MoF intervenes. Bearish if December odds fade further, oil keeps rising, or carry demand returns.",
+      "horizon": "Swing: bearish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bearish (EUR -5 vs JPY +2) → W45 PHASE 1 r3 bias bearish (EUR -4 vs JPY +2)."
+    },
+    {
+      "pair": "EURCHF",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (EUR -4 vs CHF -3)",
+      "base_state": "Neutral",
+      "base_score": -4,
+      "quote_state": "Weakening",
+      "quote_score": -3,
+      "main_driver": "Close to a wash — EUR: ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%; CHF: SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov.",
+      "drivers": [
+        "ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%",
+        "SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "Swiss CPI, Oct (cons. 1.3% y/y, one source)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "French Assembly vote on the 2027 budget revenue part (afternoon Paris)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "4 Nov",
+          "event": "Euro-area HICP flash, Oct (cons. 3.9%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "17 Dec",
+          "event": "ECB decision (2.50%, hike 75-84% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "EUR: largely priced — December hike 75-84% and two hikes by April 2027 (29-30 Oct). CHF: not applicable — no quantified SNB pricing; brokers mention a possible early-2027 hike.",
+      "invalidation": "EUR: bullish if the 3 Nov revenue vote passes with OAT-Bund narrowing, or HICP (4 Nov) above 3.9%. Bearish if the vote fails, censure or 49.3 with spreads widening; soft HICP. / CHF: bullish if Swiss CPI (3 Nov) beats 1.3% and lifts SNB pricing, or French stress drives haven demand. Bearish if soft CPI and calmer euro-area spreads.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bearish (EUR -5 vs CHF -1) → W45 PHASE 1 r3 bias two-sided (EUR -4 vs CHF -3)."
+    },
+    {
+      "pair": "EURAUD",
+      "bias": "bearish",
+      "conviction": "medium",
+      "summary": "Bearish (EUR -4 vs AUD +5)",
+      "base_state": "Neutral",
+      "base_score": -4,
+      "quote_state": "Strong",
+      "quote_score": 5,
+      "main_driver": "AUD favored: RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish; EUR: ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%.",
+      "drivers": [
+        "RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish",
+        "ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "RBA decision and SoMP (4.60%, hike ~81% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "Bullock press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "French Assembly vote on the 2027 budget revenue part (afternoon Paris)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "17 Dec",
+          "event": "ECB decision (2.50%, hike 75-84% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "EUR: largely priced — December hike 75-84% and two hikes by April 2027 (29-30 Oct). AUD: partially priced — 3 Nov hike ~81%, ~4.91% by May 2027 (ASX via rbawatch, 31 Oct).",
+      "invalidation": "EUR: bullish if the 3 Nov revenue vote passes with OAT-Bund narrowing, or HICP (4 Nov) above 3.9%. Bearish if the vote fails, censure or 49.3 with spreads widening; soft HICP. / AUD: bullish if the RBA hikes on 3 Nov with upgraded forecasts. Bearish if a hold (~19% priced) or an insurance-hike, one-and-done message; weak China data.",
+      "horizon": "Swing: bearish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bearish (EUR -5 vs AUD +5) → W45 PHASE 1 r3 bias bearish (EUR -4 vs AUD +5)."
+    },
+    {
+      "pair": "EURNZD",
+      "bias": "bearish",
+      "conviction": "medium",
+      "summary": "Bearish (EUR -4 vs NZD +3)",
+      "base_state": "Neutral",
+      "base_score": -4,
+      "quote_state": "Improving",
+      "quote_score": 3,
+      "main_driver": "NZD favored: RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%; EUR: ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%.",
+      "drivers": [
+        "RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%",
+        "ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "French Assembly vote on the 2027 budget revenue part (afternoon Paris)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "NZ Q3 labour market (4 Nov NZ time; UR cons. 5.5%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "RBNZ decision (2.75%)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "17 Dec",
+          "event": "ECB decision (2.50%, hike 75-84% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "EUR: largely priced — December hike 75-84% and two hikes by April 2027 (29-30 Oct). NZD: partially priced — December hike ~40.8% (LSEG, 28 Oct) after the 4-3 hold.",
+      "invalidation": "EUR: bullish if the 3 Nov revenue vote passes with OAT-Bund narrowing, or HICP (4 Nov) above 3.9%. Bearish if the vote fails, censure or 49.3 with spreads widening; soft HICP. / NZD: bullish if Q3 jobs (3 Nov UTC) beat and RBNZ talk firms December. Bearish if unemployment above 5.5%, a disruptive 7 Nov election result, or falling dairy prices.",
+      "horizon": "Swing: bearish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bearish (EUR -5 vs NZD 0) → W45 PHASE 1 r3 bias bearish (EUR -4 vs NZD +3)."
+    },
+    {
+      "pair": "EURCAD",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (EUR -4 vs CAD -2)",
+      "base_state": "Neutral",
+      "base_score": -4,
+      "quote_state": "Neutral",
+      "quote_score": -2,
+      "main_driver": "Close to a wash — EUR: ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%; CAD: BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs.",
+      "drivers": [
+        "ECB 2.50% hold with December 75-84% priced; French revenue vote 3 Nov, OAT-Bund 159bp; Brent +10.9%",
+        "BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "French Assembly vote on the 2027 budget revenue part (afternoon Paris)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "4 Nov",
+          "event": "Euro-area HICP flash, Oct (cons. 3.9%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "BoC decision (2.50%)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "17 Dec",
+          "event": "ECB decision (2.50%, hike 75-84% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "EUR: largely priced — December hike 75-84% and two hikes by April 2027 (29-30 Oct). CAD: not applicable — December hike ~50-57% (LSEG, 30 Oct); Reuters reports a January hike as more likely.",
+      "invalidation": "EUR: bullish if the 3 Nov revenue vote passes with OAT-Bund narrowing, or HICP (4 Nov) above 3.9%. Bearish if the vote fails, censure or 49.3 with spreads widening; soft HICP. / CAD: bullish if a strong October LFS (6 Nov) revives December, oil stays high, or tariff relief. Bearish if weak jobs, an oil reversal, or post-midterm tariff escalation.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bearish (EUR -5 vs CAD -2) → W45 PHASE 1 r3 bias two-sided (EUR -4 vs CAD -2)."
+    },
+    {
+      "pair": "GBPJPY",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (GBP +4 vs JPY +2)",
+      "base_state": "Improving",
+      "base_score": 4,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "Close to a wash — GBP: benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced; JPY: BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%.",
+      "drivers": [
+        "benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced",
+        "BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%"
+      ],
+      "catalysts": [
+        {
+          "date": "2 Nov",
+          "event": "Euro-area and UK final manufacturing PMIs",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "5 Nov",
+          "event": "BoE decision, minutes and MPR (3.75%, hike ~95% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "5 Nov",
+          "event": "Bailey press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "18 Dec",
+          "event": "BoJ decision (1.25%, hike ~57% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "GBP: largely priced — 5 Nov hike ~95% (30 Oct), further hikes in February and July. JPY: partially priced — December hike ~57%, ~80.5% by January (30 Oct, single aggregator).",
+      "invalidation": "GBP: bullish if a 5 Nov hike with hawkish votes or guidance backing the Feb/Jul path. Bearish if a hold or a one-and-done message; 10Y gilt above 5.40%. / JPY: bullish if Ueda signals December (IMF lecture 6 Nov) or MoF intervenes. Bearish if December odds fade further, oil keeps rising, or carry demand returns.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (GBP +1 vs JPY +2) → W45 PHASE 1 r3 bias two-sided (GBP +4 vs JPY +2)."
+    },
+    {
+      "pair": "GBPCHF",
+      "bias": "bullish",
+      "conviction": "medium",
+      "summary": "Bullish (GBP +4 vs CHF -3)",
+      "base_state": "Improving",
+      "base_score": 4,
+      "quote_state": "Weakening",
+      "quote_score": -3,
+      "main_driver": "GBP favored: benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced; CHF: SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov.",
+      "drivers": [
+        "benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced",
+        "SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov"
+      ],
+      "catalysts": [
+        {
+          "date": "2 Nov",
+          "event": "Euro-area and UK final manufacturing PMIs",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "3 Nov",
+          "event": "Swiss CPI, Oct (cons. 1.3% y/y, one source)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "5 Nov",
+          "event": "BoE decision, minutes and MPR (3.75%, hike ~95% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "5 Nov",
+          "event": "Bailey press conference",
+          "imp": "HIGH"
+        }
+      ],
+      "priced": "GBP: largely priced — 5 Nov hike ~95% (30 Oct), further hikes in February and July. CHF: not applicable — no quantified SNB pricing; brokers mention a possible early-2027 hike.",
+      "invalidation": "GBP: bullish if a 5 Nov hike with hawkish votes or guidance backing the Feb/Jul path. Bearish if a hold or a one-and-done message; 10Y gilt above 5.40%. / CHF: bullish if Swiss CPI (3 Nov) beats 1.3% and lifts SNB pricing, or French stress drives haven demand. Bearish if soft CPI and calmer euro-area spreads.",
+      "horizon": "Swing: bullish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (GBP +1 vs CHF -1) → W45 PHASE 1 r3 bias bullish (GBP +4 vs CHF -3)."
+    },
+    {
+      "pair": "GBPAUD",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (GBP +4 vs AUD +5)",
+      "base_state": "Improving",
+      "base_score": 4,
+      "quote_state": "Strong",
+      "quote_score": 5,
+      "main_driver": "Close to a wash — GBP: benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced; AUD: RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish.",
+      "drivers": [
+        "benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced",
+        "RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "RBA decision and SoMP (4.60%, hike ~81% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "Bullock press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "5 Nov",
+          "event": "BoE decision, minutes and MPR (3.75%, hike ~95% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "5 Nov",
+          "event": "Bailey press conference",
+          "imp": "HIGH"
+        }
+      ],
+      "priced": "GBP: largely priced — 5 Nov hike ~95% (30 Oct), further hikes in February and July. AUD: partially priced — 3 Nov hike ~81%, ~4.91% by May 2027 (ASX via rbawatch, 31 Oct).",
+      "invalidation": "GBP: bullish if a 5 Nov hike with hawkish votes or guidance backing the Feb/Jul path. Bearish if a hold or a one-and-done message; 10Y gilt above 5.40%. / AUD: bullish if the RBA hikes on 3 Nov with upgraded forecasts. Bearish if a hold (~19% priced) or an insurance-hike, one-and-done message; weak China data.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bearish (GBP +1 vs AUD +5) → W45 PHASE 1 r3 bias two-sided (GBP +4 vs AUD +5)."
+    },
+    {
+      "pair": "GBPNZD",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (GBP +4 vs NZD +3)",
+      "base_state": "Improving",
+      "base_score": 4,
+      "quote_state": "Improving",
+      "quote_score": 3,
+      "main_driver": "Close to a wash — GBP: benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced; NZD: RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%.",
+      "drivers": [
+        "benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced",
+        "RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "NZ Q3 labour market (4 Nov NZ time; UR cons. 5.5%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "5 Nov",
+          "event": "BoE decision, minutes and MPR (3.75%, hike ~95% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "5 Nov",
+          "event": "Bailey press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "RBNZ decision (2.75%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "GBP: largely priced — 5 Nov hike ~95% (30 Oct), further hikes in February and July. NZD: partially priced — December hike ~40.8% (LSEG, 28 Oct) after the 4-3 hold.",
+      "invalidation": "GBP: bullish if a 5 Nov hike with hawkish votes or guidance backing the Feb/Jul path. Bearish if a hold or a one-and-done message; 10Y gilt above 5.40%. / NZD: bullish if Q3 jobs (3 Nov UTC) beat and RBNZ talk firms December. Bearish if unemployment above 5.5%, a disruptive 7 Nov election result, or falling dairy prices.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (GBP +1 vs NZD 0) → W45 PHASE 1 r3 bias two-sided (GBP +4 vs NZD +3)."
+    },
+    {
+      "pair": "GBPCAD",
+      "bias": "bullish",
+      "conviction": "medium",
+      "summary": "Bullish (GBP +4 vs CAD -2)",
+      "base_state": "Improving",
+      "base_score": 4,
+      "quote_state": "Neutral",
+      "quote_score": -2,
+      "main_driver": "GBP favored: benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced; CAD: BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs.",
+      "drivers": [
+        "benign Budget (10Y gilt -2.1bp); BoE hike to 4.00% on 5 Nov ~95% priced, Feb/Jul hikes priced",
+        "BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs"
+      ],
+      "catalysts": [
+        {
+          "date": "5 Nov",
+          "event": "BoE decision, minutes and MPR (3.75%, hike ~95% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "5 Nov",
+          "event": "Bailey press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "6 Nov",
+          "event": "Canada Labour Force Survey, Oct",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "BoC decision (2.50%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "GBP: largely priced — 5 Nov hike ~95% (30 Oct), further hikes in February and July. CAD: not applicable — December hike ~50-57% (LSEG, 30 Oct); Reuters reports a January hike as more likely.",
+      "invalidation": "GBP: bullish if a 5 Nov hike with hawkish votes or guidance backing the Feb/Jul path. Bearish if a hold or a one-and-done message; 10Y gilt above 5.40%. / CAD: bullish if a strong October LFS (6 Nov) revives December, oil stays high, or tariff relief. Bearish if weak jobs, an oil reversal, or post-midterm tariff escalation.",
+      "horizon": "Swing: bullish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bullish (GBP +1 vs CAD -2) → W45 PHASE 1 r3 bias bullish (GBP +4 vs CAD -2)."
+    },
+    {
+      "pair": "AUDJPY",
+      "bias": "bullish",
+      "conviction": "low",
+      "summary": "Bullish (AUD +5 vs JPY +2)",
+      "base_state": "Strong",
+      "base_score": 5,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "AUD favored: RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish; JPY: BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%.",
+      "drivers": [
+        "RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish",
+        "BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "RBA decision and SoMP (4.60%, hike ~81% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "Bullock press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "4 Nov",
+          "event": "Australia household spending, Sep",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "18 Dec",
+          "event": "BoJ decision (1.25%, hike ~57% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "AUD: partially priced — 3 Nov hike ~81%, ~4.91% by May 2027 (ASX via rbawatch, 31 Oct). JPY: partially priced — December hike ~57%, ~80.5% by January (30 Oct, single aggregator).",
+      "invalidation": "AUD: bullish if the RBA hikes on 3 Nov with upgraded forecasts. Bearish if a hold (~19% priced) or an insurance-hike, one-and-done message; weak China data. / JPY: bullish if Ueda signals December (IMF lecture 6 Nov) or MoF intervenes. Bearish if December odds fade further, oil keeps rising, or carry demand returns.",
+      "horizon": "Swing: mild bullish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bullish (AUD +5 vs JPY +2) → W45 PHASE 1 r3 bias bullish (AUD +5 vs JPY +2)."
+    },
+    {
+      "pair": "AUDCHF",
+      "bias": "bullish",
+      "conviction": "medium",
+      "summary": "Bullish (AUD +5 vs CHF -3)",
+      "base_state": "Strong",
+      "base_score": 5,
+      "quote_state": "Weakening",
+      "quote_score": -3,
+      "main_driver": "AUD favored: RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish; CHF: SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov.",
+      "drivers": [
+        "RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish",
+        "SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "RBA decision and SoMP (4.60%, hike ~81% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "Bullock press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "Swiss CPI, Oct (cons. 1.3% y/y, one source)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "4 Nov",
+          "event": "Australia household spending, Sep",
+          "imp": "MEDIUM"
+        }
+      ],
+      "priced": "AUD: partially priced — 3 Nov hike ~81%, ~4.91% by May 2027 (ASX via rbawatch, 31 Oct). CHF: not applicable — no quantified SNB pricing; brokers mention a possible early-2027 hike.",
+      "invalidation": "AUD: bullish if the RBA hikes on 3 Nov with upgraded forecasts. Bearish if a hold (~19% priced) or an insurance-hike, one-and-done message; weak China data. / CHF: bullish if Swiss CPI (3 Nov) beats 1.3% and lifts SNB pricing, or French stress drives haven demand. Bearish if soft CPI and calmer euro-area spreads.",
+      "horizon": "Swing: bullish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bullish (AUD +5 vs CHF -1) → W45 PHASE 1 r3 bias bullish (AUD +5 vs CHF -3)."
+    },
+    {
+      "pair": "AUDNZD",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (AUD +5 vs NZD +3)",
+      "base_state": "Strong",
+      "base_score": 5,
+      "quote_state": "Improving",
+      "quote_score": 3,
+      "main_driver": "Close to a wash — AUD: RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish; NZD: RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%.",
+      "drivers": [
+        "RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish",
+        "RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "RBA decision and SoMP (4.60%, hike ~81% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "Bullock press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "NZ Q3 labour market (4 Nov NZ time; UR cons. 5.5%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "RBNZ decision (2.75%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "AUD: partially priced — 3 Nov hike ~81%, ~4.91% by May 2027 (ASX via rbawatch, 31 Oct). NZD: partially priced — December hike ~40.8% (LSEG, 28 Oct) after the 4-3 hold.",
+      "invalidation": "AUD: bullish if the RBA hikes on 3 Nov with upgraded forecasts. Bearish if a hold (~19% priced) or an insurance-hike, one-and-done message; weak China data. / NZD: bullish if Q3 jobs (3 Nov UTC) beat and RBNZ talk firms December. Bearish if unemployment above 5.5%, a disruptive 7 Nov election result, or falling dairy prices.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bullish (AUD +5 vs NZD 0) → W45 PHASE 1 r3 bias two-sided (AUD +5 vs NZD +3)."
+    },
+    {
+      "pair": "AUDCAD",
+      "bias": "bullish",
+      "conviction": "medium",
+      "summary": "Bullish (AUD +5 vs CAD -2)",
+      "base_state": "Strong",
+      "base_score": 5,
+      "quote_state": "Neutral",
+      "quote_score": -2,
+      "main_driver": "AUD favored: RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish; CAD: BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs.",
+      "drivers": [
+        "RBA 4.60%, 3 Nov hike ~81% priced and ~4.91% by May 2027 (highest carry); Bullock hawkish",
+        "BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "RBA decision and SoMP (4.60%, hike ~81% priced)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "3 Nov",
+          "event": "Bullock press conference",
+          "imp": "HIGH"
+        },
+        {
+          "date": "6 Nov",
+          "event": "Canada Labour Force Survey, Oct",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "BoC decision (2.50%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "AUD: partially priced — 3 Nov hike ~81%, ~4.91% by May 2027 (ASX via rbawatch, 31 Oct). CAD: not applicable — December hike ~50-57% (LSEG, 30 Oct); Reuters reports a January hike as more likely.",
+      "invalidation": "AUD: bullish if the RBA hikes on 3 Nov with upgraded forecasts. Bearish if a hold (~19% priced) or an insurance-hike, one-and-done message; weak China data. / CAD: bullish if a strong October LFS (6 Nov) revives December, oil stays high, or tariff relief. Bearish if weak jobs, an oil reversal, or post-midterm tariff escalation.",
+      "horizon": "Swing: bullish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bullish (AUD +5 vs CAD -2) → W45 PHASE 1 r3 bias bullish (AUD +5 vs CAD -2)."
+    },
+    {
+      "pair": "NZDJPY",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (NZD +3 vs JPY +2)",
+      "base_state": "Improving",
+      "base_score": 3,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "Close to a wash — NZD: RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%; JPY: BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%.",
+      "drivers": [
+        "RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%",
+        "BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "NZ Q3 labour market (4 Nov NZ time; UR cons. 5.5%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "GDT dairy auction (time not verified)",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "9 Dec",
+          "event": "RBNZ decision (2.75%)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "18 Dec",
+          "event": "BoJ decision (1.25%, hike ~57% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "NZD: partially priced — December hike ~40.8% (LSEG, 28 Oct) after the 4-3 hold. JPY: partially priced — December hike ~57%, ~80.5% by January (30 Oct, single aggregator).",
+      "invalidation": "NZD: bullish if Q3 jobs (3 Nov UTC) beat and RBNZ talk firms December. Bearish if unemployment above 5.5%, a disruptive 7 Nov election result, or falling dairy prices. / JPY: bullish if Ueda signals December (IMF lecture 6 Nov) or MoF intervenes. Bearish if December odds fade further, oil keeps rising, or carry demand returns.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (NZD 0 vs JPY +2) → W45 PHASE 1 r3 bias two-sided (NZD +3 vs JPY +2)."
+    },
+    {
+      "pair": "NZDCHF",
+      "bias": "bullish",
+      "conviction": "medium",
+      "summary": "Bullish (NZD +3 vs CHF -3)",
+      "base_state": "Improving",
+      "base_score": 3,
+      "quote_state": "Weakening",
+      "quote_score": -3,
+      "main_driver": "NZD favored: RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%; CHF: SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov.",
+      "drivers": [
+        "RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%",
+        "SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "Swiss CPI, Oct (cons. 1.3% y/y, one source)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "NZ Q3 labour market (4 Nov NZ time; UR cons. 5.5%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "3 Nov",
+          "event": "GDT dairy auction (time not verified)",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "9 Dec",
+          "event": "RBNZ decision (2.75%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "NZD: partially priced — December hike ~40.8% (LSEG, 28 Oct) after the 4-3 hold. CHF: not applicable — no quantified SNB pricing; brokers mention a possible early-2027 hike.",
+      "invalidation": "NZD: bullish if Q3 jobs (3 Nov UTC) beat and RBNZ talk firms December. Bearish if unemployment above 5.5%, a disruptive 7 Nov election result, or falling dairy prices. / CHF: bullish if Swiss CPI (3 Nov) beats 1.3% and lifts SNB pricing, or French stress drives haven demand. Bearish if soft CPI and calmer euro-area spreads.",
+      "horizon": "Swing: bullish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (NZD 0 vs CHF -1) → W45 PHASE 1 r3 bias bullish (NZD +3 vs CHF -3)."
+    },
+    {
+      "pair": "NZDCAD",
+      "bias": "bullish",
+      "conviction": "medium",
+      "summary": "Bullish (NZD +3 vs CAD -2)",
+      "base_state": "Improving",
+      "base_score": 3,
+      "quote_state": "Neutral",
+      "quote_score": -2,
+      "main_driver": "NZD favored: RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%; CAD: BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs.",
+      "drivers": [
+        "RBNZ 2.75% hold (4-3), December hike ~40.8% priced against a tightening bias; GDT +3.7%",
+        "BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "NZ Q3 labour market (4 Nov NZ time; UR cons. 5.5%)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "6 Nov",
+          "event": "Canada Labour Force Survey, Oct",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "BoC decision (2.50%)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "9 Dec",
+          "event": "RBNZ decision (2.75%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "NZD: partially priced — December hike ~40.8% (LSEG, 28 Oct) after the 4-3 hold. CAD: not applicable — December hike ~50-57% (LSEG, 30 Oct); Reuters reports a January hike as more likely.",
+      "invalidation": "NZD: bullish if Q3 jobs (3 Nov UTC) beat and RBNZ talk firms December. Bearish if unemployment above 5.5%, a disruptive 7 Nov election result, or falling dairy prices. / CAD: bullish if a strong October LFS (6 Nov) revives December, oil stays high, or tariff relief. Bearish if weak jobs, an oil reversal, or post-midterm tariff escalation.",
+      "horizon": "Swing: bullish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (NZD 0 vs CAD -2) → W45 PHASE 1 r3 bias bullish (NZD +3 vs CAD -2)."
+    },
+    {
+      "pair": "CADJPY",
+      "bias": "bearish",
+      "conviction": "low",
+      "summary": "Bearish (CAD -2 vs JPY +2)",
+      "base_state": "Neutral",
+      "base_score": -2,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "JPY favored: BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%; CAD: BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs.",
+      "drivers": [
+        "BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%",
+        "BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs"
+      ],
+      "catalysts": [
+        {
+          "date": "4 Nov",
+          "event": "Canada merchandise trade, Sep",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "6 Nov",
+          "event": "Canada Labour Force Survey, Oct",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "BoC decision (2.50%)",
+          "imp": "CRITICAL"
+        },
+        {
+          "date": "18 Dec",
+          "event": "BoJ decision (1.25%, hike ~57% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "CAD: not applicable — December hike ~50-57% (LSEG, 30 Oct); Reuters reports a January hike as more likely. JPY: partially priced — December hike ~57%, ~80.5% by January (30 Oct, single aggregator).",
+      "invalidation": "CAD: bullish if a strong October LFS (6 Nov) revives December, oil stays high, or tariff relief. Bearish if weak jobs, an oil reversal, or post-midterm tariff escalation. / JPY: bullish if Ueda signals December (IMF lecture 6 Nov) or MoF intervenes. Bearish if December odds fade further, oil keeps rising, or carry demand returns.",
+      "horizon": "Swing: mild bearish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bearish (CAD -2 vs JPY +2) → W45 PHASE 1 r3 bias bearish (CAD -2 vs JPY +2)."
+    },
+    {
+      "pair": "CADCHF",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (CAD -2 vs CHF -3)",
+      "base_state": "Neutral",
+      "base_score": -2,
+      "quote_state": "Weakening",
+      "quote_score": -3,
+      "main_driver": "Close to a wash — CAD: BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs; CHF: SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov.",
+      "drivers": [
+        "BoC 2.50% after a hike, December ~50-57% priced; August GDP 0.0% miss; Brent +10.9%; US tariffs",
+        "SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "Swiss CPI, Oct (cons. 1.3% y/y, one source)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "4 Nov",
+          "event": "Canada merchandise trade, Sep",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "6 Nov",
+          "event": "Canada Labour Force Survey, Oct",
+          "imp": "HIGH"
+        },
+        {
+          "date": "9 Dec",
+          "event": "BoC decision (2.50%)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "CAD: not applicable — December hike ~50-57% (LSEG, 30 Oct); Reuters reports a January hike as more likely. CHF: not applicable — no quantified SNB pricing; brokers mention a possible early-2027 hike.",
+      "invalidation": "CAD: bullish if a strong October LFS (6 Nov) revives December, oil stays high, or tariff relief. Bearish if weak jobs, an oil reversal, or post-midterm tariff escalation. / CHF: bullish if Swiss CPI (3 Nov) beats 1.3% and lifts SNB pricing, or French stress drives haven demand. Bearish if soft CPI and calmer euro-area spreads.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (CAD -2 vs CHF -1) → W45 PHASE 1 r3 bias two-sided (CAD -2 vs CHF -3)."
+    },
+    {
+      "pair": "CHFJPY",
+      "bias": "bearish",
+      "conviction": "medium",
+      "summary": "Bearish (CHF -3 vs JPY +2)",
+      "base_state": "Weakening",
+      "base_score": -3,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "JPY favored: BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%; CHF: SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov.",
+      "drivers": [
+        "BoJ 1.25% hawkish hold (8-1), December ~57% priced; MoF intervention warning; Brent +10.9%",
+        "SNB 0% (lowest carry), no quantified hike pricing; Swiss CPI 3 Nov"
+      ],
+      "catalysts": [
+        {
+          "date": "3 Nov",
+          "event": "Swiss CPI, Oct (cons. 1.3% y/y, one source)",
+          "imp": "HIGH"
+        },
+        {
+          "date": "5 Nov",
+          "event": "Swiss unemployment, Oct (cons. 3.1%; time per one calendar)",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "6 Nov",
+          "event": "Swiss FX reserves, Oct",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "18 Dec",
+          "event": "BoJ decision (1.25%, hike ~57% priced)",
+          "imp": "CRITICAL"
+        }
+      ],
+      "priced": "CHF: not applicable — no quantified SNB pricing; brokers mention a possible early-2027 hike. JPY: partially priced — December hike ~57%, ~80.5% by January (30 Oct, single aggregator).",
+      "invalidation": "CHF: bullish if Swiss CPI (3 Nov) beats 1.3% and lifts SNB pricing, or French stress drives haven demand. Bearish if soft CPI and calmer euro-area spreads. / JPY: bullish if Ueda signals December (IMF lecture 6 Nov) or MoF intervenes. Bearish if December odds fade further, oil keeps rising, or carry demand returns.",
+      "horizon": "Swing: bearish",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias bearish (CHF -1 vs JPY +2) → W45 PHASE 1 r3 bias bearish (CHF -3 vs JPY +2)."
+    },
+    {
+      "pair": "XAUUSD",
+      "bias": "two-sided",
+      "conviction": "low",
+      "summary": "Two-sided (XAU +2 vs USD +2)",
+      "base_state": "Neutral",
+      "base_score": 2,
+      "quote_state": "Neutral",
+      "quote_score": 2,
+      "main_driver": "Close to a wash — XAU: gold factor 0: real yields -25bp against flat breakevens and mixed ETF flows; USD: Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat.",
+      "drivers": [
+        "gold factor 0: real yields -25bp against flat breakevens and mixed ETF flows",
+        "Fed hold at 3.75-4.00% with two hike dissents; December hike ~76% priced; Q3 GDP 3.4% beat"
+      ],
+      "catalysts": [
+        {
+          "date": "2 Nov",
+          "event": "US ISM manufacturing, Oct (cons. 54.7)",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "3 Nov",
+          "event": "US midterm elections",
+          "imp": "HIGH"
+        },
+        {
+          "date": "4 Nov",
+          "event": "US ADP employment, Oct (cons. +75k)",
+          "imp": "MEDIUM"
+        },
+        {
+          "date": "6 Nov",
+          "event": "US October payrolls (cons. +50-65k; UR 4.2%)",
+          "imp": "HIGH"
+        }
+      ],
+      "priced": "XAU: no repricing signal — breakevens flat (+2bp), real yields -25bp, ETF flows mixed. USD: largely priced — December hike ~76% (FedWatch via CNBC, 30 Oct; 69.4-78.4% across sources).",
+      "invalidation": "XAU: bullish if real yields keep falling and ETF outflows reverse. Bearish if strong payrolls lift real yields, or ETF liquidation continues. / USD: bullish if strong October payrolls (6 Nov) or ISM lift December odds back above ~85%. Bearish if weak payrolls or ISM, or Fed talk that trims December pricing.",
+      "horizon": "Swing: two-sided",
+      "alignment": "Neutral",
+      "alignment_note": "Price check pending (Phase 2)",
+      "changed": "W44 FINAL bias two-sided (XAU +3 vs USD +2) → W45 PHASE 1 r3 bias two-sided (XAU +2 vs USD +2)."
+    }
+  ],
+  "news": [
+    {
+      "date": "2026-11-01",
+      "currency": "CAD",
+      "event": "OPEC+ online meeting (output expected unchanged)",
+      "importance": "LOW"
+    },
+    {
+      "date": "2026-11-02",
+      "currency": "JPY",
+      "event": "BoJ Outlook Report full text",
+      "importance": "LOW"
+    },
+    {
+      "date": "2026-11-02",
+      "currency": "EUR",
+      "event": "Euro-area and UK final manufacturing PMIs",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-02",
+      "currency": "GBP",
+      "event": "Euro-area and UK final manufacturing PMIs",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-02",
+      "currency": "USD",
+      "event": "US ISM manufacturing, Oct (cons. 54.7)",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-03",
+      "currency": "AUD",
+      "event": "RBA decision and SoMP (4.60%, hike ~81% priced)",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-11-03",
+      "currency": "AUD",
+      "event": "Bullock press conference",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-03",
+      "currency": "CHF",
+      "event": "Swiss CPI, Oct (cons. 1.3% y/y, one source)",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-03",
+      "currency": "NZD",
+      "event": "GDT dairy auction (time not verified)",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-03",
+      "currency": "EUR",
+      "event": "French Assembly vote on the 2027 budget revenue part (afternoon Paris)",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-03",
+      "currency": "USD",
+      "event": "US midterm elections",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-03",
+      "currency": "XAU",
+      "event": "US midterm elections",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-03",
+      "currency": "NZD",
+      "event": "NZ Q3 labour market (4 Nov NZ time; UR cons. 5.5%)",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-04",
+      "currency": "AUD",
+      "event": "Australia household spending, Sep",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-04",
+      "currency": "EUR",
+      "event": "Euro-area HICP flash, Oct (cons. 3.9%)",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-04",
+      "currency": "USD",
+      "event": "US ADP employment, Oct (cons. +75k)",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-04",
+      "currency": "CAD",
+      "event": "Canada merchandise trade, Sep",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-04",
+      "currency": "USD",
+      "event": "US ISM services, Oct (cons. 54.7)",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-04",
+      "currency": "JPY",
+      "event": "BoJ minutes of the September meeting (5 Nov 08:50 JST)",
+      "importance": "LOW"
+    },
+    {
+      "date": "2026-11-05",
+      "currency": "CHF",
+      "event": "Swiss unemployment, Oct (cons. 3.1%; time per one calendar)",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-05",
+      "currency": "GBP",
+      "event": "BoE decision, minutes and MPR (3.75%, hike ~95% priced)",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-11-05",
+      "currency": "GBP",
+      "event": "Bailey press conference",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-06",
+      "currency": "CHF",
+      "event": "Swiss FX reserves, Oct",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-06",
+      "currency": "USD",
+      "event": "US October payrolls (cons. +50-65k; UR 4.2%)",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-06",
+      "currency": "XAU",
+      "event": "US October payrolls (cons. +50-65k; UR 4.2%)",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-06",
+      "currency": "CAD",
+      "event": "Canada Labour Force Survey, Oct",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-06",
+      "currency": "JPY",
+      "event": "Ueda speaks, IMF Camdessus Lecture (approx. time)",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-07",
+      "currency": "NZD",
+      "event": "New Zealand general election",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-11-17",
+      "currency": "EUR",
+      "event": "French Assembly vote on the whole 2027 budget",
+      "importance": "HIGH"
+    },
+    {
+      "date": "2026-11-27",
+      "currency": "EUR",
+      "event": "S&P review of France",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-12-09",
+      "currency": "CAD",
+      "event": "BoC decision (2.50%)",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-12-09",
+      "currency": "NZD",
+      "event": "RBNZ decision (2.75%)",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-12-10",
+      "currency": "CHF",
+      "event": "SNB decision (0%)",
+      "importance": "MEDIUM"
+    },
+    {
+      "date": "2026-12-17",
+      "currency": "EUR",
+      "event": "ECB decision (2.50%, hike 75-84% priced)",
+      "importance": "CRITICAL"
+    },
+    {
+      "date": "2026-12-18",
+      "currency": "JPY",
+      "event": "BoJ decision (1.25%, hike ~57% priced)",
+      "importance": "CRITICAL"
+    }
+  ]
+}

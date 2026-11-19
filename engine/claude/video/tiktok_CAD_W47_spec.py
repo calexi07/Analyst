@@ -1,0 +1,52 @@
+# FX Before Coffee — CAD SPECIAL (TikTok 1080x1920), Week 47, Mon 16 Nov 2026 (built ~19:40 Bucharest)
+# Model inputs: archive/vintage-2026-W47-final.json (CAD R1 -1, R2 0, R3 0, N1 -1, N2 -1, G1 0; S -4, prev -6),
+#   archive/dobs-2026-W47-final.json (CAD invalidation: hot Oct CPI, oil rebound, US-Canada tariff deal at APEC),
+#   archive/do-checks/check-2026-11-16-morning.json (poll 3.2%, prior 3.1%).
+# Release (opened 16 Nov): Investing.com/Reuters (3.1% y/y vs 3.2%, m/m 0.2 vs 0.3, trim 1.8 from rev 1.9, median 2.0,
+#   ex-energy 2.0 from 2.1, gasoline +30.9%, CAD C$1.4293 per US$); ActionForex table (trim forecast 1.9, median forecast 2.0);
+#   Globe and Mail via finwire (OIS even odds for 9 Dec, overnight 2.636% after 9 Dec, Jan 27 hike fully priced; Capital Economics hold);
+#   Yahoo/Canadian Press (Oxford Economics: December hike still on track; CIBC Grantham: hold).
+# Shadow: R3 0 -> -1 (headline and CPI-trim below consensus, median in line: dovish). Raw -3.6 -> -4.5, |−4.5−(−4)|=0.5 < 1 -> held at -4.
+VO = {
+ 'hook': ["Canada's inflation just came in softer than expected.",
+          "So what does it mean for the Canadian dollar, and every loonie pair?"],
+ 'recap': ["First, what our weekend analysis said.",
+           "The Canadian dollar, the loonie, scored minus four on our scale from minus eighteen to plus eighteen. That's up from minus six the week before.",
+           "Oil, Canada's biggest export, fell about thirteen percent in four weeks. That scores minus one.",
+           "A fifty percent US tariff is still live. Another minus one.",
+           "And Canadian rates sit low in our ranking. Minus one again.",
+           "The way out we flagged for the loonie: a hot inflation report."],
+ 'release': ["Then came today's release.",
+             "Inflation held at three point one percent in October. Economists expected three point two.",
+             "On the month, prices rose zero point two percent, against zero point three expected.",
+             "The core measures the Bank of Canada watches stayed close to its two percent target. CPI-trim eased to one point eight, and CPI-median held at two.",
+             "Most of the heat comes from gasoline, up almost thirty-one percent from a year ago."],
+ 'react': ["How did markets take it?",
+           "The loonie slipped. One US dollar bought about one point four three Canadian dollars.",
+           "But December hike bets barely moved. Swaps still price roughly even odds for December ninth, and a full hike by January.",
+           "Economists are split. Oxford Economics still expects a December hike. CIBC and Capital Economics expect a hold.",
+           "And remember, the price move is context only. It's never part of our score."],
+ 'meaning': ["So, what does our model say?",
+             "A big release that comes in softer than expected is a dovish surprise. So the loonie's data surprises driver drops from zero to minus one.",
+             "That moves its raw score from minus three point six to minus four point five.",
+             "But a score only changes when the raw number moves a full point away from the published one. Half a point isn't enough, so the loonie stays at minus four.",
+             "The status: confirmed, a little weaker, and on watch. The hot report that could have rescued the loonie didn't come.",
+             "This is a shadow check. The weekly scores stay as published until the weekend."],
+ 'pairs': ["Now, all seven loonie pairs.",
+           "USD/CAD: plus nine, the widest lean against the loonie. If it slips to minus five, the gap grows to plus ten.",
+           "AUD/CAD at plus seven, GBP/CAD and NZD/CAD at plus five. All three lean against the loonie too.",
+           "CAD/JPY: minus four, leaning to the yen. Both sides got weaker today, so it stays on watch.",
+           "EUR/CAD and CAD/CHF stay two-sided, at plus one and minus one. Even a weaker loonie wouldn't change that."],
+ 'watch': ["What to watch next. Times are in GMT.",
+           "Tuesday: US retail sales at thirteen thirty. Wednesday: the Fed minutes at nineteen hundred. That's the US side of USD/CAD.",
+           "This week's APEC summit: any US–Canada tariff deal would be big news for the loonie.",
+           "Friday: Canada's retail sales at thirteen thirty.",
+           "And on December ninth, the Bank of Canada and the Fed both decide."],
+ 'scen': ["Three scenarios for the loonie.",
+          "One, a weaker loonie: oil keeps falling and December hike bets fade. The score could slip to minus five, and USD/CAD's lean would grow to plus ten.",
+          "Two, a stronger loonie: a tariff deal, an oil rebound, or the Bank of Canada leaning toward a hike. Then the gaps against it shrink.",
+          "Three, the stand-off: no deal, steady oil, steady pricing. Minus four holds, and every pair keeps its read.",
+          "Right now, the evidence leans slightly toward scenario one."],
+ 'outro': ["Follow FX Before Coffee.", "Not a trade signal."],
+}
+ORDER = ['hook', 'recap', 'release', 'react', 'meaning', 'pairs', 'watch', 'scen', 'outro']

@@ -1,0 +1,47 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:SG;font-weight:700;src:url(../../node_modules/@fontsource/space-grotesk/files/space-grotesk-latin-700-normal.woff2)}
+@font-face{font-family:Inter;font-weight:700;src:url(../../node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2)}
+@font-face{font-family:Inter;font-weight:600;src:url(../../node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2)}
+body{margin:0;width:1280px;height:720px;overflow:hidden;position:relative;background:#07090B;color:#fff;font-family:Inter}
+canvas{position:absolute;inset:0}
+.brand{position:absolute;left:48px;top:40px;font-family:SG;font-weight:700;font-size:22px;letter-spacing:4px;color:#D9A35B}
+.v{display:none}.v.on{display:block}
+.h{position:absolute;left:44px;font-family:SG;font-weight:700;letter-spacing:-3px;line-height:.9;text-shadow:0 8px 40px rgba(0,0,0,.8)}
+.pill{position:absolute;padding:10px 20px;border-radius:10px;font-family:Inter;font-weight:700;font-size:28px;letter-spacing:1px}
+.big{position:relative;font-family:SG;font-weight:700;line-height:.85;letter-spacing:-4px}
+.card{position:absolute;border-radius:22px;background:rgba(10,12,14,.78);border:2px solid rgba(255,255,255,.12);box-shadow:0 30px 90px rgba(0,0,0,.7)}
+.lbl{font-family:Inter;font-weight:700;font-size:20px;letter-spacing:3px;color:#9AA3AD}
+</style></head><body><canvas id="cv" width="1280" height="720"></canvas>
+<div class="brand">FX BEFORE COFFEE · WEEK 46</div>
+<!-- A -->
+<div class="v" id="A">
+ <div class="h" style="top:110px;font-size:150px">THE<br>DOLLAR</div>
+ <div class="h" style="top:390px;font-size:112px;color:#2EF2A0">IS BACK</div>
+ <div class="pill" style="left:48px;top:540px;background:#E8343F;color:#fff;transform:rotate(-2deg)">7 PAIRS. ONE WINNER.</div>
+ <div class="card" style="left:745px;top:110px;width:480px;height:460px;padding:30px 34px;box-sizing:border-box">
+  <div class="lbl">WIDEST GAP THIS WEEK</div>
+  <div style="font-family:SG;font-weight:700;font-size:60px;margin-top:14px">USD/CAD</div>
+  <div class="big" style="font-size:210px;color:#2EF2A0;margin-top:14px;text-shadow:0 0 60px rgba(46,242,160,.45)">+13</div>
+  <div style="display:flex;justify-content:space-between;margin-top:18px;font-family:SG;font-weight:700;font-size:40px"><span style="color:#2EF2A0">USD +7</span><span style="color:#9AA3AD">vs</span><span style="color:#E8343F">CAD −6</span></div>
+ </div>
+</div>
+<!-- B -->
+<div class="v" id="B">
+ <div class="h" style="top:100px;font-size:120px">WHO LOSES</div>
+ <div class="h" style="top:220px;font-size:120px">TO THE</div>
+ <div class="h" style="top:340px;font-size:150px;color:#2EF2A0">DOLLAR?</div>
+ <div class="pill" style="left:48px;top:540px;background:#fff;color:#07090B">8 CURRENCIES RANKED</div>
+ <div class="card" style="left:735px;top:110px;width:490px;height:480px;padding:26px 30px;box-sizing:border-box" id="rk"></div>
+</div>
+<script>
+const v=location.hash.slice(1)||'A';document.getElementById(v).classList.add('on');
+const R=[['USD',7],['JPY',2],['CHF',0],['AUD',0],['EUR',-3],['GBP',-3],['NZD',-3],['CAD',-6]];
+document.getElementById('rk').innerHTML='<div class="lbl" style="margin-bottom:10px">FUNDAMENTAL SCORE</div>'+R.map(([c,s],i)=>{const col=s>0?'#2EF2A0':(s<0?'#E8343F':'#9AA3AD');const w=Math.abs(s)/7*115;return `<div style="display:flex;align-items:center;gap:14px;height:50px;font-family:SG;font-weight:700;font-size:30px;${i==7?'background:rgba(232,52,63,.18);border-radius:10px;margin:0 -10px;padding:0 10px':''}${i==0?'background:rgba(46,242,160,.14);border-radius:10px;margin:0 -10px;padding:0 10px':''}"><span style="width:70px">${c}</span><div style="position:relative;width:240px;height:20px"><div style="position:absolute;left:120px;top:-4px;bottom:-4px;width:2px;background:rgba(255,255,255,.2)"></div><div style="position:absolute;top:0;height:20px;border-radius:5px;background:${col};left:${s>=0?120:120-w}px;width:${Math.max(w,3)}px"></div></div><span style="color:${col};width:50px;text-align:right">${s>0?'+'+s:(s<0?'−'+(-s):'0')}</span></div>`}).join('');
+const c=document.getElementById('cv').getContext('2d');
+const g0=c.createRadialGradient(950,330,50,950,330,800);g0.addColorStop(0,'rgba(46,242,160,.16)');g0.addColorStop(1,'rgba(7,9,11,0)');c.fillStyle=g0;c.fillRect(0,0,1280,720);
+let p=640;const pts=[];for(let i=0;i<=64;i++){p+=(-7+Math.sin(i*1.9)*15);pts.push([i*20,p])}
+c.globalAlpha=.22;pts.forEach(([x,y],i)=>{if(!i)return;const o=pts[i-1][1];const up=y<o;c.fillStyle=c.strokeStyle=up?'#2EF2A0':'#E8343F';c.fillRect(x-6,Math.min(o,y),12,Math.max(3,Math.abs(y-o)));c.beginPath();c.moveTo(x,Math.min(o,y)-10);c.lineTo(x,Math.max(o,y)+10);c.stroke()});
+c.globalAlpha=1;c.strokeStyle='#2EF2A0';c.lineWidth=5;c.shadowColor='#2EF2A0';c.shadowBlur=25;c.beginPath();pts.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.stroke();c.shadowBlur=0;
+const g=c.createLinearGradient(0,0,1280,0);g.addColorStop(0,'rgba(7,9,11,.95)');g.addColorStop(.5,'rgba(7,9,11,.6)');g.addColorStop(1,'rgba(7,9,11,.25)');c.fillStyle=g;c.fillRect(0,0,1280,720);
+const v2=c.createLinearGradient(0,500,0,720);v2.addColorStop(0,'rgba(7,9,11,0)');v2.addColorStop(1,'rgba(7,9,11,.85)');c.fillStyle=v2;c.fillRect(0,500,1280,220);
+</script></body></html>

@@ -1,0 +1,1187 @@
+{
+  "method_version": "v2.1",
+  "target_iso_year": 2026,
+  "target_iso_week": 44,
+  "phase": "PHASE1",
+  "first_v21_run": true,
+  "published_at_utc": "2026-10-22T22:44:13Z",
+  "research_cutoff": {
+    "europe_bucharest": "2026-10-23 01:35 Europe/Bucharest (EEST, UTC+3)",
+    "utc": "2026-10-22T22:35:00Z"
+  },
+  "baseline_close_date": "2026-10-16",
+  "weekend_information": true,
+  "regime": {
+    "e": 0,
+    "v": 0,
+    "c": -1,
+    "regime": -1,
+    "grades": {
+      "e": "B",
+      "v": "B",
+      "c": "A"
+    },
+    "inputs": {
+      "e": "S&P 500 4-week change -0.53% (24 Sep -> 22 Oct; +0.12% to the 16 Oct baseline) [S28]",
+      "v": "VIX Friday close 16 Oct 20.07 [S29]",
+      "c": "HY OAS +54bp (2.73% 23 Sep -> 3.27% 21 Oct) [S30]"
+    }
+  },
+  "currencies": {
+    "USD": {
+      "factors": {
+        "R1": {
+          "score": 1.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S2",
+            "S1"
+          ],
+          "reason": "Rank 2 of 8 by policy rate (fallback)"
+        },
+        "R2": {
+          "score": 0.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S1"
+          ],
+          "reason": "Dec hike 82.8-90% priced; hot data already priced, no fresh hawkish/dovish gap"
+        },
+        "R3": {
+          "score": 0.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S1"
+          ],
+          "reason": "No HIGH/CRITICAL US release or Fed event in the window (blackout)"
+        },
+        "N1": {
+          "score": 0.0,
+          "grade": "A",
+          "evidence_ids": [],
+          "reason": "Fixed 0 by rule"
+        },
+        "N2": {
+          "score": 0.0,
+          "grade": "C",
+          "evidence_ids": [],
+          "reason": "No active fiscal/political stress found"
+        },
+        "G1": {
+          "score": 0.5,
+          "grade": "B",
+          "evidence_ids": [
+            "S28",
+            "S29",
+            "S30"
+          ],
+          "reason": "Regime -1 x beta -0.5"
+        }
+      },
+      "outlook_O": 1,
+      "composite_c": 0.225,
+      "raw": 2.025,
+      "published_S": 2,
+      "c_eq": 0.25,
+      "blocks": {
+        "rates": 1.35,
+        "non_rate": 0.0,
+        "global": 0.675
+      },
+      "coverage_AB": 0.85,
+      "confidence": "High",
+      "conviction": "Low",
+      "bias": "neutral",
+      "state": "Neutral",
+      "priced_in": "Largely priced",
+      "horizon": "multi-week"
+    },
+    "EUR": {
+      "factors": {
+        "R1": {
+          "score": 0.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S2",
+            "S13",
+            "S14"
+          ],
+          "reason": "Rank 5 of 8 (ECB 2.50%)"
+        },
+        "R2": {
+          "score": -1.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S13"
+          ],
+          "reason": "75bp priced vs softer Council tone and an expected hold"
+        },
+        "R3": {
+          "score": 0.0,
+          "grade": "B",
+          "evidence_ids": [],
+          "reason": "No HIGH/CRITICAL surprise retrieved in the window"
+        },
+        "N1": {
+          "score": 0.0,
+          "grade": "C",
+          "evidence_ids": [
+            "S3",
+            "S4",
+            "S5"
+          ],
+          "reason": "Oil +8.5% to +10.9%: threshold not established"
+        },
+        "N2": {
+          "score": -1.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S9",
+            "S10",
+            "S11",
+            "S12"
+          ],
+          "reason": "Dated votes (27 Oct, 3 Nov) and Moody's 23 Oct, no fresh spread widening"
+        },
+        "G1": {
+          "score": 0.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S28",
+            "S29",
+            "S30"
+          ],
+          "reason": "Beta 0"
+        }
+      },
+      "outlook_O": 0,
+      "composite_c": -0.5,
+      "raw": -4.5,
+      "published_S": -5,
+      "c_eq": -0.3333,
+      "blocks": {
+        "rates": -3.15,
+        "non_rate": -1.35,
+        "global": 0.0
+      },
+      "coverage_AB": 0.9,
+      "confidence": "High",
+      "conviction": "Medium",
+      "bias": "bearish",
+      "state": "Weak",
+      "priced_in": "Partially priced",
+      "horizon": "multi-week"
+    },
+    "GBP": {
+      "factors": {
+        "R1": {
+          "score": 1.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S2",
+            "S17"
+          ],
+          "reason": "Rank 3 of 8 (Bank Rate 3.75%)"
+        },
+        "R2": {
+          "score": 0.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S17",
+            "S15",
+            "S16"
+          ],
+          "reason": "Nov hike >90% and four hikes priced; data hot but no evidence of under-pricing"
+        },
+        "R3": {
+          "score": 2.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S15",
+            "S16"
+          ],
+          "reason": "CPI core/services beat +1, labour beat +1"
+        },
+        "N1": {
+          "score": 0.0,
+          "grade": "A",
+          "evidence_ids": [],
+          "reason": "Fixed 0 by rule"
+        },
+        "N2": {
+          "score": -1.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S18"
+          ],
+          "reason": "Budget 28 Oct (dated), gilts below October highs"
+        },
+        "G1": {
+          "score": -0.5,
+          "grade": "B",
+          "evidence_ids": [
+            "S28",
+            "S29",
+            "S30"
+          ],
+          "reason": "Regime -1 x beta +0.5"
+        }
+      },
+      "outlook_O": 1,
+      "composite_c": 0.125,
+      "raw": 1.125,
+      "published_S": 1,
+      "c_eq": 0.25,
+      "blocks": {
+        "rates": 3.15,
+        "non_rate": -1.35,
+        "global": -0.675
+      },
+      "coverage_AB": 1.0,
+      "confidence": "High",
+      "conviction": "Low",
+      "bias": "neutral",
+      "state": "Neutral",
+      "priced_in": "Largely priced",
+      "horizon": "short swing"
+    },
+    "JPY": {
+      "factors": {
+        "R1": {
+          "score": -1.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S2",
+            "S19"
+          ],
+          "reason": "Rank 7 of 8 (BoJ 1.25%)"
+        },
+        "R2": {
+          "score": 0.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S19"
+          ],
+          "reason": "Dec hike 75-80% priced; Himino consistent with it"
+        },
+        "R3": {
+          "score": 0.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S19"
+          ],
+          "reason": "Himino: no market surprise; CPI not yet out"
+        },
+        "N1": {
+          "score": 0.0,
+          "grade": "C",
+          "evidence_ids": [
+            "S3",
+            "S4",
+            "S5"
+          ],
+          "reason": "Oil +8.5% to +10.9%: threshold not established"
+        },
+        "N2": {
+          "score": 1.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S19"
+          ],
+          "reason": "Credible MoF intervention threat near 159-160"
+        },
+        "G1": {
+          "score": 1.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S28",
+            "S29",
+            "S30"
+          ],
+          "reason": "Regime -1 x beta -1"
+        }
+      },
+      "outlook_O": 1,
+      "composite_c": 0.15,
+      "raw": 1.35,
+      "published_S": 1,
+      "c_eq": 0.1667,
+      "blocks": {
+        "rates": -1.35,
+        "non_rate": 1.35,
+        "global": 1.35
+      },
+      "coverage_AB": 0.9,
+      "confidence": "High",
+      "conviction": "Low",
+      "bias": "neutral",
+      "state": "Neutral",
+      "priced_in": "Largely priced",
+      "horizon": "short swing"
+    },
+    "CHF": {
+      "factors": {
+        "R1": {
+          "score": -2.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S2",
+            "S21"
+          ],
+          "reason": "Rank 8 of 8 (SNB 0%)"
+        },
+        "R2": {
+          "score": 0.0,
+          "grade": "C",
+          "evidence_ids": [
+            "S20",
+            "S21"
+          ],
+          "reason": "No move priced; expectations unchanged"
+        },
+        "R3": {
+          "score": 0.0,
+          "grade": "C",
+          "evidence_ids": [],
+          "reason": "No HIGH/CRITICAL Swiss release retrieved in the window"
+        },
+        "N1": {
+          "score": 0.0,
+          "grade": "A",
+          "evidence_ids": [],
+          "reason": "Fixed 0 by rule"
+        },
+        "N2": {
+          "score": 0.0,
+          "grade": "C",
+          "evidence_ids": [
+            "S20"
+          ],
+          "reason": "No risk-premium event"
+        },
+        "G1": {
+          "score": 1.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S28",
+            "S29",
+            "S30"
+          ],
+          "reason": "Regime -1 x beta -1"
+        }
+      },
+      "outlook_O": 0,
+      "composite_c": -0.15,
+      "raw": -1.35,
+      "published_S": -1,
+      "c_eq": -0.1667,
+      "blocks": {
+        "rates": -2.7,
+        "non_rate": 0.0,
+        "global": 1.35
+      },
+      "coverage_AB": 0.4,
+      "confidence": "Medium",
+      "conviction": "Low",
+      "bias": "neutral",
+      "state": "Neutral",
+      "priced_in": "Not applicable (O = 0 and R2 = 0)",
+      "horizon": "multi-week"
+    },
+    "CAD": {
+      "factors": {
+        "R1": {
+          "score": -1.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S2",
+            "S22"
+          ],
+          "reason": "Rank 6 of 8 (BoC 2.25%)"
+        },
+        "R2": {
+          "score": 0.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S22",
+            "S23"
+          ],
+          "reason": "Macklem hawkish vs soft core CPI and weak jobs; ~80% priced"
+        },
+        "R3": {
+          "score": 0.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S22",
+            "S23"
+          ],
+          "reason": "Core CPI miss -1, Macklem +1"
+        },
+        "N1": {
+          "score": 1.0,
+          "grade": "C",
+          "evidence_ids": [
+            "S3",
+            "S4",
+            "S5"
+          ],
+          "reason": "Oil +8.5% to +10.9% (direction-only agreement, capped +1)"
+        },
+        "N2": {
+          "score": -1.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S23"
+          ],
+          "reason": "Live US trade friction (talks broke down)"
+        },
+        "G1": {
+          "score": -0.5,
+          "grade": "B",
+          "evidence_ids": [
+            "S28",
+            "S29",
+            "S30"
+          ],
+          "reason": "Regime -1 x beta +0.5"
+        }
+      },
+      "outlook_O": 0,
+      "composite_c": -0.275,
+      "raw": -2.475,
+      "published_S": -2,
+      "c_eq": -0.25,
+      "blocks": {
+        "rates": -1.35,
+        "non_rate": -0.45,
+        "global": -0.675
+      },
+      "coverage_AB": 0.9,
+      "confidence": "High",
+      "conviction": "Low",
+      "bias": "neutral",
+      "state": "Neutral",
+      "priced_in": "Not applicable (O = 0 and R2 = 0)",
+      "horizon": "multi-week"
+    },
+    "AUD": {
+      "factors": {
+        "R1": {
+          "score": 2.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S2",
+            "S25"
+          ],
+          "reason": "Rank 1 of 8 (RBA 4.60%)"
+        },
+        "R2": {
+          "score": 1.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S24",
+            "S25"
+          ],
+          "reason": "Hauser: outlook materially worse vs Nov ~41-56% priced; data mixed"
+        },
+        "R3": {
+          "score": 1.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S24"
+          ],
+          "reason": "Hauser speech hawkish surprise"
+        },
+        "N1": {
+          "score": -1.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S6"
+          ],
+          "reason": "Iron ore -6.7% in a month"
+        },
+        "N2": {
+          "score": 0.0,
+          "grade": "C",
+          "evidence_ids": [],
+          "reason": "No risk-premium event"
+        },
+        "G1": {
+          "score": -1.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S28",
+            "S29",
+            "S30"
+          ],
+          "reason": "Regime -1 x beta +1"
+        }
+      },
+      "outlook_O": 1,
+      "composite_c": 0.5,
+      "raw": 4.5,
+      "published_S": 5,
+      "c_eq": 0.3333,
+      "blocks": {
+        "rates": 6.75,
+        "non_rate": -0.9,
+        "global": -1.35
+      },
+      "coverage_AB": 0.85,
+      "confidence": "High",
+      "conviction": "Medium",
+      "bias": "bullish",
+      "state": "Strong",
+      "priced_in": "Partially priced",
+      "horizon": "multi-week"
+    },
+    "NZD": {
+      "factors": {
+        "R1": {
+          "score": 0.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S2",
+            "S26"
+          ],
+          "reason": "Rank 4 of 8 (OCR 2.75%)"
+        },
+        "R2": {
+          "score": 0.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S26",
+            "S27"
+          ],
+          "reason": "28 Oct hike ~80% priced; CPI mixed; Conway consistent with pricing"
+        },
+        "R3": {
+          "score": 0.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S26",
+            "S27"
+          ],
+          "reason": "Q3 CPI mixed (headline miss, core firmer)"
+        },
+        "N1": {
+          "score": 1.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S7",
+            "S8"
+          ],
+          "reason": "GDT +1.2% and +2.5% (~+3.7%)"
+        },
+        "N2": {
+          "score": 0.0,
+          "grade": "C",
+          "evidence_ids": [],
+          "reason": "Election 7 Nov without market stress"
+        },
+        "G1": {
+          "score": -1.0,
+          "grade": "B",
+          "evidence_ids": [
+            "S28",
+            "S29",
+            "S30"
+          ],
+          "reason": "Regime -1 x beta +1"
+        }
+      },
+      "outlook_O": 1,
+      "composite_c": -0.05,
+      "raw": -0.45,
+      "published_S": 0,
+      "c_eq": 0.0,
+      "blocks": {
+        "rates": 0.0,
+        "non_rate": 0.9,
+        "global": -1.35
+      },
+      "coverage_AB": 0.85,
+      "confidence": "High",
+      "conviction": "Low",
+      "bias": "neutral",
+      "state": "Neutral",
+      "priced_in": "Largely priced",
+      "horizon": "short swing"
+    }
+  },
+  "gold": {
+    "X1": {
+      "score": 0.0,
+      "grade": "B",
+      "evidence_ids": [
+        "S31"
+      ],
+      "reason": "Real yield 2.63% -> 2.76% in 4 weeks, -8bp last week: no clear direction; USD R2 = 0 so no constraint"
+    },
+    "X2": {
+      "score": 1.0,
+      "grade": "B",
+      "evidence_ids": [
+        "S28",
+        "S29",
+        "S30"
+      ],
+      "reason": "Regime -1 x (-1)"
+    },
+    "X3": {
+      "score": 1.0,
+      "grade": "C",
+      "evidence_ids": [
+        "S34",
+        "S33"
+      ],
+      "reason": "Central-bank buying supportive; 4-week ETF flows unavailable (D)"
+    },
+    "X4": {
+      "score": 0.0,
+      "grade": "B",
+      "evidence_ids": [
+        "S32"
+      ],
+      "reason": "Breakeven +2bp in 4 weeks"
+    },
+    "X5": {
+      "score": 0.0,
+      "grade": "B",
+      "evidence_ids": [
+        "S35"
+      ],
+      "reason": "Positioning not extreme"
+    },
+    "g": 0.4,
+    "raw": 3.6,
+    "G": 4,
+    "XAU": 6,
+    "coverage_AB": 0.8,
+    "confidence": "Medium",
+    "conviction": "Medium",
+    "c_eq_gold": 0.4
+  },
+  "pairs": [
+    {
+      "pair": "EURUSD",
+      "gap": -7,
+      "bias": "bearish",
+      "conviction": "medium",
+      "caps_applied": [],
+      "equal_weight_gap": -5.25,
+      "block_diff": {
+        "rates": -4.5,
+        "non_rate": -1.35,
+        "global": -0.675
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "GBPUSD",
+      "gap": -1,
+      "bias": "two-sided",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": 0.0,
+      "block_diff": {
+        "rates": 1.8,
+        "non_rate": -1.35,
+        "global": -1.35
+      },
+      "driver_block": "non_rate"
+    },
+    {
+      "pair": "USDJPY",
+      "gap": 1,
+      "bias": "two-sided",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": 0.75,
+      "block_diff": {
+        "rates": 2.7,
+        "non_rate": -1.35,
+        "global": -0.675
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "USDCHF",
+      "gap": 3,
+      "bias": "bullish",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": 3.75,
+      "block_diff": {
+        "rates": 4.05,
+        "non_rate": 0.0,
+        "global": -0.675
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "USDCAD",
+      "gap": 4,
+      "bias": "bullish",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": 4.5,
+      "block_diff": {
+        "rates": 2.7,
+        "non_rate": 0.45,
+        "global": 1.35
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "AUDUSD",
+      "gap": 3,
+      "bias": "bullish",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": 0.75,
+      "block_diff": {
+        "rates": 5.4,
+        "non_rate": -0.9,
+        "global": -2.025
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "NZDUSD",
+      "gap": -2,
+      "bias": "two-sided",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": -2.25,
+      "block_diff": {
+        "rates": -1.35,
+        "non_rate": 0.9,
+        "global": -2.025
+      },
+      "driver_block": "global"
+    },
+    {
+      "pair": "EURGBP",
+      "gap": -6,
+      "bias": "bearish",
+      "conviction": "medium",
+      "caps_applied": [],
+      "equal_weight_gap": -5.25,
+      "block_diff": {
+        "rates": -6.3,
+        "non_rate": 0.0,
+        "global": 0.675
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "EURJPY",
+      "gap": -6,
+      "bias": "bearish",
+      "conviction": "medium",
+      "caps_applied": [],
+      "equal_weight_gap": -4.5,
+      "block_diff": {
+        "rates": -1.8,
+        "non_rate": -2.7,
+        "global": -1.35
+      },
+      "driver_block": "non_rate"
+    },
+    {
+      "pair": "EURCHF",
+      "gap": -4,
+      "bias": "bearish",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": -1.5,
+      "block_diff": {
+        "rates": -0.45,
+        "non_rate": -1.35,
+        "global": -1.35
+      },
+      "driver_block": "non_rate"
+    },
+    {
+      "pair": "EURAUD",
+      "gap": -10,
+      "bias": "bearish",
+      "conviction": "high",
+      "caps_applied": [],
+      "equal_weight_gap": -6.0,
+      "block_diff": {
+        "rates": -9.9,
+        "non_rate": -0.45,
+        "global": 1.35
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "EURNZD",
+      "gap": -5,
+      "bias": "bearish",
+      "conviction": "medium",
+      "caps_applied": [],
+      "equal_weight_gap": -3.0,
+      "block_diff": {
+        "rates": -3.15,
+        "non_rate": -2.25,
+        "global": 1.35
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "EURCAD",
+      "gap": -3,
+      "bias": "bearish",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": -0.75,
+      "block_diff": {
+        "rates": -1.8,
+        "non_rate": -0.9,
+        "global": 0.675
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "GBPJPY",
+      "gap": 0,
+      "bias": "two-sided",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": 0.75,
+      "block_diff": {
+        "rates": 4.5,
+        "non_rate": -2.7,
+        "global": -2.025
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "GBPCHF",
+      "gap": 2,
+      "bias": "two-sided",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": 3.75,
+      "block_diff": {
+        "rates": 5.85,
+        "non_rate": -1.35,
+        "global": -2.025
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "GBPAUD",
+      "gap": -4,
+      "bias": "bearish",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": -0.75,
+      "block_diff": {
+        "rates": -3.6,
+        "non_rate": -0.45,
+        "global": 0.675
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "GBPNZD",
+      "gap": 1,
+      "bias": "two-sided",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": 2.25,
+      "block_diff": {
+        "rates": 3.15,
+        "non_rate": -2.25,
+        "global": 0.675
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "GBPCAD",
+      "gap": 3,
+      "bias": "bullish",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": 4.5,
+      "block_diff": {
+        "rates": 4.5,
+        "non_rate": -0.9,
+        "global": 0.0
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "AUDJPY",
+      "gap": 4,
+      "bias": "bullish",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": 1.5,
+      "block_diff": {
+        "rates": 8.1,
+        "non_rate": -2.25,
+        "global": -2.7
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "AUDCHF",
+      "gap": 6,
+      "bias": "bullish",
+      "conviction": "medium",
+      "caps_applied": [],
+      "equal_weight_gap": 4.5,
+      "block_diff": {
+        "rates": 9.45,
+        "non_rate": -0.9,
+        "global": -2.7
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "AUDNZD",
+      "gap": 5,
+      "bias": "bullish",
+      "conviction": "medium",
+      "caps_applied": [],
+      "equal_weight_gap": 3.0,
+      "block_diff": {
+        "rates": 6.75,
+        "non_rate": -1.8,
+        "global": 0.0
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "AUDCAD",
+      "gap": 7,
+      "bias": "bullish",
+      "conviction": "medium",
+      "caps_applied": [],
+      "equal_weight_gap": 5.25,
+      "block_diff": {
+        "rates": 8.1,
+        "non_rate": -0.45,
+        "global": -0.675
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "NZDJPY",
+      "gap": -1,
+      "bias": "two-sided",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": -1.5,
+      "block_diff": {
+        "rates": 1.35,
+        "non_rate": -0.45,
+        "global": -2.7
+      },
+      "driver_block": "global"
+    },
+    {
+      "pair": "NZDCHF",
+      "gap": 1,
+      "bias": "two-sided",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": 1.5,
+      "block_diff": {
+        "rates": 2.7,
+        "non_rate": 0.9,
+        "global": -2.7
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "NZDCAD",
+      "gap": 2,
+      "bias": "two-sided",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": 2.25,
+      "block_diff": {
+        "rates": 1.35,
+        "non_rate": 1.35,
+        "global": -0.675
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "CADJPY",
+      "gap": -3,
+      "bias": "bearish",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": -3.75,
+      "block_diff": {
+        "rates": 0.0,
+        "non_rate": -1.8,
+        "global": -2.025
+      },
+      "driver_block": "global"
+    },
+    {
+      "pair": "CADCHF",
+      "gap": -1,
+      "bias": "two-sided",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": -0.75,
+      "block_diff": {
+        "rates": 1.35,
+        "non_rate": -0.45,
+        "global": -2.025
+      },
+      "driver_block": "global"
+    },
+    {
+      "pair": "CHFJPY",
+      "gap": -2,
+      "bias": "two-sided",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": -3.0,
+      "block_diff": {
+        "rates": -1.35,
+        "non_rate": -1.35,
+        "global": 0.0
+      },
+      "driver_block": "rates"
+    },
+    {
+      "pair": "XAUUSD",
+      "gap": 4,
+      "bias": "bullish",
+      "conviction": "low",
+      "caps_applied": [],
+      "equal_weight_gap": 3.6,
+      "block_diff": {
+        "rates": 0.0,
+        "non_rate": 1.8,
+        "global": 1.8
+      },
+      "driver_block": "non_rate"
+    }
+  ],
+  "daily_observer_json_sha256": "5d5c0291fd8e9e721f687a7e0c93ca292978ec246df0cf0eedcffaa26401127e",
+  "evidence_ids": [
+    "S1",
+    "S2",
+    "S3",
+    "S4",
+    "S5",
+    "S6",
+    "S7",
+    "S8",
+    "S9",
+    "S10",
+    "S11",
+    "S12",
+    "S13",
+    "S14",
+    "S15",
+    "S16",
+    "S17",
+    "S18",
+    "S19",
+    "S20",
+    "S21",
+    "S22",
+    "S23",
+    "S24",
+    "S25",
+    "S26",
+    "S27",
+    "S28",
+    "S29",
+    "S30",
+    "S31",
+    "S32",
+    "S33",
+    "S34",
+    "S35",
+    "S36",
+    "S37",
+    "S38"
+  ],
+  "validation": [
+    {
+      "check": 1,
+      "result": "PASS",
+      "detail": "78602 characters parsed"
+    },
+    {
+      "check": 2,
+      "result": "PASS",
+      "detail": "none found"
+    },
+    {
+      "check": 3,
+      "result": "PASS",
+      "detail": "block at char 78680; 0 HTML comments in page"
+    },
+    {
+      "check": 4,
+      "result": "PASS",
+      "detail": "format > version > report_date > report_title > valid_week > currencies > pairs > news"
+    },
+    {
+      "check": 5,
+      "result": "PASS",
+      "detail": "max note length 156"
+    },
+    {
+      "check": 6,
+      "result": "PASS",
+      "detail": "29 × 17 fields"
+    },
+    {
+      "check": 7,
+      "result": "PASS",
+      "detail": "ok"
+    },
+    {
+      "check": 8,
+      "result": "PASS",
+      "detail": "valid_week 2026-W44; 33 news items"
+    },
+    {
+      "check": 9,
+      "result": "PASS",
+      "detail": "29/29"
+    },
+    {
+      "check": 10,
+      "result": "PASS",
+      "detail": "29/29"
+    },
+    {
+      "check": 11,
+      "result": "PASS",
+      "detail": "gap 4 vs G 4"
+    },
+    {
+      "check": 12,
+      "result": "PASS",
+      "detail": "script SCORE matches; scorecard cells [2, -5, 1, 1, -1, -2, 5, 0]"
+    },
+    {
+      "check": 13,
+      "result": "PASS",
+      "detail": "659 number tokens checked against 38 evidence items"
+    },
+    {
+      "check": 14,
+      "result": "PASS",
+      "detail": "5d5c0291fd8e9e721f687a7e0c93ca292978ec246df0cf0eedcffaa26401127e"
+    }
+  ],
+  "report_file": "Forex_Fundamental_Bias_Engine_2026-10-23_Week44_PHASE1.html"
+}

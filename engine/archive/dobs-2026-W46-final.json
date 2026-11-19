@@ -1,0 +1,1420 @@
+{
+ "format": "daily-observer-fundamentals",
+ "version": 1,
+ "report_date": "2026-11-08",
+ "report_title": "Forex Fundamental Bias Engine — Week 46",
+ "valid_week": {
+  "year": 2026,
+  "week": 46
+ },
+ "currencies": {
+  "USD": {
+   "score": 7,
+   "state": "Strong",
+   "note": "Hawkish repricing room after payrolls +165k; Dec hike ~75–78% priced; risk-off helps USD."
+  },
+  "EUR": {
+   "score": -3,
+   "state": "Neutral",
+   "note": "French fiscal stress: OAT–Bund 153.9bp, Senate budget votes 20–23 Nov, S&P 27 Nov; ECB path priced."
+  },
+  "GBP": {
+   "score": -3,
+   "state": "Weakening",
+   "note": "BoE hiked to 4.00% but warned against a long sequence; about 3 more hikes priced; risk-off weighs."
+  },
+  "JPY": {
+   "score": 2,
+   "state": "Neutral",
+   "note": "Risk-off and an intervention warning support JPY; BoJ December pricing conflicts (OIS ~80% vs futures 56%)."
+  },
+  "CHF": {
+   "score": 0,
+   "state": "Improving",
+   "note": "Zero carry offset by risk-off haven support; no numeric SNB hike pricing."
+  },
+  "CAD": {
+   "score": -6,
+   "state": "Weak",
+   "note": "Oil −6.1% in 4 weeks, jobs −4.7k vs +13.6k, live US tariff and risk-off: the weakest score."
+  },
+  "AUD": {
+   "score": 0,
+   "state": "Weakening",
+   "note": "Top carry, but the RBA dropped its tightening bias (6–3 vote) and risk-off hits AUD; iron ore +3%."
+  },
+  "NZD": {
+   "score": -3,
+   "state": "Weakening",
+   "note": "Unemployment 5.7% vs 5.5% and risk-off weigh; election gives the incumbent right bloc 68 of 131 seats; dairy +5.6%."
+  },
+  "XAU": {
+   "score": 14,
+   "state": "Strong",
+   "note": "Gold factor strongly positive: risk-off haven demand and strong central-bank/ETF buying; real-yield direction capped by a hawkish Fed."
+  }
+ },
+ "pairs": [
+  {
+   "pair": "EURUSD",
+   "bias": "bearish",
+   "conviction": "high",
+   "summary": "Bearish (EUR -3 vs USD +7)",
+   "base_state": "Neutral",
+   "base_score": -3,
+   "quote_state": "Strong",
+   "quote_score": 7,
+   "main_driver": "USD favored: payrolls beat and strong data leave room for more Fed hikes than priced; risk-off support; EUR: French fiscal stress with dated votes and a wide OAT–Bund spread",
+   "drivers": [
+    "USD (+7): payrolls beat and strong data leave room for more Fed hikes than priced; risk-off support",
+    "EUR (-3): French fiscal stress with dated votes and a wide OAT–Bund spread"
+   ],
+   "catalysts": [
+    {
+     "date": "10 Nov",
+     "event": "US CPI (October)",
+     "imp": "HIGH"
+    },
+    {
+     "date": "13 Nov",
+     "event": "Euro-area Q3 GDP (second estimate)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "13 Nov",
+     "event": "Rating reviews: Fitch Germany, S&P Italy",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "13 Nov",
+     "event": "US PPI (October)",
+     "imp": "MEDIUM"
+    }
+   ],
+   "priced": "EUR: Largely priced — 2–3 ECB hikes priced over the next year. USD: Partially priced — Dec FOMC hike ~75–78% priced, about one more after (FedWatch, 6 Nov).",
+   "invalidation": "Bearish view fails if EUR strengthens (OAT–Bund spread back below about 130bp, or a Senate path that removes the budget risk) or USD weakens (US CPI below consensus (core under 0.2% m/m) or Fed speakers cooling December hike talk).",
+   "horizon": "Swing: bearish",
+   "alignment": "Neutral",
+   "alignment_note": "W45 move -0.15% (-0.13σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "bearish → bearish; EUR -4 → -3, USD +2 → +7 (gap -6 → -10); Delta check: no correction"
+  },
+  {
+   "pair": "GBPUSD",
+   "bias": "bearish",
+   "conviction": "high",
+   "summary": "Bearish (GBP -3 vs USD +7)",
+   "base_state": "Weakening",
+   "base_score": -3,
+   "quote_state": "Strong",
+   "quote_score": 7,
+   "main_driver": "USD favored: payrolls beat and strong data leave room for more Fed hikes than priced; risk-off support; GBP: BoE guidance softer than the three further hikes priced; risk-off",
+   "drivers": [
+    "USD (+7): payrolls beat and strong data leave room for more Fed hikes than priced; risk-off support",
+    "GBP (-3): BoE guidance softer than the three further hikes priced; risk-off"
+   ],
+   "catalysts": [
+    {
+     "date": "10 Nov",
+     "event": "US CPI (October)",
+     "imp": "HIGH"
+    },
+    {
+     "date": "12 Nov",
+     "event": "UK Q3 GDP (first estimate)",
+     "imp": "HIGH"
+    },
+    {
+     "date": "13 Nov",
+     "event": "US PPI (October)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "9 Dec",
+     "event": "FOMC decision (8–9 Dec)",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "GBP: Largely priced — about 3 more BoE hikes priced by Nov 2027. USD: Partially priced — Dec FOMC hike ~75–78% priced, about one more after (FedWatch, 6 Nov).",
+   "invalidation": "Bearish view fails if GBP strengthens (UK Q3 GDP on 12 Nov well above consensus, or MPC speakers backing more hikes) or USD weakens (US CPI below consensus (core under 0.2% m/m) or Fed speakers cooling December hike talk).",
+   "horizon": "Swing: bearish",
+   "alignment": "Neutral",
+   "alignment_note": "W45 move -0.29% (-0.24σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "two-sided → bearish; GBP +4 → -3, USD +2 → +7 (gap +2 → -10); Delta check: no correction"
+  },
+  {
+   "pair": "USDJPY",
+   "bias": "bullish",
+   "conviction": "medium",
+   "summary": "Bullish (USD +7 vs JPY +2)",
+   "base_state": "Strong",
+   "base_score": 7,
+   "quote_state": "Neutral",
+   "quote_score": 2,
+   "main_driver": "USD favored: payrolls beat and strong data leave room for more Fed hikes than priced; risk-off support; JPY: risk-off haven demand and an FX intervention warning",
+   "drivers": [
+    "USD (+7): payrolls beat and strong data leave room for more Fed hikes than priced; risk-off support",
+    "JPY (+2): risk-off haven demand and an FX intervention warning"
+   ],
+   "catalysts": [
+    {
+     "date": "10 Nov",
+     "event": "BoJ Summary of Opinions (October meeting)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "10 Nov",
+     "event": "US CPI (October)",
+     "imp": "HIGH"
+    },
+    {
+     "date": "13 Nov",
+     "event": "US PPI (October)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "9 Dec",
+     "event": "FOMC decision (8–9 Dec)",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "USD: Partially priced — Dec FOMC hike ~75–78% priced, about one more after (FedWatch, 6 Nov). JPY: Largely priced — Dec BoJ hike ~80% in OIS but 56% in TONA futures; 2.9 hikes over 6 meetings.",
+   "invalidation": "Bullish view fails if USD weakens (US CPI below consensus (core under 0.2% m/m) or Fed speakers cooling December hike talk) or JPY strengthens (BoJ Summary of Opinions (10 Nov) pointing clearly to December).",
+   "horizon": "Swing: bullish",
+   "alignment": "Aligned",
+   "alignment_note": "W45 move +0.58% (+0.48σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "two-sided → bullish; USD +2 → +7, JPY +2 → +2 (gap 0 → +5); Delta check: no correction"
+  },
+  {
+   "pair": "USDCHF",
+   "bias": "bullish",
+   "conviction": "medium",
+   "summary": "Bullish (USD +7 vs CHF 0)",
+   "base_state": "Strong",
+   "base_score": 7,
+   "quote_state": "Improving",
+   "quote_score": 0,
+   "main_driver": "USD favored: payrolls beat and strong data leave room for more Fed hikes than priced; risk-off support; CHF: lowest carry of the eight",
+   "drivers": [
+    "USD (+7): payrolls beat and strong data leave room for more Fed hikes than priced; risk-off support",
+    "CHF (0): lowest carry of the eight"
+   ],
+   "catalysts": [
+    {
+     "date": "10 Nov",
+     "event": "US CPI (October)",
+     "imp": "HIGH"
+    },
+    {
+     "date": "13 Nov",
+     "event": "US PPI (October)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "9 Dec",
+     "event": "FOMC decision (8–9 Dec)",
+     "imp": "CRITICAL"
+    },
+    {
+     "date": "10 Dec",
+     "event": "SNB decision",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "USD: Partially priced — Dec FOMC hike ~75–78% priced, about one more after (FedWatch, 6 Nov). CHF: Not applicable — no numeric SNB pricing; only talk of higher rates in 2027.",
+   "invalidation": "Bullish view fails if USD weakens (US CPI below consensus (core under 0.2% m/m) or Fed speakers cooling December hike talk) or CHF strengthens (A deeper risk-off or a numeric SNB hike price appearing).",
+   "horizon": "Swing: bullish",
+   "alignment": "Partial conflict",
+   "alignment_note": "W45 move -0.54% (-0.45σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "bullish → bullish; USD +2 → +7, CHF -3 → 0 (gap +5 → +7); Delta check: no correction"
+  },
+  {
+   "pair": "USDCAD",
+   "bias": "bullish",
+   "conviction": "medium",
+   "summary": "Bullish (USD +7 vs CAD -6)",
+   "base_state": "Strong",
+   "base_score": 7,
+   "quote_state": "Weak",
+   "quote_score": -6,
+   "main_driver": "USD favored: payrolls beat and strong data leave room for more Fed hikes than priced; risk-off support; CAD: oil fall, weak jobs, live US tariff and risk-off",
+   "drivers": [
+    "USD (+7): payrolls beat and strong data leave room for more Fed hikes than priced; risk-off support",
+    "CAD (-6): oil fall, weak jobs, live US tariff and risk-off"
+   ],
+   "catalysts": [
+    {
+     "date": "10 Nov",
+     "event": "BoC Summary of Deliberations",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "10 Nov",
+     "event": "US CPI (October)",
+     "imp": "HIGH"
+    },
+    {
+     "date": "11 Nov",
+     "event": "OPEC monthly oil market report",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "13 Nov",
+     "event": "US PPI (October)",
+     "imp": "MEDIUM"
+    }
+   ],
+   "priced": "USD: Partially priced — Dec FOMC hike ~75–78% priced, about one more after (FedWatch, 6 Nov). CAD: Not applicable — Dec BoC hike 33–40% priced; pricing matches the mixed evidence.",
+   "invalidation": "Bullish view fails if USD weakens (US CPI below consensus (core under 0.2% m/m) or Fed speakers cooling December hike talk) or CAD strengthens (Oil rebounding above its 9 Oct level, or a US–Canada tariff deal).",
+   "horizon": "Swing: bullish",
+   "alignment": "Aligned",
+   "alignment_note": "W45 move +1.11% (+0.92σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "bullish → bullish; USD +2 → +7, CAD -2 → -6 (gap +4 → +13); Delta check: no correction"
+  },
+  {
+   "pair": "AUDUSD",
+   "bias": "bearish",
+   "conviction": "medium",
+   "summary": "Bearish (AUD 0 vs USD +7)",
+   "base_state": "Weakening",
+   "base_score": 0,
+   "quote_state": "Strong",
+   "quote_score": 7,
+   "main_driver": "USD favored: payrolls beat and strong data leave room for more Fed hikes than priced; risk-off support; AUD: softer RBA guidance and risk-off",
+   "drivers": [
+    "USD (+7): payrolls beat and strong data leave room for more Fed hikes than priced; risk-off support",
+    "AUD (0): softer RBA guidance and risk-off"
+   ],
+   "catalysts": [
+    {
+     "date": "9 Nov",
+     "event": "China CPI and PPI (October)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "10 Nov",
+     "event": "China trade balance (October)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "10 Nov",
+     "event": "US CPI (October)",
+     "imp": "HIGH"
+    },
+    {
+     "date": "13 Nov",
+     "event": "US PPI (October)",
+     "imp": "MEDIUM"
+    }
+   ],
+   "priced": "AUD: Largely priced — Dec RBA hike 0.8%, −19bp over 12 months (OIS, 6 Nov). USD: Partially priced — Dec FOMC hike ~75–78% priced, about one more after (FedWatch, 6 Nov).",
+   "invalidation": "Bearish view fails if AUD strengthens (Strong China data (9–10 Nov) and a risk-mood recovery) or USD weakens (US CPI below consensus (core under 0.2% m/m) or Fed speakers cooling December hike talk).",
+   "horizon": "Swing: bearish",
+   "alignment": "Aligned",
+   "alignment_note": "W45 move -2.36% (-1.99σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "bullish → bearish; AUD +5 → 0, USD +2 → +7 (gap +3 → -7); Delta check: no correction"
+  },
+  {
+   "pair": "NZDUSD",
+   "bias": "bearish",
+   "conviction": "medium",
+   "summary": "Bearish (NZD -3 vs USD +7)",
+   "base_state": "Weakening",
+   "base_score": -3,
+   "quote_state": "Strong",
+   "quote_score": 7,
+   "main_driver": "USD favored: payrolls beat and strong data leave room for more Fed hikes than priced; risk-off support; NZD: weak jobs and risk-off",
+   "drivers": [
+    "USD (+7): payrolls beat and strong data leave room for more Fed hikes than priced; risk-off support",
+    "NZD (-3): weak jobs and risk-off"
+   ],
+   "catalysts": [
+    {
+     "date": "10 Nov",
+     "event": "US CPI (October)",
+     "imp": "HIGH"
+    },
+    {
+     "date": "13 Nov",
+     "event": "US PPI (October)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "9 Dec",
+     "event": "FOMC decision (8–9 Dec)",
+     "imp": "CRITICAL"
+    },
+    {
+     "date": "9 Dec",
+     "event": "RBNZ decision",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "NZD: Not applicable — Dec RBNZ hike ~60% priced. USD: Partially priced — Dec FOMC hike ~75–78% priced, about one more after (FedWatch, 6 Nov).",
+   "invalidation": "Bearish view fails if NZD strengthens (the risk mood improves or dairy prices keep rising at the 17 Nov auction) or USD weakens (US CPI below consensus (core under 0.2% m/m) or Fed speakers cooling December hike talk).",
+   "horizon": "Swing: bearish",
+   "alignment": "Aligned",
+   "alignment_note": "W45 move -1.50% (-1.26σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "two-sided → bearish; NZD +1 → -3, USD +2 → +7 (gap -1 → -10); Delta check: NZD N2 -1 → 0 (code M, S54), NZD -4 → -3; Phase 1 was bearish medium (gap -11)"
+  },
+  {
+   "pair": "EURGBP",
+   "bias": "two-sided",
+   "conviction": "low",
+   "summary": "Two-sided (EUR -3 vs GBP -3)",
+   "base_state": "Neutral",
+   "base_score": -3,
+   "quote_state": "Weakening",
+   "quote_score": -3,
+   "main_driver": "Close to a wash — EUR: French fiscal stress with dated votes and a wide OAT–Bund spread; GBP: BoE guidance softer than the three further hikes priced; risk-off",
+   "drivers": [
+    "EUR (-3): French fiscal stress with dated votes and a wide OAT–Bund spread",
+    "GBP (-3): BoE guidance softer than the three further hikes priced; risk-off"
+   ],
+   "catalysts": [
+    {
+     "date": "12 Nov",
+     "event": "UK Q3 GDP (first estimate)",
+     "imp": "HIGH"
+    },
+    {
+     "date": "13 Nov",
+     "event": "Euro-area Q3 GDP (second estimate)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "13 Nov",
+     "event": "Rating reviews: Fitch Germany, S&P Italy",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "17 Dec",
+     "event": "ECB decision",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "EUR: Largely priced — 2–3 ECB hikes priced over the next year. GBP: Largely priced — about 3 more BoE hikes priced by Nov 2027.",
+   "invalidation": "A lean appears if EUR or GBP moves: EUR up on OAT–Bund spread back below about 130bp, or a Senate path that removes the budget risk; GBP up on UK Q3 GDP on 12 Nov well above consensus, or MPC speakers backing more hikes.",
+   "horizon": "Swing: two-sided",
+   "alignment": "Neutral",
+   "alignment_note": "W45 move +0.13% (+0.16σu; v1 threshold 0.8% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "bearish → two-sided; EUR -4 → -3, GBP +4 → -3 (gap -8 → 0); Delta check: no correction"
+  },
+  {
+   "pair": "EURJPY",
+   "bias": "bearish",
+   "conviction": "medium",
+   "summary": "Bearish (EUR -3 vs JPY +2)",
+   "base_state": "Neutral",
+   "base_score": -3,
+   "quote_state": "Neutral",
+   "quote_score": 2,
+   "main_driver": "JPY favored: risk-off haven demand and an FX intervention warning; EUR: French fiscal stress with dated votes and a wide OAT–Bund spread",
+   "drivers": [
+    "JPY (+2): risk-off haven demand and an FX intervention warning",
+    "EUR (-3): French fiscal stress with dated votes and a wide OAT–Bund spread"
+   ],
+   "catalysts": [
+    {
+     "date": "10 Nov",
+     "event": "BoJ Summary of Opinions (October meeting)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "13 Nov",
+     "event": "Euro-area Q3 GDP (second estimate)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "13 Nov",
+     "event": "Rating reviews: Fitch Germany, S&P Italy",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "17 Dec",
+     "event": "ECB decision",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "EUR: Largely priced — 2–3 ECB hikes priced over the next year. JPY: Largely priced — Dec BoJ hike ~80% in OIS but 56% in TONA futures; 2.9 hikes over 6 meetings.",
+   "invalidation": "Bearish view fails if EUR strengthens (OAT–Bund spread back below about 130bp, or a Senate path that removes the budget risk) or JPY weakens (Risk mood recovering (carry trades back) or BoJ speakers delaying December).",
+   "horizon": "Swing: bearish",
+   "alignment": "Partial conflict",
+   "alignment_note": "W45 move +0.42% (+0.35σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "bearish → bearish; EUR -4 → -3, JPY +2 → +2 (gap -6 → -5); Delta check: no correction"
+  },
+  {
+   "pair": "EURCHF",
+   "bias": "bearish",
+   "conviction": "low",
+   "summary": "Bearish (EUR -3 vs CHF 0)",
+   "base_state": "Neutral",
+   "base_score": -3,
+   "quote_state": "Improving",
+   "quote_score": 0,
+   "main_driver": "CHF favored: lowest carry of the eight; EUR: French fiscal stress with dated votes and a wide OAT–Bund spread",
+   "drivers": [
+    "CHF (0): lowest carry of the eight",
+    "EUR (-3): French fiscal stress with dated votes and a wide OAT–Bund spread"
+   ],
+   "catalysts": [
+    {
+     "date": "13 Nov",
+     "event": "Euro-area Q3 GDP (second estimate)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "13 Nov",
+     "event": "Rating reviews: Fitch Germany, S&P Italy",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "10 Dec",
+     "event": "SNB decision",
+     "imp": "CRITICAL"
+    },
+    {
+     "date": "17 Dec",
+     "event": "ECB decision",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "EUR: Largely priced — 2–3 ECB hikes priced over the next year. CHF: Not applicable — no numeric SNB pricing; only talk of higher rates in 2027.",
+   "invalidation": "Bearish view fails if EUR strengthens (OAT–Bund spread back below about 130bp, or a Senate path that removes the budget risk) or CHF weakens (Risk mood recovering quickly).",
+   "horizon": "Swing: mild bearish",
+   "alignment": "Aligned",
+   "alignment_note": "W45 move -0.71% (-0.89σu; v1 threshold 0.8% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "two-sided → bearish; EUR -4 → -3, CHF -3 → 0 (gap -1 → -3); Delta check: no correction"
+  },
+  {
+   "pair": "EURAUD",
+   "bias": "bearish",
+   "conviction": "low",
+   "summary": "Bearish (EUR -3 vs AUD 0)",
+   "base_state": "Neutral",
+   "base_score": -3,
+   "quote_state": "Weakening",
+   "quote_score": 0,
+   "main_driver": "AUD favored: softer RBA guidance and risk-off; EUR: French fiscal stress with dated votes and a wide OAT–Bund spread",
+   "drivers": [
+    "AUD (0): softer RBA guidance and risk-off",
+    "EUR (-3): French fiscal stress with dated votes and a wide OAT–Bund spread"
+   ],
+   "catalysts": [
+    {
+     "date": "9 Nov",
+     "event": "China CPI and PPI (October)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "10 Nov",
+     "event": "China trade balance (October)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "13 Nov",
+     "event": "Euro-area Q3 GDP (second estimate)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "13 Nov",
+     "event": "Rating reviews: Fitch Germany, S&P Italy",
+     "imp": "MEDIUM"
+    }
+   ],
+   "priced": "EUR: Largely priced — 2–3 ECB hikes priced over the next year. AUD: Largely priced — Dec RBA hike 0.8%, −19bp over 12 months (OIS, 6 Nov).",
+   "invalidation": "Bearish view fails if EUR strengthens (OAT–Bund spread back below about 130bp, or a Senate path that removes the budget risk) or AUD weakens (Weak China data or deeper risk-off).",
+   "horizon": "Swing: mild bearish",
+   "alignment": "Conflicting",
+   "alignment_note": "W45 move +2.24% (+1.84σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "bearish → bearish; EUR -4 → -3, AUD +5 → 0 (gap -9 → -3); Delta check: no correction"
+  },
+  {
+   "pair": "EURNZD",
+   "bias": "two-sided",
+   "conviction": "low",
+   "summary": "Two-sided (EUR -3 vs NZD -3)",
+   "base_state": "Neutral",
+   "base_score": -3,
+   "quote_state": "Weakening",
+   "quote_score": -3,
+   "main_driver": "Close to a wash — EUR: French fiscal stress with dated votes and a wide OAT–Bund spread; NZD: weak jobs and risk-off",
+   "drivers": [
+    "EUR (-3): French fiscal stress with dated votes and a wide OAT–Bund spread",
+    "NZD (-3): weak jobs and risk-off"
+   ],
+   "catalysts": [
+    {
+     "date": "13 Nov",
+     "event": "Euro-area Q3 GDP (second estimate)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "13 Nov",
+     "event": "Rating reviews: Fitch Germany, S&P Italy",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "9 Dec",
+     "event": "RBNZ decision",
+     "imp": "CRITICAL"
+    },
+    {
+     "date": "17 Dec",
+     "event": "ECB decision",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "EUR: Largely priced — 2–3 ECB hikes priced over the next year. NZD: Not applicable — Dec RBNZ hike ~60% priced.",
+   "invalidation": "A lean appears if EUR or NZD moves: EUR up on OAT–Bund spread back below about 130bp, or a Senate path that removes the budget risk; NZD up on the risk mood improves or dairy prices keep rising at the 17 Nov auction.",
+   "horizon": "Swing: two-sided",
+   "alignment": "Neutral",
+   "alignment_note": "W45 move +1.44% (+1.19σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "bearish → two-sided; EUR -4 → -3, NZD +1 → -3 (gap -5 → 0); Delta check: NZD N2 -1 → 0 (code M, S54), NZD -4 → -3; Phase 1 was two-sided low (gap +1)"
+  },
+  {
+   "pair": "EURCAD",
+   "bias": "bullish",
+   "conviction": "low",
+   "summary": "Bullish (EUR -3 vs CAD -6)",
+   "base_state": "Neutral",
+   "base_score": -3,
+   "quote_state": "Weak",
+   "quote_score": -6,
+   "main_driver": "EUR favored: French fiscal stress with dated votes and a wide OAT–Bund spread; CAD: oil fall, weak jobs, live US tariff and risk-off",
+   "drivers": [
+    "EUR (-3): French fiscal stress with dated votes and a wide OAT–Bund spread",
+    "CAD (-6): oil fall, weak jobs, live US tariff and risk-off"
+   ],
+   "catalysts": [
+    {
+     "date": "10 Nov",
+     "event": "BoC Summary of Deliberations",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "11 Nov",
+     "event": "OPEC monthly oil market report",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "13 Nov",
+     "event": "Euro-area Q3 GDP (second estimate)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "13 Nov",
+     "event": "Rating reviews: Fitch Germany, S&P Italy",
+     "imp": "MEDIUM"
+    }
+   ],
+   "priced": "EUR: Largely priced — 2–3 ECB hikes priced over the next year. CAD: Not applicable — Dec BoC hike 33–40% priced; pricing matches the mixed evidence.",
+   "invalidation": "Bullish view fails if EUR weakens (Spread above the 3 Nov peak (161.8bp) or a rating action on France) or CAD strengthens (Oil rebounding above its 9 Oct level, or a US–Canada tariff deal).",
+   "horizon": "Swing: mild bullish",
+   "alignment": "Aligned",
+   "alignment_note": "W45 move +0.96% (+0.80σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "two-sided → bullish; EUR -4 → -3, CAD -2 → -6 (gap -2 → +3); Delta check: no correction"
+  },
+  {
+   "pair": "GBPJPY",
+   "bias": "bearish",
+   "conviction": "medium",
+   "summary": "Bearish (GBP -3 vs JPY +2)",
+   "base_state": "Weakening",
+   "base_score": -3,
+   "quote_state": "Neutral",
+   "quote_score": 2,
+   "main_driver": "JPY favored: risk-off haven demand and an FX intervention warning; GBP: BoE guidance softer than the three further hikes priced; risk-off",
+   "drivers": [
+    "JPY (+2): risk-off haven demand and an FX intervention warning",
+    "GBP (-3): BoE guidance softer than the three further hikes priced; risk-off"
+   ],
+   "catalysts": [
+    {
+     "date": "10 Nov",
+     "event": "BoJ Summary of Opinions (October meeting)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "12 Nov",
+     "event": "UK Q3 GDP (first estimate)",
+     "imp": "HIGH"
+    },
+    {
+     "date": "18 Dec",
+     "event": "BoJ decision (17–18 Dec)",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "GBP: Largely priced — about 3 more BoE hikes priced by Nov 2027. JPY: Largely priced — Dec BoJ hike ~80% in OIS but 56% in TONA futures; 2.9 hikes over 6 meetings.",
+   "invalidation": "Bearish view fails if GBP strengthens (UK Q3 GDP on 12 Nov well above consensus, or MPC speakers backing more hikes) or JPY weakens (Risk mood recovering (carry trades back) or BoJ speakers delaying December).",
+   "horizon": "Swing: bearish",
+   "alignment": "Neutral",
+   "alignment_note": "W45 move +0.30% (+0.16σu; v1 threshold 1.8% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "two-sided → bearish; GBP +4 → -3, JPY +2 → +2 (gap +2 → -5); Delta check: no correction"
+  },
+  {
+   "pair": "GBPCHF",
+   "bias": "bearish",
+   "conviction": "low",
+   "summary": "Bearish (GBP -3 vs CHF 0)",
+   "base_state": "Weakening",
+   "base_score": -3,
+   "quote_state": "Improving",
+   "quote_score": 0,
+   "main_driver": "CHF favored: lowest carry of the eight; GBP: BoE guidance softer than the three further hikes priced; risk-off",
+   "drivers": [
+    "CHF (0): lowest carry of the eight",
+    "GBP (-3): BoE guidance softer than the three further hikes priced; risk-off"
+   ],
+   "catalysts": [
+    {
+     "date": "12 Nov",
+     "event": "UK Q3 GDP (first estimate)",
+     "imp": "HIGH"
+    },
+    {
+     "date": "10 Dec",
+     "event": "SNB decision",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "GBP: Largely priced — about 3 more BoE hikes priced by Nov 2027. CHF: Not applicable — no numeric SNB pricing; only talk of higher rates in 2027.",
+   "invalidation": "Bearish view fails if GBP strengthens (UK Q3 GDP on 12 Nov well above consensus, or MPC speakers backing more hikes) or CHF weakens (Risk mood recovering quickly).",
+   "horizon": "Swing: mild bearish",
+   "alignment": "Aligned",
+   "alignment_note": "W45 move -0.82% (-0.69σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "bullish → bearish; GBP +4 → -3, CHF -3 → 0 (gap +7 → -3); Delta check: no correction"
+  },
+  {
+   "pair": "GBPAUD",
+   "bias": "bearish",
+   "conviction": "low",
+   "summary": "Bearish (GBP -3 vs AUD 0)",
+   "base_state": "Weakening",
+   "base_score": -3,
+   "quote_state": "Weakening",
+   "quote_score": 0,
+   "main_driver": "AUD favored: softer RBA guidance and risk-off; GBP: BoE guidance softer than the three further hikes priced; risk-off",
+   "drivers": [
+    "AUD (0): softer RBA guidance and risk-off",
+    "GBP (-3): BoE guidance softer than the three further hikes priced; risk-off"
+   ],
+   "catalysts": [
+    {
+     "date": "9 Nov",
+     "event": "China CPI and PPI (October)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "10 Nov",
+     "event": "China trade balance (October)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "12 Nov",
+     "event": "UK Q3 GDP (first estimate)",
+     "imp": "HIGH"
+    },
+    {
+     "date": "8 Dec",
+     "event": "RBA decision",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "GBP: Largely priced — about 3 more BoE hikes priced by Nov 2027. AUD: Largely priced — Dec RBA hike 0.8%, −19bp over 12 months (OIS, 6 Nov).",
+   "invalidation": "Bearish view fails if GBP strengthens (UK Q3 GDP on 12 Nov well above consensus, or MPC speakers backing more hikes) or AUD weakens (Weak China data or deeper risk-off).",
+   "horizon": "Swing: mild bearish",
+   "alignment": "Conflicting",
+   "alignment_note": "W45 move +2.18% (+1.79σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "two-sided → bearish; GBP +4 → -3, AUD +5 → 0 (gap -1 → -3); Delta check: no correction"
+  },
+  {
+   "pair": "GBPNZD",
+   "bias": "two-sided",
+   "conviction": "low",
+   "summary": "Two-sided (GBP -3 vs NZD -3)",
+   "base_state": "Weakening",
+   "base_score": -3,
+   "quote_state": "Weakening",
+   "quote_score": -3,
+   "main_driver": "Close to a wash — GBP: BoE guidance softer than the three further hikes priced; risk-off; NZD: weak jobs and risk-off",
+   "drivers": [
+    "GBP (-3): BoE guidance softer than the three further hikes priced; risk-off",
+    "NZD (-3): weak jobs and risk-off"
+   ],
+   "catalysts": [
+    {
+     "date": "12 Nov",
+     "event": "UK Q3 GDP (first estimate)",
+     "imp": "HIGH"
+    },
+    {
+     "date": "17 Nov",
+     "event": "Global Dairy Trade auction",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "27 Nov",
+     "event": "NZ official election result",
+     "imp": "HIGH"
+    },
+    {
+     "date": "9 Dec",
+     "event": "RBNZ decision",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "GBP: Largely priced — about 3 more BoE hikes priced by Nov 2027. NZD: Not applicable — Dec RBNZ hike ~60% priced.",
+   "invalidation": "A lean appears if GBP or NZD moves: GBP up on UK Q3 GDP on 12 Nov well above consensus, or MPC speakers backing more hikes; NZD up on the risk mood improves or dairy prices keep rising at the 17 Nov auction.",
+   "horizon": "Swing: two-sided",
+   "alignment": "Neutral",
+   "alignment_note": "W45 move +1.28% (+1.06σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "bullish → two-sided; GBP +4 → -3, NZD +1 → -3 (gap +3 → 0); Delta check: NZD N2 -1 → 0 (code M, S54), NZD -4 → -3; Phase 1 was two-sided low (gap +1)"
+  },
+  {
+   "pair": "GBPCAD",
+   "bias": "bullish",
+   "conviction": "low",
+   "summary": "Bullish (GBP -3 vs CAD -6)",
+   "base_state": "Weakening",
+   "base_score": -3,
+   "quote_state": "Weak",
+   "quote_score": -6,
+   "main_driver": "GBP favored: BoE guidance softer than the three further hikes priced; risk-off; CAD: oil fall, weak jobs, live US tariff and risk-off",
+   "drivers": [
+    "GBP (-3): BoE guidance softer than the three further hikes priced; risk-off",
+    "CAD (-6): oil fall, weak jobs, live US tariff and risk-off"
+   ],
+   "catalysts": [
+    {
+     "date": "10 Nov",
+     "event": "BoC Summary of Deliberations",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "11 Nov",
+     "event": "OPEC monthly oil market report",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "12 Nov",
+     "event": "UK Q3 GDP (first estimate)",
+     "imp": "HIGH"
+    },
+    {
+     "date": "13 Nov",
+     "event": "IEA oil market report",
+     "imp": "MEDIUM"
+    }
+   ],
+   "priced": "GBP: Largely priced — about 3 more BoE hikes priced by Nov 2027. CAD: Not applicable — Dec BoC hike 33–40% priced; pricing matches the mixed evidence.",
+   "invalidation": "Bullish view fails if GBP weakens (Weak Q3 GDP or MPC members talking about a pause) or CAD strengthens (Oil rebounding above its 9 Oct level, or a US–Canada tariff deal).",
+   "horizon": "Swing: mild bullish",
+   "alignment": "Aligned",
+   "alignment_note": "W45 move +0.82% (+0.68σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "bullish → bullish; GBP +4 → -3, CAD -2 → -6 (gap +6 → +3); Delta check: no correction"
+  },
+  {
+   "pair": "AUDJPY",
+   "bias": "two-sided",
+   "conviction": "low",
+   "summary": "Two-sided (AUD 0 vs JPY +2)",
+   "base_state": "Weakening",
+   "base_score": 0,
+   "quote_state": "Neutral",
+   "quote_score": 2,
+   "main_driver": "Close to a wash — AUD: softer RBA guidance and risk-off; JPY: risk-off haven demand and an FX intervention warning",
+   "drivers": [
+    "AUD (0): softer RBA guidance and risk-off",
+    "JPY (+2): risk-off haven demand and an FX intervention warning"
+   ],
+   "catalysts": [
+    {
+     "date": "9 Nov",
+     "event": "China CPI and PPI (October)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "10 Nov",
+     "event": "BoJ Summary of Opinions (October meeting)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "10 Nov",
+     "event": "China trade balance (October)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "8 Dec",
+     "event": "RBA decision",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "AUD: Largely priced — Dec RBA hike 0.8%, −19bp over 12 months (OIS, 6 Nov). JPY: Largely priced — Dec BoJ hike ~80% in OIS but 56% in TONA futures; 2.9 hikes over 6 meetings.",
+   "invalidation": "A lean appears if AUD or JPY moves: AUD up on Strong China data (9–10 Nov) and a risk-mood recovery; JPY up on BoJ Summary of Opinions (10 Nov) pointing clearly to December.",
+   "horizon": "Swing: two-sided",
+   "alignment": "Neutral",
+   "alignment_note": "W45 move -1.81% (-1.52σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "bullish → two-sided; AUD +5 → 0, JPY +2 → +2 (gap +3 → -2); Delta check: no correction"
+  },
+  {
+   "pair": "AUDCHF",
+   "bias": "two-sided",
+   "conviction": "low",
+   "summary": "Two-sided (AUD 0 vs CHF 0)",
+   "base_state": "Weakening",
+   "base_score": 0,
+   "quote_state": "Improving",
+   "quote_score": 0,
+   "main_driver": "Close to a wash — AUD: softer RBA guidance and risk-off; CHF: lowest carry of the eight",
+   "drivers": [
+    "AUD (0): softer RBA guidance and risk-off",
+    "CHF (0): lowest carry of the eight"
+   ],
+   "catalysts": [
+    {
+     "date": "9 Nov",
+     "event": "China CPI and PPI (October)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "10 Nov",
+     "event": "China trade balance (October)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "8 Dec",
+     "event": "RBA decision",
+     "imp": "CRITICAL"
+    },
+    {
+     "date": "10 Dec",
+     "event": "SNB decision",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "AUD: Largely priced — Dec RBA hike 0.8%, −19bp over 12 months (OIS, 6 Nov). CHF: Not applicable — no numeric SNB pricing; only talk of higher rates in 2027.",
+   "invalidation": "A lean appears if AUD or CHF moves: AUD up on Strong China data (9–10 Nov) and a risk-mood recovery; CHF up on A deeper risk-off or a numeric SNB hike price appearing.",
+   "horizon": "Swing: two-sided",
+   "alignment": "Neutral",
+   "alignment_note": "W45 move -2.90% (-2.45σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "bullish → two-sided; AUD +5 → 0, CHF -3 → 0 (gap +8 → 0); Delta check: no correction"
+  },
+  {
+   "pair": "AUDNZD",
+   "bias": "bullish",
+   "conviction": "low",
+   "summary": "Bullish (AUD 0 vs NZD -3)",
+   "base_state": "Weakening",
+   "base_score": 0,
+   "quote_state": "Weakening",
+   "quote_score": -3,
+   "main_driver": "AUD favored: softer RBA guidance and risk-off; NZD: weak jobs and risk-off",
+   "drivers": [
+    "AUD (0): softer RBA guidance and risk-off",
+    "NZD (-3): weak jobs and risk-off"
+   ],
+   "catalysts": [
+    {
+     "date": "9 Nov",
+     "event": "China CPI and PPI (October)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "10 Nov",
+     "event": "China trade balance (October)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "8 Dec",
+     "event": "RBA decision",
+     "imp": "CRITICAL"
+    },
+    {
+     "date": "9 Dec",
+     "event": "RBNZ decision",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "AUD: Largely priced — Dec RBA hike 0.8%, −19bp over 12 months (OIS, 6 Nov). NZD: Not applicable — Dec RBNZ hike ~60% priced.",
+   "invalidation": "Bullish view fails if AUD weakens (Weak China data or deeper risk-off) or NZD strengthens (the risk mood improves or dairy prices keep rising at the 17 Nov auction).",
+   "horizon": "Swing: mild bullish",
+   "alignment": "Partial conflict",
+   "alignment_note": "W45 move -0.90% (-0.75σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "bullish → bullish; AUD +5 → 0, NZD +1 → -3 (gap +4 → +3); Delta check: NZD N2 -1 → 0 (code M, S54), NZD -4 → -3; Phase 1 was bullish low (gap +4)"
+  },
+  {
+   "pair": "AUDCAD",
+   "bias": "bullish",
+   "conviction": "medium",
+   "summary": "Bullish (AUD 0 vs CAD -6)",
+   "base_state": "Weakening",
+   "base_score": 0,
+   "quote_state": "Weak",
+   "quote_score": -6,
+   "main_driver": "AUD favored: softer RBA guidance and risk-off; CAD: oil fall, weak jobs, live US tariff and risk-off",
+   "drivers": [
+    "AUD (0): softer RBA guidance and risk-off",
+    "CAD (-6): oil fall, weak jobs, live US tariff and risk-off"
+   ],
+   "catalysts": [
+    {
+     "date": "9 Nov",
+     "event": "China CPI and PPI (October)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "10 Nov",
+     "event": "BoC Summary of Deliberations",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "10 Nov",
+     "event": "China trade balance (October)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "11 Nov",
+     "event": "OPEC monthly oil market report",
+     "imp": "MEDIUM"
+    }
+   ],
+   "priced": "AUD: Largely priced — Dec RBA hike 0.8%, −19bp over 12 months (OIS, 6 Nov). CAD: Not applicable — Dec BoC hike 33–40% priced; pricing matches the mixed evidence.",
+   "invalidation": "Bullish view fails if AUD weakens (Weak China data or deeper risk-off) or CAD strengthens (Oil rebounding above its 9 Oct level, or a US–Canada tariff deal).",
+   "horizon": "Swing: bullish",
+   "alignment": "Conflicting",
+   "alignment_note": "W45 move -1.29% (-1.08σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "bullish → bullish; AUD +5 → 0, CAD -2 → -6 (gap +7 → +6); Delta check: no correction"
+  },
+  {
+   "pair": "NZDJPY",
+   "bias": "bearish",
+   "conviction": "medium",
+   "summary": "Bearish (NZD -3 vs JPY +2)",
+   "base_state": "Weakening",
+   "base_score": -3,
+   "quote_state": "Neutral",
+   "quote_score": 2,
+   "main_driver": "JPY favored: risk-off haven demand and an FX intervention warning; NZD: weak jobs and risk-off",
+   "drivers": [
+    "JPY (+2): risk-off haven demand and an FX intervention warning",
+    "NZD (-3): weak jobs and risk-off"
+   ],
+   "catalysts": [
+    {
+     "date": "10 Nov",
+     "event": "BoJ Summary of Opinions (October meeting)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "27 Nov",
+     "event": "NZ official election result",
+     "imp": "HIGH"
+    },
+    {
+     "date": "9 Dec",
+     "event": "RBNZ decision",
+     "imp": "CRITICAL"
+    },
+    {
+     "date": "18 Dec",
+     "event": "BoJ decision (17–18 Dec)",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "NZD: Not applicable — Dec RBNZ hike ~60% priced. JPY: Largely priced — Dec BoJ hike ~80% in OIS but 56% in TONA futures; 2.9 hikes over 6 meetings.",
+   "invalidation": "Bearish view fails if NZD strengthens (the risk mood improves or dairy prices keep rising at the 17 Nov auction) or JPY weakens (Risk mood recovering (carry trades back) or BoJ speakers delaying December).",
+   "horizon": "Swing: bearish",
+   "alignment": "Aligned",
+   "alignment_note": "W45 move -0.92% (-0.77σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "two-sided → bearish; NZD +1 → -3, JPY +2 → +2 (gap -1 → -5); Delta check: NZD N2 -1 → 0 (code M, S54), NZD -4 → -3; Phase 1 was bearish medium (gap -6)"
+  },
+  {
+   "pair": "NZDCHF",
+   "bias": "bearish",
+   "conviction": "low",
+   "summary": "Bearish (NZD -3 vs CHF 0)",
+   "base_state": "Weakening",
+   "base_score": -3,
+   "quote_state": "Improving",
+   "quote_score": 0,
+   "main_driver": "CHF favored: lowest carry of the eight; NZD: weak jobs and risk-off",
+   "drivers": [
+    "CHF (0): lowest carry of the eight",
+    "NZD (-3): weak jobs and risk-off"
+   ],
+   "catalysts": [
+    {
+     "date": "17 Nov",
+     "event": "Global Dairy Trade auction",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "27 Nov",
+     "event": "NZ official election result",
+     "imp": "HIGH"
+    },
+    {
+     "date": "9 Dec",
+     "event": "RBNZ decision",
+     "imp": "CRITICAL"
+    },
+    {
+     "date": "10 Dec",
+     "event": "SNB decision",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "NZD: Not applicable — Dec RBNZ hike ~60% priced. CHF: Not applicable — no numeric SNB pricing; only talk of higher rates in 2027.",
+   "invalidation": "Bearish view fails if NZD strengthens (the risk mood improves or dairy prices keep rising at the 17 Nov auction) or CHF weakens (Risk mood recovering quickly).",
+   "horizon": "Swing: mild bearish",
+   "alignment": "Aligned",
+   "alignment_note": "W45 move -2.06% (-1.73σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "bullish → bearish; NZD +1 → -3, CHF -3 → 0 (gap +4 → -3); Delta check: NZD N2 -1 → 0 (code M, S54), NZD -4 → -3; Phase 1 was bearish low (gap -4)"
+  },
+  {
+   "pair": "NZDCAD",
+   "bias": "bullish",
+   "conviction": "low",
+   "summary": "Bullish (NZD -3 vs CAD -6)",
+   "base_state": "Weakening",
+   "base_score": -3,
+   "quote_state": "Weak",
+   "quote_score": -6,
+   "main_driver": "NZD favored: weak jobs and risk-off; CAD: oil fall, weak jobs, live US tariff and risk-off",
+   "drivers": [
+    "NZD (-3): weak jobs and risk-off",
+    "CAD (-6): oil fall, weak jobs, live US tariff and risk-off"
+   ],
+   "catalysts": [
+    {
+     "date": "10 Nov",
+     "event": "BoC Summary of Deliberations",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "11 Nov",
+     "event": "OPEC monthly oil market report",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "13 Nov",
+     "event": "IEA oil market report",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "9 Dec",
+     "event": "BoC decision",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "NZD: Not applicable — Dec RBNZ hike ~60% priced. CAD: Not applicable — Dec BoC hike 33–40% priced; pricing matches the mixed evidence.",
+   "invalidation": "Bullish view fails if NZD weakens (coalition talks stall after the 27 Nov official result, or weaker dairy at the 17 Nov auction) or CAD strengthens (Oil rebounding above its 9 Oct level, or a US–Canada tariff deal).",
+   "horizon": "Swing: mild bullish",
+   "alignment": "Partial conflict",
+   "alignment_note": "W45 move -0.43% (-0.36σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "bullish → bullish; NZD +1 → -3, CAD -2 → -6 (gap +3 → +3); Delta check: NZD N2 -1 → 0 (code M, S54), NZD -4 → -3; Phase 1 was two-sided low (gap +2)"
+  },
+  {
+   "pair": "CADJPY",
+   "bias": "bearish",
+   "conviction": "medium",
+   "summary": "Bearish (CAD -6 vs JPY +2)",
+   "base_state": "Weak",
+   "base_score": -6,
+   "quote_state": "Neutral",
+   "quote_score": 2,
+   "main_driver": "JPY favored: risk-off haven demand and an FX intervention warning; CAD: oil fall, weak jobs, live US tariff and risk-off",
+   "drivers": [
+    "JPY (+2): risk-off haven demand and an FX intervention warning",
+    "CAD (-6): oil fall, weak jobs, live US tariff and risk-off"
+   ],
+   "catalysts": [
+    {
+     "date": "10 Nov",
+     "event": "BoC Summary of Deliberations",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "10 Nov",
+     "event": "BoJ Summary of Opinions (October meeting)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "11 Nov",
+     "event": "OPEC monthly oil market report",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "13 Nov",
+     "event": "IEA oil market report",
+     "imp": "MEDIUM"
+    }
+   ],
+   "priced": "CAD: Not applicable — Dec BoC hike 33–40% priced; pricing matches the mixed evidence. JPY: Largely priced — Dec BoJ hike ~80% in OIS but 56% in TONA futures; 2.9 hikes over 6 meetings.",
+   "invalidation": "Bearish view fails if CAD strengthens (Oil rebounding above its 9 Oct level, or a US–Canada tariff deal) or JPY weakens (Risk mood recovering (carry trades back) or BoJ speakers delaying December).",
+   "horizon": "Swing: bearish",
+   "alignment": "Aligned",
+   "alignment_note": "W45 move -0.52% (-0.44σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "bearish → bearish; CAD -2 → -6, JPY +2 → +2 (gap -4 → -8); Delta check: no correction"
+  },
+  {
+   "pair": "CADCHF",
+   "bias": "bearish",
+   "conviction": "medium",
+   "summary": "Bearish (CAD -6 vs CHF 0)",
+   "base_state": "Weak",
+   "base_score": -6,
+   "quote_state": "Improving",
+   "quote_score": 0,
+   "main_driver": "CHF favored: lowest carry of the eight; CAD: oil fall, weak jobs, live US tariff and risk-off",
+   "drivers": [
+    "CHF (0): lowest carry of the eight",
+    "CAD (-6): oil fall, weak jobs, live US tariff and risk-off"
+   ],
+   "catalysts": [
+    {
+     "date": "10 Nov",
+     "event": "BoC Summary of Deliberations",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "11 Nov",
+     "event": "OPEC monthly oil market report",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "13 Nov",
+     "event": "IEA oil market report",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "9 Dec",
+     "event": "BoC decision",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "CAD: Not applicable — Dec BoC hike 33–40% priced; pricing matches the mixed evidence. CHF: Not applicable — no numeric SNB pricing; only talk of higher rates in 2027.",
+   "invalidation": "Bearish view fails if CAD strengthens (Oil rebounding above its 9 Oct level, or a US–Canada tariff deal) or CHF weakens (Risk mood recovering quickly).",
+   "horizon": "Swing: bearish",
+   "alignment": "Aligned",
+   "alignment_note": "W45 move -1.58% (-1.33σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "two-sided → bearish; CAD -2 → -6, CHF -3 → 0 (gap +1 → -6); Delta check: no correction"
+  },
+  {
+   "pair": "CHFJPY",
+   "bias": "two-sided",
+   "conviction": "low",
+   "summary": "Two-sided (CHF 0 vs JPY +2)",
+   "base_state": "Improving",
+   "base_score": 0,
+   "quote_state": "Neutral",
+   "quote_score": 2,
+   "main_driver": "Close to a wash — CHF: lowest carry of the eight; JPY: risk-off haven demand and an FX intervention warning",
+   "drivers": [
+    "CHF (0): lowest carry of the eight",
+    "JPY (+2): risk-off haven demand and an FX intervention warning"
+   ],
+   "catalysts": [
+    {
+     "date": "10 Nov",
+     "event": "BoJ Summary of Opinions (October meeting)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "10 Dec",
+     "event": "SNB decision",
+     "imp": "CRITICAL"
+    },
+    {
+     "date": "18 Dec",
+     "event": "BoJ decision (17–18 Dec)",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "CHF: Not applicable — no numeric SNB pricing; only talk of higher rates in 2027. JPY: Largely priced — Dec BoJ hike ~80% in OIS but 56% in TONA futures; 2.9 hikes over 6 meetings.",
+   "invalidation": "A lean appears if CHF or JPY moves: CHF up on A deeper risk-off or a numeric SNB hike price appearing; JPY up on BoJ Summary of Opinions (10 Nov) pointing clearly to December.",
+   "horizon": "Swing: two-sided",
+   "alignment": "Neutral",
+   "alignment_note": "W45 move +1.16% (+0.96σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "bearish → two-sided; CHF -3 → 0, JPY +2 → +2 (gap -5 → -2); Delta check: no correction"
+  },
+  {
+   "pair": "XAUUSD",
+   "bias": "bullish",
+   "conviction": "medium",
+   "summary": "Bullish (XAU +14 vs USD +7)",
+   "base_state": "Strong",
+   "base_score": 14,
+   "quote_state": "Strong",
+   "quote_score": 7,
+   "main_driver": "XAU favored: haven demand and strong central-bank/ETF buying; USD: payrolls beat and strong data leave room for more Fed hikes than priced; risk-off support",
+   "drivers": [
+    "XAU (+14): haven demand and strong central-bank/ETF buying",
+    "USD (+7): payrolls beat and strong data leave room for more Fed hikes than priced; risk-off support"
+   ],
+   "catalysts": [
+    {
+     "date": "10 Nov",
+     "event": "US CPI (October)",
+     "imp": "HIGH"
+    },
+    {
+     "date": "13 Nov",
+     "event": "US PPI (October)",
+     "imp": "MEDIUM"
+    },
+    {
+     "date": "25 Nov",
+     "event": "US PCE inflation",
+     "imp": "HIGH"
+    },
+    {
+     "date": "9 Dec",
+     "event": "FOMC decision (8–9 Dec)",
+     "imp": "CRITICAL"
+    }
+   ],
+   "priced": "XAU: gold factor G +7 (rule-based, no priced path); USD leg as stated. USD: Partially priced — Dec FOMC hike ~75–78% priced, about one more after (FedWatch, 6 Nov).",
+   "invalidation": "Bullish view fails if XAU weakens (Hot US CPI lifting real yields, or ETF outflows) or USD strengthens (US CPI on 10 Nov at or above consensus and Fed speakers backing December).",
+   "horizon": "Swing: bullish",
+   "alignment": "Aligned",
+   "alignment_note": "W45 move +5.06% (+4.11σu; v1 threshold 1.2% = 1σ, uncalibrated); Daily Observer export, 2–6 Nov 2026; in-sample consistency read, not a test",
+   "changed": "two-sided → bullish; XAU +2 → +14, USD +2 → +7 (gap 0 → +7); Delta check: no correction"
+  }
+ ],
+ "news": [
+  {
+   "date": "2026-11-09",
+   "currency": "AUD",
+   "event": "China CPI and PPI (October)",
+   "importance": "MEDIUM"
+  },
+  {
+   "date": "2026-11-10",
+   "currency": "AUD",
+   "event": "China trade balance (October)",
+   "importance": "MEDIUM"
+  },
+  {
+   "date": "2026-11-10",
+   "currency": "CAD",
+   "event": "BoC Summary of Deliberations",
+   "importance": "MEDIUM"
+  },
+  {
+   "date": "2026-11-10",
+   "currency": "JPY",
+   "event": "BoJ Summary of Opinions (October meeting)",
+   "importance": "MEDIUM"
+  },
+  {
+   "date": "2026-11-10",
+   "currency": "USD",
+   "event": "US CPI (October)",
+   "importance": "HIGH"
+  },
+  {
+   "date": "2026-11-10",
+   "currency": "XAU",
+   "event": "US CPI (October)",
+   "importance": "HIGH"
+  },
+  {
+   "date": "2026-11-11",
+   "currency": "CAD",
+   "event": "US Veterans Day / Canada Remembrance Day (bond markets closed)",
+   "importance": "LOW"
+  },
+  {
+   "date": "2026-11-11",
+   "currency": "CAD",
+   "event": "OPEC monthly oil market report",
+   "importance": "MEDIUM"
+  },
+  {
+   "date": "2026-11-11",
+   "currency": "USD",
+   "event": "US Veterans Day / Canada Remembrance Day (bond markets closed)",
+   "importance": "LOW"
+  },
+  {
+   "date": "2026-11-12",
+   "currency": "GBP",
+   "event": "UK Q3 GDP (first estimate)",
+   "importance": "HIGH"
+  },
+  {
+   "date": "2026-11-13",
+   "currency": "CAD",
+   "event": "IEA oil market report",
+   "importance": "MEDIUM"
+  },
+  {
+   "date": "2026-11-13",
+   "currency": "EUR",
+   "event": "Euro-area Q3 GDP (second estimate)",
+   "importance": "MEDIUM"
+  },
+  {
+   "date": "2026-11-13",
+   "currency": "EUR",
+   "event": "Rating reviews: Fitch Germany, S&P Italy",
+   "importance": "MEDIUM"
+  },
+  {
+   "date": "2026-11-13",
+   "currency": "USD",
+   "event": "US PPI (October)",
+   "importance": "MEDIUM"
+  },
+  {
+   "date": "2026-11-13",
+   "currency": "XAU",
+   "event": "US PPI (October)",
+   "importance": "MEDIUM"
+  },
+  {
+   "date": "2026-11-17",
+   "currency": "NZD",
+   "event": "Global Dairy Trade auction",
+   "importance": "MEDIUM"
+  },
+  {
+   "date": "2026-11-20",
+   "currency": "EUR",
+   "event": "French Senate begins budget debate",
+   "importance": "HIGH"
+  },
+  {
+   "date": "2026-11-23",
+   "currency": "EUR",
+   "event": "French Senate vote on the revenue part",
+   "importance": "HIGH"
+  },
+  {
+   "date": "2026-11-25",
+   "currency": "AUD",
+   "event": "Australia monthly CPI",
+   "importance": "HIGH"
+  },
+  {
+   "date": "2026-11-25",
+   "currency": "USD",
+   "event": "US PCE inflation",
+   "importance": "HIGH"
+  },
+  {
+   "date": "2026-11-27",
+   "currency": "EUR",
+   "event": "S&P rating review of France",
+   "importance": "HIGH"
+  },
+  {
+   "date": "2026-11-27",
+   "currency": "NZD",
+   "event": "NZ official election result",
+   "importance": "HIGH"
+  }
+ ]
+}

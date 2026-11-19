@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Inter;font-weight:500;src:url(../node_modules/@fontsource/inter/files/inter-latin-500-normal.woff2)}
+@font-face{font-family:Inter;font-weight:600;src:url(../node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2)}
+@font-face{font-family:Inter;font-weight:700;src:url(../node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2)}
+@font-face{font-family:Outfit;font-weight:500;src:url(../node_modules/@fontsource/outfit/files/outfit-latin-500-normal.woff2)}
+@font-face{font-family:Outfit;font-weight:700;src:url(../node_modules/@fontsource/outfit/files/outfit-latin-700-normal.woff2)}
+@font-face{font-family:Outfit;font-weight:800;src:url(../node_modules/@fontsource/outfit/files/outfit-latin-800-normal.woff2)}
+:root{--bg:#120F2E;--ink:#FFFFFF;--sub:#B9B6D9;--lime:#C6FF3D;--bull:#1FD68A;--bear:#FF4D6D;--amb:#FFC24B;--glass:rgba(255,255,255,.08);--edge:rgba(255,255,255,.16)}
+*{box-sizing:border-box}
+body{margin:0;width:1080px;height:1920px;background:var(--bg);color:var(--ink);font-family:Inter,sans-serif;overflow:hidden;position:relative}
+#bg{position:absolute;inset:0;overflow:hidden}
+.blob{position:absolute;width:1400px;height:1400px;border-radius:50%}
+#stage{position:absolute;inset:0}
+.sc{position:absolute;inset:0;padding:200px 130px 420px 80px;display:none;flex-direction:column}
+.sc.on{display:flex}
+.eye{display:inline-flex;align-self:flex-start;padding:10px 22px;border-radius:999px;background:rgba(198,255,61,.14);color:var(--lime);font-family:Outfit;font-weight:700;font-size:30px;letter-spacing:2px}
+.mid{flex-grow:1;display:flex;flex-direction:column;justify-content:center;gap:36px}
+.h{font-family:Outfit;font-weight:800;line-height:1.02;letter-spacing:-1px}
+.card{background:var(--glass);border:2px solid var(--edge);border-radius:36px;padding:36px}
+.num{font-family:Outfit;font-weight:800;line-height:1}
+#hud{position:absolute;left:80px;right:130px;top:104px;display:flex;align-items:center;gap:16px}
+.logo{width:54px;height:54px;border-radius:16px;background:var(--lime);display:flex;align-items:center;justify-content:center}
+.brand{font-family:Outfit;font-weight:700;font-size:32px;letter-spacing:.5px}
+#prog{position:absolute;left:0;bottom:0;height:12px;background:var(--lime);border-radius:0 6px 6px 0}
+#flash{position:absolute;inset:0;background:#fff;opacity:0}
+#follow{position:absolute;left:80px;right:130px;top:1390px;display:flex;align-items:center;gap:22px;padding:22px 26px;border-radius:30px;background:#fff;color:#120F2E;opacity:0;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.fbtn{margin-left:auto;padding:16px 30px;border-radius:999px;font-family:Outfit;font-weight:800;font-size:32px;display:flex;align-items:center;gap:10px}
+#cursor{position:absolute;width:90px;height:90px;opacity:0}
+canvas{position:absolute;inset:0}
+</style></head><body>
+<div id="bg"><div class="blob" id="b1" style="background:radial-gradient(circle,rgba(108,75,255,.55),rgba(108,75,255,0) 62%)"></div><div class="blob" id="b2" style="background:radial-gradient(circle,rgba(24,200,255,.38),rgba(24,200,255,0) 62%)"></div><div class="blob" id="b3" style="background:radial-gradient(circle,rgba(198,255,61,.20),rgba(198,255,61,0) 62%)"></div></div>
+<div id="stage">
+
+<section class="sc" id="hook" style="padding:0">
+ <canvas id="cv" width="1080" height="1920"></canvas>
+ <div style="position:absolute;left:80px;right:130px;top:210px;display:flex;flex-direction:column;gap:22px">
+  <div data-in="0.15"><span class="eye">EUR/USD · DAILY CHECK</span></div>
+  <div class="h" style="font-size:120px" data-slam="@0+0.5"><span style="color:var(--bull)">BULLS</span> <span style="font-size:70px;color:var(--sub)">vs</span> <span style="color:var(--bear)">BEARS</span></div>
+ </div>
+ <div style="position:absolute;left:80px;right:130px;top:1330px" data-words="@1"><span class="h" style="font-size:96px">Who's winning this week?</span></div>
+</section>
+
+<section class="sc" id="monday">
+ <div data-pop="0.1" style="align-self:flex-start"><div style="display:flex;align-items:center;gap:22px"><div style="width:120px;border-radius:22px;overflow:hidden;background:#fff;text-align:center;box-shadow:0 16px 40px rgba(0,0,0,.3)"><div style="background:#C6FF3D;color:#120F2E;font-family:Outfit;font-weight:800;font-size:26px;padding:6px 0">MON</div><div style="color:#120F2E;font-family:Outfit;font-weight:800;font-size:64px;line-height:1.05;padding:4px 0 8px">9</div></div><div><div style="font-family:Outfit;font-weight:800;font-size:46px">Weekly analysis</div><div style="font-size:28px;color:var(--sub)">Mon 9 Nov · start of the week</div></div></div></div>
+ <div class="mid">
+  <div class="h" style="font-size:104px" data-words="@0">The dollar was favoured.</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+   <div class="card" data-in="@1" data-sfx="pop"><div style="font-family:Outfit;font-weight:700;font-size:40px">EUR</div><div class="num" style="font-size:150px;color:var(--bear);margin:8px 0" data-sign data-count="0|-3|@1+0.2|0.7">0</div><div style="font-size:30px;color:var(--sub);line-height:1.3">France's budget worries</div></div>
+   <div class="card" data-in="@1+2.0" data-sfx="pop"><div style="font-family:Outfit;font-weight:700;font-size:40px">USD</div><div class="num" style="font-size:150px;color:var(--bull);margin:8px 0" data-sign data-count="0|7|@1+2.2|0.7">0</div><div style="font-size:30px;color:var(--sub);line-height:1.3">Strong US jobs</div></div>
+  </div>
+  <div data-in="@1+3.2">
+   <div style="display:flex;justify-content:space-between;font-family:Outfit;font-weight:700;font-size:30px;margin-bottom:14px"><span style="color:var(--bear)">EUR</span><span style="color:var(--sub)">tug of war</span><span style="color:var(--bull)">USD</span></div>
+   <div style="position:relative;height:60px"><div style="position:absolute;left:0;right:0;top:24px;height:12px;border-radius:6px;background:linear-gradient(90deg,var(--bear),rgba(255,255,255,.25) 50%,var(--bull))"></div><div style="position:absolute;top:0;width:60px;height:60px;margin-left:-30px;border-radius:50%;background:#fff;box-shadow:0 0 30px rgba(198,255,61,.8);left:50%" data-move="77.8|@1+3.4|1.2"></div></div>
+  </div>
+ </div>
+</section>
+
+<section class="sc" id="overnight">
+ <div data-pop="0.1" style="align-self:flex-start"><div style="display:flex;align-items:center;gap:22px"><div style="width:120px;border-radius:22px;overflow:hidden;background:#fff;text-align:center;box-shadow:0 16px 40px rgba(0,0,0,.3)"><div style="background:#18C8FF;color:#120F2E;font-family:Outfit;font-weight:800;font-size:26px;padding:6px 0">THU</div><div style="color:#120F2E;font-family:Outfit;font-weight:800;font-size:64px;line-height:1.05;padding:4px 0 8px">12</div></div><div><div style="font-family:Outfit;font-weight:800;font-size:46px">Today's check</div><div style="font-size:28px;color:var(--sub)">Thu 12 Nov · morning</div></div></div></div>
+ <div class="mid">
+  <div class="h" style="font-size:96px" data-words="@1">France's stress eased a little.</div>
+  <div class="card" data-in="@1+0.5" data-sfx="pop" style="display:flex;flex-direction:column;align-items:center;gap:6px">
+   <svg width="640" height="340" viewBox="0 0 640 340" aria-hidden="true">
+    <defs><linearGradient id="ga" x1="0" x2="1"><stop offset="0" stop-color="#1FD68A"/><stop offset=".55" stop-color="#FFC24B"/><stop offset="1" stop-color="#FF4D6D"/></linearGradient></defs>
+    <path d="M60 320 A260 260 0 0 1 580 320" fill="none" stroke="url(#ga)" stroke-width="42" stroke-linecap="round"/>
+    <g id="needle" data-needle="162|142|@1+0.8|1.8"><line x1="320" y1="320" x2="320" y2="100" stroke="#fff" stroke-width="12" stroke-linecap="round"/></g>
+    <circle cx="320" cy="320" r="22" fill="#fff"/>
+   </svg>
+   <div class="num" style="font-size:110px;color:var(--amb)"><span data-count="162|142|@1+0.8|1.8">162</span></div>
+   <div style="font-size:30px;color:var(--sub)">France's stress meter</div>
+   <div data-in="@1+3.0" data-sfx="tick" style="margin-top:10px;padding:12px 26px;border-radius:999px;background:rgba(255,77,109,.18);color:#FF8DA2;font-weight:700;font-size:30px">Still in the red zone</div>
+  </div>
+  <div class="card" data-in="@2" data-sfx="pop" style="display:flex;align-items:center;gap:30px">
+   <svg width="160" height="160" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="80" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="22"/><circle cx="100" cy="100" r="80" fill="none" stroke="#1FD68A" stroke-width="22" stroke-linecap="round" stroke-dasharray="502.7" stroke-dashoffset="502.7" transform="rotate(-90 100 100)" data-ring="0.91|@2+0.5|1.6"/></svg>
+   <div><div class="num" style="font-size:110px;color:var(--bull)"><span data-count="0|91|@2+0.5|1.6">0</span>%</div><div style="font-size:30px;color:var(--sub)">chance of a US rate hike in December</div></div>
+  </div>
+ </div>
+</section>
+
+<section class="sc" id="verdict">
+ <div data-in="0.1"><span class="eye">TODAY'S READ · THU 12 NOV</span></div>
+ <div class="mid">
+  <div class="h" style="font-size:120px" data-slam="@0">The dollar still leads.</div>
+  <div class="card" data-in="@0+0.9" style="display:flex;flex-direction:column;gap:18px">
+   <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="num" style="font-size:64px;color:var(--bear)">EUR −3</span><span class="num" style="font-size:64px;color:var(--bull)">USD +7</span></div>
+   <div style="position:relative;height:60px"><div style="position:absolute;left:0;right:0;top:24px;height:12px;border-radius:6px;background:linear-gradient(90deg,var(--bear),rgba(255,255,255,.25) 50%,var(--bull))"></div><div style="position:absolute;top:0;width:60px;height:60px;margin-left:-30px;border-radius:50%;background:#fff;box-shadow:0 0 30px rgba(198,255,61,.8);left:50%" data-move="77.8|@0+1.1|1.0"></div></div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px">
+   <div style="font-family:Outfit;font-weight:700;font-size:34px;color:var(--lime)" data-in="@1">NEXT TESTS</div>
+   <div class="card" data-in="@1+0.5" data-sfx="pop" style="padding:26px 32px;font-size:36px;font-weight:600">Fri 13 Nov · Europe's growth + US prices</div>
+   <div class="card" data-in="@1+1.9" data-sfx="pop" style="padding:26px 32px;font-size:36px;font-weight:600">From 20 Nov · France's budget debate</div>
+  </div>
+ </div>
+</section>
+
+<section class="sc" id="outro" style="justify-content:center;align-items:center;padding:200px 130px 420px 130px">
+ <div style="display:flex;flex-direction:column;align-items:center;gap:40px;text-align:center">
+  <div data-pop="0.2" style="width:220px;height:220px;border-radius:60px;background:var(--lime);display:flex;align-items:center;justify-content:center;box-shadow:0 30px 90px rgba(198,255,61,.35)">
+   <svg width="150" height="150" viewBox="0 0 24 24" fill="none" stroke="#120F2E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 3 8-9"/><path d="M15 6h5v5"/></svg>
+  </div>
+  <div class="h" style="font-size:96px" data-in="0.5">Forex Fundamental Guide</div>
+  <div style="font-size:38px;color:var(--sub)" data-in="0.8">The big-picture story, every morning and evening</div>
+  <div id="obtn" data-in="1.1" style="padding:30px 70px;border-radius:999px;background:var(--lime);color:#120F2E;font-family:Outfit;font-weight:800;font-size:60px;display:flex;align-items:center;gap:18px">
+   <svg id="oplus" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#120F2E" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span id="otxt">FOLLOW</span>
+  </div>
+  <div style="font-size:28px;color:var(--sub);margin-top:30px" data-in="@1">Fundamental bias, not a trade signal.</div>
+ </div>
+</section>
+
+</div>
+<div id="hud"><div class="logo"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#120F2E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 3 8-9"/></svg></div><div class="brand">Forex Fundamental Guide</div></div>
+<div id="follow"><div class="logo" style="width:70px;height:70px;border-radius:20px"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#120F2E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 3 8-9"/></svg></div><div><div style="font-family:Outfit;font-weight:800;font-size:34px">Forex Fundamental Guide</div><div style="font-size:24px;color:#57537A">Daily check, morning and evening</div></div><div class="fbtn" id="fbtn">Follow</div></div>
+<svg id="cursor" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 8-6 2-2 6z" fill="#fff" stroke="#120F2E" stroke-width="1.4" stroke-linejoin="round"/></svg>
+<div id="flash"></div><div id="prog"></div>
+<script>
+const IDS=['hook','monday','overnight','verdict','outro'];
+let TIM=null;
+const cl=x=>Math.min(1,Math.max(0,x));const ease=x=>1-Math.pow(1-cl(x),3);
+const back=x=>{x=cl(x);const c=1.9;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+const sg=(n,dp,plus)=>{const v=dp?n.toFixed(dp):String(Math.round(n));const num=Number(v);return num>0&&plus?'+'+v:num<0?'−'+v.replace('-',''):v};
+function rnd(i){const x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x)}
+document.querySelectorAll('[data-words]').forEach(el=>{const txt=el.textContent.trim();const inner=el.firstElementChild;const host=inner||el;const words=host.textContent.trim().split(' ');host.innerHTML=words.map(w=>'<span class="w" style="display:inline-block;margin-right:.24em">'+w+'</span>').join('')});
+function T(sc,v){v=String(v);if(v[0]!=='@')return +v;const m=v.slice(1).split('+');return TIM[sc].lead+TIM[sc].starts[+m[0]]+(m[1]?+m[1]:0)}
+// ---------- hook canvas ----------
+const BULL=new Path2D('M62 58 C30 52 10 30 18 8 C30 26 48 34 70 40 Z M138 58 C170 52 190 30 182 8 C170 26 152 34 130 40 Z M60 46 Q100 30 140 46 L152 96 Q150 150 100 178 Q50 150 48 96 Z');
+const BEAR=new Path2D('M100 40 C150 40 168 80 166 118 C164 160 136 182 100 182 C64 182 36 160 34 118 C32 80 50 40 100 40 Z');
+function face(ctx,kind,x,y,s,rot,angry){ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.scale(s,s);ctx.translate(-100,-100);
+ ctx.shadowColor=kind==='bull'?'rgba(31,214,138,.7)':'rgba(255,77,109,.7)';ctx.shadowBlur=40;
+ ctx.fillStyle=kind==='bull'?'#1FD68A':'#FF4D6D';if(kind!=='bull'){ctx.beginPath();ctx.arc(54,54,30,0,7);ctx.arc(146,54,30,0,7);ctx.fill()}ctx.fill(BULL===null?null:(kind==='bull'?BULL:BEAR));ctx.shadowBlur=0;
+ ctx.fillStyle=kind==='bull'?'#0E8F5A':'#C22E4C';
+ if(kind==='bull'){ctx.beginPath();ctx.ellipse(100,140,34,24,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#08513A';ctx.beginPath();ctx.arc(88,142,6,0,7);ctx.arc(112,142,6,0,7);ctx.fill()}
+ else{ctx.beginPath();ctx.arc(52,50,14,0,7);ctx.fill();ctx.beginPath();ctx.arc(148,50,14,0,7);ctx.fill();ctx.fillStyle='#FFD3DC';ctx.beginPath();ctx.ellipse(100,138,36,28,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#2A0710';ctx.beginPath();ctx.ellipse(100,124,16,11,0,0,7);ctx.fill();ctx.strokeStyle='#2A0710';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(100,134);ctx.lineTo(100,148);ctx.moveTo(88,152);ctx.quadraticCurveTo(100,160,112,152);ctx.stroke()}
+ ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(78,92,13,0,7);ctx.arc(122,92,13,0,7);ctx.fill();ctx.fillStyle='#120F2E';ctx.beginPath();ctx.arc(80,94,7,0,7);ctx.arc(120,94,7,0,7);ctx.fill();
+ ctx.strokeStyle='#120F2E';ctx.lineWidth=7;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(62,74);ctx.lineTo(92,84+angry*4);ctx.moveTo(138,74);ctx.lineTo(108,84+angry*4);ctx.stroke();
+ ctx.restore()}
+function pricef(tau){const e=x=>1-Math.pow(1-cl(x),3);
+ if(tau<1.0)return 70*e(tau/1.0);
+ if(tau<2.7)return 70+30*Math.sin((tau-1.0)*7.5)*Math.exp(-(tau-1.0)*0.3);
+ return 70+30*Math.sin(1.7*7.5)*Math.exp(-0.51)-150*e((tau-2.7)/1.8)}
+const CW=34,GAPX=46,STEP=0.11,H=16;
+function closeAt(i){if(i<H)return -40+Math.sin(i*0.9)*14+(rnd(i)-0.5)*18;return pricef((i-H)*STEP)+(rnd(i)-0.5)*16}
+function drawHook(t){const cv=document.getElementById('cv');const c=cv.getContext('2d');c.clearRect(0,0,1080,1920);
+ const n=H+Math.floor(t/STEP);const frac=(t%STEP)/STEP;const right=930;const Y=v=>1000-v*2.6;
+ // grid
+ c.strokeStyle='rgba(255,255,255,.06)';c.lineWidth=2;for(let y=560;y<=1460;y+=100){c.beginPath();c.moveTo(0,y);c.lineTo(1080,y);c.stroke()}
+ const pts=[];
+ for(let i=Math.max(0,n-24);i<=n;i++){const x=right-(n-i)*GAPX-(i===n?0:frac*0)-frac*GAPX+GAPX;const o=i?closeAt(i-1):closeAt(0);let cls=closeAt(i);if(i===n){cls=o+(cls-o)*frac}
+  const hi=Math.max(o,cls)+6+rnd(i+50)*10,lo=Math.min(o,cls)-6-rnd(i+80)*10;const up=cls>=o;c.strokeStyle=c.fillStyle=up?'#1FD68A':'#FF4D6D';c.globalAlpha=0.9;
+  c.lineWidth=4;c.beginPath();c.moveTo(x,Y(hi));c.lineTo(x,Y(lo));c.stroke();c.fillRect(x-CW/2,Math.min(Y(o),Y(cls)),CW,Math.max(4,Math.abs(Y(o)-Y(cls))));pts.push([x,Y(cls)])}
+ c.globalAlpha=1;c.strokeStyle='#C6FF3D';c.lineWidth=5;c.shadowColor='#C6FF3D';c.shadowBlur=20;c.beginPath();pts.forEach((p,k)=>k?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.stroke();c.shadowBlur=0;
+ const last=pts[pts.length-1];c.fillStyle='#C6FF3D';c.beginPath();c.arc(last[0],last[1],12+4*Math.sin(t*12),0,7);c.fill();
+ // fighters
+ const clash=1.0;const cx=540,cy=Math.min(1250,Math.max(750,last[1]))+0;
+ let bx,rx,shake=0,push=0;
+ if(t<clash){const p=ease(t/clash);bx=-220+(cx-150+220)*p;rx=1300-(1300-(cx+150))*p}
+ else{const k=t-clash;const tug=t<2.7?28*Math.sin(k*7.5):0;push=t>2.7?240*ease((t-2.7)/1.6):0;bx=cx-150+tug-push;rx=cx+150+tug-push;shake=Math.max(0,1-k/0.3)}
+ const sx=(rnd(Math.floor(t*60))-0.5)*40*shake,sy=(rnd(Math.floor(t*60)+3)-0.5)*40*shake;
+ const fy=1180;
+ face(c,'bull',bx+sx,fy+sy,1.55,t>2.7?-0.25*ease((t-2.7)/1):0.12,1);
+ face(c,'bear',rx+sx,fy+sy,1.55,t>2.7?0.08:-0.12,1);
+ // sparks
+ if(t>=clash&&t<clash+0.8){const k=(t-clash)/0.8;for(let i=0;i<26;i++){const a=rnd(i)*Math.PI*2;const r=40+k*(200+rnd(i+9)*260);c.globalAlpha=1-k;c.fillStyle=i%3?'#FFE36B':'#fff';c.beginPath();c.arc(cx-push+Math.cos(a)*r+sx,fy-20+Math.sin(a)*r+sy,7*(1-k)+2,0,7);c.fill()}c.globalAlpha=1}
+ // VS badge
+ if(t>=clash){const p=back((t-clash)/0.35);const fade=t>2.7?1-ease((t-2.7)/0.4):1;c.save();c.globalAlpha=fade;c.translate(cx-push*0.5+sx,fy-270+sy);c.scale(p,p);c.rotate(-0.12);c.fillStyle='#C6FF3D';c.beginPath();c.roundRect(-110,-70,220,140,40);c.fill();c.fillStyle='#120F2E';c.font='800 96px Outfit';c.textAlign='center';c.textBaseline='middle';c.fillText('VS',0,6);c.restore()}
+ return {shake:Math.hypot(sx,sy)}}
+// ---------- generic ----------
+function draw(sc,t){const S=document.getElementById(sc);
+ S.querySelectorAll('[data-in]').forEach(el=>{const p=ease((t-T(sc,el.dataset.in))/0.4);el.style.opacity=p;el.style.transform='translateY('+(1-p)*60+'px) scale('+(0.94+0.06*p)+')'});
+ S.querySelectorAll('[data-pop]').forEach(el=>{const p=back((t-T(sc,el.dataset.pop))/0.45);el.style.opacity=cl((t-T(sc,el.dataset.pop))/0.15);el.style.transform='scale('+p+') rotate('+(1-p)*-12+'deg)'});
+ S.querySelectorAll('[data-words]').forEach(el=>{const d=T(sc,el.dataset.words);[...el.querySelectorAll('.w')].forEach((w,i)=>{const p=back((t-d-i*0.08)/0.35);w.style.opacity=cl((t-d-i*0.08)/0.12);w.style.transform='translateY('+(1-p)*50+'px) scale('+(0.7+0.3*p)+')'})});
+ S.querySelectorAll('[data-slam]').forEach(el=>{const d=T(sc,el.dataset.slam);const x=(t-d)/0.3;el.style.opacity=cl(x*3);el.style.transform='scale('+(1.6-0.6*back(x))+')';el.style.transformOrigin='left center'});
+ S.querySelectorAll('[data-count]').forEach(el=>{const [a,b,d,du,dp]=el.dataset.count.split('|');const p=ease((t-T(sc,d))/+du);el.textContent=sg(+a+(+b-+a)*p,+(dp||0),el.hasAttribute('data-sign'))});
+ S.querySelectorAll('[data-move]').forEach(el=>{const [l,d,du]=el.dataset.move.split('|');const p=back((t-T(sc,d))/+du);el.style.left=(50+(+l-50)*p)+'%'});
+ S.querySelectorAll('[data-ring]').forEach(el=>{const [v,d,du]=el.dataset.ring.split('|');const p=ease((t-T(sc,d))/+du);el.setAttribute('stroke-dashoffset',502.7*(1-v*p))});
+ S.querySelectorAll('[data-needle]').forEach(el=>{const [a,b,d,du]=el.dataset.needle.split('|');const p=back((t-T(sc,d))/+du);const v=+a+(+b-+a)*p;const ang=(v-100)/80*180-90;el.setAttribute('transform','rotate('+ang+' 320 320)')});
+ if(sc==='hook')return drawHook(t);
+ if(sc==='outro'){const tap=1.9;const k=t-tap;const b=document.getElementById('obtn');b.style.transform=(k>0&&k<0.25?'scale(0.92)':'scale(1)')+' translateY(0)';if(k>0.12){b.style.background='#fff';document.getElementById('otxt').textContent='FOLLOWING';document.getElementById('oplus').innerHTML='<path d="M5 12l5 5 9-10"/>'}else{b.style.background='var(--lime)';document.getElementById('otxt').textContent='FOLLOW';document.getElementById('oplus').innerHTML='<path d="M12 5v14M5 12h14"/>'}}
+}
+// follow sticker windows: [scene, start, end, tapAt]
+const FOLLOW=[['monday',4.6,7.4,5.8],['overnight',5.4,8.0,6.5]];
+window.cueList=(si)=>{const sc=IDS[si];const S=document.getElementById(sc);const out=[];if(si>0)out.push({t:0,type:'whoosh'});
+ S.querySelectorAll('[data-sfx]').forEach(el=>{out.push({t:T(sc,el.dataset.in),type:el.dataset.sfx})});
+ S.querySelectorAll('[data-count]').forEach(el=>{const [a,b,d,du]=el.dataset.count.split('|');const s=T(sc,d);for(let k=0;k<+du*0.8;k+=0.08)out.push({t:s+k,type:'tick2'})});
+ S.querySelectorAll('[data-slam]').forEach(el=>out.push({t:T(sc,el.dataset.slam),type:'hit'}));
+ S.querySelectorAll('[data-words]').forEach(el=>out.push({t:T(sc,el.dataset.words),type:'swish'}));
+ if(sc==='hook'){out.push({t:0,type:'rumble'},{t:1.0,type:'impact'},{t:1.55,type:'thud'},{t:2.1,type:'thud'},{t:2.7,type:'impact2'})}
+ FOLLOW.filter(f=>f[0]===sc).forEach(f=>{out.push({t:f[1],type:'pop'},{t:f[3],type:'click'},{t:f[3]+0.05,type:'ding'})});
+ if(sc==='monday'||sc==='overnight')out.push({t:0.1,type:'hit'});
+ if(sc==='outro'){out.push({t:0.2,type:'impact2'},{t:1.9,type:'click'},{t:1.95,type:'ding'})}
+ return out};
+window.setTim=t=>{TIM=t};
+window.render=(si,t,gt,total)=>{const sc=IDS[si];const TR=0.4;
+ IDS.forEach(id=>{const e=document.getElementById(id);e.classList.remove('on');e.style.transform='';e.style.opacity=1;e.style.filter='none'});
+ const cur=document.getElementById(sc);cur.classList.add('on');const r=draw(sc,t)||{};
+ if(si>0&&t<TR){const p=ease(t/TR);const pv=IDS[si-1];const P=document.getElementById(pv);P.classList.add('on');draw(pv,TIM[pv].dur);
+  P.style.transform=`translateY(${-260*p}px) scale(${1-0.08*p})`;P.style.opacity=1-p;P.style.filter=`blur(${12*p}px)`;
+  cur.style.transform=`translateY(${360*(1-p)}px)`;cur.style.opacity=p}
+ else if(sc!=='hook'){cur.style.transform=`scale(${1+0.02*t/TIM[sc].dur})`}
+ const fl=document.getElementById('flash');fl.style.opacity=sc==='hook'?Math.max(0,0.85*(1-Math.abs(t-1.0)/0.12))*(t>0.88?1:0):(si>0&&t<0.12?0.15*(1-t/0.12):0);
+ // follow sticker
+ const F=FOLLOW.find(f=>f[0]===sc&&t>=f[1]-0.01&&t<=f[2]+0.4);const fe=document.getElementById('follow'),fb=document.getElementById('fbtn'),cu=document.getElementById('cursor');
+ if(F){const pin=back((t-F[1])/0.45),pout=ease((t-F[2])/0.35);fe.style.opacity=cl((t-F[1])/0.15)*(1-pout);fe.style.transform=`translateY(${(1-pin)*-160-pout*120}px)`;
+  const tapped=t>=F[3];fb.style.background=tapped?'#120F2E':'#C6FF3D';fb.style.color=tapped?'#fff':'#120F2E';fb.textContent=tapped?'Following':'Follow';fb.style.transform=(t>=F[3]&&t<F[3]+0.18)?'scale(.9)':'scale(1)';
+  const ca=ease((t-(F[3]-0.7))/0.6);cu.style.opacity=t>F[3]-0.7&&t<F[2]?1:0;cu.style.left=(1120-260*ca)+'px';cu.style.top=(1700-250*ca+((t>=F[3]&&t<F[3]+0.18)?8:0))+'px'}
+ else{fe.style.opacity=0;cu.style.opacity=0}
+ document.getElementById('hud').style.opacity=sc==='outro'?0:1;
+ const G=gt;const b=[[200,300,0.21],[700,1100,0.17],[300,1600,0.13]];['b1','b2','b3'].forEach((id,i)=>{const e=document.getElementById(id);e.style.left=(b[i][0]-700+260*Math.sin(G*b[i][2]+i))+'px';e.style.top=(b[i][1]-700+220*Math.cos(G*b[i][2]*1.3+i))+'px'});
+ document.getElementById('prog').style.width=(gt/total*100)+'%';
+};
+</script>
+</body></html>

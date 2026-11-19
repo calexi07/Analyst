@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<style>
+@font-face{font-family:Inter;font-weight:500;src:url(../node_modules/@fontsource/inter/files/inter-latin-500-normal.woff2)}
+@font-face{font-family:Inter;font-weight:600;src:url(../node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2)}
+@font-face{font-family:Inter;font-weight:700;src:url(../node_modules/@fontsource/inter/files/inter-latin-700-normal.woff2)}
+@font-face{font-family:SG;font-weight:500;src:url(../node_modules/@fontsource/space-grotesk/files/space-grotesk-latin-500-normal.woff2)}
+@font-face{font-family:SG;font-weight:700;src:url(../node_modules/@fontsource/space-grotesk/files/space-grotesk-latin-700-normal.woff2)}
+:root{--bg:#120D0A;--cream:#EADBC4;--sub:#A8998A;--crema:#D9A35B;--bull:#3DDC97;--bear:#F0616D;--card:rgba(234,219,196,.06);--edge:rgba(234,219,196,.15)}
+*{box-sizing:border-box}
+body{margin:0;width:1920px;height:1080px;background:var(--bg);color:var(--cream);font-family:Inter,sans-serif;overflow:hidden;position:relative}
+#bg{position:absolute;inset:0;background:radial-gradient(1400px 900px at 30% 10%,#2C2018,transparent 70%),linear-gradient(180deg,#17110D,#0D0907)}
+#glow{position:absolute;width:1400px;height:1400px;border-radius:50%;left:900px;top:-500px;opacity:.10;filter:blur(40px)}
+canvas#amb{position:absolute;inset:0}
+.sc{position:absolute;inset:0;display:none}.sc.on{display:block}
+.card{background:var(--card);border:2px solid var(--edge);border-radius:30px;padding:30px 36px}
+.h{font-family:SG;font-weight:700;line-height:1.05}
+.num{font-family:SG;font-weight:700;line-height:1}
+.lbl{font-size:24px;letter-spacing:3px;font-weight:700;color:var(--sub);text-transform:uppercase}
+.abs{position:absolute}
+#hud{position:absolute;left:70px;top:48px;display:flex;align-items:center;gap:14px;font-family:SG;font-weight:700;font-size:26px;letter-spacing:3px;z-index:5}
+#chapter{position:absolute;right:70px;top:42px;padding:10px 22px;border-radius:14px;background:var(--cream);color:#120D0A;font-family:SG;font-weight:700;font-size:26px;letter-spacing:2px;z-index:5}
+#cap{position:absolute;left:220px;right:220px;bottom:58px;text-align:center;font-family:SG;font-weight:700;font-size:46px;line-height:1.15;z-index:6;text-shadow:0 4px 18px rgba(0,0,0,.9)}
+#prog{position:absolute;left:0;bottom:0;height:7px;background:var(--crema);z-index:7}
+#wipe{position:absolute;inset:-200px;z-index:8;pointer-events:none;display:none}
+#sub{position:absolute;right:70px;bottom:150px;display:flex;align-items:center;gap:20px;padding:18px 22px;border-radius:24px;background:var(--cream);color:#120D0A;z-index:9;opacity:0;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+#subbtn{padding:14px 28px;border-radius:12px;background:#E5322D;color:#fff;font-family:SG;font-weight:700;font-size:28px;letter-spacing:1px}
+#bell{font-size:40px;display:inline-block}
+#cursor{position:absolute;width:70px;height:70px;z-index:10;opacity:0}
+.coin{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:SG;font-weight:700;color:#120D0A;box-shadow:inset 0 -14px 0 rgba(0,0,0,.18),0 30px 60px rgba(0,0,0,.45)}
+.eye{position:absolute;width:26px;height:34px;background:#120D0A;border-radius:50%}
+.eye::after{content:'';position:absolute;width:9px;height:9px;background:#fff;border-radius:50%;left:5px;top:6px}
+.chip{display:inline-flex;align-items:center;gap:14px;padding:16px 24px;border-radius:18px;background:var(--card);border:2px solid var(--edge);font-family:SG;font-weight:700;font-size:36px}
+.bar{position:absolute;top:6px;height:30px;border-radius:10px}
+</style></head><body>
+<div id="bg"></div><div id="glow"></div><canvas id="amb" width="1920" height="1080"></canvas>
+<div id="stage"></div>
+<div id="hud"><svg width="44" height="44" viewBox="230 200 620 700"><g fill="none" stroke="#EADBC4" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"><path d="M330 560 H710 V650 C710 760 640 820 520 820 C400 820 330 760 330 650 Z"/><path d="M280 880 H760"/></g><rect x="418" y="410" width="44" height="80" rx="8" fill="#EADBC4"/><rect x="498" y="350" width="44" height="110" rx="8" fill="#EADBC4"/><rect x="578" y="250" width="44" height="190" rx="8" fill="#3DDC97"/></svg>FX BEFORE COFFEE · WEEKLY OUTLOOK</div>
+<div id="chapter"></div>
+<div id="cap"></div><div id="prog"></div><div id="wipe"></div>
+<div id="sub"><svg width="64" height="64" viewBox="230 200 620 700"><rect x="230" y="200" width="620" height="700" rx="120" fill="#120D0A"/><g fill="none" stroke="#EADBC4" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"><path d="M330 560 H710 V650 C710 760 640 820 520 820 C400 820 330 760 330 650 Z"/></g><rect x="578" y="250" width="44" height="190" rx="8" fill="#3DDC97"/></svg><div><div style="font-family:SG;font-weight:700;font-size:30px">FX Before Coffee</div><div style="font-size:22px;color:#6B5D50">New outlook every Monday</div></div><div id="subbtn">SUBSCRIBE</div><span id="bell">🔔</span></div>
+<svg id="cursor" viewBox="0 0 24 24"><path d="M5 3l14 8-6 2-2 6z" fill="#fff" stroke="#120D0A" stroke-width="1.4" stroke-linejoin="round"/></svg>
+<script>
+let SPEC=null,TIM=null,CAPS={},IDS=[];
+const cl=x=>Math.min(1,Math.max(0,x)),ease=x=>1-Math.pow(1-cl(x),3),eio=x=>{x=cl(x);return x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2};
+const back=x=>{x=cl(x);const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)};
+const sgn=v=>v>0?'+'+v:(v<0?'−'+(-v):'0');const col=v=>v>0?'var(--bull)':(v<0?'var(--bear)':'var(--sub)');
+function T(sc,v){v=String(v);if(v[0]!=='@')return +v;const m=v.slice(1).split('+');const k=Math.min(+m[0],TIM[sc].starts.length-1);return TIM[sc].lead+TIM[sc].starts[k]+(m[1]?+m[1]:0)}
+function coin(sym,c,size){const fs=sym.length>2?size*0.26:(sym.length>1?size*0.34:size*0.46);return `<div class="coin" data-coin style="width:${size}px;height:${size}px;background:${c};font-size:${fs}px"><div class="eye" style="left:${size*0.3}px;top:${size*0.24}px"></div><div class="eye" style="left:${size*0.58}px;top:${size*0.24}px"></div><span style="margin-top:${size*0.32}px">${sym}</span></div>`}
+// ---------- builders
+function S(id,html){return `<section class="sc" id="${id}">${html}</section>`}
+function build(){const P=SPEC;let h='';
+ // cold open
+ h+=S('cold',`<div class="abs" style="left:140px;top:250px;right:140px">${P.cold.map((l,i)=>`<div data-pop="@${i}" class="h" style="font-size:${i==3?60:80}px;margin:22px 0;display:flex;gap:30px;align-items:center;color:${i==3?'var(--crema)':'var(--cream)'}"><span style="font-size:86px">${(P.coldIcons||['🏦','📉','🛢️','☕'])[i]}</span><span>${l}</span></div>`).join('')}</div>`);
+ // title
+ h+=S('title',`<div class="abs" style="left:0;right:0;top:250px;text-align:center"><div data-pop="0.2" style="display:inline-block;position:relative;width:170px;height:170px">${coin('☕','#D9A35B',170)}</div><div data-pop="0.5" class="h" style="font-size:150px;letter-spacing:6px;margin-top:30px">WEEKLY OUTLOOK</div><div data-pop="0.9" style="font-size:44px;color:var(--crema);font-family:SG;font-weight:700;letter-spacing:8px;margin-top:14px">WEEK ${P.week} · ${P.dates.toUpperCase()}</div></div>`);
+ // big picture
+ h+=S('big',`<div class="abs h" style="left:140px;top:150px;font-size:96px" data-pop="0.1">The big picture</div>
+ <div class="abs" style="left:140px;top:300px;display:grid;grid-template-columns:repeat(3,420px);gap:30px">
+  ${P.regime.map((r,i)=>`<div class="card" data-pop="@1+${0.3+i*1.1}"><div class="lbl">${r[0]}</div><div class="num" style="font-size:92px;color:${r[6]||'var(--bear)'};margin:12px 0" data-count="${r[3]}|${r[1]}|@1+${0.4+i*1.1}|1|${r[4]}" data-unit="${r[5]}">0</div><div style="font-size:26px;color:var(--sub)">${r[2]}</div></div>`).join('')}
+ </div>
+ <div class="abs" data-stamp="@2" style="left:${(P.stamp||{}).left||1520}px;top:330px;transform:rotate(-12deg);padding:20px 34px;border:8px solid ${(P.stamp||{}).col||'var(--bear)'};border-radius:22px;color:${(P.stamp||{}).col||'var(--bear)'};font-family:SG;font-weight:700;font-size:${(P.stamp||{}).size||70}px;letter-spacing:4px;white-space:nowrap">${(P.stamp||{}).text||'RISK-OFF'}</div>
+ <div class="abs" style="left:140px;top:640px;display:flex;gap:30px">${P.themes.map((t,i)=>`<div class="card" data-pop="@3+${0.3+i*1.4}" style="width:530px;display:flex;align-items:center;gap:22px"><span style="font-size:64px">${t[0]}</span><span class="h" style="font-size:38px">${t[1]}</span></div>`).join('')}</div>`);
+ // guide
+ h+=S('guide',`<div class="abs h" style="left:140px;top:150px;font-size:96px" data-pop="0.1">How to read our scores</div>
+ <div class="abs card" style="left:140px;top:310px;width:1640px" data-pop="@1"><div style="display:flex;justify-content:space-between" class="num"><span style="font-size:70px;color:var(--bear)">−18</span><span style="font-size:50px;color:var(--sub)">0</span><span style="font-size:70px;color:var(--bull)">+18</span></div><div style="height:16px;border-radius:8px;margin:18px 0;background:linear-gradient(90deg,var(--bear),rgba(234,219,196,.2) 50%,var(--bull))"></div><div style="font-size:30px;color:var(--sub)">6 drivers: rate level · rate expectations · data surprises · commodities · politics &amp; fiscal · global risk mood</div></div>
+ <div class="abs" style="left:140px;top:620px;display:flex;gap:26px;align-items:center" data-pop="@2">${(()=>{const g=P.guideEx||['EUR',-3,'USD',7];const gap=g[1]-g[3];const lab=gap>=3?'BULLISH':(gap<=-3?'BEARISH':'TWO-SIDED');return `<span class="chip">${g[0]} <span style="color:${col(g[1])}">${sgn(g[1])}</span></span><span class="h" style="font-size:60px">−</span><span class="chip">${g[2]} <span style="color:${col(g[3])}">${sgn(g[3])}</span></span><span class="h" style="font-size:60px">=</span><span class="chip" style="font-size:44px">GAP <span style="color:var(--crema)">${sgn(gap)}</span></span><span class="chip" style="background:${gap<0?'rgba(240,97,109,.16)':'rgba(61,220,151,.16)'};color:${gap<0?'#FF9AA2':'#7FEBBE'};border-color:transparent">${lab} ${g[0]}/${g[2]}</span>`})()}</div>
+ <div class="abs" style="left:140px;top:770px;font-size:34px;color:var(--sub)" data-pop="@2+2.5">±3 or more → a lean · smaller → two-sided</div>
+ <div class="abs card" style="left:140px;top:850px;font-size:34px;font-weight:600;border-color:rgba(217,163,91,.4)" data-pop="@3">💡 Fundamental bias, not a trade signal.</div>`);
+ // currencies
+ P.ccy.forEach(c=>{const names=c.gold?P.gn:P.fn;const n=c.f.length;
+  const bars=c.f.map((v,i)=>`<div style="display:flex;align-items:center;gap:18px;height:50px"><span style="width:290px;font-size:28px;font-weight:600">${names[i]}</span><div style="position:relative;flex:1;height:42px"><div style="position:absolute;left:50%;top:0;bottom:0;width:2px;background:rgba(234,219,196,.25)"></div><div class="bar" data-fv="${v}" data-fi="${i}" style="background:${col(v)}"></div></div><span class="num" style="width:60px;text-align:right;font-size:34px;color:${col(v)}">${sgn(v)}</span></div>`).join('');
+  const cards=Object.entries(c.cards).map(([k,v])=>`<div class="card abs" data-slot="${k}" style="left:0;right:0;top:0;display:flex;align-items:center;gap:34px"><div class="num" style="font-size:${v[0].length>6?72:96}px;color:${c.col};white-space:nowrap">${v[0]}</div><div class="h" style="font-size:38px">${v[1]}</div></div>`).join('');
+  const flip=`<div class="card abs" data-slot="${c.flip}" style="left:0;right:0;top:0;display:grid;grid-template-columns:1fr 1fr;gap:26px"><div><div class="lbl" style="color:var(--bull)">⬆ Stronger if</div><div class="h" style="font-size:34px;margin-top:10px">${c.up}</div></div><div><div class="lbl" style="color:var(--bear)">⬇ Weaker if</div><div class="h" style="font-size:34px;margin-top:10px">${c.down}</div></div></div>`;
+  const pairs=c.pairs.map(p=>`<span class="chip">${p[0]} <span style="color:var(--crema)">${sgn(p[1])}</span></span>`).join('');
+  h+=S(c.id,`<div class="abs" data-chap style="left:0;right:0;top:300px;text-align:center"><div class="lbl" style="font-size:34px;color:${c.col}">${c.gold?'BONUS CHAPTER':'CHAPTER '+c.ch}</div><div class="h" style="font-size:170px;margin-top:10px">${c.name}</div></div>
+  <div data-main>
+   <div class="abs" style="left:110px;top:150px;width:560px;text-align:center"><div style="display:inline-block;position:relative;width:260px;height:260px" data-bob>${coin(c.sym,c.col,260)}</div>
+    <div class="h" style="font-size:64px;margin-top:20px">${c.name}</div>
+    <svg width="460" height="250" viewBox="0 0 460 250" style="margin-top:12px"><path d="M40 220 A190 190 0 0 1 420 220" fill="none" stroke="rgba(234,219,196,.15)" stroke-width="26" stroke-linecap="round"/><path d="M40 220 A190 190 0 0 1 230 30" fill="none" stroke="rgba(240,97,109,.55)" stroke-width="26" stroke-linecap="round"/><path d="M230 30 A190 190 0 0 1 420 220" fill="none" stroke="rgba(61,220,151,.55)" stroke-width="26" stroke-linecap="round"/><line data-needle="${c.score}" x1="230" y1="220" x2="230" y2="70" stroke="#EADBC4" stroke-width="10" stroke-linecap="round"/><circle cx="230" cy="220" r="18" fill="#EADBC4"/></svg>
+    <div class="num" style="font-size:110px;color:${col(c.score)};margin-top:-30px" data-count="0|${c.score}|@1+0.2|1.2|0" data-sign>0</div>
+    <div style="font-size:28px;color:var(--sub);margin-top:6px" data-pop="@1+1.4">${c.gold?'gold factor · last week ':'last week '}${sgn(c.prev)} → ${sgn(c.score)}</div></div>
+   <div class="abs card" style="left:760px;top:150px;width:1050px;padding:24px 34px" data-pop="@1+0.6"><div class="lbl" style="margin-bottom:8px">${c.gold?'Gold drivers':'The '+n+' drivers'}</div>${bars}</div>
+   <div class="abs" style="left:760px;top:${150+120+n*50+40}px;width:1050px;height:220px">${cards}${flip}</div>
+   <div class="abs" style="left:760px;top:${150+120+n*50+40}px;display:flex;gap:22px;flex-wrap:wrap" data-pairs="@${c.vo.length-1}">${c.gold?'':'<span class="lbl" style="align-self:center;margin-right:6px">Pairs to watch</span>'}${pairs}</div>
+  </div>`)});
+ // ranking
+ const R=P.rank;h+=S('rank',`<div class="abs h" style="left:140px;top:140px;font-size:90px" data-pop="0.1">The ranking</div>
+ <div class="abs card" style="left:140px;top:280px;width:820px;padding:24px 30px" data-pop="@1">${R.map(([c,v],i)=>`<div style="display:flex;align-items:center;gap:16px;height:62px"><span class="num" style="width:90px;font-size:38px">${c}</span><div style="position:relative;flex:1;height:42px"><div style="position:absolute;left:50%;top:0;bottom:0;width:2px;background:rgba(234,219,196,.25)"></div><div class="bar" data-rv="${v}" data-ri="${i}" style="background:${col(v)}"></div></div><span class="num" style="width:60px;text-align:right;font-size:38px;color:${col(v)}">${sgn(v)}</span></div>`).join('')}</div>
+ <div class="abs" style="left:1030px;top:280px;width:760px"><div class="lbl" data-pop="@2">Widest gaps</div>${(()=>{const cp=P.top.length>4;return P.top.map((p,i)=>`<div class="card" data-pop="@2+${(P.topPop&&P.topPop[i]!=null)?P.topPop[i]:0.8+i*0.9}" style="display:flex;justify-content:space-between;align-items:center;margin-top:${cp?8:16}px;padding:${cp?'9px 24px':'20px 30px'}"><span class="num" style="font-size:${cp?38:48}px;width:${cp?'230px':'auto'}">${p[0]}</span><span style="font-size:${cp?24:28}px;font-weight:700;color:${p[1]>0?'#7FEBBE':'#FF9AA2'}">${p[1]>0?'BULLISH':'BEARISH'}${p[2]?` <span style="color:var(--sub)">· ${p[2].toUpperCase()}</span>`:''}</span><span class="num" style="font-size:${cp?44:56}px;color:var(--crema)">${sgn(p[1])}</span></div>`).join('')})()}
+ <div class="lbl" style="margin-top:${P.top.length>4?22:30}px" data-pop="@3">Stand-offs (two-sided)</div><div style="display:flex;gap:${P.top.length>4?10:14}px;flex-wrap:wrap;margin-top:${P.top.length>4?10:14}px">${P.two.map((p,i)=>`<span class="chip" data-pop="@3+${0.5+i*0.4}" style="font-size:${P.top.length>4?26:30}px;${P.top.length>4?'padding:10px 16px':''}">🤝 ${p}</span>`).join('')}</div></div>`);
+ // week
+ h+=S('week',`<div class="abs h" style="left:140px;top:140px;font-size:90px" data-pop="0.1">The week ahead</div>
+ <div class="abs" style="left:140px;top:290px;display:grid;grid-template-columns:repeat(5,316px);gap:20px">${P.days.map((d,i)=>`<div class="card" data-pop="@0+${0.3+i*0.25}" style="height:470px;padding:22px"><div class="lbl">${d[0]}</div>${(()=>{const dn=P.days.some(x=>x[1].length>3);return d[1].map(e=>`<div data-pop="@${e[3]}" style="margin-top:${dn?12:16}px;padding:${dn?'11px 14px':'14px 16px'};border-radius:16px;background:${e[2]=='HIGH'?'rgba(240,97,109,.16)':'rgba(234,219,196,.07)'}"><div class="h" style="font-size:${dn?25:28}px">${e[0]}</div><div style="font-size:${dn?19:22}px;color:var(--sub);margin-top:4px">${e[1]}</div></div>`).join('')})()}</div>`).join('')}</div>
+ <div class="abs card" data-pop="@3" style="left:140px;top:800px;width:1640px;font-size:32px;font-weight:600;border-color:rgba(217,163,91,.4)">${P.scen||'🔥 Hot US CPI → dollar story louder &nbsp;·&nbsp; 🧊 Soft CPI → biggest risk to it'}</div>`);
+ // outro
+ h+=S('outro',`<div class="abs" style="left:0;right:0;top:170px;text-align:center"><div data-pop="0.2" style="display:inline-block;position:relative;width:200px;height:200px">${coin('☕','#D9A35B',200)}</div><div data-pop="0.5" class="h" style="font-size:110px;margin-top:26px">FX BEFORE COFFEE</div><div data-pop="0.8" style="font-size:36px;color:var(--sub);margin-top:10px">A new weekly outlook every Monday</div>
+ <div data-pop="@1" style="display:inline-flex;align-items:center;gap:24px;margin-top:44px"><div id="obtn" style="padding:26px 70px;border-radius:18px;background:#E5322D;color:#fff;font-family:SG;font-weight:700;font-size:54px;letter-spacing:3px">SUBSCRIBE</div><span id="obell" style="font-size:72px;display:inline-block">🔔</span></div>
+ <div data-pop="@2" style="font-size:30px;color:var(--sub);margin-top:40px">Fundamental bias only · not a trade signal</div></div>`);
+ document.getElementById('stage').innerHTML=h;IDS=SPEC.order}
+// ---------- draw
+function draw(sc,t){const E=document.getElementById(sc);
+ E.querySelectorAll('[data-pop]').forEach(el=>{const p=back((t-T(sc,el.dataset.pop))/0.55);const a=cl((t-T(sc,el.dataset.pop))/0.3);el.style.opacity=a;el.style.transform=`translateY(${(1-p)*40}px) scale(${0.92+0.08*p})`});
+ E.querySelectorAll('[data-stamp]').forEach(el=>{const k=t-T(sc,el.dataset.stamp);const p=back(k/0.4);el.style.opacity=cl(k/0.15);el.style.transform=`rotate(-12deg) scale(${k<0?2:2-1*p})`});
+ E.querySelectorAll('[data-count]').forEach(el=>{const [a,b,d,du,dp]=el.dataset.count.split('|');const p=eio((t-T(sc,d))/+du);const v=+a+(+b-+a)*p;let s=(+dp?v.toFixed(+dp):String(Math.round(v)));if(el.hasAttribute('data-sign')){const n=Number(s);s=n>0?'+'+s:(n<0?'−'+s.replace('-',''):s)}else s=s.replace('-','−');el.textContent=s+(el.dataset.unit||'')});
+ E.querySelectorAll('[data-fv]').forEach(el=>{const v=+el.dataset.fv,i=+el.dataset.fi;const p=back((t-T(sc,'@1+0.9')-i*0.15)/0.6);const w=Math.max(Math.abs(v)/2*50*p,v===0?0.6:0);el.style.width=w+'%';el.style.left=(v>=0?50:50-w)+'%'});
+ E.querySelectorAll('[data-rv]').forEach(el=>{const v=+el.dataset.rv,i=+el.dataset.ri;const p=back((t-T(sc,'@1+0.3')-i*0.18)/0.6);const w=Math.max(Math.abs(v)/8*50*p,v===0?0.6:0);el.style.width=w+'%';el.style.left=(v>=0?50:50-w)+'%'});
+ E.querySelectorAll('[data-needle]').forEach(el=>{const v=+el.dataset.needle;const p=back((t-T(sc,'@1+0.2'))/1.2);const ang=v/18*90*p;el.setAttribute('transform',`rotate(${ang} 230 220)`)});
+ E.querySelectorAll('[data-bob]').forEach(el=>{el.style.transform=`translateY(${Math.sin(t*2.2)*10}px) rotate(${Math.sin(t*1.3)*4}deg)`});
+ E.querySelectorAll('.eye').forEach(el=>{const b=(t%3.7)<0.12;el.style.transform=b?'scaleY(0.1)':'scaleY(1)'});
+ // chapter slam then main
+ const ch=E.querySelector('[data-chap]'),mn=E.querySelector('[data-main]');
+ if(ch){const out=T(sc,'@1')-0.35;const pin=back(t/0.6),po=eio((t-out)/0.4);ch.style.opacity=cl(t/0.25)*(1-po);ch.style.transform=`scale(${(1.25-0.25*pin)*(1-0.3*po)})`;mn.style.opacity=cl((t-out)/0.4);
+  // slots: show latest started slot
+  const slots=[...E.querySelectorAll('[data-slot]')];let cur=null;slots.forEach(s=>{if(t>=T(sc,'@'+s.dataset.slot))cur=s});
+  const pr=E.querySelector('[data-pairs]');const tp=T(sc,pr.dataset.pairs);
+  slots.forEach(s=>{const st=T(sc,'@'+s.dataset.slot);const on=s===cur&&t<tp-0.1;const k=t-st;const p=back(k/0.5);s.style.opacity=on?cl(k/0.25):0;s.style.transform=`translateX(${on?(1-p)*80:0}px)`});
+  const k=t-tp;pr.style.opacity=cl(k/0.3);[...pr.children].forEach((c,i)=>{const p=back((k-i*0.25)/0.5);c.style.transform=`scale(${k<i*0.25?0.6:0.6+0.4*p})`;c.style.opacity=cl((k-i*0.25)/0.2)})}
+ if(sc==='outro'){const tap=T('outro','@1')+1.8,k=t-tap;const b=document.getElementById('obtn');const on=k>0;b.style.background=on?'#3A2E26':'#E5322D';b.textContent=on?'SUBSCRIBED ✓':'SUBSCRIBE';b.style.transform=(k>0&&k<0.18)?'scale(.94)':'scale(1)';document.getElementById('obell').style.transform=`rotate(${k>0.6&&k<2?Math.sin(k*30)*18*(2-k):0}deg)`;
+  const cu=document.getElementById('cursor');const ca=eio((t-(tap-0.9))/0.8);cu.style.opacity=(t>tap-0.9&&t<tap+1.2)?1:0;cu.style.left=(1500-470*ca)+'px';cu.style.top=(1000-370*ca)+'px'}
+}
+function drawAmb(g){const c=document.getElementById('amb').getContext('2d');c.clearRect(0,0,1920,1080);c.lineWidth=2;for(let k=0;k<3;k++){c.strokeStyle=`rgba(234,219,196,${0.04+k*0.015})`;c.beginPath();for(let x=0;x<=1920;x+=14){const y=880+k*60+30*Math.sin(x/170+g*0.35+k)+18*Math.sin(x/70-g*0.6+k*2);x?c.lineTo(x,y):c.moveTo(x,y)}c.stroke()}}
+function caption(sc,t){const el=document.getElementById('cap');const W=CAPS[sc]||[];const tt=t-TIM[sc].lead;const ch=[];let cur=[];W.forEach((w,i)=>{cur.push(w);if(cur.length===6||/[.,?!:]$/.test(w[0])&&cur.length>2||i===W.length-1){ch.push(cur);cur=[]}});
+ const c=ch.find(g=>tt>=g[0][1]-0.05&&tt<=g[g.length-1][2]+0.2);if(!c){el.innerHTML='';return}
+ el.innerHTML=c.map(w=>{const on=tt>=w[1]-0.03&&tt<w[2]+0.03;return `<span style="display:inline-block;margin:0 .13em;color:${on?'#D9A35B':'#EADBC4'}">${w[0]}</span>`}).join('')}
+window.init=(spec,tim,caps)=>{SPEC=spec;TIM=tim;CAPS=caps;build()};
+window.cueList=si=>{const sc=IDS[si];const E=document.getElementById(sc);const out=[];if(si>0)out.push({t:0,type:'whoosh'});
+ E.querySelectorAll('[data-pop]').forEach(el=>out.push({t:T(sc,el.dataset.pop),type:'pop'}));
+ E.querySelectorAll('[data-stamp]').forEach(el=>out.push({t:T(sc,el.dataset.stamp),type:'hit'}));
+ if(E.querySelector('[data-chap]'))out.push({t:0.05,type:'hit'},{t:T(sc,'@1')+0.9,type:'swish'});
+ E.querySelectorAll('[data-slot]').forEach(s=>out.push({t:T(sc,'@'+s.dataset.slot),type:'swish'}));
+ if(sc==='outro')out.push({t:T('outro','@1')+1.8,type:'click'},{t:T('outro','@1')+1.85,type:'ding'});
+ SPEC.subs.filter(s=>s[0]===sc).forEach(s=>out.push({t:s[1],type:'pop'},{t:s[1]+2.2,type:'click'},{t:s[1]+2.25,type:'ding'}));
+ if(sc==='cold')out.push({t:0.1,type:'swell'});
+ return out.filter(o=>o.t<TIM[sc].dur)};
+window.render=(si,t,gt,total)=>{const sc=IDS[si];IDS.forEach(id=>document.getElementById(id).classList.remove('on'));const E=document.getElementById(sc);E.classList.add('on');draw(sc,t);
+ const W=document.getElementById('wipe');const TR=0.7;
+ if(si>0&&t<TR){const p=eio(t/TR);W.style.display='block';W.style.background=SPEC.colors[sc]||'#D9A35B';W.style.transform=`translateX(${(-1+2*p)*130}%) skewX(-14deg)`}else W.style.display='none';
+ if(si>0&&t<TR*0.5){const P=document.getElementById(IDS[si-1]);P.classList.add('on');draw(IDS[si-1],TIM[IDS[si-1]].dur);E.classList.remove('on')}
+ document.getElementById('glow').style.background=SPEC.colors[sc]||'#D9A35B';
+ const chp=document.getElementById('chapter');chp.textContent=SPEC.chips[sc]||'';chp.style.opacity=SPEC.chips[sc]?1:0;
+ document.getElementById('hud').style.opacity=(sc==='title'||sc==='outro')?0:1;
+ // subscribe lower third
+ const s=SPEC.subs.find(x=>x[0]===sc&&t>=x[1]-0.01&&t<=x[1]+4.6);const se=document.getElementById('sub'),sb=document.getElementById('subbtn'),cu=document.getElementById('cursor');
+ if(s){const k=t-s[1];const pin=back(k/0.5),pout=eio((k-4.0)/0.5);se.style.opacity=cl(k/0.2)*(1-pout);se.style.transform=`translateX(${(1-pin)*120}px)`;const tap=k>=2.2;sb.style.background=tap?'#3A2E26':'#E5322D';sb.textContent=tap?'SUBSCRIBED ✓':'SUBSCRIBE';sb.style.transform=(tap&&k<2.4)?'scale(.92)':'scale(1)';document.getElementById('bell').style.transform=`rotate(${k>2.6&&k<3.8?Math.sin(k*30)*20:0}deg)`;
+  if(sc!=='outro'){const ca=eio((k-1.4)/0.7);cu.style.opacity=(k>1.4&&k<3.6)?1:0;const r=sb.getBoundingClientRect();cu.style.left=(1960-(1960-r.left-r.width*0.45)*ca)+'px';cu.style.top=(1120-(1120-r.top-r.height*0.4)*ca)+'px'}}
+ else{se.style.opacity=0;if(sc!=='outro')cu.style.opacity=0}
+ drawAmb(gt);caption(sc,t);document.getElementById('prog').style.width=(gt/total*100)+'%'};
+</script></body></html>
