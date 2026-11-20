@@ -1,0 +1,93 @@
+{
+ "format": "daily-observer-trade-review",
+ "version": 1,
+ "week": {
+  "year": 2026,
+  "week": 47
+ },
+ "generated_at": "2026-11-20T22:14:12Z",
+ "export_generated_at": "2026-11-20T22:03:30.065Z",
+ "headline": "1 setup, +2.0R: an XAUUSD short with the weekly bearish bias that reached the 2R target; sweep, break and MAE were not logged.",
+ "summary": {
+  "setups": 1,
+  "wins": 1,
+  "losses": 0,
+  "be": 0,
+  "total_r": 2.0,
+  "avg_r": 2.0,
+  "win_rate": 1.0,
+  "with_bias": 1,
+  "against_bias": 0
+ },
+ "setups": [
+  {
+   "pair": "XAUUSD",
+   "day": "2026-11-19",
+   "time": "07:30",
+   "session": "Asia",
+   "direction": "Short",
+   "result": "W",
+   "r": 2.0,
+   "accounts": 1,
+   "rules": [
+    {
+     "rule": "S1 bias",
+     "status": "ok",
+     "note": "Short with the W47 FINAL bias: XAUUSD bearish, low conviction, gap −3 (XAU +2 vs USD +5)."
+    },
+    {
+     "rule": "S2 liquidity sweep",
+     "status": "unknown",
+     "note": "Sweep day/time not logged, so sweep-before-entry and sweep session cannot be checked."
+    },
+    {
+     "rule": "S3 structure break",
+     "status": "unknown",
+     "note": "Break type and notes not logged."
+    },
+    {
+     "rule": "S4 limit entry on break line",
+     "status": "unknown",
+     "note": "Entry 3737.05 logged; whether it was a limit on the break line is not stated."
+    },
+    {
+     "rule": "S5 stop beyond liquidity",
+     "status": "unknown",
+     "note": "SL 3759.32 is above entry (correct side for a short; risk 22.27); its position vs the swept level is not logged."
+    },
+    {
+     "rule": "S6 take profit 2R",
+     "status": "ok",
+     "note": "Closed at +2.0R, as planned."
+    }
+   ],
+   "context": "W47 FINAL: XAUUSD bearish, low conviction (XAU +2 vs USD +5). Latest daily check before entry (morning check 9, 19 Nov 06:40): 🟡 confirmed but fragile, gap −3 unchanged. No HIGH/CRITICAL USD/XAU catalyst on 19 Nov or within ±2 h; FOMC minutes (HIGH) came 18 Nov 21:00, ~10.5 h before entry; US claims/Philly Fed (MEDIUM) 15:30 the same day.",
+   "verdict": "In the direction of the weekly bias and closed at the 2R target, with a chart attached. The log does not show the sweep, the break or MFE/MAE, so S2–S5 cannot be confirmed; the result is good but the process is only partly documented."
+  }
+ ],
+ "patterns": [],
+ "recommendations": [],
+ "questions": [
+  {
+   "id": "Q1",
+   "setup": "XAUUSD 2026-11-19",
+   "text": "Which high was swept before the short, and at what day/time (Bucharest)? Please also fill sweep_day/sweep_time in the log."
+  },
+  {
+   "id": "Q2",
+   "setup": "XAUUSD 2026-11-19",
+   "text": "Was the structure break a wick or a body break, and was the entry a limit order on the break line (S3–S4)?"
+  },
+  {
+   "id": "Q3",
+   "setup": "XAUUSD 2026-11-19",
+   "text": "Was the stop at 3759.32 placed just above the swept high (S5)? And how far did price go against you before the target (MAE in R)?"
+  },
+  {
+   "id": "Q4",
+   "setup": "XAUUSD 2026-11-19",
+   "text": "Was this taken on one account only, or on several prop accounts (only one row is logged)?"
+  }
+ ],
+ "strengths": "Trade in the direction of the weekly fundamental bias, stop on the correct side, closed at the planned 2R, chart snapshot attached and logged the same day."
+}
