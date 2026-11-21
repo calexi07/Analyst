@@ -1,0 +1,23 @@
+name: Add daily closes (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      file:
+        description: 'JSON in imports/, e.g. imports/daily-closes-2026-11-20.json'
+        required: true
+
+jobs:
+  upsert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Write closes to Supabase do_daily
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          FILE: ${{ github.event.inputs.file }}
+        run: node scripts/daily-closes-upsert.mjs
