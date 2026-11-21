@@ -25,8 +25,9 @@ def load(pair):
     for b in bars:
         d = days.setdefault(b['day'], dict(h=b['h'], l=b['l'], c=b['c']))
         d['h'] = max(d['h'], b['h']); d['l'] = min(d['l'], b['l']); d['c'] = b['c']
-    trs, cl, prev, atr, sma = [], [], None, {}, {}
+    trs, cl, prev, atr, sma, pdhl, last = [], [], None, {}, {}, {}, None
     for k in sorted(days):
+        pdhl[k] = (days[last]['h'], days[last]['l']) if last else (None, None); last = k
         atr[k] = sum(trs[-14:]) / 14 if len(trs) >= 14 else None
         sma[k] = {n: (sum(cl[-n:]) / n if len(cl) >= n else None) for n in (20, 50)}
         d = days[k]; trs.append(d['h'] - d['l'] if prev is None else max(d['h'], prev) - min(d['l'], prev)); cl.append(d['c']); prev = d['c']
@@ -34,7 +35,8 @@ def load(pair):
     for b in bars:
         if b['wk'] != wk: wk = b['wk']; wko = b['o']
         b['wko'] = wko; b['atr'] = atr.get(b['day']); b['sma20'] = sma[b['day']][20]; b['sma50'] = sma[b['day']][50]
-        b['ema_prev'] = ema; ema = b['c'] if ema is None else ema + a * (b['c'] - ema)
+        b['ema_prev'] = ema; ema = b['c'] if ema is None else ema + a * (b['c'] - ema); b['ema'] = ema
+        b['pdh'], b['pdl'] = pdhl[b['day']]
     return bars
 
 def bias_table():
@@ -56,7 +58,7 @@ def usd_strength(data):
     return {t: sum(v) / len(v) for t, v in acc.items() if len(v) >= 4}
 
 DEF = dict(dirm='bias', cf='wtd', k=1.0, tp=2.0, hold=4, entry='A', sess=False, first=False, exh=None, conv='any', mingap=None,
-           partial=False, be=False, thesis=False, usdcf=False, trlen=20)
+           partial=False, be=False, thesis=False, usdcf=False, trlen=20, nomon=False, restx='none', trail=2.0, minwtd=0.0)
 
 def run(pair, bars, B, P, start, end=None, usd=None):
     P = {**DEF, **P}; pip = pip_of(pair); cost = cost_of(pair) * pip
@@ -74,7 +76,7 @@ def run(pair, bars, B, P, start, end=None, usd=None):
         # pending limit order (entry B / E) fills on this bar?
         if pend and pos is None:
             if (b['t'] - pend['t0']).total_seconds() > pend['life'] * 3600 or b['wk'] != pend['wk']: pend = None
-            elif (b['l'] <= pend['e'] if pend['d'] > 0 else b['h'] >= pend['e']):
+            elif (pend.get('stop') and (b['h'] >= pend['e'] if pend['d'] > 0 else b['l'] <= pend['e'])) or (not pend.get('stop') and (b['l'] <= pend['e'] if pend['d'] > 0 else b['h'] >= pend['e'])):
                 pos = dict(i=i, t=b['t'], d=pend['d'], e=pend['e'], risk=pend['risk'], sl=pend['e'] - pend['d'] * pend['risk'], w=1.0, banked=0.0, part=False, meta=pend['meta'])
                 pos['tp'] = pos['e'] + pos['d'] * P['tp'] * pos['risk'] if P['tp'] else None
                 pend = None
@@ -88,12 +90,16 @@ def run(pair, bars, B, P, start, end=None, usd=None):
                 if P['partial'] and not pos['part'] and hit1R:
                     pos['banked'] += 0.5 * 1.0; pos['w'] = 0.5; pos['part'] = True; pos['sl'] = pos['e']
                 if P['be'] and not pos['part'] and hit1R: pos['sl'] = pos['e']; pos['part'] = True
+                if pos['part'] and P['restx'] == 'trail':
+                    ns = b['c'] - d * P['trail'] * b['atr']; pos['sl'] = max(pos['sl'], ns) if d > 0 else min(pos['sl'], ns)
                 if pos['tp'] is not None and ((b['h'] >= pos['tp']) if d > 0 else (b['l'] <= pos['tp'])): ex = (pos['tp'], 'TP')
                 else:
                     lastbar = b['dow'] == 4 and (i + 1 == len(bars) or bars[i + 1]['day'] != b['day'])
                     held = (b['tc'] - pos['t']).total_seconds() / 86400
                     if lastbar: ex = (b['c'], 'Fri')
                     elif P['hold'] != 'fri' and held >= P['hold']: ex = (b['c'], 'Time')
+                    elif pos['part'] and P['restx'] == 'ema20' and (b['c'] - b['ema']) * d < 0: ex = (b['c'], 'EMA20')
+                    elif pos['part'] and P['restx'] == 'prevday' and b['pdl'] is not None and ((b['c'] < b['pdl']) if d > 0 else (b['c'] > b['pdh'])): ex = (b['c'], 'PrevDay')
                     elif P['thesis'] and (b['c'] - b['wko']) * d < 0 and b['wk'] == bars[pos['i']]['wk']: ex = (b['c'], 'Thesis')
                     elif dr == -d: ex = (b['c'], 'Flip')
             if ex:
@@ -104,10 +110,11 @@ def run(pair, bars, B, P, start, end=None, usd=None):
         if b['t'] < start or (end and b['t'] >= end): continue
         if lastx and (b['tc'] - lastx).total_seconds() < 24 * 3600: continue
         if b['atr'] is None or dr == 0 or b['dow'] > 3: continue          # Mon–Thu (trading day), no Friday entries
+        if P['nomon'] and b['dow'] == 0: continue
         if P['sess'] and not (8 <= b['hl'] < 20): continue                # candle opening 08:00–19:59 Bucharest
         if P['first'] and (pair, b['wk']) in wk_done: continue
         wtd = (b['c'] - b['wko']) * dr
-        if P['cf'] == 'wtd' and wtd <= 0: continue
+        if P['cf'] == 'wtd' and wtd <= P['minwtd'] * b['atr']: continue
         if P['exh'] is not None and wtd > P['exh'] * b['atr']: continue
         if P['usdcf'] and pair != 'XAUUSD':
             u = (usd or {}).get(b['t'])
@@ -121,6 +128,17 @@ def run(pair, bars, B, P, start, end=None, usd=None):
             pos['tp'] = pos['e'] + dr * P['tp'] * risk if P['tp'] else None
         elif P['entry'] == 'B':
             pend = dict(t0=b['tc'], wk=b['wk'], d=dr, e=(b['h'] + b['l']) / 2, risk=risk, life=4, meta=meta)
+        elif P['entry'] == 'D' and b['pdh'] is not None:
+            e = b['pdh'] if dr > 0 else b['pdl']
+            if (e - b['c']) * dr > 0: pend = dict(t0=b['tc'], wk=b['wk'], d=dr, e=e, risk=risk, life=24, meta=meta, stop=True)
+            else: wk_done.discard((pair, b['wk']))
+        elif P['entry'] == 'P':
+            # pullback then resumption: the previous candle closed against the direction, this one closes beyond its high/low
+            pb = bars[i - 1]
+            if (pb['c'] - pb['o']) * dr < 0 and ((b['c'] > pb['h']) if dr > 0 else (b['c'] < pb['l'])):
+                pos = dict(i=i, t=b['tc'], d=dr, e=b['c'], risk=risk, sl=b['c'] - dr * risk, w=1.0, banked=0.0, part=False, meta=meta)
+                pos['tp'] = pos['e'] + dr * P['tp'] * risk if P['tp'] else None
+            else: wk_done.discard((pair, b['wk']))
         elif P['entry'] == 'E' and b['ema_prev'] is not None:
             e = b['ema_prev']
             if (b['c'] - e) * dr > 0: pend = dict(t0=b['tc'], wk=b['wk'], d=dr, e=e, risk=risk, life=24, meta=meta)
