@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — swing strategy test bench (4H or Daily chart, holds 3–4 days).
-// Generated automatically: 2026-11-21 12:29 UTC. Bias data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
+// Generated automatically: 2026-11-21 12:47 UTC. Bias data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // A test bench for your own rules in the Strategy Tester. Not a trade signal.
 //@version=6
@@ -8,9 +8,9 @@ strategy("Bias Engine · swing test bench", shorttitle = "BE Swing", overlay = t
 
 // ───────── settings ─────────
 string pairIn  = input.string("Auto", "Pair", options = ["Auto", "EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD"], tooltip = "Auto reads the chart symbol (e.g. EURUSD, OANDA:XAUUSD). Built for the 4H chart (Daily works too). Days below are calendar time, so they mean the same on any timeframe.")
-string dirMode = input.string("Fundamental bias", "Direction from", options = ["Fundamental bias", "Price trend (SMA)", "Both must agree"], group = "Direction", tooltip = "Fundamental bias: the week's published bias (data only from the first week in the script). Price trend: close above / below the SMA below, works on years of history, so the mechanics can be tested on thousands of trades. Both: only when the two agree.")
+string dirMode = input.string("Both must agree", "Direction from", options = ["Fundamental bias", "Price trend (SMA)", "Both must agree"], group = "Direction", tooltip = "Fundamental bias: the week's published bias (data only from the first week in the script). Price trend: close above / below the SMA below, works on years of history, so the mechanics can be tested on thousands of trades. Both: only when the two agree.")
 string minConv = input.string("Any", "Minimum conviction", options = ["Any", "Medium or high", "High only"], group = "Direction", tooltip = "Bias modes only. Two-sided weeks never trade.")
-int    trLen   = input.int(50, "Trend SMA length (daily closes)", minval = 5, maxval = 400, group = "Direction")
+int    trLen   = input.int(20, "Trend SMA length (daily closes)", minval = 5, maxval = 400, group = "Direction")
 string cfMode  = input.string("Week-to-date", "Price confirmation", options = ["None", "Week-to-date", "Close vs 20-day SMA"], group = "Confirmation", tooltip = "Week-to-date: the day's close is above this week's open for longs (below for shorts); Monday's close is the first that can confirm, so the earliest entry is Tuesday. 20-day SMA: the close is on the trade's side of the 20-day average.")
 string enMode  = input.string("A · at the confirming candle's close", "Entry", options = ["A · at the confirming candle's close", "B · pullback to 50% of the confirming candle", "C · break of the confirming candle's high/low"], group = "Entry", tooltip = "The confirming candle is the chart candle (4H) whose close meets direction + confirmation. A: at its close. B: limit order at the middle of its range, valid for the next candle. C: stop order beyond its high (long) / low (short), valid for the next candle.")
 bool   noFri   = input.bool(true, "No new entries on Friday", group = "Entry", tooltip = "Fridays would open a trade into the weekend and into next week's new bias.")
@@ -18,8 +18,9 @@ int    coolH   = input.int(24, "Hours to wait after an exit", minval = 0, maxval
 string slMode  = input.string("ATR × multiple", "Stop loss", options = ["ATR × multiple", "Beyond the confirming candle's low/high"], group = "Exit")
 float  slAtr   = input.float(1.0, "ATR multiple", minval = 0.3, maxval = 5, step = 0.1, group = "Exit")
 string atrTf   = input.string("Daily ATR (14)", "ATR from", options = ["Daily ATR (14)", "Chart ATR (14)"], group = "Exit", tooltip = "Daily ATR sizes the stop for a 3–4 day hold whatever the chart timeframe (≈ one normal day's range). Chart ATR on 4H gives a much tighter stop.")
-float  tpR     = input.float(2.0, "Take profit (R), 0 = none", minval = 0, maxval = 10, step = 0.5, group = "Exit")
-int    hold    = input.int(4, "Time stop: close after this many days", minval = 1, maxval = 20, group = "Exit")
+string exMode  = input.string("Half at +1R, rest at break-even", "Exit style", options = ["Half at +1R, rest at break-even", "Fixed (one target)"], group = "Exit", tooltip = "Half at +1R: half the position closes at +1R, the stop of the other half moves to the entry price, and it runs to the take profit below, the time stop or Friday's close. Fixed: the whole position has one stop and one target. Backtest on the USD pairs: the half-at-1R exit cut the worst drawdown from −10R to −4R and was better in both halves of the bias weeks.")
+float  tpR     = input.float(3.0, "Take profit (R), 0 = none", minval = 0, maxval = 10, step = 0.5, group = "Exit", tooltip = "For the half-at-1R style this is the target of the second half (tested: 3R). For the fixed style it is the target of the whole position (earlier default: 2R).")
+int    hold    = input.int(0, "Time stop: close after this many days (0 = hold to Friday)", minval = 0, maxval = 20, group = "Exit", tooltip = "Tested: hold to Friday with the half-at-1R exit; 4 days with the fixed exit.")
 bool   wkExit  = input.bool(true, "Close every trade at Friday's close", group = "Exit")
 bool   flipEx  = input.bool(true, "Close if the direction turns against the trade", group = "Exit")
 bool   trOn    = input.bool(false, "Trailing stop", group = "Exit")
@@ -279,10 +280,19 @@ var float slLvl = na
 var float tpLvl = na
 var int   lastExitT = 0
 var int   posDir = 0
+var float ent0 = na
+var float risk0 = na
+var float q0 = na
+var bool  partDone = false
+bool halfOn = exMode == "Half at +1R, rest at break-even"
 bool flat = strategy.position_size == 0
 
 if not flat and posDir == 0
     posDir := strategy.position_size > 0 ? 1 : -1
+    ent0 := strategy.position_avg_price
+    risk0 := math.abs(ent0 - slLvl)
+    q0 := math.abs(strategy.position_size)
+    partDone := false
 if flat and posDir != 0
     posDir := 0
     lastExitT := time
@@ -311,7 +321,11 @@ if sig
             strategy.entry(id, dir > 0 ? strategy.long : strategy.short, qty = q, limit = ent, comment = cmt)
         else
             strategy.entry(id, dir > 0 ? strategy.long : strategy.short, qty = q, stop = ent, comment = cmt)
-        strategy.exit("X" + id, id, stop = slLvl, limit = tpLvl, comment_loss = "SL", comment_profit = "TP")
+        if halfOn
+            strategy.exit("H" + id, id, qty_percent = 50, stop = slLvl, limit = ent + dir * risk, comment_loss = "SL", comment_profit = "+1R half")
+            strategy.exit("X" + id, id, qty_percent = 50, stop = slLvl, limit = tpLvl, comment_loss = "SL", comment_profit = "TP")
+        else
+            strategy.exit("X" + id, id, stop = slLvl, limit = tpLvl, comment_loss = "SL", comment_profit = "TP")
 
 if not flat
     string id = posDir > 0 ? "L" : "S"
@@ -319,10 +333,15 @@ if not flat
     if trOn
         float trS = posDir > 0 ? close - trAtr * atr : close + trAtr * atr
         slLvl := posDir > 0 ? math.max(slLvl, trS) : math.min(slLvl, trS)
-    strategy.exit("X" + id, id, stop = slLvl, limit = tpLvl, comment_loss = trOn ? "SL/trail" : "SL", comment_profit = "TP")
+    if halfOn and not partDone and math.abs(strategy.position_size) < q0 * 0.75
+        partDone := true
+        slLvl := posDir > 0 ? math.max(slLvl, ent0) : math.min(slLvl, ent0)
+    if halfOn and not partDone
+        strategy.exit("H" + id, id, qty_percent = 50, stop = slLvl, limit = ent0 + posDir * risk0, comment_loss = "SL", comment_profit = "+1R half")
+    strategy.exit("X" + id, id, qty_percent = halfOn ? 50 : 100, stop = slLvl, limit = tpLvl, comment_loss = partDone ? "Break-even" : trOn ? "SL/trail" : "SL", comment_profit = "TP")
     if wkExit and lastWkBar
         strategy.close(id, comment = "Friday close")
-    else if held >= hold * 86400000
+    else if hold > 0 and held >= hold * 86400000
         strategy.close(id, comment = "Time " + str.tostring(hold) + "d")
     else if flipEx and dir == -posDir
         strategy.close(id, comment = "Direction flip")
