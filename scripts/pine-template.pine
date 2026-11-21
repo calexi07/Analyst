@@ -4,7 +4,7 @@
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // Fundamental context only. Not a trade signal.
 //@version=6
-indicator("Bias Engine · weekly bias & daily checks", shorttitle = "Bias Engine", overlay = true, max_labels_count = 500, max_lines_count = 500, max_boxes_count = 200, max_bars_back = 5000)
+indicator("Bias Engine · weekly bias & daily checks", shorttitle = "Bias Engine", overlay = true, max_labels_count = 500, max_lines_count = 500, max_boxes_count = 500, max_bars_back = 5000)
 max_bars_back(time, 4999)
 
 // ───────── settings ─────────
@@ -50,8 +50,13 @@ int    sdLen   = input.int(5, "Swing length (bars each side)", minval = 2, maxva
 float  sdDisp  = input.float(1.2, "Displacement: body ≥ ATR(14) ×", minval = 0.5, maxval = 4, step = 0.1, group = "Structure & zones", tooltip = "The biggest body of the breaking candle and the 2 before it must be at least this many ATRs. Higher = fewer, stronger breaks.")
 bool   sdFvgQ  = input.bool(true, "Require a fair value gap", group = "Structure & zones")
 string sdZone  = input.string("Order block + FVG", "Zones to draw", options = ["Order block + FVG", "Order block only", "FVG only"], group = "Structure & zones")
-int    sdMaxZ  = input.int(6, "Active zones kept", minval = 1, maxval = 30, group = "Structure & zones")
-bool   sdHide  = input.bool(true, "Hide invalidated zones", group = "Structure & zones", tooltip = "A demand zone is invalidated by a close below it, a supply zone by a close above it.")
+int    sdMaxZ  = input.int(6, "Fresh zones kept", minval = 1, maxval = 30, group = "Structure & zones", tooltip = "Untouched zones still waiting for price. The oldest is dropped when a new one appears.")
+bool   sdHist  = input.bool(false, "Show history (touched and broken zones)", group = "Structure & zones", tooltip = "Off: only the current, untouched zones. On: also the zones that were touched (yellow) or broken (black), so you can see how they played out.")
+int    sdHistN = input.int(30, "History: zones kept", minval = 5, maxval = 120, group = "Structure & zones")
+int    sdExt   = input.int(4, "Box ends this many candles after the touch / break", minval = 0, maxval = 20, group = "Structure & zones")
+int    sdWatch = input.int(30, "After a touch, watch for a break for (candles)", minval = 1, maxval = 300, group = "Structure & zones", tooltip = "A touched zone turns black if a candle closes beyond it within this many candles; otherwise it stays yellow (it did its job).")
+color  sdTchC  = input.color(color.new(#E2B93B, 80), "Touched zone", group = "Structure & zones")
+color  sdBrkC  = input.color(color.new(#000000, 55), "Broken zone", group = "Structure & zones")
 color  sdDemC  = input.color(color.new(#22AB94, 85), "Demand zone", group = "Structure & zones")
 color  sdSupC  = input.color(color.new(#F23645, 85), "Supply zone", group = "Structure & zones")
 bool   fsOn    = sdMode == "Fractal breaks (simple)"
@@ -365,10 +370,55 @@ var box[]   sdFvg = array.new<box>()
 var float[] sdTop = array.new_float()
 var float[] sdBot = array.new_float()
 var bool[]  sdUp  = array.new_bool()
-var int[]   sdHit = array.new_int()
+var int[]   sdSt  = array.new_int()   // 0 fresh, 1 touched (watching for a break)
+var int[]   sdTI  = array.new_int()   // bar of the touch
+var box[]   sdHB  = array.new<box>()  // finished zones kept as history
+f_bd(color c) => color.new(c, math.max(color.t(c) - 45, 0))
+// a zone is finished: keep it as history or delete it
+f_sdArch(box o, box f) =>
+    if sdHist
+        if not na(o)
+            array.push(sdHB, o)
+        if not na(f)
+            array.push(sdHB, f)
+        while array.size(sdHB) > sdHistN * 2
+            box x = array.shift(sdHB)
+            if not na(x)
+                box.delete(x)
+    else
+        if not na(o)
+            box.delete(o)
+        if not na(f)
+            box.delete(f)
+    0
+// recolour a zone and stop it a few candles after this bar
+f_sdPaint(box o, box f, color c, string tx) =>
+    int tEnd = time + sdExt * timeframe.in_seconds() * 1000
+    if not na(o)
+        box.set_extend(o, extend.none)
+        box.set_right(o, tEnd)
+        box.set_bgcolor(o, c)
+        box.set_border_color(o, f_bd(c))
+        box.set_text(o, tx)
+        box.set_text_color(o, f_bd(c))
+    if not na(f)
+        box.set_extend(f, extend.none)
+        box.set_right(f, tEnd)
+        box.set_bgcolor(f, color.new(c, math.min(color.t(c) + 7, 100)))
+        box.set_border_color(f, color.new(f_bd(c), 60))
+    0
+f_sdDrop(int k) =>
+    array.remove(sdBox, k)
+    array.remove(sdFvg, k)
+    array.remove(sdTop, k)
+    array.remove(sdBot, k)
+    array.remove(sdUp, k)
+    array.remove(sdSt, k)
+    array.remove(sdTI, k)
+    0
 f_sdZone(bool up, int t0, float top, float bot, int ft, float ftop, float fbot, float lvl) =>
     color zc = up ? sdDemC : sdSupC
-    color zb = color.new(zc, math.max(color.t(zc) - 45, 0))
+    color zb = f_bd(zc)
     box ob = sdZone != "FVG only" ? box.new(t0, top, time, bot, xloc = xloc.bar_time, extend = extend.right, border_color = zb, border_width = 1, bgcolor = zc, text = up ? "demand · fresh" : "supply · fresh", text_size = size.tiny, text_color = zb, text_halign = text.align_right, text_valign = text.align_center) : na
     box fv = sdZone != "Order block only" and not na(ftop) ? box.new(ft, ftop, time, fbot, xloc = xloc.bar_time, extend = extend.right, border_color = color.new(zb, 60), border_style = line.style_dotted, bgcolor = color.new(zc, math.min(color.t(zc) + 7, 100)), text = sdZone == "FVG only" ? (up ? "demand FVG · fresh" : "supply FVG · fresh") : "FVG", text_size = size.tiny, text_color = zb, text_halign = text.align_right) : na
     array.push(sdBox, ob)
@@ -376,61 +426,52 @@ f_sdZone(bool up, int t0, float top, float bot, int ft, float ftop, float fbot, 
     array.push(sdTop, sdZone == "FVG only" ? ftop : top)
     array.push(sdBot, sdZone == "FVG only" ? fbot : bot)
     array.push(sdUp, up)
-    array.push(sdHit, 0)
-    if array.size(sdBox) > sdMaxZ
-        box o1 = array.shift(sdBox)
-        box o2 = array.shift(sdFvg)
-        if not na(o1)
-            box.delete(o1)
-        if not na(o2)
-            box.delete(o2)
-        array.shift(sdTop)
-        array.shift(sdBot)
-        array.shift(sdUp)
-        array.shift(sdHit)
+    array.push(sdSt, 0)
+    array.push(sdTI, bar_index)
+    // too many fresh zones: drop the oldest fresh one
+    int nf = 0
+    for k = 0 to array.size(sdSt) - 1
+        nf += array.get(sdSt, k) == 0 ? 1 : 0
+    if nf > sdMaxZ
+        for k = 0 to array.size(sdSt) - 1
+            if array.get(sdSt, k) == 0
+                box o1 = array.get(sdBox, k)
+                box o2 = array.get(sdFvg, k)
+                if not na(o1)
+                    box.delete(o1)
+                if not na(o2)
+                    box.delete(o2)
+                f_sdDrop(k)
+                break
     0
-// update active zones: touches and invalidation (close beyond the zone)
-f_sdUpdate(float pLo, float pHi) =>
+// each bar: fresh → touched (yellow) → broken (black); the box stops a few candles after the event
+f_sdUpdate() =>
     int n = array.size(sdBox)
     if n > 0
         for k = n - 1 to 0
             float zt = array.get(sdTop, k)
             float zb = array.get(sdBot, k)
             bool  up = array.get(sdUp, k)
-            box ob = array.get(sdBox, k)
-            box fv = array.get(sdFvg, k)
-            bool dead = up ? close < zb : close > zt
-            if dead
-                if sdHide
-                    if not na(ob)
-                        box.delete(ob)
-                    if not na(fv)
-                        box.delete(fv)
+            int   st = array.get(sdSt, k)
+            box o = array.get(sdBox, k)
+            box f = array.get(sdFvg, k)
+            bool broken = up ? close < zb : close > zt
+            bool touch  = up ? low <= zt : high >= zb
+            if broken
+                f_sdPaint(o, f, sdBrkC, (up ? "demand" : "supply") + " · broken")
+                f_sdArch(o, f)
+                f_sdDrop(k)
+            else if st == 0 and touch
+                f_sdPaint(o, f, sdTchC, (up ? "demand" : "supply") + " · touched")
+                if sdHist
+                    array.set(sdSt, k, 1)
+                    array.set(sdTI, k, bar_index)
                 else
-                    if not na(ob)
-                        box.set_extend(ob, extend.none)
-                        box.set_right(ob, time)
-                        box.set_text(ob, "invalidated")
-                    if not na(fv)
-                        box.set_extend(fv, extend.none)
-                        box.set_right(fv, time)
-                array.remove(sdBox, k)
-                array.remove(sdFvg, k)
-                array.remove(sdTop, k)
-                array.remove(sdBot, k)
-                array.remove(sdUp, k)
-                array.remove(sdHit, k)
-            else
-                bool touch = up ? low <= zt : high >= zb
-                int h = array.get(sdHit, k)
-                if touch and (h == 0 or not (up ? pLo <= zt : pHi >= zb))
-                    h += 1
-                    array.set(sdHit, k, h)
-                    string tx = (up ? "demand" : "supply") + (h == 1 ? " · touched 1×" : " · touched " + str.tostring(h) + "×")
-                    if not na(ob)
-                        box.set_text(ob, tx)
-                    if not na(fv)
-                        box.set_text(fv, sdZone == "FVG only" ? tx : "FVG")
+                    f_sdArch(o, f)
+                    f_sdDrop(k)
+            else if st == 1 and bar_index - array.get(sdTI, k) >= sdWatch
+                f_sdArch(o, f)
+                f_sdDrop(k)
             int _done = 0
     0
 f_sd() =>
@@ -464,7 +505,7 @@ f_sd() =>
     bool brUp = false
     bool brDn = false
     if sdMode == "BOS + displacement (OB/FVG zones)"
-        f_sdUpdate(low[1], high[1])
+        f_sdUpdate()
         if not na(hiL) and close > hiL
             // bullish FVG in the last 3 candles: low[k] above high[k+2]
             float ft = na
