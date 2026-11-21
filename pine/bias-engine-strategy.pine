@@ -1,10 +1,10 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — weekly bias + daily checks (history) on the chart.
-// Generated automatically: 2026-11-21 11:59 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
+// Generated automatically: 2026-11-21 12:02 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // Fundamental context only. Not a trade signal.
 //@version=6
-strategy("Bias Engine · setup strategy (sweep → POC → 0.5)", shorttitle = "BE Setups", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = false, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0, max_labels_count = 500, max_lines_count = 500, max_boxes_count = 500, max_bars_back = 5000)
+strategy("Bias Engine · setup strategy (sweep → POC → 0.5)", shorttitle = "BE Setups", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = false, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0.005, slippage = 0, max_labels_count = 500, max_lines_count = 500, max_boxes_count = 500, max_bars_back = 5000)
 max_bars_back(time, 4999)
 
 // ───────── settings ─────────
@@ -52,10 +52,12 @@ bool   seWtd   = input.bool(true, "Price must confirm the bias this week", group
 bool   seNoRoll = input.bool(true, "Skip sweeps around the daily rollover (23:00–01:00)", group = "Setup engine", tooltip = "Ignores sweeps whose 1H candle starts at 23:00 or 00:00 Romania time (around the 5 PM New York rollover, when spreads widen). Backtest: those two hours lost 24R on 63 trades.")
 int    seLen   = input.int(5, "POC structure length (chart candles)", minval = 2, maxval = 50, group = "Setup engine", tooltip = "Same swing logic as the BOS/CHoCH indicator: highs and lows alternate; a POC is a candle CLOSE beyond the last swing.")
 int    seExp   = input.int(24, "Wait for the POC at most (hours)", minval = 1, maxval = 120, group = "Setup engine")
+string seFibS  = input.string("0.5", "Entry level (fib)", options = ["0.5", "0.618", "0.705", "0.786"], group = "Setup engine", tooltip = "Fib from the sweep candle's high/low (1 = SL) to the extreme of the move (0). A deeper level gives a smaller stop and fills less often. Test each one in the Strategy Tester.")
+float  seFib   = str.tonumber(seFibS)
 float  seRR    = input.float(2.0, "Take profit (R)", minval = 0.5, maxval = 10, step = 0.5, group = "Setup engine")
 int    seKeep  = input.int(20, "Finished setups kept on the chart", minval = 1, maxval = 60, group = "Setup engine")
 bool   seStat  = input.bool(true, "Results table (setups on this chart)", group = "Setup engine")
-color  seEntC  = input.color(#D9A35B, "Entry 0.5", group = "Setup engine")
+color  seEntC  = input.color(#D9A35B, "Entry line", group = "Setup engine")
 color  seSlC   = input.color(#F23645, "Stop loss (1)", group = "Setup engine")
 color  seTpC   = input.color(#22AB94, "Take profit", group = "Setup engine")
 // fractal structure: a body close beyond the last fractal high / low
@@ -85,7 +87,7 @@ int    fsW     = input.int(2, "Line width", minval = 1, maxval = 4, group = "Str
 bool   fsLab   = input.bool(true, "Break labels", group = "Structure & zones")
 int    fsMax   = input.int(100, "Max break lines kept", minval = 10, maxval = 200, group = "Structure & zones")
 
-// ───────── data (generated 2026-11-21 11:59 UTC) ─────────
+// ───────── data (generated 2026-11-21 12:02 UTC) ─────────
 var string[] PAIRS = array.from("EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD")
 var string[] CCY   = array.from("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "XAU")
 var int[]    wT = array.new_int()     // week start (Sunday 21:00 UTC)
@@ -629,7 +631,7 @@ f_seStore() =>
     0
 f_seFib(int dir, float sl, float ext, int tP) =>
     // fib 1 = SL (sweep candle extreme), 0 = extreme of the move, entry 0.5, TP at seRR × risk beyond the entry
-    float ent = (sl + ext) / 2
+    float ent = ext + seFib * (sl - ext)
     float tp = ent + dir * seRR * math.abs(sl - ent)
     string px = format.mintick
     if na(array.get(seLn, 0))
@@ -650,7 +652,7 @@ f_seFib(int dir, float sl, float ext, int tP) =>
     label.set_xy(array.get(seLb, 1), time, ent)
     label.set_xy(array.get(seLb, 2), time, tp)
     label.set_text(array.get(seLb, 0), "1 · SL " + str.tostring(sl, px) + " (" + str.tostring(f_sePips(math.abs(sl - ent))) + " pips)")
-    label.set_text(array.get(seLb, 1), "0.5 · entry " + str.tostring(ent, px))
+    label.set_text(array.get(seLb, 1), seFibS + " · entry " + str.tostring(ent, px))
     label.set_text(array.get(seLb, 2), "TP " + str.tostring(seRR) + "R " + str.tostring(tp, px))
     [ent, tp]
 f_seEnd(int dir, string txt, color c) =>
@@ -719,7 +721,7 @@ if seAct
                 [e0, t0p] = f_seFib(seDir, seSL, seExt, seTP0)
                 seEnt := e0
                 seTP := t0p
-                seEvt := "📐 " + pName + ": POC " + (seDir < 0 ? "down" : "up") + ". Entry 0.5 " + str.tostring(e0, format.mintick) + ", SL " + str.tostring(seSL, format.mintick) + ", TP " + str.tostring(t0p, format.mintick)
+                seEvt := "📐 " + pName + ": POC " + (seDir < 0 ? "down" : "up") + ". Entry " + seFibS + " " + str.tostring(e0, format.mintick) + ", SL " + str.tostring(seSL, format.mintick) + ", TP " + str.tostring(t0p, format.mintick)
     // 3) after the POC: the move may extend (fib 0 follows it) until price comes back to 0.5
     else if seSt == 2
         bool slHit2 = seDir < 0 ? high >= seSL : low <= seSL
@@ -734,8 +736,8 @@ if seAct
             seMfe := 0.0
             seCv := cv
             seGap := g
-            label.new(time, seEnt, "▶ 0.5", xloc = xloc.bar_time, style = label.style_label_upper_left, color = color.new(seEntC, 100), textcolor = seEntC, size = size.tiny)
-            seEvt := "▶ " + pName + ": price back at 0.5 (" + str.tostring(seEnt, format.mintick) + ")."
+            label.new(time, seEnt, "▶ " + seFibS, xloc = xloc.bar_time, style = label.style_label_upper_left, color = color.new(seEntC, 100), textcolor = seEntC, size = size.tiny)
+            seEvt := "▶ " + pName + ": price back at " + seFibS + " (" + str.tostring(seEnt, format.mintick) + ")."
         else
             seExt := seDir < 0 ? math.min(seExt, low) : math.max(seExt, high)
             [e1, t1p] = f_seFib(seDir, seSL, seExt, seTP0)
@@ -805,7 +807,7 @@ if barstate.islast and seAct and seStat
                 nL += 1
                 mfeL += array.get(rMfe, i)
                 nL1 += array.get(rMfe, i) >= 1 ? 1 : 0
-    string st = seSt == 1 ? "💧 waiting for a POC" : seSt == 2 ? "📐 waiting for 0.5" : seSt == 3 ? "▶ in the trade" : "idle"
+    string st = seSt == 1 ? "💧 waiting for a POC" : seSt == 2 ? "📐 waiting for " + seFibS : seSt == 3 ? "▶ in the trade" : "idle"
     table.cell(seTb, 0, 0, "Setups · " + pName, text_color = tTx, bgcolor = tHd, text_size = size.tiny, text_halign = text.align_left)
     table.cell(seTb, 1, 0, "n", text_color = tMu, bgcolor = tHd, text_size = size.tiny)
     table.cell(seTb, 2, 0, "win", text_color = tMu, bgcolor = tHd, text_size = size.tiny)
