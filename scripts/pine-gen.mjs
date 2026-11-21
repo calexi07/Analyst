@@ -167,7 +167,7 @@ mkdirSync('pine', { recursive:true });
 writeFileSync('pine/bias-engine.pine', tpl);
 // the same script as a TradingView strategy (Strategy Tester → List of trades → Export), so the setup rules can be measured
 const strat = tpl
-  .replace(/indicator\("Bias Engine · weekly bias & daily checks", shorttitle = "Bias Engine", overlay = true,/, 'strategy("Bias Engine · setup strategy (sweep → POC → 0.5)", shorttitle = "BE Setups", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = false,')
+  .replace(/indicator\("Bias Engine · weekly bias & daily checks", shorttitle = "Bias Engine", overlay = true,/, 'strategy("Bias Engine · setup strategy (sweep → POC → 0.5)", shorttitle = "BE Setups", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = false, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0,')
   .replace('// {{STRATEGY_ORDERS}}', ORDERS)
   .replace(/^alertcondition\(.*$/gm, '// (alertcondition is not available in strategies; use alert() events)');
 writeFileSync('pine/bias-engine-strategy.pine', strat);
