@@ -142,6 +142,9 @@ def run(pair, bars, B, P, start, end=None, usd=None):
                 pos = dict(i=i, t=b['t'], d=pend['d'], e=pend['e'], risk=pend['risk'], sl=pend['e'] - pend['d'] * pend['risk'], w=1.0, banked=0.0, part=False, meta=pend['meta'])
                 pos['tp'] = pos['e'] + pos['d'] * P['tp'] * pos['risk'] if P['tp'] else None
                 pend = None
+                if P.get('fillchk') and ((b['l'] <= pos['sl']) if pos['d'] > 0 else (b['h'] >= pos['sl'])):
+                    # worst case: the stop is touched on the same candle that filled the entry
+                    res.append(dict(pair=pair, t=b['t'], tx=b['tc'], d=pos['d'], R=-1 - cost / pos['risk'], why='SL same bar', mfe=0.0, **pos['meta'])); pos = None; lastx = b['tc']
         # manage the open position from the bar after entry
         if pos and i > pos['i']:
             d = pos['d']; R = lambda px: (px - pos['e']) * d / pos['risk']
@@ -165,7 +168,9 @@ def run(pair, bars, B, P, start, end=None, usd=None):
                     if pos['best'] >= trg:
                         ns = pos['e'] + d * lock * pos['risk']; pos['sl'] = max(pos['sl'], ns) if d > 0 else min(pos['sl'], ns)
                 if P['trailm'] != 'none' and pos['best'] >= P['trailfrom']:
-                    if P['trailm'] == 'chand': ns = pos['e'] + d * (pos['best'] * pos['risk']) - d * P['trailk'] * b['atr']
+                    A = b['atr4'] if P.get('atrsrc') == '4h' else b['atr']
+                    if P['trailm'] == 'chand': ns = pos['e'] + d * (pos['best'] * pos['risk']) - d * P['trailk'] * A
+                    elif P['trailm'] == 'close': ns = b['c'] - d * P['trailk'] * A
                     elif P['trailm'] == 'nbar':
                         win = bars[max(pos['i'] + 1, i - P['trailn'] + 1):i + 1]
                         ns = min(x['l'] for x in win) if d > 0 else max(x['h'] for x in win)
@@ -216,7 +221,7 @@ def run(pair, bars, B, P, start, end=None, usd=None):
             u = (usd or {}).get(b['t'])
             usd_dir = dr if pair.startswith('USD') else -dr
             if u is None or u * usd_dir <= 0: continue
-        risk = P['k'] * b['atr']
+        risk = P['k'] * (b['atr4'] if P.get('atrsrc') == '4h' else b['atr'])
         meta = dict(bias=bi[0], conv=bi[1], gap=bi[2], wk=b['wk'])
         wk_done.add((pair, b['wk']))
         if P['entry'] == 'A':
@@ -304,6 +309,9 @@ def run(pair, bars, B, P, start, end=None, usd=None):
                 pos = dict(i=i, t=b['tc'], d=dr, e=b['c'], risk=risk, sl=b['c'] - dr * risk, w=1.0, banked=0.0, part=False, meta=meta)
                 pos['tp'] = pos['e'] + dr * P['tp'] * risk if P['tp'] else None
             else: wk_done.discard((pair, b['wk']))
+        elif P['entry'] == 'C':
+            # stop order one tick beyond this candle's high (long) / low (short), alive for the next candle only
+            pend = dict(t0=b['tc'], wk=b['wk'], d=dr, e=b['h'] if dr > 0 else b['l'], risk=risk, life=1, meta=meta, stop=True)
         elif P['entry'] == 'E' and b['ema_prev'] is not None:
             e = b['ema_prev']
             if (b['c'] - e) * dr > 0: pend = dict(t0=b['tc'], wk=b['wk'], d=dr, e=e, risk=risk, life=24, meta=meta)
