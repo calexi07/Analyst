@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — weekly bias + daily checks (history) on the chart.
-// Generated automatically: 2026-11-21 08:42 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
+// Generated automatically: 2026-11-21 09:01 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // Fundamental context only. Not a trade signal.
 //@version=6
@@ -47,6 +47,7 @@ int    lqMax   = input.int(150, "Max sweep lines kept", minval = 10, maxval = 30
 // fractal structure: a body close beyond the last fractal high / low
 string sdMode  = input.string("BOS + displacement (OB/FVG zones)", "Structure", options = ["BOS + displacement (OB/FVG zones)", "Fractal breaks (simple)", "Off"], group = "Structure & zones", tooltip = "BOS + displacement (recommended): a swing (pivot of the length below) is broken by a candle CLOSE, the move has a big body (≥ the ATR multiple) and leaves a fair value gap. The order block (last opposite candle before the move) and the FVG are drawn as the supply/demand zone.\nFractal breaks: the simple version (any close beyond a small fractal).")
 int    sdLen   = input.int(5, "Swing length (bars each side)", minval = 2, maxval = 20, group = "Structure & zones")
+bool   sdWhy   = input.bool(true, "Show why a BOS left no zone", group = "Structure & zones", tooltip = "Every break of structure in the bias direction is drawn. When it leaves no zone, the label says why (no displacement, no FVG, no sweep, no order block).")
 bool   sdInt   = input.bool(true, "Also zones from internal structure", group = "Structure & zones", tooltip = "Adds the smaller breaks inside a leg (internal swings), so a stepped move leaves a zone at every step, closer to price. Internal breaks: thin dashed line, label iBOS, zone text 'int'.")
 int    sdLenI  = input.int(2, "Internal swing length", minval = 1, maxval = 10, group = "Structure & zones")
 float  sdDisp  = input.float(1.2, "Displacement: body ≥ ATR(14) ×", minval = 0.5, maxval = 4, step = 0.1, group = "Structure & zones", tooltip = "The biggest body of the breaking candle and the 2 before it must be at least this many ATRs. Higher = fewer, stronger breaks.")
@@ -70,7 +71,7 @@ int    fsW     = input.int(2, "Line width", minval = 1, maxval = 4, group = "Str
 bool   fsLab   = input.bool(true, "Break labels", group = "Structure & zones")
 int    fsMax   = input.int(100, "Max break lines kept", minval = 10, maxval = 200, group = "Structure & zones")
 
-// ───────── data (generated 2026-11-21 08:42 UTC) ─────────
+// ───────── data (generated 2026-11-21 09:01 UTC) ─────────
 var string[] PAIRS = array.from("EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD")
 var string[] CCY   = array.from("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "XAU")
 var int[]    wT = array.new_int()     // week start (Sunday 21:00 UTC)
@@ -710,61 +711,73 @@ f_sd(simple int len, bool intl) =>
         if not intl
             f_sdUpdate()
         if not na(hiL) and close > hiL
-            // bullish FVG in the last 3 candles: low[k] above high[k+2]
-            float ft = na
-            float fb = na
-            int   fT = na
-            for k = 0 to 2
-                if na(ft) and low[k] > high[k + 2]
-                    ft := low[k]
-                    fb := high[k + 2]
-                    fT := time[k + 1]
-            if disp and (not sdFvgQ or not na(ft)) and okUp and (not fsSwp or swSell)
-                // order block = origin of the leg that broke the swing: the lowest low since the broken swing high,
-                // then the last bearish candle at or just before that low
+            if okUp
+                // the leg = from its origin (lowest low since the broken swing high) to this candle
                 int span = math.min(math.max(bar_index - nz(hiI, bar_index - 30), 3), 300)
                 int lowK = 0
                 for k = 0 to span
                     if low[k] < low[lowK]
                         lowK := k
+                float legBody = 0.0
+                for k = 0 to lowK
+                    legBody := math.max(legBody, math.abs(close[k] - open[k]))
+                bool dispL = legBody >= sdDisp * atr
+                // FVG anywhere in the leg; the one nearest the origin is kept
+                float ft = na
+                float fb = na
+                int   fT = na
+                for k = 0 to math.max(lowK - 1, 0)
+                    if low[k] > high[k + 2]
+                        ft := low[k]
+                        fb := high[k + 2]
+                        fT := time[k + 1]
                 int ob = -1
                 for k = lowK to math.min(lowK + 10, 300)
                     if close[k] < open[k]
                         ob := k
                         break
-                if ob > 0 or sdZone == "FVG only"
-                    array.push(fsLines, line.new(hiT, hiL, time, hiL, xloc = xloc.bar_time, color = intl ? color.new(fsC, 30) : fsC, style = intl ? line.style_dashed : line.style_solid, width = intl ? 1 : fsW))
-                    if fsLab
-                        array.push(fsLbls, label.new(time, hiL, intl ? "iBOS ▲" : "BOS ▲", xloc = xloc.bar_time, style = label.style_label_lower_left, color = color.new(fsC, 100), textcolor = fsC, size = size.tiny))
+                bool swOk = not fsSwp or swSell
+                bool zOk = dispL and (not sdFvgQ or not na(ft)) and swOk and (ob > 0 or (sdZone == "FVG only" and not na(ft)))
+                string why = not dispL ? "no displacement" : sdFvgQ and na(ft) ? "no FVG" : not swOk ? "no sweep" : "no order block"
+                array.push(fsLines, line.new(hiT, hiL, time, hiL, xloc = xloc.bar_time, color = intl ? color.new(fsC, 30) : fsC, style = intl ? line.style_dashed : line.style_solid, width = intl ? 1 : fsW))
+                if fsLab
+                    array.push(fsLbls, label.new(time, hiL, (intl ? "iBOS ▲" : "BOS ▲") + (zOk or not sdWhy ? "" : " · " + why), xloc = xloc.bar_time, style = label.style_label_lower_left, color = color.new(fsC, 100), textcolor = zOk ? fsC : color.new(fsC, 45), size = size.tiny))
+                if zOk
                     f_sdZone(intl, true, ob > 0 ? time[ob] : fT, ob > 0 ? high[ob] : ft, ob > 0 ? low[ob] : fb, fT, ft, fb, hiL)
                     brUp := true
             hiL := na
             swSell := false
         if not na(loL) and close < loL
-            float ft2 = na
-            float fb2 = na
-            int   fT2 = na
-            for k = 0 to 2
-                if na(ft2) and high[k] < low[k + 2]
-                    ft2 := low[k + 2]
-                    fb2 := high[k]
-                    fT2 := time[k + 1]
-            if disp and (not sdFvgQ or not na(ft2)) and okDn and (not fsSwp or swBuy)
-                // origin of the bearish leg: the highest high since the broken swing low, then the last bullish candle at or before it
+            if okDn
                 int span2 = math.min(math.max(bar_index - nz(loI, bar_index - 30), 3), 300)
                 int highK = 0
                 for k = 0 to span2
                     if high[k] > high[highK]
                         highK := k
+                float legBody2 = 0.0
+                for k = 0 to highK
+                    legBody2 := math.max(legBody2, math.abs(close[k] - open[k]))
+                bool dispL2 = legBody2 >= sdDisp * atr
+                float ft2 = na
+                float fb2 = na
+                int   fT2 = na
+                for k = 0 to math.max(highK - 1, 0)
+                    if high[k] < low[k + 2]
+                        ft2 := low[k + 2]
+                        fb2 := high[k]
+                        fT2 := time[k + 1]
                 int ob2 = -1
                 for k = highK to math.min(highK + 10, 300)
                     if close[k] > open[k]
                         ob2 := k
                         break
-                if ob2 > 0 or sdZone == "FVG only"
-                    array.push(fsLines, line.new(loT, loL, time, loL, xloc = xloc.bar_time, color = intl ? color.new(fsC, 30) : fsC, style = intl ? line.style_dashed : line.style_solid, width = intl ? 1 : fsW))
-                    if fsLab
-                        array.push(fsLbls, label.new(time, loL, intl ? "iBOS ▼" : "BOS ▼", xloc = xloc.bar_time, style = label.style_label_upper_left, color = color.new(fsC, 100), textcolor = fsC, size = size.tiny))
+                bool swOk2 = not fsSwp or swBuy
+                bool zOk2 = dispL2 and (not sdFvgQ or not na(ft2)) and swOk2 and (ob2 > 0 or (sdZone == "FVG only" and not na(ft2)))
+                string why2 = not dispL2 ? "no displacement" : sdFvgQ and na(ft2) ? "no FVG" : not swOk2 ? "no sweep" : "no order block"
+                array.push(fsLines, line.new(loT, loL, time, loL, xloc = xloc.bar_time, color = intl ? color.new(fsC, 30) : fsC, style = intl ? line.style_dashed : line.style_solid, width = intl ? 1 : fsW))
+                if fsLab
+                    array.push(fsLbls, label.new(time, loL, (intl ? "iBOS ▼" : "BOS ▼") + (zOk2 or not sdWhy ? "" : " · " + why2), xloc = xloc.bar_time, style = label.style_label_upper_left, color = color.new(fsC, 100), textcolor = zOk2 ? fsC : color.new(fsC, 45), size = size.tiny))
+                if zOk2
                     f_sdZone(intl, false, ob2 > 0 ? time[ob2] : fT2, ob2 > 0 ? high[ob2] : ft2, ob2 > 0 ? low[ob2] : fb2, fT2, ft2, fb2, loL)
                     brDn := true
             loL := na
