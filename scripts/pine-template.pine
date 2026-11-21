@@ -442,7 +442,7 @@ f_seStore() =>
 f_seFib(int dir, float sl, float ext, int tP) =>
     // fib 1 = SL (sweep candle extreme), 0 = extreme of the move, entry 0.5, TP at seRR × risk beyond the entry
     float ent = (sl + ext) / 2
-    float tp = ent - dir * seRR * math.abs(sl - ent)
+    float tp = ent + dir * seRR * math.abs(sl - ent)
     string px = format.mintick
     if na(array.get(seLn, 0))
         array.set(seLn, 0, line.new(tP, sl, time, sl, xloc = xloc.bar_time, extend = extend.right, color = seSlC, style = line.style_solid, width = 1))
