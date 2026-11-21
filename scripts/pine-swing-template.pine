@@ -119,7 +119,7 @@ if flat
     strategy.cancel("L")
     strategy.cancel("S")
 
-bool sig = flat and time >= fromT and dir != 0 and cfOk and dayOk and bar_index - lastExit > coolD and not na(atr)
+bool sig = flat and timeframe.isdaily and time >= fromT and dir != 0 and cfOk and dayOk and bar_index - lastExit > coolD and not na(atr)
 if sig
     bool isA = str.startswith(enMode, "A")
     bool isB = str.startswith(enMode, "B")
@@ -169,4 +169,4 @@ if barstate.islast
     table.cell(tb, 0, 3, "Confirmed", text_color = color.gray, text_size = size.small)
     table.cell(tb, 1, 3, dir == 0 ? "–" : cfOk ? "yes" : "no", text_color = color.white, text_size = size.small)
 if not timeframe.isdaily and barstate.islast
-    label.new(bar_index, high, "BE Swing is built for the Daily chart", style = label.style_label_down, color = color.orange, textcolor = color.white)
+    label.new(bar_index, high, "BE Swing trades only on the Daily (1D) chart.\nSwitch the chart to 1D: on this timeframe no trades are taken.", style = label.style_label_down, color = color.orange, textcolor = color.white, size = size.large)
