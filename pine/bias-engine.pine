@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — weekly bias + daily checks (history) on the chart.
-// Generated automatically: 2026-11-21 09:04 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
+// Generated automatically: 2026-11-21 11:05 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // Fundamental context only. Not a trade signal.
 //@version=6
@@ -44,8 +44,19 @@ bool   lqLab   = input.bool(true, "$ labels", group = "Liquidity")
 bool   lqByB   = input.bool(true, "Colour by side", group = "Liquidity", tooltip = "On: sellside sweeps in the Bullish colour, buyside sweeps in the Bearish colour. Off: one grey colour, as in the original indicator.")
 color  lqC     = input.color(#5d606b, "Line colour (when not by side)", group = "Liquidity")
 int    lqMax   = input.int(150, "Max sweep lines kept", minval = 10, maxval = 300, group = "Liquidity")
+// setup engine: 1H liquidity (confirmed on the 1H close) → POC on the chart's candles in the bias direction → fib 0.5 entry, SL at the sweep candle, TP 2R
+bool   seOn    = input.bool(true, "Setup engine (sweep → POC → fib 0.5)", group = "Setup engine", tooltip = "Works on a chart lower than the Sweep timeframe (e.g. 1H liquidity on a 5m chart). 1) a liquidity sweep on the side the week's bias wants (bearish → buyside, bullish → sellside) is confirmed when its 1H candle closes: dashed line, $ and 💧. 2) the engine waits for a POC (BOS/CHoCH by candle close) on the chart's candles in the bias direction. 3) a fib is drawn from the sweep candle's high/low (1 = SL) to the low/high of the move (0); entry at 0.5, TP at 2R. Your own rules, drawn automatically; not advice.")
+bool   seTwo   = input.bool(false, "Also in two-sided weeks (both sides)", group = "Setup engine")
+int    seLen   = input.int(5, "POC structure length (chart candles)", minval = 2, maxval = 50, group = "Setup engine", tooltip = "Same swing logic as the BOS/CHoCH indicator: highs and lows alternate; a POC is a candle CLOSE beyond the last swing.")
+int    seExp   = input.int(24, "Wait for the POC at most (hours)", minval = 1, maxval = 120, group = "Setup engine")
+float  seRR    = input.float(2.0, "Take profit (R)", minval = 0.5, maxval = 10, step = 0.5, group = "Setup engine")
+int    seKeep  = input.int(20, "Finished setups kept on the chart", minval = 1, maxval = 60, group = "Setup engine")
+bool   seStat  = input.bool(true, "Results table (setups on this chart)", group = "Setup engine")
+color  seEntC  = input.color(#D9A35B, "Entry 0.5", group = "Setup engine")
+color  seSlC   = input.color(#F23645, "Stop loss (1)", group = "Setup engine")
+color  seTpC   = input.color(#22AB94, "Take profit", group = "Setup engine")
 // fractal structure: a body close beyond the last fractal high / low
-string sdMode  = input.string("BOS + displacement (OB/FVG zones)", "Structure", options = ["BOS + displacement (OB/FVG zones)", "Fractal breaks (simple)", "Off"], group = "Structure & zones", tooltip = "BOS + displacement (recommended): a swing (pivot of the length below) is broken by a candle CLOSE, the move has a big body (≥ the ATR multiple) and leaves a fair value gap. The order block (last opposite candle before the move) and the FVG are drawn as the supply/demand zone.\nFractal breaks: the simple version (any close beyond a small fractal).")
+string sdMode  = input.string("Off", "Structure", options = ["BOS + displacement (OB/FVG zones)", "Fractal breaks (simple)", "Off"], group = "Structure & zones", tooltip = "BOS + displacement (recommended): a swing (pivot of the length below) is broken by a candle CLOSE, the move has a big body (≥ the ATR multiple) and leaves a fair value gap. The order block (last opposite candle before the move) and the FVG are drawn as the supply/demand zone.\nFractal breaks: the simple version (any close beyond a small fractal).")
 int    sdLen   = input.int(5, "Swing length (bars each side)", minval = 2, maxval = 20, group = "Structure & zones")
 string sdShow  = input.string("All grades", "Zones to show", options = ["All grades", "A + B", "Only A"], group = "Structure & zones", tooltip = "Every BOS leaves a zone at the origin of its leg. Grade A = displacement + FVG (+ a sweep before it, if 'Grade A needs a sweep' is on). B = one of the two. C = neither (a slow, stepped leg). C zones are drawn fainter.")
 bool   sdWhy   = input.bool(true, "Grade on the BOS label", group = "Structure & zones")
@@ -71,7 +82,7 @@ int    fsW     = input.int(2, "Line width", minval = 1, maxval = 4, group = "Str
 bool   fsLab   = input.bool(true, "Break labels", group = "Structure & zones")
 int    fsMax   = input.int(100, "Max break lines kept", minval = 10, maxval = 200, group = "Structure & zones")
 
-// ───────── data (generated 2026-11-21 09:04 UTC) ─────────
+// ───────── data (generated 2026-11-21 11:05 UTC) ─────────
 var string[] PAIRS = array.from("EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD")
 var string[] CCY   = array.from("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "XAU")
 var int[]    wT = array.new_int()     // week start (Sunday 21:00 UTC)
@@ -469,7 +480,7 @@ f_lqDraw(lqSweep sw, bool buySide) =>
 f_lq() =>
     var float lastB = na
     var float lastS = na
-    bool tfOk = timeframe.in_seconds() / 60 <= lqMin
+    bool tfOk = timeframe.in_seconds() / 60 <= lqMin and not (seOn and timeframe.in_seconds() / 60 < lqMin)
     bool nb = lqOn and tfOk and showBuyLq and not na(lqBuyS) and (na(lastB) or lqBuyS.lvl != lastB)
     bool ns = lqOn and tfOk and showSellLq and not na(lqSellS) and (na(lastS) or lqSellS.lvl != lastS)
     if nb
@@ -483,6 +494,245 @@ f_lq() =>
 alertcondition(lqNewBuy or lqNewSell, "Liquidity sweep (bias side)", "Liquidity sweep on the side chosen by the week's bias. Context only, not a trade signal.")
 alertcondition(lqNewBuy, "Buyside sweep", "Buyside liquidity swept (high taken).")
 alertcondition(lqNewSell, "Sellside sweep", "Sellside liquidity swept (low taken).")
+
+// ───────── setup engine: 1H sweep (confirmed) → POC on chart candles → fib 0.5 entry ─────────
+// the last CLOSED candle of the sweep timeframe (no repainting: it only changes once that candle has closed)
+[hT, hO, hH, hL, hC] = request.security(syminfo.tickerid, lqTf, [time[1], open[1], high[1], low[1], close[1]], lookahead = barmerge.lookahead_on)
+var int[]   HT = array.new_int()
+var float[] HO = array.new_float()
+var float[] HH = array.new_float()
+var float[] HL = array.new_float()
+var float[] HC = array.new_float()
+bool seAct = seOn and timeframe.in_seconds() / 60 < lqMin
+bool hNew = seAct and not na(hT) and hT != nz(hT[1], -1)
+if hNew
+    array.push(HT, hT)
+    array.push(HO, hO)
+    array.push(HH, hH)
+    array.push(HL, hL)
+    array.push(HC, hC)
+    if array.size(HT) > 600
+        array.shift(HT)
+        array.shift(HO)
+        array.shift(HH)
+        array.shift(HL)
+        array.shift(HC)
+// same rule as "Liquidity stop hunt", run on the stored 1H candles: the newest candle trades through an older swing high/low
+// and (Wick Only) closes back inside it. Returns [buyside level, its time, sellside level, its time].
+f_seSweep() =>
+    int n = array.size(HT)
+    float bLv = na
+    int   bT  = na
+    float sLv = na
+    int   sT  = na
+    if n >= 4
+        int c = n - 1
+        float cH = array.get(HH, c)
+        float cL = array.get(HL, c)
+        float cO = array.get(HO, c)
+        float cC = array.get(HC, c)
+        float thHi = 0.0
+        for i = 1 to math.min(n - 2, 500)
+            float hi = array.get(HH, c - i)
+            if hi >= thHi
+                thHi := hi
+            if hi >= cH or thHi >= cH
+                break
+            if array.get(HH, c - i - 1) <= hi and array.get(HH, c - i + 1) <= hi and cH >= hi and cO <= hi and hi >= thHi
+                if lqType == "Regular" or cC <= hi
+                    bLv := hi
+                    bT := array.get(HT, c - i)
+        float thLo = 99999999.0
+        for j = 1 to math.min(n - 2, 500)
+            float lo = array.get(HL, c - j)
+            if lo <= thLo
+                thLo := lo
+            if lo <= cL or thLo <= cL
+                break
+            if array.get(HL, c - j - 1) >= lo and array.get(HL, c - j + 1) >= lo and cL <= lo and cO >= lo and lo <= thLo
+                if lqType == "Regular" or cC >= lo
+                    sLv := lo
+                    sT := array.get(HT, c - j)
+    [bLv, bT, sLv, sT]
+// POC structure on the chart's own candles (leg logic of the BOS/CHoCH indicator)
+var int seLeg = 0
+bool seLH = high[seLen] > ta.highest(seLen)
+bool seLL = low[seLen] < ta.lowest(seLen)
+seLeg := seLH ? 0 : seLL ? 1 : seLeg
+bool seTop = ta.change(seLeg) != 0 and seLeg == 0
+bool seBot = ta.change(seLeg) != 0 and seLeg == 1
+var float seShP = na
+var int   seShT = na
+var float seSlP = na
+var int   seSlT = na
+if seTop
+    seShP := high[seLen]
+    seShT := time[seLen]
+if seBot
+    seSlP := low[seLen]
+    seSlT := time[seLen]
+// state: 0 idle · 1 sweep confirmed, waiting for the POC · 2 POC done, waiting for 0.5 · 3 in the trade
+var int   seSt   = 0
+var int   seDir  = 0      // -1 short (buyside swept), +1 long (sellside swept)
+var float seSL   = na     // sweep candle high / low = fib 1 = stop loss
+var int   seT0   = na     // time the sweep was confirmed
+var float seExt  = na     // low (short) / high (long) of the move since the sweep = fib 0
+var float seEnt  = na
+var float seTP   = na
+var int   seTP0  = na     // POC time
+var line[]  seLn = array.new<line>(4)    // 0 SL, 1 entry, 2 fib 0, 3 TP
+var label[] seLb = array.new<label>(4)   // 0 SL, 1 entry, 2 TP, 3 result
+var line[]  seOld = array.new<line>()
+var label[] seOldL = array.new<label>()
+var int seN = 0
+var int seW = 0
+var int seLs = 0
+var int seX = 0
+f_sePips(float d) => math.round(d / pipSz * 10) / 10
+// move the current setup's drawings into the history (they stop at this candle)
+f_seStore() =>
+    for i = 0 to 3
+        line x = array.get(seLn, i)
+        if not na(x)
+            line.set_extend(x, extend.none)
+            line.set_x2(x, time)
+            array.push(seOld, x)
+        array.set(seLn, i, na)
+        label y = array.get(seLb, i)
+        if not na(y)
+            array.push(seOldL, y)
+        array.set(seLb, i, na)
+    while array.size(seOld) > seKeep * 4
+        line.delete(array.shift(seOld))
+    while array.size(seOldL) > seKeep * 4
+        label.delete(array.shift(seOldL))
+    0
+f_seFib(int dir, float sl, float ext, int tP) =>
+    // fib 1 = SL (sweep candle extreme), 0 = extreme of the move, entry 0.5, TP at seRR × risk beyond the entry
+    float ent = (sl + ext) / 2
+    float tp = ent - dir * seRR * math.abs(sl - ent)
+    string px = format.mintick
+    if na(array.get(seLn, 0))
+        array.set(seLn, 0, line.new(tP, sl, time, sl, xloc = xloc.bar_time, extend = extend.right, color = seSlC, style = line.style_solid, width = 1))
+        array.set(seLn, 1, line.new(tP, ent, time, ent, xloc = xloc.bar_time, extend = extend.right, color = seEntC, style = line.style_dashed, width = 2))
+        array.set(seLn, 2, line.new(tP, ext, time, ext, xloc = xloc.bar_time, extend = extend.right, color = color.new(seEntC, 60), style = line.style_dotted, width = 1))
+        array.set(seLn, 3, line.new(tP, tp, time, tp, xloc = xloc.bar_time, extend = extend.right, color = seTpC, style = line.style_solid, width = 1))
+        array.set(seLb, 0, label.new(time, sl, "", xloc = xloc.bar_time, style = label.style_label_left, color = color.new(seSlC, 100), textcolor = seSlC, size = size.tiny))
+        array.set(seLb, 1, label.new(time, ent, "", xloc = xloc.bar_time, style = label.style_label_left, color = color.new(seEntC, 100), textcolor = seEntC, size = size.tiny))
+        array.set(seLb, 2, label.new(time, tp, "", xloc = xloc.bar_time, style = label.style_label_left, color = color.new(seTpC, 100), textcolor = seTpC, size = size.tiny))
+    line.set_y1(array.get(seLn, 1), ent)
+    line.set_y2(array.get(seLn, 1), ent)
+    line.set_y1(array.get(seLn, 2), ext)
+    line.set_y2(array.get(seLn, 2), ext)
+    line.set_y1(array.get(seLn, 3), tp)
+    line.set_y2(array.get(seLn, 3), tp)
+    label.set_xy(array.get(seLb, 0), time, sl)
+    label.set_xy(array.get(seLb, 1), time, ent)
+    label.set_xy(array.get(seLb, 2), time, tp)
+    label.set_text(array.get(seLb, 0), "1 · SL " + str.tostring(sl, px) + " (" + str.tostring(f_sePips(math.abs(sl - ent))) + " pips)")
+    label.set_text(array.get(seLb, 1), "0.5 · entry " + str.tostring(ent, px))
+    label.set_text(array.get(seLb, 2), "TP " + str.tostring(seRR) + "R " + str.tostring(tp, px))
+    [ent, tp]
+f_seEnd(int dir, string txt, color c) =>
+    array.set(seLb, 3, label.new(time, dir < 0 ? high : low, txt, xloc = xloc.bar_time, style = dir < 0 ? label.style_label_down : label.style_label_up, color = color.new(c, 15), textcolor = color.white, size = size.small))
+    f_seStore()
+    0
+string seEvt = ""
+if seAct
+    bool wantShort = hasRec ? b == "D" or (b == "N" and seTwo) : seTwo
+    bool wantLong  = hasRec ? b == "U" or (b == "N" and seTwo) : seTwo
+    // 1) a 1H candle just closed: look for a sweep on the side the bias wants
+    if hNew
+        [bLv, bT, sLv, sT] = f_seSweep()
+        bool gotS = wantShort and not na(bLv)
+        bool gotL = wantLong and not na(sLv)
+        if (gotS or gotL) and seSt <= 2
+            if seSt == 2
+                f_seStore()
+            int tLast = time - timeframe.in_seconds() * 1000
+            seDir := gotS ? -1 : 1
+            float lv = gotS ? bLv : sLv
+            seSL := gotS ? hH : hL
+            seT0 := time
+            seExt := gotS ? low : high
+            seSt := 1
+            color c = gotS ? bearC : bullC
+            array.push(lqLines, line.new(gotS ? bT : sT, lv, tLast, lv, xloc = xloc.bar_time, color = c, style = line.style_dashed, width = 1))
+            array.push(lqLbls, label.new(int(math.avg(gotS ? bT : sT, tLast)), lv, "$", xloc = xloc.bar_time, style = label.style_none, textcolor = c, size = size.small, tooltip = (gotS ? "Buyside" : "Sellside") + " liquidity taken and confirmed by the " + lqTf + " close. Waiting for a POC " + (gotS ? "down" : "up") + "."))
+            array.push(lqLbls, label.new(tLast, gotS ? hH : hL, "💧", xloc = xloc.bar_time, style = gotS ? label.style_label_down : label.style_label_up, color = color.new(c, 100), textcolor = c, size = size.normal, tooltip = "Liquidity confirmed on the " + lqTf + " close (" + (gotS ? "high " : "low ") + str.tostring(gotS ? hH : hL, format.mintick) + " = stop for this setup)."))
+            while array.size(lqLines) > lqMax
+                line.delete(array.shift(lqLines))
+            while array.size(lqLbls) > lqMax
+                label.delete(array.shift(lqLbls))
+            seEvt := "💧 " + pName + ": " + (gotS ? "buyside" : "sellside") + " liquidity confirmed (" + lqTf + "). Waiting for a POC " + (gotS ? "down." : "up.")
+    // 2) waiting for the POC (candle close beyond the last chart swing in the bias direction)
+    if seSt == 1
+        bool slHit = seDir < 0 ? high > seSL : low < seSL
+        if slHit
+            seSt := 0
+            seX += 1
+            label.new(time, seDir < 0 ? high : low, "✖", xloc = xloc.bar_time, style = seDir < 0 ? label.style_label_down : label.style_label_up, color = color.new(neutC, 100), textcolor = neutC, size = size.small, tooltip = "Setup cancelled: price went beyond the sweep candle before a POC.")
+        else if time - seT0 > seExp * 3600000
+            seSt := 0
+            seX += 1
+        else
+            seExt := seDir < 0 ? math.min(seExt, low) : math.max(seExt, high)
+            bool poc = seDir < 0 ? (not na(seSlP) and close < seSlP and close[1] >= seSlP) : (not na(seShP) and close > seShP and close[1] <= seShP)
+            if poc
+                float lvl = seDir < 0 ? seSlP : seShP
+                int t0 = seDir < 0 ? seSlT : seShT
+                line.new(t0, lvl, time, lvl, xloc = xloc.bar_time, color = seDir < 0 ? bearC : bullC, style = line.style_solid, width = 1)
+                label.new(int(math.avg(t0, time)), lvl, "POC", xloc = xloc.bar_time, style = seDir < 0 ? label.style_label_up : label.style_label_down, color = color.new(neutC, 100), textcolor = seDir < 0 ? bearC : bullC, size = size.small)
+                seTP0 := time
+                seSt := 2
+                seN += 1
+                [e0, t0p] = f_seFib(seDir, seSL, seExt, seTP0)
+                seEnt := e0
+                seTP := t0p
+                seEvt := "📐 " + pName + ": POC " + (seDir < 0 ? "down" : "up") + ". Entry 0.5 " + str.tostring(e0, format.mintick) + ", SL " + str.tostring(seSL, format.mintick) + ", TP " + str.tostring(t0p, format.mintick)
+    // 3) after the POC: the move may extend (fib 0 follows it) until price comes back to 0.5
+    else if seSt == 2
+        bool slHit2 = seDir < 0 ? high >= seSL : low <= seSL
+        bool touch = seDir < 0 ? high >= seEnt : low <= seEnt
+        if slHit2
+            seN -= 1
+            seX += 1
+            f_seEnd(seDir, "✖ no entry", neutC)
+            seSt := 0
+        else if touch and time > seTP0
+            seSt := 3
+            label.new(time, seEnt, "▶ 0.5", xloc = xloc.bar_time, style = label.style_label_left, color = color.new(seEntC, 100), textcolor = seEntC, size = size.tiny)
+            seEvt := "▶ " + pName + ": price back at 0.5 (" + str.tostring(seEnt, format.mintick) + ")."
+        else
+            seExt := seDir < 0 ? math.min(seExt, low) : math.max(seExt, high)
+            [e1, t1p] = f_seFib(seDir, seSL, seExt, seTP0)
+            seEnt := e1
+            seTP := t1p
+    // 4) in the trade: SL first if both are hit in the same candle
+    else if seSt == 3
+        bool lose = seDir < 0 ? high >= seSL : low <= seSL
+        bool win  = seDir < 0 ? low <= seTP : high >= seTP
+        if lose
+            seLs += 1
+            f_seEnd(seDir, "❌ −1R", seSlC)
+            seSt := 0
+            seEvt := "❌ " + pName + ": stop loss hit (−1R)."
+        else if win
+            seW += 1
+            f_seEnd(seDir, "✅ +" + str.tostring(seRR) + "R", seTpC)
+            seSt := 0
+            seEvt := "✅ " + pName + ": take profit hit (+" + str.tostring(seRR) + "R)."
+if seEvt != ""
+    alert(seEvt, alert.freq_once_per_bar)
+var table seTb = na
+if barstate.islast and seAct and seStat
+    table.delete(seTb)
+    seTb := table.new(position.bottom_right, 1, 2, bgcolor = tBg, frame_color = tBd, frame_width = 1, border_color = tBd, border_width = 1)
+    int done = seW + seLs
+    float netR = seW * seRR - seLs
+    string st = seSt == 1 ? "💧 waiting for a POC" : seSt == 2 ? "📐 waiting for 0.5" : seSt == 3 ? "▶ in the trade" : "idle"
+    table.cell(seTb, 0, 0, "Setups on this chart: " + str.tostring(seN) + " · ✅ " + str.tostring(seW) + " · ❌ " + str.tostring(seLs) + (done > 0 ? " · net " + (netR >= 0 ? "+" : "") + str.tostring(netR, "#.#") + "R" : ""), text_color = tTx, text_size = size.tiny, text_halign = text.align_left)
+    table.cell(seTb, 0, 1, "Now: " + st, text_color = tMu, text_size = size.tiny, text_halign = text.align_left)
 
 // ───────── fractal structure breaks (body close), filtered by the week's bias ─────────
 var line[]  fsLines = array.new<line>()
