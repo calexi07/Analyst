@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — weekly bias + daily checks (history) on the chart.
-// Generated automatically: 2026-11-21 11:32 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
+// Generated automatically: 2026-11-21 11:50 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // Fundamental context only. Not a trade signal.
 //@version=6
@@ -47,6 +47,7 @@ int    lqMax   = input.int(150, "Max sweep lines kept", minval = 10, maxval = 30
 // setup engine: 1H liquidity (confirmed on the 1H close) → POC on the chart's candles in the bias direction → fib 0.5 entry, SL at the sweep candle, TP 2R
 bool   seOn    = input.bool(true, "Setup engine (sweep → POC → fib 0.5)", group = "Setup engine", tooltip = "Works on a chart lower than the Sweep timeframe (e.g. 1H liquidity on a 5m chart). 1) a liquidity sweep on the side the week's bias wants (bearish → buyside, bullish → sellside) is confirmed when its 1H candle closes: dashed line, $ and 💧. 2) the engine waits for a POC (BOS/CHoCH by candle close) on the chart's candles in the bias direction. 3) a fib is drawn from the sweep candle's high/low (1 = SL) to the low/high of the move (0); entry at 0.5, TP at 2R. Your own rules, drawn automatically; not advice.")
 bool   seTwo   = input.bool(false, "Also in two-sided weeks (both sides)", group = "Setup engine")
+bool   seNoNY  = input.bool(true, "Skip sweeps in the New York session", group = "Setup engine", tooltip = "Ignores liquidity sweeps whose 1H candle starts at 15:00 or later (Romania time; Asia before 09:00, London 09:00–15:00, New York from 15:00). Backtest of 29 pairs: New York sweeps were the weakest session.")
 int    seLen   = input.int(5, "POC structure length (chart candles)", minval = 2, maxval = 50, group = "Setup engine", tooltip = "Same swing logic as the BOS/CHoCH indicator: highs and lows alternate; a POC is a candle CLOSE beyond the last swing.")
 int    seExp   = input.int(24, "Wait for the POC at most (hours)", minval = 1, maxval = 120, group = "Setup engine")
 float  seRR    = input.float(2.0, "Take profit (R)", minval = 0.5, maxval = 10, step = 0.5, group = "Setup engine")
@@ -82,7 +83,7 @@ int    fsW     = input.int(2, "Line width", minval = 1, maxval = 4, group = "Str
 bool   fsLab   = input.bool(true, "Break labels", group = "Structure & zones")
 int    fsMax   = input.int(100, "Max break lines kept", minval = 10, maxval = 200, group = "Structure & zones")
 
-// ───────── data (generated 2026-11-21 11:32 UTC) ─────────
+// ───────── data (generated 2026-11-21 11:50 UTC) ─────────
 var string[] PAIRS = array.from("EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD")
 var string[] CCY   = array.from("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "XAU")
 var int[]    wT = array.new_int()     // week start (Sunday 21:00 UTC)
@@ -658,8 +659,9 @@ if seAct
     // 1) a 1H candle just closed: look for a sweep on the side the bias wants
     if hNew
         [bLv, bT, sLv, sT] = f_seSweep()
-        bool gotS = wantShort and not na(bLv)
-        bool gotL = wantLong and not na(sLv)
+        bool nyOk = not (seNoNY and hour(hT, "Europe/Bucharest") >= 15)
+        bool gotS = nyOk and wantShort and not na(bLv)
+        bool gotL = nyOk and wantLong and not na(sLv)
         if (gotS or gotL) and seSt <= 2
             if seSt == 2
                 f_seStore()
