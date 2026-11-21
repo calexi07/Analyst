@@ -37,7 +37,7 @@ bool   lqOn    = input.bool(true, "Show liquidity sweeps", group = "Liquidity", 
 string lqMode  = input.string("Follow the bias", "Which side", options = ["Follow the bias", "Opposite to the bias", "Both", "Buyside only", "Sellside only"], group = "Liquidity", tooltip = "Follow the bias: BULLISH week → sellside sweeps (lows taken), BEARISH week → buyside sweeps (highs taken). Opposite: the other side. Both / Buyside only / Sellside only ignore the bias.")
 string lqTwo   = input.string("Both", "Two-sided weeks", options = ["Both", "None"], group = "Liquidity", tooltip = "What to show in weeks with a two-sided bias (or no published bias) when 'Which side' follows the bias.")
 string lqType  = input.string("Wick Only", "Sweep type", options = ["Regular", "Wick Only"], group = "Liquidity", tooltip = "Wick Only: the candle must close back inside the swept level.")
-string lqTf    = input.string("1D", "Sweep timeframe", options = ["3", "5", "15", "30", "60", "120", "180", "240", "480", "960", "1D", "2D", "3D", "4D", "5D", "1W", "1M", "3M"], group = "Liquidity")
+string lqTf    = input.string("60", "Sweep timeframe", options = ["3", "5", "15", "30", "60", "120", "180", "240", "480", "960", "1D", "2D", "3D", "4D", "5D", "1W", "1M", "3M"], group = "Liquidity")
 string lqSty   = input.string("Dotted", "Line style", options = ["Solid", "Dotted", "Dashed"], group = "Liquidity")
 int    lqW     = input.int(1, "Line width", minval = 1, maxval = 4, group = "Liquidity")
 bool   lqLab   = input.bool(true, "$ labels", group = "Liquidity")
@@ -46,6 +46,7 @@ color  lqC     = input.color(#5d606b, "Line colour (when not by side)", group = 
 int    lqMax   = input.int(150, "Max sweep lines kept", minval = 10, maxval = 300, group = "Liquidity")
 // fractal structure: a body close beyond the last fractal high / low
 string sdMode  = input.string("BOS + displacement (OB/FVG zones)", "Structure", options = ["BOS + displacement (OB/FVG zones)", "Fractal breaks (simple)", "Off"], group = "Structure & zones", tooltip = "BOS + displacement (recommended): a swing (pivot of the length below) is broken by a candle CLOSE, the move has a big body (≥ the ATR multiple) and leaves a fair value gap. The order block (last opposite candle before the move) and the FVG are drawn as the supply/demand zone.\nFractal breaks: the simple version (any close beyond a small fractal).")
+string sdTf    = input.string("60", "Structure timeframe", options = ["15", "30", "60", "120", "240", "1D"], group = "Structure & zones", tooltip = "BOS, swings, order blocks and FVGs are calculated only on this timeframe and drawn on any lower chart (e.g. 1H zones on a 5m chart). Nothing is calculated from the chart's own smaller candles. On a higher chart than this, the chart's timeframe is used.")
 int    sdLen   = input.int(5, "Swing length (bars each side)", minval = 2, maxval = 20, group = "Structure & zones")
 bool   sdInt   = input.bool(true, "Also zones from internal structure", group = "Structure & zones", tooltip = "Adds the smaller breaks inside a leg (internal swings), so a stepped move leaves a zone at every step, closer to price. Internal breaks: thin dashed line, label iBOS, zone text 'int'.")
 int    sdLenI  = input.int(2, "Internal swing length", minval = 1, maxval = 10, group = "Structure & zones")
@@ -59,6 +60,10 @@ int    sdExt   = input.int(4, "Box ends this many candles after the touch / brea
 int    sdWatch = input.int(30, "After a touch, watch for a break for (candles)", minval = 1, maxval = 300, group = "Structure & zones", tooltip = "A touched zone turns black if a candle closes beyond it within this many candles; otherwise it stays yellow (it did its job).")
 color  sdTchC  = input.color(color.new(#E2B93B, 80), "Touched zone", group = "Structure & zones")
 color  sdBrkC  = input.color(color.new(#000000, 55), "Broken zone", group = "Structure & zones")
+// the nearest untaken liquidity on the other side of the move (where a move from the zone would be drawn to)
+bool   ltOn    = input.bool(true, "Show liquidity draw", group = "Liquidity draw", tooltip = "The nearest structure-timeframe swing high (bullish week) or swing low (bearish week) that price has not traded through yet. Two-sided weeks: both sides. Context only, not a trade target.")
+int    ltN     = input.int(1, "Levels per side", minval = 1, maxval = 3, group = "Liquidity draw")
+color  ltC     = input.color(#5B9CF6, "Colour", group = "Liquidity draw")
 color  sdDemC  = input.color(color.new(#22AB94, 85), "Demand zone", group = "Structure & zones")
 color  sdSupC  = input.color(color.new(#F23645, 85), "Supply zone", group = "Structure & zones")
 bool   fsOn    = sdMode == "Fractal breaks (simple)"
@@ -454,7 +459,7 @@ f_sdZone(bool intl, bool up, int t0, float top, float bot, int ft, float ftop, f
                     break
     0
     // each bar: fresh → touched (yellow) → broken (black); the box stops a few candles after the event
-f_sdUpdate() =>
+f_sdUpdate(float sc) =>
     int n = array.size(sdBox)
     if n > 0
         for k = n - 1 to 0
@@ -464,7 +469,7 @@ f_sdUpdate() =>
             int   st = array.get(sdSt, k)
             box o = array.get(sdBox, k)
             box f = array.get(sdFvg, k)
-            bool broken = up ? close < zb : close > zt
+            bool broken = up ? sc < zb : sc > zt
             bool touch  = up ? low <= zt : high >= zb
             if broken
                 f_sdPaint(o, f, sdBrkC, (up ? "demand" : "supply") + " · broken")
@@ -483,15 +488,14 @@ f_sdUpdate() =>
                 f_sdDrop(k)
             int _done = 0
     0
-f_sd(simple int len, bool intl) =>
+// structure is calculated only on the structure timeframe (pure function, no drawing: it runs inside request.security)
+f_sdDetect(simple int len, float dispK) =>
     var float hiL = na
     var int   hiT = na
     var float loL = na
     var int   loT = na
     var int   hiI = na
     var int   loI = na
-    var bool  swSell = false
-    var bool  swBuy  = false
     float ph = ta.pivothigh(high, len, len)
     float pl = ta.pivotlow(low, len, len)
     float atr = ta.atr(14)
@@ -503,88 +507,195 @@ f_sd(simple int len, bool intl) =>
         loL := pl
         loT := time[len]
         loI := bar_index - len
-    if not na(lqSellS)
-        swSell := true
-    if not na(lqBuyS)
-        swBuy := true
     float bodyMax = math.max(math.abs(close - open), math.abs(close[1] - open[1]), math.abs(close[2] - open[2]))
-    bool disp = bodyMax >= sdDisp * atr
-    bool okUp = fsMode == "Both" or not hasRec or b != "D"
-    bool okDn = fsMode == "Both" or not hasRec or b != "U"
-    bool brUp = false
-    bool brDn = false
-    if sdMode == "BOS + displacement (OB/FVG zones)" and (not intl or sdInt)
-        if not intl
-            f_sdUpdate()
+    bool disp = bodyMax >= dispK * atr
+    bool  uE = false
+    float uL = na
+    int uS = na
+    int uOT = na
+    float uOH = na
+    float uOL = na
+    int uFT = na
+    float uFH = na
+    float uFL = na
+    bool  dE = false
+    float dL = na
+    int dS = na
+    int dOT = na
+    float dOH = na
+    float dOL = na
+    int dFT = na
+    float dFH = na
+    float dFL = na
+    if barstate.isconfirmed
         if not na(hiL) and close > hiL
-            // bullish FVG in the last 3 candles: low[k] above high[k+2]
-            float ft = na
-            float fb = na
-            int   fT = na
             for k = 0 to 2
-                if na(ft) and low[k] > high[k + 2]
-                    ft := low[k]
-                    fb := high[k + 2]
-                    fT := time[k + 1]
-            if disp and (not sdFvgQ or not na(ft)) and okUp and (not fsSwp or swSell)
-                // order block = origin of the leg that broke the swing: the lowest low since the broken swing high,
-                // then the last bearish candle at or just before that low
+                if na(uFH) and low[k] > high[k + 2]
+                    uFH := low[k]
+                    uFL := high[k + 2]
+                    uFT := time[k + 1]
+            if disp
                 int span = math.min(math.max(bar_index - nz(hiI, bar_index - 30), 3), 300)
                 int lowK = 0
                 for k = 0 to span
                     if low[k] < low[lowK]
                         lowK := k
-                int ob = -1
                 for k = lowK to math.min(lowK + 10, 300)
                     if close[k] < open[k]
-                        ob := k
+                        uOT := time[k]
+                        uOH := high[k]
+                        uOL := low[k]
                         break
-                if ob > 0 or sdZone == "FVG only"
-                    array.push(fsLines, line.new(hiT, hiL, time, hiL, xloc = xloc.bar_time, color = intl ? color.new(fsC, 30) : fsC, style = intl ? line.style_dashed : line.style_solid, width = intl ? 1 : fsW))
-                    if fsLab
-                        array.push(fsLbls, label.new(time, hiL, intl ? "iBOS ▲" : "BOS ▲", xloc = xloc.bar_time, style = label.style_label_lower_left, color = color.new(fsC, 100), textcolor = fsC, size = size.tiny))
-                    f_sdZone(intl, true, ob > 0 ? time[ob] : fT, ob > 0 ? high[ob] : ft, ob > 0 ? low[ob] : fb, fT, ft, fb, hiL)
-                    brUp := true
+                uE := true
+                uL := hiL
+                uS := hiT
             hiL := na
-            swSell := false
         if not na(loL) and close < loL
-            float ft2 = na
-            float fb2 = na
-            int   fT2 = na
             for k = 0 to 2
-                if na(ft2) and high[k] < low[k + 2]
-                    ft2 := low[k + 2]
-                    fb2 := high[k]
-                    fT2 := time[k + 1]
-            if disp and (not sdFvgQ or not na(ft2)) and okDn and (not fsSwp or swBuy)
-                // origin of the bearish leg: the highest high since the broken swing low, then the last bullish candle at or before it
+                if na(dFH) and high[k] < low[k + 2]
+                    dFH := low[k + 2]
+                    dFL := high[k]
+                    dFT := time[k + 1]
+            if disp
                 int span2 = math.min(math.max(bar_index - nz(loI, bar_index - 30), 3), 300)
                 int highK = 0
                 for k = 0 to span2
                     if high[k] > high[highK]
                         highK := k
-                int ob2 = -1
                 for k = highK to math.min(highK + 10, 300)
                     if close[k] > open[k]
-                        ob2 := k
+                        dOT := time[k]
+                        dOH := high[k]
+                        dOL := low[k]
                         break
-                if ob2 > 0 or sdZone == "FVG only"
-                    array.push(fsLines, line.new(loT, loL, time, loL, xloc = xloc.bar_time, color = intl ? color.new(fsC, 30) : fsC, style = intl ? line.style_dashed : line.style_solid, width = intl ? 1 : fsW))
-                    if fsLab
-                        array.push(fsLbls, label.new(time, loL, intl ? "iBOS ▼" : "BOS ▼", xloc = xloc.bar_time, style = label.style_label_upper_left, color = color.new(fsC, 100), textcolor = fsC, size = size.tiny))
-                    f_sdZone(intl, false, ob2 > 0 ? time[ob2] : fT2, ob2 > 0 ? high[ob2] : ft2, ob2 > 0 ? low[ob2] : fb2, fT2, ft2, fb2, loL)
-                    brDn := true
+                dE := true
+                dL := loL
+                dS := loT
             loL := na
-            swBuy := false
-        while array.size(fsLines) > fsMax
-            line.delete(array.shift(fsLines))
-        while array.size(fsLbls) > fsMax
-            label.delete(array.shift(fsLbls))
-    [brUp, brDn]
-[sdUpM, sdDnM] = f_sd(sdLen, false)
-[sdUpI, sdDnI] = f_sd(sdLenI, true)
-bool sdUpB = sdUpM or sdUpI
-bool sdDnB = sdDnM or sdDnI
+    [uE, time, uL, uS, uOT, uOH, uOL, uFT, uFH, uFL, dE, dL, dS, dOT, dOH, dOL, dFT, dFH, dFL]
+// confirmed swing points of the structure timeframe (for the liquidity draw)
+f_piv(simple int len) =>
+    float ph = ta.pivothigh(high, len, len)
+    float pl = ta.pivotlow(low, len, len)
+    [barstate.isconfirmed ? ph : na, time[len], barstate.isconfirmed ? pl : na]
+string sTf = timeframe.in_seconds() > timeframe.in_seconds(sdTf) ? timeframe.period : sdTf
+[mUE, mT, mUL, mUS, mUOT, mUOH, mUOL, mUFT, mUFH, mUFL, mDE, mDL, mDS, mDOT, mDOH, mDOL, mDFT, mDFH, mDFL] = request.security(syminfo.tickerid, sTf, f_sdDetect(sdLen, sdDisp), barmerge.gaps_on, barmerge.lookahead_off)
+[iUE, iT, iUL, iUS, iUOT, iUOH, iUOL, iUFT, iUFH, iUFL, iDE, iDL, iDS, iDOT, iDOH, iDOL, iDFT, iDFH, iDFL] = request.security(syminfo.tickerid, sTf, f_sdDetect(sdLenI, sdDisp), barmerge.gaps_on, barmerge.lookahead_off)
+[pvH, pvT, pvL] = request.security(syminfo.tickerid, sTf, f_piv(sdLen), barmerge.gaps_on, barmerge.lookahead_off)
+float sCl = request.security(syminfo.tickerid, sTf, close, barmerge.gaps_on, barmerge.lookahead_off)
+// draw one structure-timeframe break (and its zone) on the chart, filtered by the week's bias and the sweep option
+f_sdDraw(bool intl, bool up, int tB, float lvl, int tS, int oT, float oH, float oL, int fT, float fH, float fL, bool swOk) =>
+    bool okDir = fsMode == "Both" or not hasRec or (up ? b != "D" : b != "U")
+    bool zoneOk = sdZone == "FVG only" ? not na(fH) : not na(oH)
+    bool fvgOk = not sdFvgQ or not na(fH)
+    bool drawn = false
+    if okDir and zoneOk and fvgOk and swOk
+        array.push(fsLines, line.new(tS, lvl, tB, lvl, xloc = xloc.bar_time, color = intl ? color.new(fsC, 30) : fsC, style = intl ? line.style_dashed : line.style_solid, width = intl ? 1 : fsW))
+        if fsLab
+            array.push(fsLbls, label.new(tB, lvl, (intl ? "iBOS " : "BOS ") + (up ? "▲" : "▼"), xloc = xloc.bar_time, style = up ? label.style_label_lower_left : label.style_label_upper_left, color = color.new(fsC, 100), textcolor = fsC, size = size.tiny))
+        f_sdZone(intl, up, na(oT) ? fT : oT, na(oH) ? fH : oH, na(oL) ? fL : oL, fT, fH, fL, lvl)
+        drawn := true
+    while array.size(fsLines) > fsMax
+        line.delete(array.shift(fsLines))
+    while array.size(fsLbls) > fsMax
+        label.delete(array.shift(fsLbls))
+    drawn
+f_sd() =>
+    var int lastM = na
+    var int lastI = na
+    var bool swSell = false
+    var bool swBuy  = false
+    if not na(lqSellS)
+        swSell := true
+    if not na(lqBuyS)
+        swBuy := true
+    bool upB = false
+    bool dnB = false
+    if sdMode == "BOS + displacement (OB/FVG zones)"
+        f_sdUpdate(sCl)
+        if (mUE or mDE) and not na(mT) and mT != lastM
+            lastM := mT
+            if mUE
+                upB := f_sdDraw(false, true, mT, mUL, mUS, mUOT, mUOH, mUOL, mUFT, mUFH, mUFL, not fsSwp or swSell) or upB
+                swSell := false
+            if mDE
+                dnB := f_sdDraw(false, false, mT, mDL, mDS, mDOT, mDOH, mDOL, mDFT, mDFH, mDFL, not fsSwp or swBuy) or dnB
+                swBuy := false
+        if sdInt and (iUE or iDE) and not na(iT) and iT != lastI
+            lastI := iT
+            if iUE
+                upB := f_sdDraw(true, true, iT, iUL, iUS, iUOT, iUOH, iUOL, iUFT, iUFH, iUFL, not fsSwp or swSell) or upB
+            if iDE
+                dnB := f_sdDraw(true, false, iT, iDL, iDS, iDOT, iDOH, iDOL, iDFT, iDFH, iDFL, not fsSwp or swBuy) or dnB
+    [upB, dnB]
+[sdUpB, sdDnB] = f_sd()
+
+// ───────── liquidity draw: nearest untaken structure-timeframe swing on the other side ─────────
+var float[] ltHi  = array.new_float()
+var int[]   ltHiT = array.new_int()
+var float[] ltLo  = array.new_float()
+var int[]   ltLoT = array.new_int()
+var line[]  ltLn  = array.new<line>()
+var label[] ltLb  = array.new<label>()
+f_lt() =>
+    var int lastP = na
+    if (not na(pvH) or not na(pvL)) and not na(pvT) and pvT != lastP
+        lastP := pvT
+        if not na(pvH)
+            array.push(ltHi, pvH)
+            array.push(ltHiT, pvT)
+        if not na(pvL)
+            array.push(ltLo, pvL)
+            array.push(ltLoT, pvT)
+    // a level is taken once price trades through it
+    if array.size(ltHi) > 0
+        for k = array.size(ltHi) - 1 to 0
+            if high > array.get(ltHi, k)
+                array.remove(ltHi, k)
+                array.remove(ltHiT, k)
+    if array.size(ltLo) > 0
+        for k = array.size(ltLo) - 1 to 0
+            if low < array.get(ltLo, k)
+                array.remove(ltLo, k)
+                array.remove(ltLoT, k)
+    while array.size(ltHi) > 60
+        array.shift(ltHi)
+        array.shift(ltHiT)
+    while array.size(ltLo) > 60
+        array.shift(ltLo)
+        array.shift(ltLoT)
+    0
+f_lt()
+f_ltDraw(bool upSide) =>
+    float[] lv = upSide ? ltHi : ltLo
+    int[]   lt = upSide ? ltHiT : ltLoT
+    int[] used = array.new_int()
+    for n = 1 to ltN
+        int best = -1
+        if array.size(lv) > 0
+            for k = 0 to array.size(lv) - 1
+                if array.indexof(used, k) < 0
+                    float v = array.get(lv, k)
+                    if best < 0 or (upSide ? v < array.get(lv, best) : v > array.get(lv, best))
+                        best := k
+        if best >= 0
+            array.push(used, best)
+            float v = array.get(lv, best)
+            int t1 = time + 8 * timeframe.in_seconds() * 1000
+            array.push(ltLn, line.new(array.get(lt, best), v, t1, v, xloc = xloc.bar_time, color = color.new(ltC, 20), style = line.style_dashed, width = 1))
+            array.push(ltLb, label.new(t1, v, (upSide ? "buyside" : "sellside") + " liquidity " + str.tostring(v, format.mintick), xloc = xloc.bar_time, style = label.style_label_left, color = color.new(ltC, 100), textcolor = ltC, size = size.tiny, tooltip = "Nearest untaken " + sTf + " swing " + (upSide ? "high above price" : "low below price") + ". Where a move in the bias direction would be drawn to. Context only, not a trade target."))
+    0
+if barstate.islast
+    while array.size(ltLn) > 0
+        line.delete(array.pop(ltLn))
+    while array.size(ltLb) > 0
+        label.delete(array.pop(ltLb))
+    if ltOn
+        bool bothS = not hasRec or b == "N"
+        if bothS or b == "U"
+            f_ltDraw(true)
+        if bothS or b == "D"
+            f_ltDraw(false)
 alertcondition(sdUpB or sdDnB, "BOS + displacement (bias side)", "Structure break with displacement on the side chosen by the week's bias; a new supply/demand zone is drawn. Context only, not a trade signal.")
 
 // ───────── daily checks on this bar ─────────
