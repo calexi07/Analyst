@@ -369,11 +369,8 @@ var int[]   sdHit = array.new_int()
 f_sdZone(bool up, int t0, float top, float bot, int ft, float ftop, float fbot, float lvl) =>
     color zc = up ? sdDemC : sdSupC
     color zb = color.new(zc, math.max(color.t(zc) - 45, 0))
-    string tip = (up ? "Demand" : "Supply") + " zone after a BOS " + (up ? "up" : "down") + " with displacement (broken swing " + str.tostring(lvl, format.mintick) + ")\nWeek bias for " + pName + ": " + (hasRec ? f_bname(b) : "no published bias") + "\nContext only, not a trade signal."
     box ob = sdZone != "FVG only" ? box.new(t0, top, time, bot, xloc = xloc.bar_time, extend = extend.right, border_color = zb, border_width = 1, bgcolor = zc, text = up ? "demand · fresh" : "supply · fresh", text_size = size.tiny, text_color = zb, text_halign = text.align_right, text_valign = text.align_center) : na
     box fv = sdZone != "Order block only" and not na(ftop) ? box.new(ft, ftop, time, fbot, xloc = xloc.bar_time, extend = extend.right, border_color = color.new(zb, 60), border_style = line.style_dotted, bgcolor = color.new(zc, math.min(color.t(zc) + 7, 100)), text = sdZone == "FVG only" ? (up ? "demand FVG · fresh" : "supply FVG · fresh") : "FVG", text_size = size.tiny, text_color = zb, text_halign = text.align_right) : na
-    if not na(ob)
-        box.set_tooltip(ob, tip)
     array.push(sdBox, ob)
     array.push(sdFvg, fv)
     array.push(sdTop, sdZone == "FVG only" ? ftop : top)
