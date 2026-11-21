@@ -116,13 +116,24 @@ const hooks = lastC ? PAIRS.map(p => lastC.pairs[p]?.hook || '-').join('|') : ''
 const gen = new Date().toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
 const first = wl[0], last = wl.at(-1);
 
+// Pine rejects one very long if block ("The if statement is too long"): one week or one check per block
+function dataBlocks(lines){
+  const out = []; let cur = [], size = 0;
+  const flush = () => { if(cur.length){ out.push('if barstate.isfirst', ...cur); cur = []; size = 0; } };
+  for(const ln of lines){
+    if(cur.length && (/array\.push\((wT|cT),/.test(ln) || size + ln.length > 6000)) flush();
+    cur.push(ln); size += ln.length;
+  }
+  flush();
+  return out.join('\n');
+}
 const tpl = readFileSync('scripts/pine-template.pine', 'utf8')
   .replace('{{GENERATED}}', gen)
   .replace('{{COVERAGE}}', `${wkKey(first.y, first.w)} → ${wkKey(last.y, last.w)} (${wl.length} weeks), ${cl.length} daily checks`)
   .replace('{{PAIRS}}', PAIRS.map(p => `"${p}"`).join(', '))
   .replace('{{PAIR_OPTIONS}}', ['"Auto"', ...PAIRS.map(p => `"${p}"`)].join(', '))
   .replace('{{CCY}}', CCY.map(c => `"${c}"`).join(', '))
-  .replace('{{DATA}}', L.join('\n'))
+  .replace('{{DATA}}', dataBlocks(L))
   .replace('{{LAST_HOOKS}}', hooks)
   .replace('{{LAST_CHECK_INDEX}}', String(cl.length - 1))
   .replace('{{STAMP}}', gen);

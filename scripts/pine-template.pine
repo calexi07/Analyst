@@ -57,7 +57,7 @@ var string[] cN = array.new_string()  // check name
 var string[] cD = array.new_string()  // per pair: status + today's gap
 var string[] cH = array.new_string()  // per pair: the check's one-line note (newest checks only)
 var string[] cC = array.new_string()  // per currency: status~note (newest checks only)
-if barstate.isfirst
+// the data is split into several short blocks (Pine limits the size of one if block)
 {{DATA}}
 
 // ───────── helpers ─────────
