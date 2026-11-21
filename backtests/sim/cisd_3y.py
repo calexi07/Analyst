@@ -17,8 +17,8 @@ for p in LONG:
 def htfW(x, htf):
     return x['wk'] if htf == 'W' else x['day']
 cisd.htf_key = htfW
-for n, P in [('HTF D, both directions', dict()), ('HTF D, trend direction', dict(bias=True)), ('HTF D, trend, no BE', dict(bias=True, be=False)),
-             ('HTF W, both directions', dict(htf='W')), ('HTF W, trend direction', dict(htf='W', bias=True)), ('HTF W, trend, no BE', dict(htf='W', bias=True, be=False))]:
+for n, P in [('HTF D, both directions', dict()), ('HTF D, trend direction', dict(bias=True)), ('HTF D, trend, no BE', dict(bias=True, be=None)),
+             ('HTF W, both directions', dict(htf='W')), ('HTF W, trend direction', dict(htf='W', bias=True)), ('HTF W, trend, no BE', dict(htf='W', bias=True, be=None))]:
     ys = [sum([cisd.run(p, DATA[p], P, a, c) for p in LONG], []) for a, c in YRS]
     t = sorted(sum(ys, []), key=lambda x: x['tx']); eq = pk = dd = 0
     for x in t: eq += x['R']; pk = max(pk, eq); dd = min(dd, eq - pk)

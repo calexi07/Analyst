@@ -20,14 +20,16 @@ def htf_key(x, htf):
     ny = (x['t'] + D.timedelta(hours=7)).astimezone(NY)
     return (x['day'], ny.hour // 4)
 
-DEF = dict(htf='D', piv=3, wait=36, age=120, disp=0.5, minr=0.25, maxr=3.0, tp=(1, 2, 3), be=True, pend=60, lookback=10,
-           hours=None, bias=False, dirs=(1, -1), cool=0)
+DEF = dict(htf='D', piv=3, wait=36, age=120, disp=0.5, minr=0.25, maxr=3.0, tp=(1, 2, 3), pend=60, lookback=10,
+           hours=None, bias=False, dirs=(1, -1), cool=0,
+           tpR=3, be=1, belock=0, part=0, pfrac=0.5, trail=0, trail2=0, tr2at=2, tract=1, trref='close', swtrail=False, liq=False, liqmin=1, tmax=0)
 
 def run_dir(p, b0, d, P, start, end):
     P = {**DEF, **P}; b = mirror(b0, d); cost = cost_of(p) * pip_of(p); n = len(b)
     res = []; ctx = None; pend = None; pos = None
     htf = []; cur = None; untaken = []
     piv = []                     # confirmed pivot highs: (pivot index, high, close)
+    piv_l = []
     L = P['piv']
     for i, x in enumerate(b):
         A = x['atr']
@@ -40,21 +42,40 @@ def run_dir(p, b0, d, P, start, end):
         else: cur['l'] = min(cur['l'], x['l']); cur['h'] = max(cur['h'], x['h'])
         if i >= 2 * L and b[i - L]['h'] == max(y['h'] for y in b[i - 2 * L:i + 1]) and b[i - L]['h'] > max(y['h'] for y in b[i - 2 * L:i - L]):
             piv.append((i - L, b[i - L]['h'], b[i - L]['c'])); piv[:] = piv[-40:]
+        if i >= 2 * L and b[i - L]['l'] == min(y['l'] for y in b[i - 2 * L:i + 1]) and b[i - L]['l'] < min(y['l'] for y in b[i - 2 * L:i - L]):
+            piv_l.append((i - L, b[i - L]['l'])); piv_l[:] = piv_l[-40:]
         # ---- open trade
         if pos:
-            sl = pos['e'] if pos['be'] else pos['sl']
-            if x['l'] <= sl:                                     # conservative: stop first
-                px = min(x['o'], sl); res.append(dict(p=p, d=d, t=pos['t'], tx=x['tc'], wk=pos['wk'], R=(px - pos['e']) / pos['r'] - cost / pos['r'], why='BE' if pos['be'] else 'SL')); pos = None
-            elif x['h'] >= pos['t3']:
-                px = max(x['o'], pos['t3']); res.append(dict(p=p, d=d, t=pos['t'], tx=x['tc'], wk=pos['wk'], R=(px - pos['e']) / pos['r'] - cost / pos['r'], why='TP3')); pos = None
+            r = pos['r']; best = pos['best']
+            def out(px, why):
+                R = (px - pos['e']) / r
+                if pos['bank'] is not None: R = P['pfrac'] * pos['bank'] + (1 - P['pfrac']) * R
+                res.append(dict(p=p, d=d, t=pos['t'], tx=x['tc'], wk=pos['wk'], R=R - cost / r, why=why))
+            if x['l'] <= pos['sl']:                              # conservative: stop first
+                px = min(x['o'], pos['sl']); out(px, 'SL' if pos['sl'] < pos['e'] - 1e-12 else 'BE/trail'); pos = None
+            elif pos['tp'] is not None and x['h'] >= pos['tp']:
+                out(max(x['o'], pos['tp']), 'TP'); pos = None
+            elif P['tmax'] and i - pos['i'] >= P['tmax']:
+                out(x['c'], 'time'); pos = None
             else:
-                if P['be'] and x['h'] >= pos['t1']: pos['be'] = True
+                pos['best'] = best = max(best, x['h'])
+                if P['part'] and pos['bank'] is None and x['h'] >= pos['e'] + P['part'] * r:
+                    pos['bank'] = P['part']
+                if P['be'] is not None and best >= pos['e'] + P['be'] * r: pos['sl'] = max(pos['sl'], pos['e'] + P['belock'] * r)
+                if P['trail'] and best >= pos['e'] + P['tract'] * r:
+                    k = P['trail2'] if P['trail2'] and best >= pos['e'] + P['tr2at'] * r else P['trail']
+                    ref = x['c'] if P['trref'] == 'close' else best
+                    pos['sl'] = max(pos['sl'], ref - k * A)
+                if P['swtrail'] and best >= pos['e'] + P['tract'] * r and piv_l:
+                    lv_ = piv_l[-1]
+                    if lv_[0] > pos['i']: pos['sl'] = max(pos['sl'], lv_[1] - 0.1 * A)
         # ---- pending limit
         if pend and not pos:
             if i - pend['i'] > P['pend'] or x['h'] >= pend['t1'] and x['l'] > pend['e']: pend = None
             elif x['l'] <= pend['e']:
                 e = min(pend['e'], x['o']); r = e - pend['sl']
-                pos = dict(t=x['t'], wk=x['wk'], e=e, sl=pend['sl'], r=r, t1=e + P['tp'][0] * r, t3=e + P['tp'][2] * r, be=False); pend = None
+                tp_ = pend['liq'] if P['liq'] and pend['liq'] and pend['liq'] - e >= P['liqmin'] * r else (e + P['tpR'] * r if P['tpR'] else None)
+                pos = dict(i=i, t=x['t'], wk=x['wk'], e=e, sl=pend['sl'], r=r, tp=tp_, best=x['h'], bank=None); pend = None
                 if x['l'] <= pos['sl']:
                     res.append(dict(p=p, d=d, t=x['t'], tx=x['tc'], wk=pos['wk'], R=-1 - cost / r, why='SL fill bar')); pos = None
         if not (start <= x['t'] < end) or A is None: ctx = None; continue
@@ -75,7 +96,8 @@ def run_dir(p, b0, d, P, start, end):
         if lv and x['c'] > lv[1] and x['c'] - x['o'] >= P['disp'] * A:
             e = lv[2]; sl = ctx['ext']; r = e - sl
             if r > 0 and P['minr'] * A <= r <= P['maxr'] * A and x['c'] > e:
-                pend = dict(i=i, e=e, sl=sl, t1=e + P['tp'][0] * r)
+                hi_ = [c_['h'] for c_ in htf[-P['lookback']:] if c_['h'] > e]
+                pend = dict(i=i, e=e, sl=sl, t1=e + P['tp'][0] * r, liq=min(hi_) if hi_ else None)
             ctx = None
     return res
 
@@ -84,21 +106,4 @@ def run(p, b, P, start, end):
     return sum([run_dir(p, b, d, P, start, end) for d in P['dirs']], [])
 
 if __name__ == '__main__':
-    ALL = USDP + EURP; DATA = {p: prep(p) for p in ALL}
-    def ev(P, pairs=ALL, per=H):
-        hs = [sum([run(p, DATA[p], P, a, c) for p in pairs], []) for a, c in per]
-        t = sorted(sum(hs, []), key=lambda x: x['tx']); eq = pk = dd = 0; wk = collections.defaultdict(float)
-        for x in t: eq += x['R']; pk = max(pk, eq); dd = min(dd, eq - pk); wk[x['wk'][1]] += x['R']
-        w = [wk.get(q, 0) for q in range(40, 48)]; why = collections.Counter(x['why'] for x in t)
-        return f"{len(t):3}tr {', '.join(f'{k} {v}' for k, v in sorted(why.items()))} | {' / '.join(f'{sum(x['R'] for x in h_):+.1f}' for h_ in hs)} = {eq:+6.1f}R dd {dd:+.1f} 2wk[{', '.join(f'{v:+.1f}' for v in w[0::2])}..]"
-    for n, P in [('default (1H chart, HTF = Daily), both directions', {}),
-                 ('  + only engine bias direction', dict(bias=True)),
-                 ('  + bias + hours 06-22', dict(bias=True, hours=(6, 22))),
-                 ('HTF = 4H, both directions', dict(htf='4H')),
-                 ('  + only engine bias direction', dict(htf='4H', bias=True)),
-                 ('  + bias + hours 06-22', dict(htf='4H', bias=True, hours=(6, 22))),
-                 ('HTF = D, bias, no break-even', dict(bias=True, be=False)),
-                 ('HTF = D, bias, TP 2R', dict(bias=True, tp=(1, 1.5, 2))),
-                 ('HTF = 4H, bias, no break-even', dict(htf='4H', bias=True, be=False))]:
-        print(f"{n:<50} W40-47: {ev(P)}")
-        print(f"{'':<50} before W40 (no bias): {ev({**P, 'bias': False}, per=[PRE])}")
+    pass
