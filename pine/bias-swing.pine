@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — swing strategy test bench (4H or Daily chart, holds 3–4 days).
-// Generated automatically: 2026-11-21 13:14 UTC. Bias data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
+// Generated automatically: 2026-11-21 13:19 UTC. Bias data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // A test bench for your own rules in the Strategy Tester. Not a trade signal.
 //@version=6
@@ -321,7 +321,8 @@ if sig
     if go and risk > 0 and (dir > 0 ? sl < ent : sl > ent)
         float qRaw = strategy.equity * stRisk / 100 / (risk * syminfo.pointvalue)
         // an even size, so the two halves are equal and no 1-unit remainder is left behind
-        float q = halfOn ? math.max(2, math.floor(qRaw / 2) * 2) : qRaw
+        // large sizes (FX units) are rounded to an even number; small sizes (gold ounces, indices) keep 2 decimals, so the risk stays at 1%
+        float q = halfOn and qRaw >= 20 ? math.floor(qRaw / 2) * 2 : math.round(qRaw, 2)
         ent0 := ent
         risk0 := risk
         q0 := q
