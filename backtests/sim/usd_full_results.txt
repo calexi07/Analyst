@@ -1,0 +1,42 @@
+== Best per entry (bias direction, both halves > 0, ranked by total) ==
+A      cf=none opens=w    Friday close                   bias  51tr  +0.3/+14.6 dd -4.4 = +14.9R | both +14.2R | 3y trend  +45.4R [23.7, -11.1, 32.8]
+D      cf=none opens=w    no Friday close, no time limit bias  27tr  +3.3/ +8.3 dd -2.1 = +11.6R | both  +9.2R | 3y trend  +54.2R [30.0, 6.7, 17.5]
+DO     cf=none opens=none no Friday close, no time limit bias  32tr  +4.2/ +5.3 dd -5.1 =  +9.5R | both  +8.7R | 3y trend  +16.3R [8.9, -3.2, 10.6]
+FVG    cf=none opens=none Friday close                   bias  48tr  +1.1/ +5.6 dd -5.4 =  +6.7R | both  +7.1R | 3y trend   +9.3R [10.2, -23.1, 22.2]
+OB     cf=none opens=wmy  no Friday close, max 5 days    bias  15tr  +0.6/ +0.0 dd -3.1 =  +0.6R | both  +0.6R | 3y trend  +11.7R [3.8, 6.3, 1.6]
+OBFVG  cf=none opens=wmy  Friday close                   bias   8tr  +0.1/ +0.5 dd -1.0 =  +0.6R | both  +0.6R | 3y trend   -6.3R [2.1, -7.3, -1.1]
+SR     cf=none opens=wm   Friday close                   bias  17tr  +3.3/ +1.9 dd -1.8 =  +5.2R | both  +3.4R | 3y trend  +11.0R [1.8, -5.1, 14.3]
+SRS    cf=none opens=wm   Friday close                   bias  15tr  +1.4/ +4.3 dd -2.9 =  +5.7R | both  +4.1R | 3y trend   -0.7R [-5.6, -15.8, 20.7]
+SWP    cf=none opens=none Friday close                   bias  44tr  +9.1/+10.3 dd -2.4 = +19.4R | both +13.3R | 3y trend   +9.1R [7.8, -10.3, 11.6]
+WO     cf=none opens=none Friday close                   bias  44tr  +1.6/+13.0 dd -2.3 = +14.6R | both +13.7R | 3y trend  +23.1R [18.0, -14.0, 19.1]
+YO     cf=none opens=none no Friday close, max 5 days    bias   2tr  +2.1/ +0.0 dd +0.0 =  +2.1R | both  +0.9R | 3y trend   +8.8R [-2.7, -5.9, 17.4]
+
+== Median effect (bias direction) ==
+entry {'A': (11.1, 34.4), 'D': (9.5, 54.9), 'WO': (11.3, 22.1), 'DO': (4.5, 31.2), 'YO': (0.2, 0.3), 'SR': (2.5, 11.0), 'SRS': (4.0, 3.4), 'SWP': (4.4, 9.2), 'OB': (-3.1, 7.2), 'FVG': (2.8, 11.3), 'OBFVG': (-1.8, -6.2)} (bias weeks, 3y trend)
+cf {'none': (4.2, 10.4), 'wtd': (3.8, 11.4)} (bias weeks, 3y trend)
+opens {'none': (3.6, 8.8), 'w': (2.6, 8.9), 'wm': (4.2, 11.1), 'wmy': (4.3, 16.0)} (bias weeks, 3y trend)
+fri {'Friday close': (5.6, 12.1), 'no Friday close, max 5 days': (2.2, 8.8), 'no Friday close, no time limit': (2.8, 13.3)} (bias weeks, 3y trend)
+
+== Top 12 overall on bias weeks with both halves > 0 ==
+SWP    cf=none opens=none Friday close                   bias  44tr  +9.1/+10.3 dd -2.4 = +19.4R | 3y trend   +9.1R [7.8, -10.3, 11.6] dd-21.2
+SWP    cf=none opens=none no Friday close, no time limit bias  28tr  +9.4/ +5.8 dd -2.6 = +15.2R | 3y trend  +10.3R [5.7, -9.3, 13.9] dd-23.2
+A      cf=none opens=w    Friday close                   bias  51tr  +0.3/+14.6 dd -4.4 = +14.9R | 3y trend  +45.4R [23.7, -11.1, 32.8] dd-34.7
+A      cf=wtd  opens=none Friday close                   bias  51tr  +0.3/+14.6 dd -4.4 = +14.9R | 3y trend  +45.4R [23.7, -11.1, 32.8] dd-34.7
+A      cf=wtd  opens=w    Friday close                   bias  51tr  +0.3/+14.6 dd -4.4 = +14.9R | 3y trend  +45.4R [23.7, -11.1, 32.8] dd-34.7
+WO     cf=none opens=none Friday close                   bias  44tr  +1.6/+13.0 dd -2.3 = +14.6R | 3y trend  +23.1R [18.0, -14.0, 19.1] dd-20.9
+WO     cf=none opens=w    Friday close                   bias  44tr  +1.6/+13.0 dd -2.3 = +14.6R | 3y trend  +23.1R [18.0, -14.0, 19.1] dd-20.9
+WO     cf=wtd  opens=none Friday close                   bias  44tr  +1.6/+13.0 dd -2.3 = +14.6R | 3y trend  +23.1R [18.0, -14.0, 19.1] dd-20.9
+WO     cf=wtd  opens=w    Friday close                   bias  44tr  +1.6/+13.0 dd -2.3 = +14.6R | 3y trend  +23.1R [18.0, -14.0, 19.1] dd-20.9
+WO     cf=none opens=wm   Friday close                   bias  38tr  +1.4/+13.1 dd -2.2 = +14.5R | 3y trend  +33.7R [20.1, -9.6, 23.2] dd-16.6
+WO     cf=wtd  opens=wm   Friday close                   bias  38tr  +1.4/+13.1 dd -2.2 = +14.5R | 3y trend  +33.7R [20.1, -9.6, 23.2] dd-16.6
+SWP    cf=none opens=none no Friday close, max 5 days    bias  36tr  +9.5/ +4.5 dd -2.2 = +14.0R | 3y trend   -2.4R [4.8, -17.7, 10.5] dd-25.3
+
+== Top 8 on 3 years (trend), positive every year ==
+D      cf=none opens=wm   Friday close                   3y  +76.2R [38.3, 2.5, 35.4] dd-18.8 | bias  37tr  -2.8/+12.8 dd -6.9 = +10.0R
+D      cf=wtd  opens=wm   Friday close                   3y  +76.2R [38.3, 2.5, 35.4] dd-18.8 | bias  37tr  -2.8/+12.8 dd -6.9 = +10.0R
+D      cf=none opens=w    Friday close                   3y  +72.7R [26.7, 11.0, 35.0] dd-12.4 | bias  43tr  -2.0/+12.8 dd -6.2 = +10.8R
+D      cf=wtd  opens=none Friday close                   3y  +72.7R [26.7, 11.0, 35.0] dd-12.4 | bias  43tr  -2.0/+12.8 dd -6.2 = +10.8R
+D      cf=wtd  opens=w    Friday close                   3y  +72.7R [26.7, 11.0, 35.0] dd-12.4 | bias  43tr  -2.0/+12.8 dd -6.2 = +10.8R
+D      cf=none opens=wm   no Friday close, max 5 days    3y  +68.0R [38.4, 8.6, 21.0] dd-17.2 | bias  30tr  -3.7/ +9.1 dd -7.7 =  +5.4R
+D      cf=wtd  opens=wm   no Friday close, max 5 days    3y  +68.0R [38.4, 8.6, 21.0] dd-17.2 | bias  30tr  -3.7/ +9.1 dd -7.7 =  +5.4R
+D      cf=none opens=wm   no Friday close, no time limit 3y  +67.2R [42.4, 2.7, 22.1] dd-14.4 | bias  20tr  +2.8/ +6.9 dd -1.1 =  +9.7R

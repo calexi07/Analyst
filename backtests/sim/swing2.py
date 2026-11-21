@@ -51,7 +51,15 @@ def load(pair):
         ph, pl = d['h'], d['l']; hs.append(d['h']); ls.append(d['l'])
         trs.append(d['h'] - d['l'] if prev is None else max(d['h'], prev) - min(d['l'], prev)); cl.append(d['c']); prev = d['c']
     wko, wk = None, None; ema = None; a = 2 / 21
-    dop, dk, mop, mk, pwh, pwl, cwh, cwl = None, None, None, None, None, None, None, None
+    dop, dk, mop, mk, pwh, pwl, cwh, cwl, yop, yk = None, None, None, None, None, None, None, None, None, None
+    # daily fractal swing points (2 days each side), usable from the day after confirmation
+    ks = sorted(days); sup = {}; res_ = {}; lows = []; highs = []
+    for n_, k in enumerate(ks):
+        if n_ >= 4:
+            m = ks[n_ - 2]; win = ks[n_ - 4:n_ + 1]
+            if days[m]['l'] == min(days[x]['l'] for x in win): lows.append((k, days[m]['l']))
+            if days[m]['h'] == max(days[x]['h'] for x in win): highs.append((k, days[m]['h']))
+        sup[k] = [v for d_, v in lows[-12:]]; res_[k] = [v for d_, v in highs[-12:]]
     for j, b in enumerate(bars):
         if b['wk'] != wk:
             if wk is not None: pwh, pwl = cwh, cwl
@@ -59,7 +67,10 @@ def load(pair):
         else: cwh, cwl = max(cwh, b['h']), min(cwl, b['l'])
         if b['day'] != dk: dk = b['day']; dop = b['o']
         if (b['day'].year, b['day'].month) != mk: mk = (b['day'].year, b['day'].month); mop = b['o']
+        if b['day'].year != yk: yk = b['day'].year; yop = b['o']
+        b['yop'] = yop
         b['dop'], b['mop'], b['pwh'], b['pwl'] = dop, mop, pwh, pwl
+        b['sups'], b['ress'] = sup[b['day']], res_[b['day']]
         b['sw6l'] = min(x['l'] for x in bars[max(0, j - 6):j]) if j >= 6 else None
         b['sw6h'] = max(x['h'] for x in bars[max(0, j - 6):j]) if j >= 6 else None
         b['wko'] = wko; b['atr'] = atr.get(b['day']); b['sma20'] = sma[b['day']][20]; b['sma50'] = sma[b['day']][50]
@@ -86,12 +97,26 @@ def usd_strength(data):
     return {t: sum(v) / len(v) for t, v in acc.items() if len(v) >= 4}
 
 DEF = dict(dirm='bias', cf='wtd', k=1.0, tp=2.0, hold=4, entry='A', sess=False, first=False, exh=None, conv='any', mingap=None,
-           partial=False, be=False, thesis=False, usdcf=False, trlen=20, nomon=False, restx='none', trail=2.0, minwtd=0.0, tsrc='sma20', adx=None, atrp=None, er=None, swsl=False)
+           partial=False, be=False, thesis=False, usdcf=False, trlen=20, nomon=False, restx='none', trail=2.0, minwtd=0.0, tsrc='sma20', adx=None, atrp=None, er=None, swsl=False, fri=True, opens='none')
 
 def run(pair, bars, B, P, start, end=None, usd=None):
     P = {**DEF, **P}; pip = pip_of(pair); cost = cost_of(pair) * pip
     res, pos, pend, lastx, wk_done = [], None, None, None, set()
+    obz, fvz = [], []   # 4H demand/supply zones and fair value gaps: [dir, top, bottom, created_index]
     for i, b in enumerate(bars):
+        if i >= 25 and P['entry'] in ('OB', 'FVG', 'OBFVG'):
+            body = [abs(x['c'] - x['o']) for x in bars[i - 20:i]]; avg = sum(body) / 20
+            for dz in (1, -1):
+                if (b['c'] - b['o']) * dz > 1.5 * avg and ((b['c'] > max(x['h'] for x in bars[i - 5:i])) if dz > 0 else (b['c'] < min(x['l'] for x in bars[i - 5:i]))):
+                    for j in range(i - 1, i - 4, -1):
+                        x = bars[j]
+                        if (x['c'] - x['o']) * dz < 0:
+                            obz.append([dz, x['o'] if dz > 0 else x['h'], x['l'] if dz > 0 else x['o'], i]); break
+            if b['l'] > bars[i - 2]['h']: fvz.append([1, b['l'], bars[i - 2]['h'], i])
+            if b['h'] < bars[i - 2]['l']: fvz.append([-1, bars[i - 2]['l'], b['h'], i])
+            # zones die when price closes through them; old ones expire after 5 days
+            obz = [z for z in obz if i - z[3] < 30 and not ((b['c'] < z[2]) if z[0] > 0 else (b['c'] > z[1]))]
+            fvz = [z for z in fvz if i - z[3] < 30 and not ((b['l'] <= z[2]) if z[0] > 0 else (b['h'] >= z[1]))]
         if b['t'] < start or (end and b['t'] >= end):
             if pos is None and pend is None: continue
         bi = B.get((pair, b['wk']), ('-', '-', None))
@@ -119,7 +144,9 @@ def run(pair, bars, B, P, start, end=None, usd=None):
         if pos and i > pos['i']:
             d = pos['d']; R = lambda px: (px - pos['e']) * d / pos['risk']
             ex = None
-            if (b['l'] <= pos['sl']) if d > 0 else (b['h'] >= pos['sl']): ex = (pos['sl'], 'SL')
+            if (b['l'] <= pos['sl']) if d > 0 else (b['h'] >= pos['sl']):
+                gap = (b['o'] < pos['sl']) if d > 0 else (b['o'] > pos['sl'])
+                ex = (b['o'] if gap else pos['sl'], 'SL')
             else:
                 hit1R = (b['h'] >= pos['e'] + pos['risk']) if d > 0 else (b['l'] <= pos['e'] - pos['risk'])
                 if P['partial'] and not pos['part'] and hit1R:
@@ -131,7 +158,7 @@ def run(pair, bars, B, P, start, end=None, usd=None):
                 else:
                     lastbar = b['dow'] == 4 and (i + 1 == len(bars) or bars[i + 1]['day'] != b['day'])
                     held = (b['tc'] - pos['t']).total_seconds() / 86400
-                    if lastbar: ex = (b['c'], 'Fri')
+                    if lastbar and P['fri']: ex = (b['c'], 'Fri')
                     elif P['hold'] != 'fri' and held >= P['hold']: ex = (b['c'], 'Time')
                     elif pos['part'] and P['restx'] == 'ema20' and (b['c'] - b['ema']) * d < 0: ex = (b['c'], 'EMA20')
                     elif pos['part'] and P['restx'] == 'prevday' and b['pdl'] is not None and ((b['c'] < b['pdl']) if d > 0 else (b['c'] > b['pdh'])): ex = (b['c'], 'PrevDay')
@@ -146,6 +173,9 @@ def run(pair, bars, B, P, start, end=None, usd=None):
         if lastx and (b['tc'] - lastx).total_seconds() < 24 * 3600: continue
         if b['atr'] is None or dr == 0 or b['dow'] > 3: continue          # Mon–Thu (trading day), no Friday entries
         if P['nomon'] and b['dow'] == 0: continue
+        if P['opens'] != 'none':
+            lv = {'w': [b['wko']], 'm': [b['mop']], 'y': [b['yop']], 'wm': [b['wko'], b['mop']], 'wmy': [b['wko'], b['mop'], b['yop']], 'my': [b['mop'], b['yop']]}[P['opens']]
+            if any(v is None or (b['c'] - v) * dr <= 0 for v in lv): continue
         if P['adx'] is not None and (b['f']['adx'] is None or b['f']['adx'] < P['adx']): continue
         if P['atrp'] is not None and (b['f']['atrp'] is None or not (P['atrp'][0] <= b['f']['atrp'] <= P['atrp'][1])): continue
         if P['er'] is not None and (b['f']['er'] is None or b['f']['er'] < P['er']): continue
@@ -176,6 +206,17 @@ def run(pair, bars, B, P, start, end=None, usd=None):
             life = {'PDL': 24, 'WO': 120, 'DO': 24, 'MO': 120, 'PWL': 120}[P['entry']]
             if lv is not None and (b['c'] - lv) * dr > 0: pend = dict(t0=b['tc'], wk=b['wk'], d=dr, e=lv, risk=risk, life=life, meta=meta)
             else: wk_done.discard((pair, b['wk']))
+        elif P['entry'] in ('SD', 'SWO'):
+            # combination: a sweep of yesterday's low/high enters at once; otherwise a pending order (D: break of yesterday, WO: week open)
+            lv = b['pdl'] if dr > 0 else b['pdh']
+            if lv is not None and ((b['l'] < lv < b['c']) if dr > 0 else (b['h'] > lv > b['c'])):
+                pos = dict(i=i, t=b['tc'], d=dr, e=b['c'], risk=risk, sl=b['c'] - dr * risk, w=1.0, banked=0.0, part=False, meta={**meta, 'how': 'sweep'})
+                pos['tp'] = pos['e'] + dr * P['tp'] * risk if P['tp'] else None
+            elif P['entry'] == 'SD' and b['pdh'] is not None and ((b['pdh'] if dr > 0 else b['pdl']) - b['c']) * dr > 0:
+                pend = dict(t0=b['tc'], wk=b['wk'], d=dr, e=b['pdh'] if dr > 0 else b['pdl'], risk=risk, life=4, meta={**meta, 'how': 'break'}, stop=True)
+            elif P['entry'] == 'SWO' and (b['c'] - b['wko']) * dr > 0:
+                pend = dict(t0=b['tc'], wk=b['wk'], d=dr, e=b['wko'], risk=risk, life=4, meta={**meta, 'how': 'week open'})
+            else: wk_done.discard((pair, b['wk']))
         elif P['entry'] in ('SWP', 'SW6', 'SWW'):
             # liquidity sweep and reclaim in the trade's direction: the candle trades through the level and closes back on the right side
             lv = {'SWP': b['pdl'] if dr > 0 else b['pdh'], 'SW6': b['sw6l'] if dr > 0 else b['sw6h'], 'SWW': b['pwl'] if dr > 0 else b['pwh']}[P['entry']]
@@ -185,6 +226,28 @@ def run(pair, bars, B, P, start, end=None, usd=None):
                 rk = max(abs(b['c'] - ext) + 0.1 * b['atr'], 0.3 * b['atr']) if P['swsl'] else risk
                 pos = dict(i=i, t=b['tc'], d=dr, e=b['c'], risk=rk, sl=b['c'] - dr * rk, w=1.0, banked=0.0, part=False, meta=meta)
                 pos['tp'] = pos['e'] + dr * P['tp'] * rk if P['tp'] else None
+            else: wk_done.discard((pair, b['wk']))
+        elif P['entry'] in ('SR', 'SRS', 'YO'):
+            if P['entry'] == 'YO': cands = [b['yop']]
+            else: cands = [v for v in (b['sups'] if dr > 0 else b['ress'])]
+            cands = [v for v in cands if v is not None and 0 < (b['c'] - v) * dr <= 1.5 * b['atr']]
+            if not cands: wk_done.discard((pair, b['wk']))
+            else:
+                lv = max(cands) if dr > 0 else min(cands)
+                if P['entry'] == 'SRS':
+                    # sweep of the nearest support/resistance on this candle, close back on the right side
+                    near = [v for v in (b['sups'] if dr > 0 else b['ress']) if v is not None and ((b['l'] < v < b['c']) if dr > 0 else (b['h'] > v > b['c']))]
+                    if near:
+                        pos = dict(i=i, t=b['tc'], d=dr, e=b['c'], risk=risk, sl=b['c'] - dr * risk, w=1.0, banked=0.0, part=False, meta=meta)
+                        pos['tp'] = pos['e'] + dr * P['tp'] * risk if P['tp'] else None
+                    else: wk_done.discard((pair, b['wk']))
+                else: pend = dict(t0=b['tc'], wk=b['wk'], d=dr, e=lv, risk=risk, life=48 if P['entry'] == 'SR' else 120, meta=meta)
+        elif P['entry'] in ('OB', 'FVG', 'OBFVG'):
+            src = obz if P['entry'] == 'OB' else fvz if P['entry'] == 'FVG' else [z for z in obz if any(f_[0] == z[0] and f_[2] <= z[1] and f_[1] >= z[2] for f_ in fvz)]
+            zs = [z for z in src if z[0] == dr and 0 < (b['c'] - (z[1] if dr > 0 else z[2])) * dr <= 2 * b['atr']]
+            if zs:
+                z = max(zs, key=lambda z: z[3]); e = z[1] if dr > 0 else z[2]
+                pend = dict(t0=b['tc'], wk=b['wk'], d=dr, e=e, risk=risk, life=48, meta=meta)
             else: wk_done.discard((pair, b['wk']))
         elif P['entry'] == 'DC' and b['f']['dch'] is not None:
             e = b['f']['dch'] if dr > 0 else b['f']['dcl']
