@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — weekly bias + daily checks (history) on the chart.
-// Generated automatically: 2026-11-21 08:12 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
+// Generated automatically: 2026-11-21 08:25 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // Fundamental context only. Not a trade signal.
 //@version=6
@@ -47,10 +47,12 @@ int    lqMax   = input.int(150, "Max sweep lines kept", minval = 10, maxval = 30
 // fractal structure: a body close beyond the last fractal high / low
 string sdMode  = input.string("BOS + displacement (OB/FVG zones)", "Structure", options = ["BOS + displacement (OB/FVG zones)", "Fractal breaks (simple)", "Off"], group = "Structure & zones", tooltip = "BOS + displacement (recommended): a swing (pivot of the length below) is broken by a candle CLOSE, the move has a big body (≥ the ATR multiple) and leaves a fair value gap. The order block (last opposite candle before the move) and the FVG are drawn as the supply/demand zone.\nFractal breaks: the simple version (any close beyond a small fractal).")
 int    sdLen   = input.int(5, "Swing length (bars each side)", minval = 2, maxval = 20, group = "Structure & zones")
+bool   sdInt   = input.bool(true, "Also zones from internal structure", group = "Structure & zones", tooltip = "Adds the smaller breaks inside a leg (internal swings), so a stepped move leaves a zone at every step, closer to price. Internal breaks: thin dashed line, label iBOS, zone text 'int'.")
+int    sdLenI  = input.int(2, "Internal swing length", minval = 1, maxval = 10, group = "Structure & zones")
 float  sdDisp  = input.float(1.2, "Displacement: body ≥ ATR(14) ×", minval = 0.5, maxval = 4, step = 0.1, group = "Structure & zones", tooltip = "The biggest body of the breaking candle and the 2 before it must be at least this many ATRs. Higher = fewer, stronger breaks.")
 bool   sdFvgQ  = input.bool(true, "Require a fair value gap", group = "Structure & zones")
 string sdZone  = input.string("Order block + FVG", "Zones to draw", options = ["Order block + FVG", "Order block only", "FVG only"], group = "Structure & zones")
-int    sdMaxZ  = input.int(6, "Fresh zones kept", minval = 1, maxval = 30, group = "Structure & zones", tooltip = "Untouched zones still waiting for price. The oldest is dropped when a new one appears.")
+int    sdMaxZ  = input.int(10, "Fresh zones kept", minval = 1, maxval = 30, group = "Structure & zones", tooltip = "Untouched zones still waiting for price. The oldest is dropped when a new one appears.")
 bool   sdHist  = input.bool(false, "Show history (touched and broken zones)", group = "Structure & zones", tooltip = "Off: only the current, untouched zones. On: also the zones that were touched (yellow) or broken (black), so you can see how they played out.")
 int    sdHistN = input.int(30, "History: zones kept", minval = 5, maxval = 120, group = "Structure & zones")
 int    sdExt   = input.int(4, "Box ends this many candles after the touch / break", minval = 0, maxval = 20, group = "Structure & zones")
@@ -68,7 +70,7 @@ int    fsW     = input.int(2, "Line width", minval = 1, maxval = 4, group = "Str
 bool   fsLab   = input.bool(true, "Break labels", group = "Structure & zones")
 int    fsMax   = input.int(100, "Max break lines kept", minval = 10, maxval = 200, group = "Structure & zones")
 
-// ───────── data (generated 2026-11-21 08:12 UTC) ─────────
+// ───────── data (generated 2026-11-21 08:25 UTC) ─────────
 var string[] PAIRS = array.from("EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD")
 var string[] CCY   = array.from("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "XAU")
 var int[]    wT = array.new_int()     // week start (Sunday 21:00 UTC)
@@ -584,35 +586,42 @@ f_sdDrop(int k) =>
     array.remove(sdSt, k)
     array.remove(sdTI, k)
     0
-f_sdZone(bool up, int t0, float top, float bot, int ft, float ftop, float fbot, float lvl) =>
-    color zc = up ? sdDemC : sdSupC
-    color zb = f_bd(zc)
-    box ob = sdZone != "FVG only" ? box.new(t0, top, time, bot, xloc = xloc.bar_time, extend = extend.right, border_color = zb, border_width = 1, bgcolor = zc, text = up ? "demand · fresh" : "supply · fresh", text_size = size.tiny, text_color = zb, text_halign = text.align_right, text_valign = text.align_center) : na
-    box fv = sdZone != "Order block only" and not na(ftop) ? box.new(ft, ftop, time, fbot, xloc = xloc.bar_time, extend = extend.right, border_color = color.new(zb, 60), border_style = line.style_dotted, bgcolor = color.new(zc, math.min(color.t(zc) + 7, 100)), text = sdZone == "FVG only" ? (up ? "demand FVG · fresh" : "supply FVG · fresh") : "FVG", text_size = size.tiny, text_color = zb, text_halign = text.align_right) : na
-    array.push(sdBox, ob)
-    array.push(sdFvg, fv)
-    array.push(sdTop, sdZone == "FVG only" ? ftop : top)
-    array.push(sdBot, sdZone == "FVG only" ? fbot : bot)
-    array.push(sdUp, up)
-    array.push(sdSt, 0)
-    array.push(sdTI, bar_index)
-    // too many fresh zones: drop the oldest fresh one
-    int nf = 0
-    for k = 0 to array.size(sdSt) - 1
-        nf += array.get(sdSt, k) == 0 ? 1 : 0
-    if nf > sdMaxZ
+f_sdZone(bool intl, bool up, int t0, float top, float bot, int ft, float ftop, float fbot, float lvl) =>
+    // the same zone already tracked (main and internal break on the same leg): skip
+    bool dup = false
+    for k = 0 to math.max(array.size(sdTop) - 1, 0)
+        if array.size(sdTop) > 0 and array.get(sdTop, k) == (sdZone == "FVG only" ? ftop : top) and array.get(sdBot, k) == (sdZone == "FVG only" ? fbot : bot)
+            dup := true
+            break
+    if not dup
+        color zc = up ? sdDemC : sdSupC
+        color zb = f_bd(zc)
+        box ob = sdZone != "FVG only" ? box.new(t0, top, time, bot, xloc = xloc.bar_time, extend = extend.right, border_color = zb, border_width = 1, bgcolor = zc, text = (intl ? "int " : "") + (up ? "demand · fresh" : "supply · fresh"), text_size = size.tiny, text_color = zb, text_halign = text.align_right, text_valign = text.align_center) : na
+        box fv = sdZone != "Order block only" and not na(ftop) ? box.new(ft, ftop, time, fbot, xloc = xloc.bar_time, extend = extend.right, border_color = color.new(zb, 60), border_style = line.style_dotted, bgcolor = color.new(zc, math.min(color.t(zc) + 7, 100)), text = sdZone == "FVG only" ? (up ? "demand FVG · fresh" : "supply FVG · fresh") : "FVG", text_size = size.tiny, text_color = zb, text_halign = text.align_right) : na
+        array.push(sdBox, ob)
+        array.push(sdFvg, fv)
+        array.push(sdTop, sdZone == "FVG only" ? ftop : top)
+        array.push(sdBot, sdZone == "FVG only" ? fbot : bot)
+        array.push(sdUp, up)
+        array.push(sdSt, 0)
+        array.push(sdTI, bar_index)
+        // too many fresh zones: drop the oldest fresh one
+        int nf = 0
         for k = 0 to array.size(sdSt) - 1
-            if array.get(sdSt, k) == 0
-                box o1 = array.get(sdBox, k)
-                box o2 = array.get(sdFvg, k)
-                if not na(o1)
-                    box.delete(o1)
-                if not na(o2)
-                    box.delete(o2)
-                f_sdDrop(k)
-                break
+            nf += array.get(sdSt, k) == 0 ? 1 : 0
+        if nf > sdMaxZ
+            for k = 0 to array.size(sdSt) - 1
+                if array.get(sdSt, k) == 0
+                    box o1 = array.get(sdBox, k)
+                    box o2 = array.get(sdFvg, k)
+                    if not na(o1)
+                        box.delete(o1)
+                    if not na(o2)
+                        box.delete(o2)
+                    f_sdDrop(k)
+                    break
     0
-// each bar: fresh → touched (yellow) → broken (black); the box stops a few candles after the event
+    // each bar: fresh → touched (yellow) → broken (black); the box stops a few candles after the event
 f_sdUpdate() =>
     int n = array.size(sdBox)
     if n > 0
@@ -642,7 +651,7 @@ f_sdUpdate() =>
                 f_sdDrop(k)
             int _done = 0
     0
-f_sd() =>
+f_sd(simple int len, bool intl) =>
     var float hiL = na
     var int   hiT = na
     var float loL = na
@@ -651,17 +660,17 @@ f_sd() =>
     var int   loI = na
     var bool  swSell = false
     var bool  swBuy  = false
-    float ph = ta.pivothigh(high, sdLen, sdLen)
-    float pl = ta.pivotlow(low, sdLen, sdLen)
+    float ph = ta.pivothigh(high, len, len)
+    float pl = ta.pivotlow(low, len, len)
     float atr = ta.atr(14)
     if not na(ph)
         hiL := ph
-        hiT := time[sdLen]
-        hiI := bar_index - sdLen
+        hiT := time[len]
+        hiI := bar_index - len
     if not na(pl)
         loL := pl
-        loT := time[sdLen]
-        loI := bar_index - sdLen
+        loT := time[len]
+        loI := bar_index - len
     if not na(lqSellS)
         swSell := true
     if not na(lqBuyS)
@@ -672,8 +681,9 @@ f_sd() =>
     bool okDn = fsMode == "Both" or not hasRec or b != "U"
     bool brUp = false
     bool brDn = false
-    if sdMode == "BOS + displacement (OB/FVG zones)"
-        f_sdUpdate()
+    if sdMode == "BOS + displacement (OB/FVG zones)" and (not intl or sdInt)
+        if not intl
+            f_sdUpdate()
         if not na(hiL) and close > hiL
             // bullish FVG in the last 3 candles: low[k] above high[k+2]
             float ft = na
@@ -698,10 +708,10 @@ f_sd() =>
                         ob := k
                         break
                 if ob > 0 or sdZone == "FVG only"
-                    array.push(fsLines, line.new(hiT, hiL, time, hiL, xloc = xloc.bar_time, color = fsC, style = line.style_solid, width = fsW))
+                    array.push(fsLines, line.new(hiT, hiL, time, hiL, xloc = xloc.bar_time, color = intl ? color.new(fsC, 30) : fsC, style = intl ? line.style_dashed : line.style_solid, width = intl ? 1 : fsW))
                     if fsLab
-                        array.push(fsLbls, label.new(time, hiL, "BOS ▲", xloc = xloc.bar_time, style = label.style_label_lower_left, color = color.new(fsC, 100), textcolor = fsC, size = size.tiny))
-                    f_sdZone(true, ob > 0 ? time[ob] : fT, ob > 0 ? high[ob] : ft, ob > 0 ? low[ob] : fb, fT, ft, fb, hiL)
+                        array.push(fsLbls, label.new(time, hiL, intl ? "iBOS ▲" : "BOS ▲", xloc = xloc.bar_time, style = label.style_label_lower_left, color = color.new(fsC, 100), textcolor = fsC, size = size.tiny))
+                    f_sdZone(intl, true, ob > 0 ? time[ob] : fT, ob > 0 ? high[ob] : ft, ob > 0 ? low[ob] : fb, fT, ft, fb, hiL)
                     brUp := true
             hiL := na
             swSell := false
@@ -727,10 +737,10 @@ f_sd() =>
                         ob2 := k
                         break
                 if ob2 > 0 or sdZone == "FVG only"
-                    array.push(fsLines, line.new(loT, loL, time, loL, xloc = xloc.bar_time, color = fsC, style = line.style_solid, width = fsW))
+                    array.push(fsLines, line.new(loT, loL, time, loL, xloc = xloc.bar_time, color = intl ? color.new(fsC, 30) : fsC, style = intl ? line.style_dashed : line.style_solid, width = intl ? 1 : fsW))
                     if fsLab
-                        array.push(fsLbls, label.new(time, loL, "BOS ▼", xloc = xloc.bar_time, style = label.style_label_upper_left, color = color.new(fsC, 100), textcolor = fsC, size = size.tiny))
-                    f_sdZone(false, ob2 > 0 ? time[ob2] : fT2, ob2 > 0 ? high[ob2] : ft2, ob2 > 0 ? low[ob2] : fb2, fT2, ft2, fb2, loL)
+                        array.push(fsLbls, label.new(time, loL, intl ? "iBOS ▼" : "BOS ▼", xloc = xloc.bar_time, style = label.style_label_upper_left, color = color.new(fsC, 100), textcolor = fsC, size = size.tiny))
+                    f_sdZone(intl, false, ob2 > 0 ? time[ob2] : fT2, ob2 > 0 ? high[ob2] : ft2, ob2 > 0 ? low[ob2] : fb2, fT2, ft2, fb2, loL)
                     brDn := true
             loL := na
             swBuy := false
@@ -739,7 +749,10 @@ f_sd() =>
         while array.size(fsLbls) > fsMax
             label.delete(array.shift(fsLbls))
     [brUp, brDn]
-[sdUpB, sdDnB] = f_sd()
+[sdUpM, sdDnM] = f_sd(sdLen, false)
+[sdUpI, sdDnI] = f_sd(sdLenI, true)
+bool sdUpB = sdUpM or sdUpI
+bool sdDnB = sdDnM or sdDnI
 alertcondition(sdUpB or sdDnB, "BOS + displacement (bias side)", "Structure break with displacement on the side chosen by the week's bias; a new supply/demand zone is drawn. Context only, not a trade signal.")
 
 // ───────── daily checks on this bar ─────────
