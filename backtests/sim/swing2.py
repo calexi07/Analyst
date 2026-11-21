@@ -50,7 +50,7 @@ def load(pair):
                 DX.append(dx); adx_v = sum(DX[-14:]) / len(DX[-14:]) if len(DX) >= 14 else None
         ph, pl = d['h'], d['l']; hs.append(d['h']); ls.append(d['l'])
         trs.append(d['h'] - d['l'] if prev is None else max(d['h'], prev) - min(d['l'], prev)); cl.append(d['c']); prev = d['c']
-    wko, wk = None, None; ema = None; a = 2 / 21
+    wko, wk = None, None; ema = None; a = 2 / 21; e144 = e169 = None
     dop, dk, mop, mk, pwh, pwl, cwh, cwl, yop, yk = None, None, None, None, None, None, None, None, None, None
     # daily fractal swing points (2 days each side), usable from the day after confirmation
     ks = sorted(days); sup = {}; res_ = {}; lows = []; highs = []
@@ -75,6 +75,8 @@ def load(pair):
         b['sw6h'] = max(x['h'] for x in bars[max(0, j - 6):j]) if j >= 6 else None
         b['wko'] = wko; b['atr'] = atr.get(b['day']); b['sma20'] = sma[b['day']][20]; b['sma50'] = sma[b['day']][50]
         b['ema_prev'] = ema; ema = b['c'] if ema is None else ema + a * (b['c'] - ema); b['ema'] = ema
+        e144 = b['c'] if e144 is None else e144 + 2 / 145 * (b['c'] - e144); e169 = b['c'] if e169 is None else e169 + 2 / 170 * (b['c'] - e169)
+        b['v1'], b['v2'] = (e144, e169) if j >= 300 else (None, None)
         b['pdh'], b['pdl'] = pdhl[b['day']]; b['f'] = feat[b['day']]
     return bars
 
@@ -97,7 +99,7 @@ def usd_strength(data):
     return {t: sum(v) / len(v) for t, v in acc.items() if len(v) >= 4}
 
 DEF = dict(dirm='bias', cf='wtd', k=1.0, tp=2.0, hold=4, entry='A', sess=False, first=False, exh=None, conv='any', mingap=None,
-           partial=False, be=False, thesis=False, usdcf=False, trlen=20, nomon=False, restx='none', trail=2.0, minwtd=0.0, tsrc='sma20', adx=None, atrp=None, er=None, swsl=False, fri=True, opens='none')
+           partial=False, be=False, thesis=False, usdcf=False, trlen=20, nomon=False, restx='none', trail=2.0, minwtd=0.0, tsrc='sma20', adx=None, atrp=None, er=None, swsl=False, fri=True, opens='none', vegas='none')
 
 def run(pair, bars, B, P, start, end=None, usd=None):
     P = {**DEF, **P}; pip = pip_of(pair); cost = cost_of(pair) * pip
@@ -173,6 +175,13 @@ def run(pair, bars, B, P, start, end=None, usd=None):
         if lastx and (b['tc'] - lastx).total_seconds() < 24 * 3600: continue
         if b['atr'] is None or dr == 0 or b['dow'] > 3: continue          # Mon–Thu (trading day), no Friday entries
         if P['nomon'] and b['dow'] == 0: continue
+        if P['vegas'] != 'none':
+            if b['v1'] is None: continue
+            hi, lo = max(b['v1'], b['v2']), min(b['v1'], b['v2'])
+            if P['vegas'] == 'side' and not ((b['c'] > hi) if dr > 0 else (b['c'] < lo)): continue          # price on the trade's side of the tunnel
+            if P['vegas'] == 'slope' and not ((b['v1'] > b['v2']) if dr > 0 else (b['v1'] < b['v2'])): continue  # EMA144 above EMA169 for longs
+            if P['vegas'] == 'both' and not (((b['c'] > hi) and b['v1'] > b['v2']) if dr > 0 else ((b['c'] < lo) and b['v1'] < b['v2'])): continue
+            if P['vegas'] == 'near' and not (0 <= ((b['l'] - hi) if dr > 0 else (lo - b['h'])) <= 0.5 * b['atr'] or (lo <= (b['l'] if dr > 0 else b['h']) <= hi)): continue  # candle touches / near the tunnel
         if P['opens'] != 'none':
             lv = {'w': [b['wko']], 'm': [b['mop']], 'y': [b['yop']], 'wm': [b['wko'], b['mop']], 'wmy': [b['wko'], b['mop'], b['yop']], 'my': [b['mop'], b['yop']]}[P['opens']]
             if any(v is None or (b['c'] - v) * dr <= 0 for v in lv): continue
@@ -248,6 +257,11 @@ def run(pair, bars, B, P, start, end=None, usd=None):
             if zs:
                 z = max(zs, key=lambda z: z[3]); e = z[1] if dr > 0 else z[2]
                 pend = dict(t0=b['tc'], wk=b['wk'], d=dr, e=e, risk=risk, life=48, meta=meta)
+            else: wk_done.discard((pair, b['wk']))
+        elif P['entry'] == 'VT' and b['v1'] is not None:
+            # limit at the tunnel edge on the trade's side (support for longs, resistance for shorts)
+            e = max(b['v1'], b['v2']) if dr > 0 else min(b['v1'], b['v2'])
+            if (b['c'] - e) * dr > 0: pend = dict(t0=b['tc'], wk=b['wk'], d=dr, e=e, risk=risk, life=24, meta=meta)
             else: wk_done.discard((pair, b['wk']))
         elif P['entry'] == 'DC' and b['f']['dch'] is not None:
             e = b['f']['dch'] if dr > 0 else b['f']['dcl']
