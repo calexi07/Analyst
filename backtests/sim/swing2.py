@@ -141,6 +141,9 @@ def run(pair, bars, B, P, start, end=None, usd=None):
             elif (pend.get('stop') and (b['h'] >= pend['e'] if pend['d'] > 0 else b['l'] <= pend['e'])) or (not pend.get('stop') and (b['l'] <= pend['e'] if pend['d'] > 0 else b['h'] >= pend['e'])):
                 pos = dict(i=i, t=b['t'], d=pend['d'], e=pend['e'], risk=pend['risk'], sl=pend['e'] - pend['d'] * pend['risk'], w=1.0, banked=0.0, part=False, meta=pend['meta'])
                 pos['tp'] = pos['e'] + pos['d'] * P['tp'] * pos['risk'] if P['tp'] else None
+                if P['tpmode'] != 'R':
+                    lvl = {'pdh': b['pdh'] if pos['d'] > 0 else b['pdl'], 'pwh': b['pwh'] if pos['d'] > 0 else b['pwl']}[P['tpmode']]
+                    if lvl is not None and (lvl - pos['e']) * pos['d'] >= 1.0 * pos['risk']: pos['tp'] = lvl
                 pend = None
                 if P.get('fillchk') and ((b['l'] <= pos['sl']) if pos['d'] > 0 else (b['h'] >= pos['sl'])):
                     # worst case: the stop is touched on the same candle that filled the entry
@@ -170,7 +173,9 @@ def run(pair, bars, B, P, start, end=None, usd=None):
                 if P['trailm'] != 'none' and pos['best'] >= P['trailfrom']:
                     A = b['atr4'] if P.get('atrsrc') == '4h' else b['atr']
                     if P['trailm'] == 'chand': ns = pos['e'] + d * (pos['best'] * pos['risk']) - d * P['trailk'] * A
-                    elif P['trailm'] == 'close': ns = b['c'] - d * P['trailk'] * A
+                    elif P['trailm'] == 'close':
+                        k_ = P.get('trailk2', P['trailk']) if pos['best'] >= P.get('trailat', 99) else P['trailk']
+                        ns = b['c'] - d * k_ * A
                     elif P['trailm'] == 'nbar':
                         win = bars[max(pos['i'] + 1, i - P['trailn'] + 1):i + 1]
                         ns = min(x['l'] for x in win) if d > 0 else max(x['h'] for x in win)
@@ -312,6 +317,19 @@ def run(pair, bars, B, P, start, end=None, usd=None):
         elif P['entry'] == 'C':
             # stop order one tick beyond this candle's high (long) / low (short), alive for the next candle only
             pend = dict(t0=b['tc'], wk=b['wk'], d=dr, e=b['h'] if dr > 0 else b['l'], risk=risk, life=1, meta=meta, stop=True)
+        elif P['entry'] in ('CB', 'CD', 'PB', 'C2', 'CE', 'AR'):
+            A4 = b['atr4'] if P.get('atrsrc') == '4h' else b['atr']
+            ok, e, life = True, (b['h'] if dr > 0 else b['l']), 1
+            if P['entry'] == 'CB': e = e + dr * P.get('cbuf', 0.1) * A4                       # break with a buffer
+            elif P['entry'] == 'CD': ok = (b['c'] - b['o']) * dr > 0                            # signal candle closed in the trade's direction
+            elif P['entry'] == 'PB': ok = (b['c'] - b['o']) * dr < 0                            # signal candle is a pullback; break of its high/low
+            elif P['entry'] == 'C2': e = max(b['h'], bars[i - 1]['h']) if dr > 0 else min(b['l'], bars[i - 1]['l'])   # break of the last two candles
+            elif P['entry'] == 'CE': ok = b['ema'] is not None and (b['c'] - b['ema']) * dr > 0  # 4H close on the trade's side of the 4H EMA20
+            elif P['entry'] == 'AR':                                                            # Asian range (00-08 Bucharest) broken in London/NY until 16:00
+                ok = b['hl'] == 4 and bars[i - 1]['day'] == b['day']
+                if ok: e = max(b['h'], bars[i - 1]['h']) if dr > 0 else min(b['l'], bars[i - 1]['l']); life = 8
+            if ok: pend = dict(t0=b['tc'], wk=b['wk'], d=dr, e=e, risk=risk, life=life, meta=meta, stop=True)
+            else: wk_done.discard((pair, b['wk']))
         elif P['entry'] == 'E' and b['ema_prev'] is not None:
             e = b['ema_prev']
             if (b['c'] - e) * dr > 0: pend = dict(t0=b['tc'], wk=b['wk'], d=dr, e=e, risk=risk, life=24, meta=meta)
