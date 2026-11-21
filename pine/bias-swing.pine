@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — swing strategy test bench (4H or Daily chart, holds 3–4 days).
-// Generated automatically: 2026-11-21 12:47 UTC. Bias data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
+// Generated automatically: 2026-11-21 13:10 UTC. Bias data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // A test bench for your own rules in the Strategy Tester. Not a trade signal.
 //@version=6
@@ -8,11 +8,12 @@ strategy("Bias Engine · swing test bench", shorttitle = "BE Swing", overlay = t
 
 // ───────── settings ─────────
 string pairIn  = input.string("Auto", "Pair", options = ["Auto", "EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD"], tooltip = "Auto reads the chart symbol (e.g. EURUSD, OANDA:XAUUSD). Built for the 4H chart (Daily works too). Days below are calendar time, so they mean the same on any timeframe.")
-string dirMode = input.string("Both must agree", "Direction from", options = ["Fundamental bias", "Price trend (SMA)", "Both must agree"], group = "Direction", tooltip = "Fundamental bias: the week's published bias (data only from the first week in the script). Price trend: close above / below the SMA below, works on years of history, so the mechanics can be tested on thousands of trades. Both: only when the two agree.")
+string dirMode = input.string("Fundamental bias", "Direction from", options = ["Fundamental bias", "Price trend (SMA)", "Both must agree"], group = "Direction", tooltip = "Fundamental bias: the week's published bias (data only from the first week in the script). Price trend: close above / below the SMA below, works on years of history, so the mechanics can be tested on thousands of trades. Both: only when the two agree.")
 string minConv = input.string("Any", "Minimum conviction", options = ["Any", "Medium or high", "High only"], group = "Direction", tooltip = "Bias modes only. Two-sided weeks never trade.")
 int    trLen   = input.int(20, "Trend SMA length (daily closes)", minval = 5, maxval = 400, group = "Direction")
-string cfMode  = input.string("Week-to-date", "Price confirmation", options = ["None", "Week-to-date", "Close vs 20-day SMA"], group = "Confirmation", tooltip = "Week-to-date: the day's close is above this week's open for longs (below for shorts); Monday's close is the first that can confirm, so the earliest entry is Tuesday. 20-day SMA: the close is on the trade's side of the 20-day average.")
-string enMode  = input.string("A · at the confirming candle's close", "Entry", options = ["A · at the confirming candle's close", "B · pullback to 50% of the confirming candle", "C · break of the confirming candle's high/low"], group = "Entry", tooltip = "The confirming candle is the chart candle (4H) whose close meets direction + confirmation. A: at its close. B: limit order at the middle of its range, valid for the next candle. C: stop order beyond its high (long) / low (short), valid for the next candle.")
+string cfMode  = input.string("None", "Price confirmation", options = ["None", "Week-to-date", "Close vs 20-day SMA"], group = "Confirmation", tooltip = "Week-to-date: the day's close is above this week's open for longs (below for shorts); Monday's close is the first that can confirm, so the earliest entry is Tuesday. 20-day SMA: the close is on the trade's side of the 20-day average.")
+string enMode  = input.string("S · sweep of yesterday's low/high + reclaim", "Entry", options = ["S · sweep of yesterday's low/high + reclaim", "SD · sweep, else break of yesterday's high/low", "D · break of yesterday's high/low", "A · at the confirming candle's close", "B · pullback to 50% of the confirming candle", "C · break of the confirming candle's high/low"], group = "Entry", tooltip = "S: a 4H candle trades below yesterday's low (long) / above yesterday's high (short) and closes back on the other side; entry at its close. SD: the same sweep enters at once; otherwise a stop order waits at yesterday's high (long) / low (short) for the next candle. D: only that stop order. A/B/C: the earlier entries at, inside or beyond the confirming candle. Backtest on the USD pairs, bias weeks W40–W47: S +19R, SD +18R, A +15R; on 3 years without bias: D +73R, SD +46R, S +9R (the sweep needs the fundamental direction).")
+string opMode  = input.string("None", "Price on the trade's side of", options = ["None", "Week open", "Week + month open", "Week + month + year open"], group = "Entry", tooltip = "Long only above these opens, short only below. On 3 years it helped the technical entries (D), on the bias weeks it changed little.")
 bool   noFri   = input.bool(true, "No new entries on Friday", group = "Entry", tooltip = "Fridays would open a trade into the weekend and into next week's new bias.")
 int    coolH   = input.int(24, "Hours to wait after an exit", minval = 0, maxval = 240, group = "Entry", tooltip = "No new trade on this pair for this many hours after a trade closes (0 = the next candle).")
 string slMode  = input.string("ATR × multiple", "Stop loss", options = ["ATR × multiple", "Beyond the confirming candle's low/high"], group = "Exit")
@@ -252,7 +253,9 @@ string ckS = ck == "?" or ci < 0 or time - array.get(cT, math.max(ci, 0)) > 3 * 
 
 // ───────── direction and confirmation (all known at this day's close) ─────────
 // daily values of the previous completed day (no lookahead), so they mean the same on 4H and Daily
-[dAtr, smaT, sma20] = request.security(syminfo.tickerid, "D", [ta.atr(14)[1], ta.sma(close, trLen)[1], ta.sma(close, 20)[1]], lookahead = barmerge.lookahead_on)
+[dAtr, smaT, sma20, pdH, pdL] = request.security(syminfo.tickerid, "D", [ta.atr(14)[1], ta.sma(close, trLen)[1], ta.sma(close, 20)[1], high[1], low[1]], lookahead = barmerge.lookahead_on)
+float mO = request.security(syminfo.tickerid, "M", open, lookahead = barmerge.lookahead_on)
+float yO = request.security(syminfo.tickerid, "12M", open, lookahead = barmerge.lookahead_on)
 float cAtr = ta.atr(14)
 float atr = atrTf == "Daily ATR (14)" ? dAtr : cAtr
 // trading day in New York terms (the FX day starts at 17:00 New York)
@@ -272,6 +275,7 @@ bool wtdUp = close > wkO
 bool wtdDn = close < wkO
 bool smUp = not na(sma20) and close > sma20
 bool smDn = not na(sma20) and close < sma20
+bool opOk = opMode == "None" or (dir > 0 ? (close > wkO and (opMode == "Week open" or close > mO) and (opMode != "Week + month + year open" or close > yO)) : (close < wkO and (opMode == "Week open" or close < mO) and (opMode != "Week + month + year open" or close < yO)))
 bool cfOk = cfMode == "None" or (cfMode == "Week-to-date" ? (dir > 0 ? wtdUp : wtdDn) : (dir > 0 ? smUp : smDn))
 bool dayOk = not (noFri and tDay == dayofweek.friday) and tDay != dayofweek.saturday and tDay != dayofweek.sunday and not lastWkBar
 
@@ -302,16 +306,23 @@ if flat
     strategy.cancel("L")
     strategy.cancel("S")
 
-bool sig = flat and time >= fromT and dir != 0 and cfOk and dayOk and time - lastExitT >= coolH * 3600000 and not na(atr)
+bool sig = flat and time >= fromT and dir != 0 and cfOk and opOk and dayOk and time - lastExitT >= coolH * 3600000 and not na(atr)
 if sig
-    bool isA = str.startswith(enMode, "A")
-    bool isB = str.startswith(enMode, "B")
-    float ent = isA ? close : isB ? (high + low) / 2 : (dir > 0 ? high + syminfo.mintick : low - syminfo.mintick)
+    string ek = array.get(str.split(enMode, " "), 0)
+    bool sweepOk = not na(pdL) and (dir > 0 ? (low < pdL and close > pdL) : (high > pdH and close < pdH))
+    float brk = dir > 0 ? pdH : pdL
+    bool brkOk = not na(brk) and (brk - close) * dir > 0
+    // kind: 0 market at the close, 1 limit, 2 stop; go = this candle gives an order
+    int kind = ek == "A" ? 0 : ek == "B" ? 1 : ek == "C" ? 2 : ek == "S" ? 0 : ek == "D" ? 2 : (sweepOk ? 0 : 2)
+    bool go = ek == "S" ? sweepOk : ek == "D" ? brkOk : ek == "SD" ? (sweepOk or brkOk) : true
+    float ent = ek == "A" or ((ek == "S" or ek == "SD") and sweepOk) ? close : ek == "B" ? (high + low) / 2 : ek == "C" ? (dir > 0 ? high + syminfo.mintick : low - syminfo.mintick) : brk
+    bool isA = kind == 0
+    bool isB = kind == 1
     float sl = slMode == "ATR × multiple" ? ent - dir * slAtr * atr : (dir > 0 ? low - 0.1 * atr : high + 0.1 * atr)
     float risk = math.abs(ent - sl)
-    if risk > 0 and (dir > 0 ? sl < ent : sl > ent)
+    if go and risk > 0 and (dir > 0 ? sl < ent : sl > ent)
         float q = strategy.equity * stRisk / 100 / (risk * syminfo.pointvalue)
-        string cmt = pName + " | " + (dir > 0 ? "long" : "short") + " | bias " + f_bname(b) + " " + f_cname(cv) + " gap " + f_sg(g) + " | trend " + f_wa(dir == tDir) + " | wtd " + f_wa(dir > 0 ? wtdUp : wtdDn) + " | sma20 " + f_wa(dir > 0 ? smUp : smDn) + " | check " + ckS + " | entry " + str.substring(enMode, 0, 1) + " | SL " + str.tostring(f_pips(risk)) + "p | dir " + dirMode + " | " + array.get(DOW, tDay - 1) + " " + timeframe.period
+        string cmt = pName + " | " + (dir > 0 ? "long" : "short") + " | bias " + f_bname(b) + " " + f_cname(cv) + " gap " + f_sg(g) + " | trend " + f_wa(dir == tDir) + " | wtd " + f_wa(dir > 0 ? wtdUp : wtdDn) + " | sma20 " + f_wa(dir > 0 ? smUp : smDn) + " | check " + ckS + " | entry " + (ek == "SD" ? (sweepOk ? "SD-sweep" : "SD-break") : ek) + " | SL " + str.tostring(f_pips(risk)) + "p | dir " + dirMode + " | " + array.get(DOW, tDay - 1) + " " + timeframe.period
         string id = dir > 0 ? "L" : "S"
         slLvl := sl
         tpLvl := tpR > 0 ? ent + dir * tpR * risk : na
