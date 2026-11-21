@@ -192,7 +192,7 @@ def run(pair, bars, B, P, start, end=None, usd=None):
         if lastx and (b['tc'] - lastx).total_seconds() < P['cool'] * 3600: continue
         if P['hours'] and not (P['hours'][0] <= b['hl'] < P['hours'][1]): continue
         if P['maxwk'] and sum(1 for x in res if x['pair'] == pair and x['wk'] == b['wk']) >= P['maxwk']: continue
-        if b['atr'] is None or dr == 0 or b['dow'] > 3: continue          # Mon–Thu (trading day), no Friday entries
+        if b['atr'] is None or dr == 0 or b['dow'] > P.get('maxdow', 3): continue          # Mon–Thu (trading day), no Friday entries
         if P['nomon'] and b['dow'] == 0: continue
         if P['vegas'] != 'none':
             if b['v1'] is None: continue
