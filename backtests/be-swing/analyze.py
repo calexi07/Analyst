@@ -9,7 +9,7 @@ for f in sorted(glob.glob(os.path.join(os.path.dirname(__file__) or '.',pat))):
     for n,d in T.items():
         if 'Exit' not in d or d['Exit']['Signal']=='Open': continue
         e,x=d['Entry'],d['Exit']; s=e['Signal']
-        m=re.search(r'^(\w+) \| (\w+) \| bias ([\w-]+) (\S+) gap ([+-]?\d+) \| trend (\w+) \| wtd (\w+) \| sma20 (\w+) \| check ([^|]+) \| entry (\w) \| SL ([\d.]+)p \| dir ([^|]+) \| (\w+)',s)
+        m=re.search(r'^(\w+) \| (\w+) \| bias ([\w-]+) (\S+) gap ([+-]?\d+) \| trend (\w+) \| wtd (\w+) \| sma20 (\w+) \| check ([^|]+) \| entry (\S+) \| SL ([\d.]+)p \| dir ([^|]+) \| (\w+)',s)
         if not m: print('skip',s); continue
         pair,side,bias,conv,gap,trend,wtd,sma,ck,en,sl,dmode,dow=m.groups()
         g=lambda k:float(next(v for kk,v in x.items() if kk.startswith(k)))
