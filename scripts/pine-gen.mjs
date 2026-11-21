@@ -132,6 +132,27 @@ function dataBlocks(lines){
   fns.forEach((_, i) => out.push(`    f_data${i}()`));
   return out.join('\n');
 }
+const ORDERS = String.raw`
+// ───────── strategy orders (strategy build only): the same setup as a real order, 1% risk, for the Strategy Tester export ─────────
+float stRisk = input.float(1.0, "Risk per trade (% of equity)", minval = 0.1, maxval = 5, step = 0.1, group = "Strategy")
+// status of the latest daily check for this pair at this time
+f_ckNow() =>
+    string out = "none"
+    if pIdx >= 0 and array.size(cT) > 0
+        for j = 0 to array.size(cT) - 1
+            if array.get(cT, j) <= time
+                string r = f_item(array.get(cD, j), pIdx)
+                out := r == "?" ? out : f_sname(str.substring(r, 0, 1))
+    out
+float seRiskP = math.abs(seSL - seEnt)
+if seAct and seSt == 2 and seRiskP > 0 and strategy.position_size == 0
+    float q = strategy.equity * stRisk / 100 / (seRiskP * syminfo.pointvalue)
+    string cmt = pName + " | " + (seDir < 0 ? "short" : "long") + " | bias " + f_bname(b) + " " + f_cname(cv) + " gap " + f_sg(g) + " | check " + f_ckNow() + " | sweep " + seHr + " " + seSess + " | SL " + str.tostring(f_sePips(seRiskP)) + "p | POC after " + str.tostring(sePocH, "#.#") + "h"
+    strategy.entry("Setup", seDir < 0 ? strategy.short : strategy.long, qty = q, limit = seEnt, comment = cmt)
+    strategy.exit("Exit", "Setup", stop = seSL, limit = seTP, comment_loss = "SL −1R", comment_profit = "TP +" + str.tostring(seRR) + "R")
+if seAct and seSt != 2 and strategy.position_size == 0
+    strategy.cancel("Setup")
+`;
 const tpl = readFileSync('scripts/pine-template.pine', 'utf8')
   .replace('{{GENERATED}}', gen)
   .replace('{{COVERAGE}}', `${wkKey(first.y, first.w)} → ${wkKey(last.y, last.w)} (${wl.length} weeks), ${cl.length} daily checks`)
@@ -144,6 +165,11 @@ const tpl = readFileSync('scripts/pine-template.pine', 'utf8')
   .replace('{{STAMP}}', gen);
 mkdirSync('pine', { recursive:true });
 writeFileSync('pine/bias-engine.pine', tpl);
+// the same script as a TradingView strategy (Strategy Tester → List of trades → Export), so the setup rules can be measured
+const strat = tpl
+  .replace(/indicator\("Bias Engine · weekly bias & daily checks", shorttitle = "Bias Engine", overlay = true,/, 'strategy("Bias Engine · setup strategy (sweep → POC → 0.5)", shorttitle = "BE Setups", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = false,')
+  .replace('// {{STRATEGY_ORDERS}}', ORDERS);
+writeFileSync('pine/bias-engine-strategy.pine', strat);
 writeFileSync('pine/history.json', JSON.stringify({ saved_at:gen, daily_observer:supaOk ? 'ok' : 'unavailable (history kept from the last good run)',
   weeks:[...weeks.values()].filter(W => Object.keys(W.pairs).length).sort((a, b) => a.y - b.y || a.w - b.w),
   checks:[...checks.values()].sort((a, b) => (a.date + a.slot).localeCompare(b.date + b.slot)) }));
