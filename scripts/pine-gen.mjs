@@ -118,13 +118,18 @@ const first = wl[0], last = wl.at(-1);
 
 // Pine rejects one very long if block ("The if statement is too long"): one week or one check per block
 function dataBlocks(lines){
-  const out = []; let cur = [], size = 0;
-  const flush = () => { if(cur.length){ out.push('if barstate.isfirst', ...cur); cur = []; size = 0; } };
+  // Pine limits both one if block and the script's main body, so each week / check is a small function, called once on the first bar
+  const fns = []; let cur = [], size = 0;
+  const flush = () => { if(cur.length){ fns.push(cur); cur = []; size = 0; } };
   for(const ln of lines){
     if(cur.length && (/array\.push\((wT|cT),/.test(ln) || size + ln.length > 6000)) flush();
     cur.push(ln); size += ln.length;
   }
   flush();
+  const out = [];
+  fns.forEach((body, i) => out.push(`f_data${i}() =>`, ...body, '    0'));
+  out.push('if barstate.isfirst');
+  fns.forEach((_, i) => out.push(`    f_data${i}()`));
   return out.join('\n');
 }
 const tpl = readFileSync('scripts/pine-template.pine', 'utf8')
