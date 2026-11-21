@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — swing strategy test bench (Daily chart, holds 3–4 days).
-// Generated automatically: 2026-11-21 12:12 UTC. Bias data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
+// Generated automatically: 2026-11-21 12:18 UTC. Bias data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // A test bench for your own rules in the Strategy Tester. Not a trade signal.
 //@version=6
@@ -23,6 +23,7 @@ bool   wkExit  = input.bool(true, "Close every trade at Friday's close", group =
 bool   flipEx  = input.bool(true, "Close if the direction turns against the trade", group = "Exit")
 bool   trOn    = input.bool(false, "Trailing stop", group = "Exit")
 float  trAtr   = input.float(2.0, "Trailing distance (ATR ×)", minval = 0.5, maxval = 6, step = 0.1, group = "Exit")
+int    fromT   = input.time(timestamp("2000-01-01"), "Trade only from this date", group = "Risk", tooltip = "Set it to the first bias week (e.g. 1 Oct 2026) to compare 'Price trend' and 'Fundamental bias' on exactly the same weeks.")
 float  stRisk  = input.float(1.0, "Risk per trade (% of equity)", minval = 0.1, maxval = 5, step = 0.1, group = "Risk")
 color  bullC   = input.color(#22AB94, "Bullish", group = "Colours")
 color  bearC   = input.color(#F23645, "Bearish", group = "Colours")
@@ -286,7 +287,7 @@ if flat
     strategy.cancel("L")
     strategy.cancel("S")
 
-bool sig = flat and dir != 0 and cfOk and dayOk and bar_index - lastExit > coolD and not na(atr)
+bool sig = flat and time >= fromT and dir != 0 and cfOk and dayOk and bar_index - lastExit > coolD and not na(atr)
 if sig
     bool isA = str.startswith(enMode, "A")
     bool isB = str.startswith(enMode, "B")
