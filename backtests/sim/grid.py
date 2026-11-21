@@ -1,7 +1,7 @@
 # Runs the BE Swing variant grid on every backtests/ohlc/FOREXCOM_<PAIR>_240.csv. Usage: python3 backtests/sim/grid.py
 import sys,os,glob,itertools,statistics as S,datetime as D
 sys.path.insert(0,os.path.dirname(__file__)); from swing_sim import *
-start=D.datetime(2026,9,27,21,tzinfo=D.timezone.utc)
+start=D.datetime(*map(int,(sys.argv[1] if len(sys.argv)>1 else "2026-10-11").split("-")),21,tzinfo=D.timezone.utc)  # Sunday 21:00 UTC before the first tested week; default leaves room for the 20-day SMA
 files=sorted(glob.glob(os.path.join(os.path.dirname(__file__),'../ohlc/FOREXCOM_*_240.csv')))
 G=list(itertools.product(['bias','trend'],['none','wtd'],[0.75,1.0,1.5],[0,1.5,2,3],[2,3,4],[0,1.5]))
 tot={g:[0,0] for g in G}
