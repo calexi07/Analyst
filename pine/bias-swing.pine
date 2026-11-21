@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — swing strategy test bench (4H or Daily chart, holds 3–4 days).
-// Generated automatically: 2026-11-21 13:10 UTC. Bias data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
+// Generated automatically: 2026-11-21 13:14 UTC. Bias data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // A test bench for your own rules in the Strategy Tester. Not a trade signal.
 //@version=6
@@ -293,9 +293,7 @@ bool flat = strategy.position_size == 0
 
 if not flat and posDir == 0
     posDir := strategy.position_size > 0 ? 1 : -1
-    ent0 := strategy.position_avg_price
-    risk0 := math.abs(ent0 - slLvl)
-    q0 := math.abs(strategy.position_size)
+    // ent0 / risk0 / q0 are set when the order is placed (if the half already filled on the entry's next candle, the position is smaller here)
     partDone := false
 if flat and posDir != 0
     posDir := 0
@@ -321,7 +319,12 @@ if sig
     float sl = slMode == "ATR × multiple" ? ent - dir * slAtr * atr : (dir > 0 ? low - 0.1 * atr : high + 0.1 * atr)
     float risk = math.abs(ent - sl)
     if go and risk > 0 and (dir > 0 ? sl < ent : sl > ent)
-        float q = strategy.equity * stRisk / 100 / (risk * syminfo.pointvalue)
+        float qRaw = strategy.equity * stRisk / 100 / (risk * syminfo.pointvalue)
+        // an even size, so the two halves are equal and no 1-unit remainder is left behind
+        float q = halfOn ? math.max(2, math.floor(qRaw / 2) * 2) : qRaw
+        ent0 := ent
+        risk0 := risk
+        q0 := q
         string cmt = pName + " | " + (dir > 0 ? "long" : "short") + " | bias " + f_bname(b) + " " + f_cname(cv) + " gap " + f_sg(g) + " | trend " + f_wa(dir == tDir) + " | wtd " + f_wa(dir > 0 ? wtdUp : wtdDn) + " | sma20 " + f_wa(dir > 0 ? smUp : smDn) + " | check " + ckS + " | entry " + (ek == "SD" ? (sweepOk ? "SD-sweep" : "SD-break") : ek) + " | SL " + str.tostring(f_pips(risk)) + "p | dir " + dirMode + " | " + array.get(DOW, tDay - 1) + " " + timeframe.period
         string id = dir > 0 ? "L" : "S"
         slLvl := sl
