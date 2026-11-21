@@ -1,16 +1,16 @@
 {
  "format": "bias-engine-ta",
  "version": 1,
- "generated_at": "2026-11-21T18:55:57.527Z",
- "fundamentals": "2026-W47 FINAL",
+ "generated_at": "2026-11-21T19:47:44.536Z",
+ "fundamentals": "2026-W48 PHASE 1",
  "source": "Yahoo Finance hourly bars (FX PAIR=X, gold GC=F futures), regrouped into New-York-close daily and 4-hour bars. Levels can differ by a few pips from your broker.",
  "note": "Technical context compared with the fundamental bias. Price never changes a fundamental score. Not a trade signal.",
  "counts": {
-  "aligned": 8,
-  "pullback": 2,
+  "aligned": 7,
+  "pullback": 1,
   "turning": 0,
-  "conflict": 10,
-  "two-sided": 9
+  "conflict": 5,
+  "two-sided": 16
  },
  "pairs": {
   "EURUSD": {
@@ -19,7 +19,7 @@
    "price_time": "2026-11-20T22:00:00.000Z",
    "bias": "bearish",
    "conviction": "medium",
-   "gap": -8,
+   "gap": -7,
    "status": "aligned",
    "headline": "Price agrees with the bearish bias: D1 and H4 structure both point down.",
    "detail": [
@@ -111,8 +111,8 @@
    "price": 1.30818,
    "price_time": "2026-11-20T22:00:00.000Z",
    "bias": "bearish",
-   "conviction": "low",
-   "gap": -4,
+   "conviction": "medium",
+   "gap": -7,
    "status": "aligned",
    "headline": "Price agrees with the bearish bias: D1 and H4 structure both point down.",
    "detail": [
@@ -205,7 +205,7 @@
    "price_time": "2026-11-20T21:00:00.000Z",
    "bias": "bullish",
    "conviction": "medium",
-   "gap": 5,
+   "gap": 8,
    "status": "conflict",
    "headline": "Price disagrees with the bullish bias: D1 and H4 structure point down. It would start to agree on a 4h close above 159.97.",
    "detail": [
@@ -309,8 +309,8 @@
    "price": 0.83955,
    "price_time": "2026-11-20T22:00:00.000Z",
    "bias": "bullish",
-   "conviction": "medium",
-   "gap": 8,
+   "conviction": "low",
+   "gap": 7,
    "status": "pullback",
    "headline": "D1 agrees with the bullish bias, H4 is pulling back against it. Waiting for H4 to turn back up (a 4h close above 0.8444).",
    "detail": [
@@ -395,8 +395,8 @@
    "price": 1.4339,
    "price_time": "2026-11-20T22:00:00.000Z",
    "bias": "bullish",
-   "conviction": "low",
-   "gap": 9,
+   "conviction": "medium",
+   "gap": 14,
    "status": "aligned",
    "headline": "Price agrees with the bullish bias: D1 and H4 structure both point up.",
    "detail": [
@@ -488,14 +488,16 @@
    "pair": "AUDUSD",
    "price": 0.6619,
    "price_time": "2026-11-20T22:00:00.000Z",
-   "bias": "two-sided",
-   "conviction": "low",
-   "gap": -2,
-   "status": "two-sided",
-   "headline": "No fundamental lean this week; price structure is down on D1 and down on H4.",
+   "bias": "bearish",
+   "conviction": "medium",
+   "gap": -7,
+   "status": "aligned",
+   "headline": "Price agrees with the bearish bias: D1 and H4 structure both point down.",
    "detail": [
+    "Nearest H4 supply on the bias side: 0.66587–0.6684 (fresh), 0.8 ATR away.",
     "Resting liquidity: above 0.6684 (previous day high); below 0.66124 (previous day low).",
-    "Location: discount of the 3-month range (1%)."
+    "Location: discount of the 3-month range (1%).",
+    "The price read turns against the bias on a daily close above 0.70269 (last D1 swing)."
    ],
    "d1": {
     "structure": "down",
@@ -566,7 +568,7 @@
     "hi": 0.72406,
     "lo": 0.66124
    },
-   "watch_level": null
+   "watch_level": 0.70269
   },
   "NZDUSD": {
    "pair": "NZDUSD",
@@ -574,7 +576,7 @@
    "price_time": "2026-11-20T22:00:00.000Z",
    "bias": "bearish",
    "conviction": "low",
-   "gap": -4,
+   "gap": -9,
    "status": "aligned",
    "headline": "Price agrees with the bearish bias: D1 and H4 structure both point down.",
    "detail": [
@@ -665,13 +667,12 @@
    "pair": "EURGBP",
    "price": 0.8381,
    "price_time": "2026-11-20T22:00:00.000Z",
-   "bias": "bearish",
+   "bias": "two-sided",
    "conviction": "low",
-   "gap": -4,
-   "status": "conflict",
-   "headline": "Price disagrees with the bearish bias: D1 and H4 structure point up. It would start to agree on a 4h close below 0.83599.",
+   "gap": 0,
+   "status": "two-sided",
+   "headline": "No fundamental lean this week; price structure is up on D1 and up on H4.",
    "detail": [
-    "Nearest H4 supply on the bias side: 0.83947–0.84004 (tested), 0.5 ATR away.",
     "Latest sweep: buy-side liquidity (equal highs (2) 0.83793) taken and rejected on H1.",
     "Resting liquidity: above 0.8385 (previous day high); below 0.83606 (equal lows (2)).",
     "Location: discount of the 3-month range (21%)."
@@ -764,23 +765,21 @@
     "hi": 0.8612,
     "lo": 0.83194
    },
-   "watch_level": 0.83599
+   "watch_level": null
   },
   "EURJPY": {
    "pair": "EURJPY",
    "price": 173.904,
    "price_time": "2026-11-20T22:00:00.000Z",
-   "bias": "bearish",
+   "bias": "two-sided",
    "conviction": "low",
-   "gap": -3,
-   "status": "aligned",
-   "headline": "Price agrees with the bearish bias: D1 and H4 structure both point down.",
+   "gap": 1,
+   "status": "two-sided",
+   "headline": "No fundamental lean this week; price structure is down on D1 and down on H4.",
    "detail": [
-    "Nearest H4 supply on the bias side: 175.758–176.072 (fresh), 1.6 ATR away.",
     "Latest sweep: sell-side liquidity (equal lows (4) 175.077) taken and rejected on H1.",
     "Resting liquidity: above 175.344 (previous day high); below 173.732 (previous day low).",
-    "Location: discount of the 3-month range (1%).",
-    "The price read turns against the bias on a daily close above 177.708 (last D1 swing)."
+    "Location: discount of the 3-month range (1%)."
    ],
    "d1": {
     "structure": "down",
@@ -857,7 +856,7 @@
     "hi": 186.02,
     "lo": 173.732
    },
-   "watch_level": 177.708
+   "watch_level": null
   },
   "EURCHF": {
    "pair": "EURCHF",
@@ -967,11 +966,11 @@
    "pair": "EURAUD",
    "price": 1.65697,
    "price_time": "2026-11-20T22:00:00.000Z",
-   "bias": "bearish",
-   "conviction": "medium",
-   "gap": -6,
-   "status": "conflict",
-   "headline": "Price disagrees with the bearish bias: D1 and H4 structure point up. It would start to agree on a 4h close below 1.64369.",
+   "bias": "two-sided",
+   "conviction": "low",
+   "gap": 0,
+   "status": "two-sided",
+   "headline": "No fundamental lean this week; price structure is up on D1 and up on H4.",
    "detail": [
     "Latest sweep: buy-side liquidity (equal highs (2) 1.63352) taken and rejected on H1.",
     "Resting liquidity: above 1.65906 (previous day high); below 1.64369 (previous day low).",
@@ -1052,19 +1051,18 @@
     "hi": 1.65906,
     "lo": 1.57735
    },
-   "watch_level": 1.64369
+   "watch_level": null
   },
   "EURNZD": {
    "pair": "EURNZD",
    "price": 2.00489,
    "price_time": "2026-11-20T22:00:00.000Z",
-   "bias": "bearish",
+   "bias": "two-sided",
    "conviction": "low",
-   "gap": -4,
-   "status": "conflict",
-   "headline": "Price disagrees with the bearish bias: D1 and H4 structure point up. It would start to agree on a 4h close below 1.99297.",
+   "gap": 2,
+   "status": "two-sided",
+   "headline": "No fundamental lean this week; price structure is up on D1 and up on H4.",
    "detail": [
-    "Nearest H4 supply on the bias side: 2.01056–2.01712 (fresh), 0.5 ATR away.",
     "Latest sweep: buy-side liquidity (previous week high 2.00621) taken and rejected on H1.",
     "Resting liquidity: above 2.00621 (previous week high); below 2.00466 (equal lows (2)).",
     "Location: premium of the 3-month range (82%)."
@@ -1157,19 +1155,20 @@
     "hi": 2.01712,
     "lo": 1.95053
    },
-   "watch_level": 1.99297
+   "watch_level": null
   },
   "EURCAD": {
    "pair": "EURCAD",
    "price": 1.57251,
    "price_time": "2026-11-20T22:00:00.000Z",
-   "bias": "two-sided",
-   "conviction": "low",
-   "gap": 1,
-   "status": "two-sided",
-   "headline": "No fundamental lean this week; price structure is down on D1 and down on H4.",
+   "bias": "bullish",
+   "conviction": "medium",
+   "gap": 7,
+   "status": "conflict",
+   "headline": "Price disagrees with the bullish bias: D1 and H4 structure point down. It would start to agree on a 4h close above 1.5745.",
    "detail": [
     "Price is inside a D1 demand zone 1.56778–1.57404 (tested).",
+    "Nearest D1 demand on the bias side: 1.56573–1.57238 (tested), 0.0 ATR away.",
     "Latest sweep: buy-side liquidity (equal highs (2) 1.57199) taken and rejected on H1.",
     "Resting liquidity: above 1.57442 (previous day high); below 1.57083 (previous week low).",
     "Location: discount of the 3-month range (28%)."
@@ -1268,7 +1267,7 @@
     "hi": 1.6186,
     "lo": 1.55484
    },
-   "watch_level": null
+   "watch_level": 1.5745
   },
   "GBPJPY": {
    "pair": "GBPJPY",
@@ -1365,13 +1364,12 @@
    "pair": "GBPCHF",
    "price": 1.09875,
    "price_time": "2026-11-20T22:00:00.000Z",
-   "bias": "bullish",
+   "bias": "two-sided",
    "conviction": "low",
-   "gap": 4,
-   "status": "pullback",
-   "headline": "D1 agrees with the bullish bias, H4 is pulling back against it. Waiting for H4 to turn back up (a 4h close above 1.1093).",
+   "gap": 0,
+   "status": "two-sided",
+   "headline": "No fundamental lean this week; price structure is up on D1 and down on H4.",
    "detail": [
-    "Nearest H4 demand on the bias side: 1.09385–1.09748 (tested), 0.2 ATR away.",
     "Latest sweep: buy-side liquidity (equal highs (4) 1.09933) taken and rejected on H1.",
     "Resting liquidity: above 1.09933 (equal highs (4)); below 1.0984 (equal lows (3)).",
     "Location: discount of the 3-month range (44%)."
@@ -1464,7 +1462,7 @@
     "hi": 1.11151,
     "lo": 1.08887
    },
-   "watch_level": 1.1093
+   "watch_level": null
   },
   "GBPAUD": {
    "pair": "GBPAUD",
@@ -1472,7 +1470,7 @@
    "price_time": "2026-11-20T22:00:00.000Z",
    "bias": "two-sided",
    "conviction": "low",
-   "gap": -2,
+   "gap": 0,
    "status": "two-sided",
    "headline": "No fundamental lean this week; price structure is up on D1 and up on H4.",
    "detail": [
@@ -1556,7 +1554,7 @@
    "price_time": "2026-11-20T22:00:00.000Z",
    "bias": "two-sided",
    "conviction": "low",
-   "gap": 0,
+   "gap": 2,
    "status": "two-sided",
    "headline": "No fundamental lean this week; price structure is up on D1 and up on H4.",
    "detail": [
@@ -1666,8 +1664,8 @@
    "price": 1.87657,
    "price_time": "2026-11-20T22:00:00.000Z",
    "bias": "bullish",
-   "conviction": "low",
-   "gap": 5,
+   "conviction": "medium",
+   "gap": 7,
    "status": "conflict",
    "headline": "Price disagrees with the bullish bias: D1 and H4 structure point down. It would start to agree on a 4h close above 1.88938.",
    "detail": [
@@ -1770,11 +1768,11 @@
    "pair": "AUDJPY",
    "price": 104.918,
    "price_time": "2026-11-20T22:00:00.000Z",
-   "bias": "bullish",
+   "bias": "two-sided",
    "conviction": "low",
-   "gap": 3,
-   "status": "conflict",
-   "headline": "Price disagrees with the bullish bias: D1 and H4 structure point down. It would start to agree on a 4h close above 107.434.",
+   "gap": 1,
+   "status": "two-sided",
+   "headline": "No fundamental lean this week; price structure is down on D1 and down on H4.",
    "detail": [
     "Resting liquidity: above 106.476 (previous day high); below 104.717 (previous day low).",
     "Location: discount of the 3-month range (2%)."
@@ -1848,17 +1846,17 @@
     "hi": 114.961,
     "lo": 104.717
    },
-   "watch_level": 107.434
+   "watch_level": null
   },
   "AUDCHF": {
    "pair": "AUDCHF",
    "price": 0.5551,
    "price_time": "2026-11-20T22:00:00.000Z",
-   "bias": "bullish",
-   "conviction": "medium",
-   "gap": 6,
-   "status": "conflict",
-   "headline": "Price disagrees with the bullish bias: D1 and H4 structure point down. It would start to agree on a 4h close above 0.56586.",
+   "bias": "two-sided",
+   "conviction": "low",
+   "gap": 0,
+   "status": "two-sided",
+   "headline": "No fundamental lean this week; price structure is down on D1 and down on H4.",
    "detail": [
     "Latest sweep: sell-side liquidity (equal lows (2) 0.55984) taken and rejected on H1.",
     "Resting liquidity: above 0.56284 (previous day high); below 0.55426 (previous day low).",
@@ -1939,7 +1937,7 @@
     "hi": 0.58823,
     "lo": 0.55426
    },
-   "watch_level": 0.56586
+   "watch_level": null
   },
   "AUDNZD": {
    "pair": "AUDNZD",
@@ -2044,7 +2042,7 @@
    "price": 0.94804,
    "price_time": "2026-11-20T22:00:00.000Z",
    "bias": "bullish",
-   "conviction": "low",
+   "conviction": "medium",
    "gap": 7,
    "status": "conflict",
    "headline": "Price disagrees with the bullish bias: D1 and H4 structure point down. It would start to agree on a 4h close above 0.95679.",
@@ -2136,7 +2134,7 @@
    "price_time": "2026-11-20T22:00:00.000Z",
    "bias": "two-sided",
    "conviction": "low",
-   "gap": 1,
+   "gap": -1,
    "status": "two-sided",
    "headline": "No fundamental lean this week; price structure is down on D1 and down on H4.",
    "detail": [
@@ -2225,13 +2223,12 @@
    "pair": "NZDCHF",
    "price": 0.45917,
    "price_time": "2026-11-20T22:00:00.000Z",
-   "bias": "bullish",
+   "bias": "two-sided",
    "conviction": "low",
-   "gap": 4,
-   "status": "conflict",
-   "headline": "Price disagrees with the bullish bias: D1 and H4 structure point down. It would start to agree on a 4h close above 0.4641.",
+   "gap": -2,
+   "status": "two-sided",
+   "headline": "No fundamental lean this week; price structure is down on D1 and down on H4.",
    "detail": [
-    "Nearest H4 demand on the bias side: 0.45193–0.45484 (fresh), 0.9 ATR away.",
     "Latest sweep: sell-side liquidity (equal lows (4) 0.45893) taken and rejected on H1.",
     "Resting liquidity: above 0.4612 (equal highs (2)); below 0.45893 (equal lows (4)).",
     "Location: discount of the 3-month range (26%)."
@@ -2324,7 +2321,7 @@
     "hi": 0.48,
     "lo": 0.45193
    },
-   "watch_level": 0.4641
+   "watch_level": null
   },
   "NZDCAD": {
    "pair": "NZDCAD",
@@ -2436,8 +2433,8 @@
    "price": 110.531,
    "price_time": "2026-11-20T22:00:00.000Z",
    "bias": "bearish",
-   "conviction": "low",
-   "gap": -4,
+   "conviction": "medium",
+   "gap": -6,
    "status": "aligned",
    "headline": "Price agrees with the bearish bias: D1 and H4 structure both point down.",
    "detail": [
@@ -2522,15 +2519,17 @@
    "pair": "CADCHF",
    "price": 0.5856,
    "price_time": "2026-11-20T23:00:00.000Z",
-   "bias": "two-sided",
+   "bias": "bearish",
    "conviction": "low",
-   "gap": -1,
-   "status": "two-sided",
-   "headline": "No fundamental lean this week; price structure is down on D1 and down on H4.",
+   "gap": -7,
+   "status": "aligned",
+   "headline": "Price agrees with the bearish bias: D1 and H4 structure both point down.",
    "detail": [
+    "Nearest H4 supply on the bias side: 0.59033–0.59057 (fresh), 1.2 ATR away.",
     "Latest sweep: sell-side liquidity (equal lows (4) 0.58525) taken and rejected on H4.",
     "Resting liquidity: above 0.58569 (equal highs (2)); below 0.58525 (equal lows (4)).",
-    "Location: premium of the 3-month range (51%)."
+    "Location: premium of the 3-month range (51%).",
+    "The price read turns against the bias on a daily close above 0.58863 (last D1 swing)."
    ],
    "d1": {
     "structure": "down",
@@ -2620,24 +2619,22 @@
     "hi": 0.593,
     "lo": 0.578
    },
-   "watch_level": null
+   "watch_level": 0.58863
   },
   "CHFJPY": {
    "pair": "CHFJPY",
    "price": 188.758,
    "price_time": "2026-11-20T22:00:00.000Z",
-   "bias": "bearish",
+   "bias": "two-sided",
    "conviction": "low",
-   "gap": -3,
-   "status": "aligned",
-   "headline": "Price agrees with the bearish bias: D1 and H4 structure both point down.",
+   "gap": 1,
+   "status": "two-sided",
+   "headline": "No fundamental lean this week; price structure is down on D1 and down on H4.",
    "detail": [
     "Price is inside a H4 demand zone 188.328–189.147 (tested).",
-    "Nearest H4 supply on the bias side: 191.404–191.496 (fresh), 2.2 ATR away.",
     "Latest sweep: sell-side liquidity (equal lows (2) 189.059) taken and rejected on H1.",
     "Resting liquidity: above 189.42 (equal highs (2)); below 188.525 (previous day low).",
-    "Location: discount of the 3-month range (10%).",
-    "The price read turns against the bias on a daily close above 194.329 (last D1 swing)."
+    "Location: discount of the 3-month range (10%)."
    ],
    "d1": {
     "structure": "down",
@@ -2727,22 +2724,20 @@
     "hi": 199.002,
     "lo": 187.581
    },
-   "watch_level": 194.329
+   "watch_level": null
   },
   "XAUUSD": {
    "pair": "XAUUSD",
    "price": 3515.4,
    "price_time": "2026-11-20T21:00:00.000Z",
-   "bias": "bearish",
+   "bias": "two-sided",
    "conviction": "low",
-   "gap": -3,
-   "status": "aligned",
-   "headline": "Price agrees with the bearish bias: D1 and H4 structure both point down.",
+   "gap": 1,
+   "status": "two-sided",
+   "headline": "No fundamental lean this week; price structure is down on D1 and down on H4.",
    "detail": [
-    "Nearest H4 supply on the bias side: 3715.4–3738.7 (fresh), 2.1 ATR away.",
     "Resting liquidity: above 3638.1 (previous day high); below 3502.9 (previous day low).",
-    "Location: discount of the 3-month range (1%).",
-    "The price read turns against the bias on a daily close above 4157.7 (last D1 swing)."
+    "Location: discount of the 3-month range (1%)."
    ],
    "d1": {
     "structure": "down",
@@ -2807,7 +2802,7 @@
     "hi": 4755,
     "lo": 3502.9
    },
-   "watch_level": 4157.7
+   "watch_level": null
   }
  },
  "errors": {}
