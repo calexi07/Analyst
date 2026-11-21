@@ -158,6 +158,13 @@ var box   zSl = na
 var box   zTp = na
 var int   zEb = -1
 var float bestP = na
+// a pending entry: placed now, or paused during the rollover and placed again after it
+var bool  pLive = false
+var float pE = na
+var float pQ = na
+var int   pDir = 0
+var int   pKind = 0
+var string pCmt = ""
 bool halfOn = exMode == "Half at +1R, rest at break-even"
 bool flat = strategy.position_size == 0
 
@@ -181,13 +188,6 @@ f_inRoll(int t) =>
     h == 23 or h == 0
 // true when the next bar opens inside the window (orders placed or kept now would fill there)
 bool rollNow = noRoll and f_inRoll(time_close)
-// a pending entry: placed now, or paused during the rollover and placed again after it
-var bool  pLive = false
-var float pE = na
-var float pQ = na
-var int   pDir = 0
-var int   pKind = 0
-var string pCmt = ""
 
 // pending orders live one signal candle
 if flat and sBar
