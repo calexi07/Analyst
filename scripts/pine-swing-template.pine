@@ -15,17 +15,19 @@ string cfMode  = input.string("None", "Price confirmation", options = ["None", "
 string enMode  = input.string("S · sweep of yesterday's low/high + reclaim", "Entry", options = ["S · sweep of yesterday's low/high + reclaim", "SD · sweep, else break of yesterday's high/low", "D · break of yesterday's high/low", "A · at the confirming candle's close", "B · pullback to 50% of the confirming candle", "C · break of the confirming candle's high/low"], group = "Entry", tooltip = "S: a 4H candle trades below yesterday's low (long) / above yesterday's high (short) and closes back on the other side; entry at its close. SD: the same sweep enters at once; otherwise a stop order waits at yesterday's high (long) / low (short) for the next candle. D: only that stop order. A/B/C: the earlier entries at, inside or beyond the confirming candle. Backtest on the USD pairs, bias weeks W40–W47: S +19R, SD +18R, A +15R; on 3 years without bias: D +73R, SD +46R, S +9R (the sweep needs the fundamental direction).")
 string opMode  = input.string("None", "Price on the trade's side of", options = ["None", "Week open", "Week + month open", "Week + month + year open"], group = "Entry", tooltip = "Long only above these opens, short only below. On 3 years it helped the technical entries (D), on the bias weeks it changed little.")
 bool   noFri   = input.bool(true, "No new entries on Friday", group = "Entry", tooltip = "Fridays would open a trade into the weekend and into next week's new bias.")
+bool   noThu   = input.bool(true, "No new entries on Thursday", group = "Entry", tooltip = "A Thursday trade has only one day left before Friday's close. Backtest (sweep + bias, USD pairs, W40–W47): Thursday entries made 0R on 9 trades; without them the worst drawdown fell from −2.5R to −2.0R, and on 3 years of trend-direction tests the result rose from +9R to +14R.")
 int    coolH   = input.int(24, "Hours to wait after an exit", minval = 0, maxval = 240, group = "Entry", tooltip = "No new trade on this pair for this many hours after a trade closes (0 = the next candle).")
 string slMode  = input.string("ATR × multiple", "Stop loss", options = ["ATR × multiple", "Beyond the confirming candle's low/high"], group = "Exit")
 float  slAtr   = input.float(1.0, "ATR multiple", minval = 0.3, maxval = 5, step = 0.1, group = "Exit")
 string atrTf   = input.string("Daily ATR (14)", "ATR from", options = ["Daily ATR (14)", "Chart ATR (14)"], group = "Exit", tooltip = "Daily ATR sizes the stop for a 3–4 day hold whatever the chart timeframe (≈ one normal day's range). Chart ATR on 4H gives a much tighter stop.")
 string exMode  = input.string("Half at +1R, rest at break-even", "Exit style", options = ["Half at +1R, rest at break-even", "Fixed (one target)"], group = "Exit", tooltip = "Half at +1R: half the position closes at +1R, the stop of the other half moves to the entry price, and it runs to the take profit below, the time stop or Friday's close. Fixed: the whole position has one stop and one target. Backtest on the USD pairs: the half-at-1R exit cut the worst drawdown from −10R to −4R and was better in both halves of the bias weeks.")
-float  tpR     = input.float(3.0, "Take profit (R), 0 = none", minval = 0, maxval = 10, step = 0.5, group = "Exit", tooltip = "For the half-at-1R style this is the target of the second half (tested: 3R). For the fixed style it is the target of the whole position (earlier default: 2R).")
+float  tpR     = input.float(0.0, "Take profit (R), 0 = none", minval = 0, maxval = 10, step = 0.5, group = "Exit", tooltip = "For the half-at-1R style this is the target of the second half (default 0 = no target, the chandelier trailing stop below manages it; earlier default 3R). For the fixed style it is the target of the whole position (earlier default: 2R).")
 int    hold    = input.int(0, "Time stop: close after this many days (0 = hold to Friday)", minval = 0, maxval = 20, group = "Exit", tooltip = "Tested: hold to Friday with the half-at-1R exit; 4 days with the fixed exit.")
 bool   wkExit  = input.bool(true, "Close every trade at Friday's close", group = "Exit")
 bool   flipEx  = input.bool(true, "Close if the direction turns against the trade", group = "Exit")
-bool   trOn    = input.bool(false, "Trailing stop", group = "Exit")
-float  trAtr   = input.float(2.0, "Trailing distance (ATR ×)", minval = 0.5, maxval = 6, step = 0.1, group = "Exit")
+string trMode  = input.string("Chandelier after +1R", "Trailing stop", options = ["Chandelier after +1R", "From the close (always on)", "Off"], group = "Exit", tooltip = "Chandelier: once the trade has been +1R in profit, the stop follows the best price reached since entry at the distance below (daily ATR ×). It only moves in the trade's favour. Backtest (sweep + bias, USD pairs, W40–W47), second half trailed at 0.75 ATR with no target, plus no Thursday entries: +21.1R vs +19.3R, worst drawdown −2.0R vs −2.5R, every 2-week block ≥ +3.2R. Small sample (35 trades): treat as a forward test. From the close: the older trailing stop, a fixed distance from each candle's close.")
+float  trAtr   = input.float(0.75, "Trailing distance (ATR ×)", minval = 0.25, maxval = 6, step = 0.05, group = "Exit")
+bool   trOn    = trMode != "Off"
 int    fromT   = input.time(timestamp("2000-01-01"), "Trade only from this date", group = "Risk", tooltip = "Set it to the first bias week (e.g. 1 Oct 2026) to compare 'Price trend' and 'Fundamental bias' on exactly the same weeks.")
 float  stRisk  = input.float(1.0, "Risk per trade (% of equity)", minval = 0.1, maxval = 5, step = 0.1, group = "Risk")
 color  bullC   = input.color(#22AB94, "Bullish", group = "Colours")
@@ -109,7 +111,7 @@ bool smUp = not na(sma20) and close > sma20
 bool smDn = not na(sma20) and close < sma20
 bool opOk = opMode == "None" or (dir > 0 ? (close > wkO and (opMode == "Week open" or close > mO) and (opMode != "Week + month + year open" or close > yO)) : (close < wkO and (opMode == "Week open" or close < mO) and (opMode != "Week + month + year open" or close < yO)))
 bool cfOk = cfMode == "None" or (cfMode == "Week-to-date" ? (dir > 0 ? wtdUp : wtdDn) : (dir > 0 ? smUp : smDn))
-bool dayOk = not (noFri and tDay == dayofweek.friday) and tDay != dayofweek.saturday and tDay != dayofweek.sunday and not lastWkBar
+bool dayOk = not (noFri and tDay == dayofweek.friday) and not (noThu and tDay == dayofweek.thursday) and tDay != dayofweek.saturday and tDay != dayofweek.sunday and not lastWkBar
 
 // ───────── orders ─────────
 var float slLvl = na
@@ -120,6 +122,7 @@ var float ent0 = na
 var float risk0 = na
 var float q0 = na
 var bool  partDone = false
+var float bestP = na
 bool halfOn = exMode == "Half at +1R, rest at break-even"
 bool flat = strategy.position_size == 0
 
@@ -127,6 +130,7 @@ if not flat and posDir == 0
     posDir := strategy.position_size > 0 ? 1 : -1
     // ent0 / risk0 / q0 are set when the order is placed (if the half already filled on the entry's next candle, the position is smaller here)
     partDone := false
+    bestP := na
 if flat and posDir != 0
     posDir := 0
     lastExitT := time
@@ -177,15 +181,17 @@ if sig
 if not flat
     string id = posDir > 0 ? "L" : "S"
     int held = strategy.opentrades > 0 ? time_close - strategy.opentrades.entry_time(0) : 0
-    if trOn
-        float trS = posDir > 0 ? close - trAtr * atr : close + trAtr * atr
+    bestP := na(bestP) ? (posDir > 0 ? high : low) : posDir > 0 ? math.max(bestP, high) : math.min(bestP, low)
+    bool trLive = trMode == "From the close (always on)" or (trMode == "Chandelier after +1R" and (bestP - ent0) * posDir >= risk0)
+    if trLive
+        float trS = trMode == "Chandelier after +1R" ? bestP - posDir * trAtr * atr : posDir > 0 ? close - trAtr * atr : close + trAtr * atr
         slLvl := posDir > 0 ? math.max(slLvl, trS) : math.min(slLvl, trS)
     if halfOn and not partDone and math.abs(strategy.position_size) < q0 * 0.75
         partDone := true
         slLvl := posDir > 0 ? math.max(slLvl, ent0) : math.min(slLvl, ent0)
     if halfOn and not partDone
         strategy.exit("H" + id, id, qty_percent = 50, stop = slLvl, limit = ent0 + posDir * risk0, comment_loss = "SL", comment_profit = "+1R half")
-    strategy.exit("X" + id, id, qty_percent = halfOn ? 50 : 100, stop = slLvl, limit = tpLvl, comment_loss = partDone ? "Break-even" : trOn ? "SL/trail" : "SL", comment_profit = "TP")
+    strategy.exit("X" + id, id, qty_percent = halfOn ? 50 : 100, stop = slLvl, limit = tpLvl, comment_loss = trLive and (slLvl - ent0) * posDir > 0 ? "Trail" : partDone ? "Break-even" : "SL", comment_profit = "TP")
     if wkExit and lastWkBar
         strategy.close(id, comment = "Friday close")
     else if hold > 0 and held >= hold * 86400000
