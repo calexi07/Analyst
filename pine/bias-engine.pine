@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — weekly bias + daily checks (history) on the chart.
-// Generated automatically: 2026-11-21 08:00 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
+// Generated automatically: 2026-11-21 08:04 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // Fundamental context only. Not a trade signal.
 //@version=6
@@ -63,7 +63,7 @@ int    fsW     = input.int(2, "Line width", minval = 1, maxval = 4, group = "Str
 bool   fsLab   = input.bool(true, "Break labels", group = "Structure & zones")
 int    fsMax   = input.int(100, "Max break lines kept", minval = 10, maxval = 200, group = "Structure & zones")
 
-// ───────── data (generated 2026-11-21 08:00 UTC) ─────────
+// ───────── data (generated 2026-11-21 08:04 UTC) ─────────
 var string[] PAIRS = array.from("EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD")
 var string[] CCY   = array.from("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "XAU")
 var int[]    wT = array.new_int()     // week start (Sunday 21:00 UTC)
@@ -606,6 +606,8 @@ f_sd() =>
     var int   hiT = na
     var float loL = na
     var int   loT = na
+    var int   hiI = na
+    var int   loI = na
     var bool  swSell = false
     var bool  swBuy  = false
     float ph = ta.pivothigh(high, sdLen, sdLen)
@@ -614,9 +616,11 @@ f_sd() =>
     if not na(ph)
         hiL := ph
         hiT := time[sdLen]
+        hiI := bar_index - sdLen
     if not na(pl)
         loL := pl
         loT := time[sdLen]
+        loI := bar_index - sdLen
     if not na(lqSellS)
         swSell := true
     if not na(lqBuyS)
@@ -640,9 +644,15 @@ f_sd() =>
                     fb := high[k + 2]
                     fT := time[k + 1]
             if disp and (not sdFvgQ or not na(ft)) and okUp and (not fsSwp or swSell)
-                // order block: the last bearish candle before the impulse (looked for in the last 15 bars)
+                // order block = origin of the leg that broke the swing: the lowest low since the broken swing high,
+                // then the last bearish candle at or just before that low
+                int span = math.min(math.max(bar_index - nz(hiI, bar_index - 30), 3), 300)
+                int lowK = 0
+                for k = 0 to span
+                    if low[k] < low[lowK]
+                        lowK := k
                 int ob = -1
-                for k = 1 to 15
+                for k = lowK to math.min(lowK + 10, 300)
                     if close[k] < open[k]
                         ob := k
                         break
@@ -664,8 +674,14 @@ f_sd() =>
                     fb2 := high[k]
                     fT2 := time[k + 1]
             if disp and (not sdFvgQ or not na(ft2)) and okDn and (not fsSwp or swBuy)
+                // origin of the bearish leg: the highest high since the broken swing low, then the last bullish candle at or before it
+                int span2 = math.min(math.max(bar_index - nz(loI, bar_index - 30), 3), 300)
+                int highK = 0
+                for k = 0 to span2
+                    if high[k] > high[highK]
+                        highK := k
                 int ob2 = -1
-                for k = 1 to 15
+                for k = highK to math.min(highK + 10, 300)
                     if close[k] > open[k]
                         ob2 := k
                         break
