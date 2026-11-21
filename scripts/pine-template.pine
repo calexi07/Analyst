@@ -420,11 +420,36 @@ f_sdDrop(int k) =>
     0
 f_sdZone(bool intl, bool up, int t0, float top, float bot, int ft, float ftop, float fbot, float lvl) =>
     // the same zone already tracked (main and internal break on the same leg): skip
+    // a fresh zone of the same side that overlaps the new one is widened to cover both (one zone instead of two)
     bool dup = false
-    for k = 0 to math.max(array.size(sdTop) - 1, 0)
-        if array.size(sdTop) > 0 and array.get(sdTop, k) == (sdZone == "FVG only" ? ftop : top) and array.get(sdBot, k) == (sdZone == "FVG only" ? fbot : bot)
-            dup := true
-            break
+    float nTop = sdZone == "FVG only" ? ftop : top
+    float nBot = sdZone == "FVG only" ? fbot : bot
+    if array.size(sdTop) > 0
+        for k = 0 to array.size(sdTop) - 1
+            if array.get(sdUp, k) == up and array.get(sdSt, k) == 0 and nTop >= array.get(sdBot, k) and nBot <= array.get(sdTop, k)
+                float mTop = math.max(nTop, array.get(sdTop, k))
+                float mBot = math.min(nBot, array.get(sdBot, k))
+                array.set(sdTop, k, mTop)
+                array.set(sdBot, k, mBot)
+                box eo = array.get(sdBox, k)
+                if not na(eo)
+                    box.set_top(eo, mTop)
+                    box.set_bottom(eo, mBot)
+                    box.set_left(eo, math.min(box.get_left(eo), t0))
+                    box.set_text(eo, (up ? "demand" : "supply") + " · fresh")
+                box ef = array.get(sdFvg, k)
+                if sdZone != "Order block only" and not na(ftop)
+                    if na(ef)
+                        color zc0 = up ? sdDemC : sdSupC
+                        array.set(sdFvg, k, box.new(ft, ftop, time, fbot, xloc = xloc.bar_time, extend = extend.right, border_color = color.new(f_bd(zc0), 60), border_style = line.style_dotted, bgcolor = color.new(zc0, math.min(color.t(zc0) + 7, 100)), text = "FVG", text_size = size.tiny, text_color = f_bd(zc0), text_halign = text.align_right))
+                    else
+                        box.set_top(ef, math.max(box.get_top(ef), ftop))
+                        box.set_bottom(ef, math.min(box.get_bottom(ef), fbot))
+                        box.set_left(ef, math.min(box.get_left(ef), ft))
+                if sdZone == "FVG only" and not na(eo)
+                    box.set_top(eo, mTop)
+                dup := true
+                break
     if not dup
         color zc = up ? sdDemC : sdSupC
         color zb = f_bd(zc)
