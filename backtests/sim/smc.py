@@ -86,7 +86,9 @@ def run(p, b, P, start, end):
         if lastx and (x['tc'] - lastx).total_seconds() < P['cool'] * 3600: continue
         bi = B.get((p, x['wk']), ('-', '-', None)); bd = 1 if bi[0] == 'U' else -1 if bi[0] == 'D' else 0
         d = bd if P['dirm'] == 'bias' else x['td'] if P['dirm'] == 'trend' else (bd if bd == x['td'] else 0)
-        if d == 0 or x['dow'] > P['maxdow'] or not (P['hours'][0] <= x['hr'] < P['hours'][1]): continue
+        allow = x['dow'] <= P['maxdow'] and P['hours'][0] <= x['hr'] < P['hours'][1]
+        if d == 0: continue
+        if not allow and not P.get('state_always'): continue
         A = x['atr']; S = P['strat']; entry = None
         if S == 'sweep_choch':      # swing liquidity taken against the bias, then an internal CHoCH back in the bias direction
             sl_ = last(sw_l if d > 0 else sw_h, i)
@@ -114,7 +116,7 @@ def run(p, b, P, start, end):
                 else:
                     k['pb'] = min(k['pb'], x['l']) if d > 0 else max(k['pb'], x['h'])
                     ih = last(in_h if d > 0 else in_l, i, k['pbi'] - 6)
-                    if ih and (x['c'] - ih[1]) * d > 0: entry = (x['c'], k['pb'] - d * 0.1 * A); st.pop('bos')
+                    if ih and (x['c'] - ih[1]) * d > 0 and allow: entry = (x['c'], k['pb'] - d * 0.1 * A); st.pop('bos')
         elif S == 'asia_judas':     # London takes the Asian range against the bias, then an internal CHoCH (L=2) back
             if x['asia'] and 8 <= x['hr'] < 13:
                 lvl = x['asia'][1] if d > 0 else x['asia'][0]; k = st.get('j')

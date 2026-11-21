@@ -1,0 +1,241 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Forex Fundamental Bias Engine — structure strategy: swing BOS → pullback into discount → internal CHoCH (1H chart).
+// Generated automatically: {{GENERATED}}. Bias data: {{COVERAGE}}.
+// Do not edit by hand: the data block is rewritten after every phase and daily check.
+// A test bench for your own rules in the Strategy Tester. Not a trade signal.
+//@version=6
+strategy("Bias Engine · structure (BOS → discount → CHoCH)", shorttitle = "BE Structure", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = true, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0.005, slippage = 0, max_labels_count = 500, max_lines_count = 500, max_boxes_count = 500)
+
+// ───────── settings ─────────
+string pairIn  = input.string("Auto", "Pair", options = [{{PAIR_OPTIONS}}], tooltip = "Auto reads the chart symbol. Built for the 1H chart: the pivot lengths below are in candles of the chart.")
+string dirMode = input.string("Fundamental bias", "Direction from", options = ["Fundamental bias", "Bias + 20-day SMA agree"], group = "Direction", tooltip = "The week's published bias sets the only direction traded (two-sided weeks do not trade). Simulation (14 pairs, W40–W47): bias only +12.4R on 23 trades; bias + SMA agreement +4.3R on 15.")
+string minConv = input.string("Any", "Minimum conviction", options = ["Any", "Medium or high", "High only"], group = "Direction")
+int    swLen   = input.int(12, "Swing structure: pivot length (candles each side)", minval = 2, maxval = 50, group = "Structure", tooltip = "Swing highs/lows define the BOS and the impulse leg. 12 on 1H ≈ a 3-candle pivot on 4H. A pivot is only known after this many candles have closed on its right (no repainting).")
+int    inLen   = input.int(3, "Internal structure: pivot length", minval = 1, maxval = 20, group = "Structure", tooltip = "Internal highs/lows inside the pullback; the CHoCH is a close beyond the last internal high (long) / low (short) formed in the pullback.")
+float  discPct = input.float(50, "Pullback must reach (% of the impulse leg)", minval = 20, maxval = 80, step = 5, group = "Structure", tooltip = "50 = the discount half of the leg from the swing low to the high after the BOS (premium half for shorts).")
+int    maxWait = input.int(72, "Setup expires after (candles)", minval = 6, maxval = 300, group = "Structure")
+float  slBuf   = input.float(0.1, "Stop buffer beyond the pullback extreme (ATR ×)", minval = 0, maxval = 2, step = 0.05, group = "Exit")
+float  maxRisk = input.float(4.0, "Skip if the stop is wider than (ATR ×)", minval = 1, maxval = 20, step = 0.5, group = "Exit")
+string tpMode  = input.string("Fixed R", "Take profit", options = ["Fixed R", "Swing liquidity (min 2R)", "None"], group = "Exit", tooltip = "Fixed R: target at the multiple below. Swing liquidity: the last confirmed swing high (long) / low (short) if it is at least 2R away, otherwise the fixed R. Simulation: 3R +12.4R, 2R +10.8R, liquidity +10.4R.")
+float  tpR     = input.float(3.0, "Take profit (R)", minval = 0.5, maxval = 10, step = 0.5, group = "Exit")
+bool   wkExit  = input.bool(true, "Close every trade at Friday's close", group = "Exit", tooltip = "Simulation: holding over the weekend with a structure trail was worse (−0.9R vs +8.4R in the first test).")
+bool   flipEx  = input.bool(true, "Close at the new week if the bias turns against the trade", group = "Exit")
+bool   hrsOn   = input.bool(true, "Only enter in my trading hours (Bucharest)", group = "Entry")
+int    hrsFrom = input.int(6, "From (hour)", minval = 0, maxval = 23, group = "Entry", inline = "hrs")
+int    hrsTo   = input.int(22, "to (hour)", minval = 1, maxval = 24, group = "Entry", inline = "hrs")
+bool   noFri   = input.bool(true, "No new entries on Friday", group = "Entry")
+int    coolH   = input.int(12, "Hours to wait after an exit", minval = 0, maxval = 240, group = "Entry")
+int    fromT   = input.time(timestamp("2000-01-01"), "Trade only from this date", group = "Risk")
+float  stRisk  = input.float(1.0, "Risk per trade (% of equity)", minval = 0.1, maxval = 5, step = 0.1, group = "Risk")
+color  bullC   = input.color(#22AB94, "Bullish", group = "Colours")
+color  bearC   = input.color(#F23645, "Bearish", group = "Colours")
+bool   zonesOn = input.bool(true, "Show SL / TP zones", group = "Colours")
+bool   strOn   = input.bool(true, "Show BOS, discount level and CHoCH", group = "Colours")
+
+// ───────── data (generated) ─────────
+var string[] PAIRS = array.from({{PAIRS}})
+var string[] CCY   = array.from({{CCY}})
+var int[]    wT = array.new_int()
+var string[] wN = array.new_string()
+var string[] wD = array.new_string()
+var string[] wS = array.new_string()
+var int[]    cT = array.new_int()
+var string[] cN = array.new_string()
+var string[] cD = array.new_string()
+var string[] cH = array.new_string()
+var string[] cC = array.new_string()
+{{DATA}}
+
+// ───────── helpers ─────────
+f_item(string row, int i) =>
+    string[] parts = str.split(row, ",")
+    i >= 0 and i < array.size(parts) ? array.get(parts, i) : "?"
+f_bname(string b) => b == "U" ? "BULLISH" : b == "D" ? "BEARISH" : b == "N" ? "TWO-SIDED" : "none"
+f_cname(string c) => c == "h" ? "high" : c == "m" ? "medium" : c == "l" ? "low" : "-"
+f_sg(float v) => na(v) ? "0" : v > 0 ? "+" + str.tostring(v) : str.tostring(v)
+f_sname(string s) => s == "C" ? "Confirmed" : s == "S" ? "Confirmed, could get stronger" : s == "F" ? "Confirmed but fragile" : s == "W" ? "Under watch" : s == "P" ? "Under pressure" : s == "X" ? "Invalidated" : s == "T" ? "Still two-sided" : "none"
+f_wa(bool ok) => ok ? "with" : "against"
+var string[] DOW = array.from("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+
+// ───────── pair and week ─────────
+string symA = syminfo.basecurrency + syminfo.currency
+string tk   = str.upper(syminfo.ticker)
+string symB = str.length(tk) >= 6 ? str.substring(tk, 0, 6) : tk
+int pIdx = pairIn != "Auto" ? array.indexof(PAIRS, pairIn) : array.indexof(PAIRS, symA) >= 0 ? array.indexof(PAIRS, symA) : array.indexof(PAIRS, symB)
+string pName = pIdx >= 0 ? array.get(PAIRS, pIdx) : syminfo.ticker
+float pipSz = str.contains(pName, "JPY") ? 0.01 : str.contains(pName, "XAU") ? 0.1 : 0.0001
+f_pips(float d) => math.round(d / pipSz * 10) / 10
+
+int WEEK_MS = 7 * 86400000
+var int wi = -1
+while wi + 1 < array.size(wT) and time >= array.get(wT, wi + 1)
+    wi += 1
+bool inWk = wi >= 0 and time < array.get(wT, math.max(wi, 0)) + WEEK_MS
+string rec = inWk and pIdx >= 0 ? f_item(array.get(wD, math.max(wi, 0)), pIdx) : "?"
+bool hasRec = rec != "?" and str.length(rec) >= 2
+string b  = hasRec ? str.substring(rec, 0, 1) : "-"
+string cv = hasRec ? str.substring(rec, 1, 2) : "-"
+float  g  = hasRec and str.length(rec) > 2 ? str.tonumber(str.substring(rec, 2)) : na
+
+// latest daily check for this pair up to this bar
+var int ci = -1
+while ci + 1 < array.size(cT) and time >= array.get(cT, ci + 1)
+    ci += 1
+string ck = ci >= 0 and pIdx >= 0 ? f_item(array.get(cD, math.max(ci, 0)), pIdx) : "?"
+string ckS = ck == "?" or ci < 0 or time - array.get(cT, math.max(ci, 0)) > 3 * 86400000 ? "none" : f_sname(str.substring(ck, 0, 1))
+
+// ───────── direction ─────────
+[dC1, dSma] = request.security(syminfo.tickerid, "D", [close[1], ta.sma(close, 20)[1]], lookahead = barmerge.lookahead_on)
+int biasDir = b == "U" ? 1 : b == "D" ? -1 : 0
+bool convOk = minConv == "Any" or (minConv == "High only" ? cv == "h" : cv == "h" or cv == "m")
+int bDir = convOk ? biasDir : 0
+int tDir = na(dSma) ? 0 : dC1 > dSma ? 1 : dC1 < dSma ? -1 : 0
+int dir = dirMode == "Fundamental bias" ? bDir : (bDir == tDir ? bDir : 0)
+float atr = ta.atr(14)
+int NY7 = 7 * 3600000
+int tDay = dayofweek(time + NY7, "America/New_York")
+int fri17 = timestamp("America/New_York", year(time + NY7, "America/New_York"), month(time + NY7, "America/New_York"), dayofmonth(time + NY7, "America/New_York"), 17, 0)
+bool lastWkBar = tDay == dayofweek.friday and time_close + timeframe.in_seconds() * 1000 > fri17
+int hB = hour(time, "Europe/Bucharest")
+bool allow = (not hrsOn or (hB >= hrsFrom and hB < hrsTo)) and not (noFri and tDay == dayofweek.friday) and tDay != dayofweek.saturday and tDay != dayofweek.sunday and not lastWkBar
+
+// ───────── structure (pivots confirmed after their right-hand candles close) ─────────
+float pSH = ta.pivothigh(high, swLen, swLen)
+float pSL = ta.pivotlow(low, swLen, swLen)
+float pIH = ta.pivothigh(high, inLen, inLen)
+float pIL = ta.pivotlow(low, inLen, inLen)
+var float swH = na
+var float swL = na
+var float inH = na
+var float inL = na
+var int   inHi = na
+var int   inLi = na
+if not na(pSH)
+    swH := pSH
+if not na(pSL)
+    swL := pSL
+if not na(pIH)
+    inH := pIH
+    inHi := bar_index - inLen
+if not na(pIL)
+    inL := pIL
+    inLi := bar_index - inLen
+
+// ───────── setup: BOS → pullback into discount → internal CHoCH ─────────
+var bool  sOn = false
+var int   sD = 0
+var float sLvl = na
+var float sA = na
+var float sExt = na
+var int   sI = na
+var float sPb = na
+var int   sPbi = na
+var float slLvl = na
+var float tpLvl = na
+var int   posDir = 0
+var int   lastExitT = 0
+var float ent0 = na
+var box   zSl = na
+var box   zTp = na
+var int   zEb = -1
+bool flat = strategy.position_size == 0
+if not flat and posDir == 0
+    posDir := strategy.position_size > 0 ? 1 : -1
+if flat and posDir != 0
+    if not na(zSl)
+        box.set_right(zSl, bar_index)
+    if not na(zTp)
+        box.set_right(zTp, bar_index)
+    posDir := 0
+    lastExitT := time
+
+bool bosNow = false
+bool chochNow = false
+bool active = flat and time >= fromT and dir != 0 and time - lastExitT >= coolH * 3600000 and not na(atr)
+if active
+    if sOn and sD != dir
+        sOn := false
+    float sh = dir > 0 ? swH : swL
+    float lo = dir > 0 ? swL : swH
+    if not na(sh) and (close - sh) * dir > 0 and (not sOn or sLvl != sh) and not na(lo)
+        sOn := true
+        sD := dir
+        sLvl := sh
+        sA := lo
+        sExt := dir > 0 ? high : low
+        sI := bar_index
+        sPb := na
+        sPbi := na
+        bosNow := true
+    else if sOn
+        if bar_index - sI > maxWait or (close - sA) * dir < 0
+            sOn := false
+        else
+            float lvl = sA + (1 - discPct / 100) * (sExt - sA)
+            if na(sPb)
+                sExt := dir > 0 ? math.max(sExt, high) : math.min(sExt, low)
+                lvl := sA + (1 - discPct / 100) * (sExt - sA)
+                if dir > 0 ? low <= lvl : high >= lvl
+                    sPb := dir > 0 ? low : high
+                    sPbi := bar_index
+            else
+                sPb := dir > 0 ? math.min(sPb, low) : math.max(sPb, high)
+                float ih = dir > 0 ? inH : inL
+                int ihI = dir > 0 ? inHi : inLi
+                if not na(ih) and ihI > sPbi - 6 and (close - ih) * dir > 0 and allow
+                    float sl = sPb - dir * slBuf * atr
+                    float risk = math.abs(close - sl)
+                    if risk > 0 and risk <= maxRisk * atr
+                        float lq = dir > 0 ? swH : swL
+                        float tp = tpMode == "None" ? na : tpMode == "Swing liquidity (min 2R)" and not na(lq) and (lq - close) * dir >= 2 * risk ? lq : close + dir * tpR * risk
+                        float qRaw = strategy.equity * stRisk / 100 / (risk * syminfo.pointvalue)
+                        float q = qRaw >= 20 ? math.floor(qRaw) : math.round(qRaw, 2)
+                        string id = dir > 0 ? "L" : "S"
+                        string cmt = pName + " | " + (dir > 0 ? "long" : "short") + " | bias " + f_bname(b) + " " + f_cname(cv) + " gap " + f_sg(g) + " | BOS " + str.tostring(sLvl, format.mintick) + " | CHoCH | SL " + str.tostring(f_pips(risk)) + "p | " + array.get(DOW, tDay - 1) + " " + timeframe.period
+                        slLvl := sl
+                        tpLvl := tp
+                        ent0 := close
+                        strategy.entry(id, dir > 0 ? strategy.long : strategy.short, qty = q, comment = cmt)
+                        strategy.exit("X" + id, id, stop = sl, limit = tp, comment_loss = "SL", comment_profit = "TP")
+                        chochNow := true
+                    sOn := false
+
+// ───────── exits ─────────
+int prevBias = biasDir[1]
+if not flat
+    string id = posDir > 0 ? "L" : "S"
+    strategy.exit("X" + id, id, stop = slLvl, limit = tpLvl, comment_loss = "SL", comment_profit = "TP")
+    if wkExit and lastWkBar
+        strategy.close(id, comment = "Friday close")
+    else if flipEx and biasDir == -posDir and prevBias != biasDir
+        strategy.close(id, comment = "Bias flip")
+
+// ───────── drawing ─────────
+if strOn and bosNow
+    label.new(bar_index, dir > 0 ? high : low, "BOS", style = dir > 0 ? label.style_label_down : label.style_label_up, color = color.new(dir > 0 ? bullC : bearC, 30), textcolor = color.white, size = size.tiny)
+if strOn and chochNow
+    label.new(bar_index, dir > 0 ? low : high, "CHoCH", style = dir > 0 ? label.style_label_up : label.style_label_down, color = dir > 0 ? bullC : bearC, textcolor = color.white, size = size.tiny)
+plot(strOn and sOn ? sLvl : na, "BOS level", color = color.new(color.gray, 30), style = plot.style_linebr)
+plot(strOn and sOn ? sA + (1 - discPct / 100) * (sExt - sA) : na, "Discount level", color = color.new(color.orange, 20), style = plot.style_linebr)
+if not flat and zonesOn
+    int eb = strategy.opentrades.entry_bar_index(0)
+    float ep = strategy.opentrades.entry_price(0)
+    if eb != zEb
+        zEb := eb
+        zSl := box.new(eb, math.max(ep, slLvl), bar_index, math.min(ep, slLvl), border_color = color.new(bearC, 30), bgcolor = color.new(bearC, 80))
+        zTp := na(tpLvl) ? na : box.new(eb, math.max(ep, tpLvl), bar_index, math.min(ep, tpLvl), border_color = color.new(bullC, 30), bgcolor = color.new(bullC, 80))
+    box.set_right(zSl, bar_index)
+    if not na(zTp)
+        box.set_right(zTp, bar_index)
+bgcolor(dir > 0 ? color.new(bullC, 95) : dir < 0 ? color.new(bearC, 95) : na, title = "Direction")
+
+var table tb = table.new(position.bottom_right, 2, 3, bgcolor = color.new(#1E222D, 10), border_width = 1)
+if barstate.islast
+    table.cell(tb, 0, 0, "BE Structure · " + pName, text_color = color.white, text_size = size.small)
+    table.cell(tb, 1, 0, timeframe.period, text_color = color.white, text_size = size.small)
+    table.cell(tb, 0, 1, "Bias", text_color = color.gray, text_size = size.small)
+    table.cell(tb, 1, 1, f_bname(b) + " " + f_cname(cv) + " " + f_sg(g), text_color = biasDir > 0 ? bullC : biasDir < 0 ? bearC : color.gray, text_size = size.small)
+    table.cell(tb, 0, 2, "Setup", text_color = color.gray, text_size = size.small)
+    table.cell(tb, 1, 2, not flat ? "in trade" : sOn ? (na(sPb) ? "BOS, waiting for discount" : "in discount, waiting for CHoCH") : "waiting for BOS", text_color = color.white, text_size = size.small)
+if timeframe.period != "60" and barstate.islast
+    label.new(bar_index, high, "BE Structure was tested on the 1H chart (pivot lengths are in chart candles).", style = label.style_label_down, color = color.orange, textcolor = color.white)

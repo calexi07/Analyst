@@ -182,6 +182,17 @@ if(existsSync('scripts/pine-swing-template.pine')){
     .replace('{{DATA}}', dataBlocks(L));
   writeFileSync('pine/bias-swing.pine', sw);
 }
+// the structure strategy (1H chart): same data, its own template
+if(existsSync('scripts/pine-structure-template.pine')){
+  const st = readFileSync('scripts/pine-structure-template.pine', 'utf8')
+    .replace('{{GENERATED}}', gen)
+    .replace('{{COVERAGE}}', `${wkKey(first.y, first.w)} → ${wkKey(last.y, last.w)} (${wl.length} weeks), ${cl.length} daily checks`)
+    .replace('{{PAIRS}}', PAIRS.map(p => `"${p}"`).join(', '))
+    .replace('{{PAIR_OPTIONS}}', ['"Auto"', ...PAIRS.map(p => `"${p}"`)].join(', '))
+    .replace('{{CCY}}', CCY.map(c => `"${c}"`).join(', '))
+    .replace('{{DATA}}', dataBlocks(L));
+  writeFileSync('pine/bias-structure.pine', st);
+}
 writeFileSync('pine/history.json', JSON.stringify({ saved_at:gen, daily_observer:supaOk ? 'ok' : 'unavailable (history kept from the last good run)',
   weeks:[...weeks.values()].filter(W => Object.keys(W.pairs).length).sort((a, b) => a.y - b.y || a.w - b.w),
   checks:[...checks.values()].sort((a, b) => (a.date + a.slot).localeCompare(b.date + b.slot)) }));
