@@ -99,7 +99,7 @@ def usd_strength(data):
     return {t: sum(v) / len(v) for t, v in acc.items() if len(v) >= 4}
 
 DEF = dict(dirm='bias', cf='wtd', k=1.0, tp=2.0, hold=4, entry='A', sess=False, first=False, exh=None, conv='any', mingap=None,
-           partial=False, be=False, thesis=False, usdcf=False, trlen=20, nomon=False, restx='none', trail=2.0, minwtd=0.0, tsrc='sma20', adx=None, atrp=None, er=None, swsl=False, fri=True, opens='none', vegas='none', pf=0.5, pl=1.0, bemove=True, belock=0.0, cool=24, hours=None, maxwk=0, swdepth=(0, 99), swclose=0.0, swlimit=False)
+           partial=False, be=False, thesis=False, usdcf=False, trlen=20, nomon=False, restx='none', trail=2.0, minwtd=0.0, tsrc='sma20', adx=None, atrp=None, er=None, swsl=False, fri=True, opens='none', vegas='none', pf=0.5, pl=1.0, bemove=True, belock=0.0, cool=24, hours=None, maxwk=0, swdepth=(0, 99), swclose=0.0, swlimit=False, tpmode='R', steps=(), trailm='none', trailk=2.0, trailn=6, trailfrom=0.0, p2=None, p2f=0.25)
 
 def run(pair, bars, B, P, start, end=None, usd=None):
     P = {**DEF, **P}; pip = pip_of(pair); cost = cost_of(pair) * pip
@@ -156,6 +156,21 @@ def run(pair, bars, B, P, start, end=None, usd=None):
                     pos['banked'] += P['pf'] * pl; pos['w'] = 1 - P['pf']; pos['part'] = True
                     pos['sl'] = pos['e'] + d * P['belock'] * pos['risk'] if P['bemove'] else pos['sl']
                 if P['be'] and not pos['part'] and hit1R: pos['sl'] = pos['e']; pos['part'] = True
+                ext = b['h'] if d > 0 else b['l']
+                pos['best'] = max(pos.get('best', 0.0), R(ext))
+                if P['p2'] and pos['part'] and not pos.get('p2') and pos['best'] >= P['p2'][0]:
+                    pos['banked'] += P['p2f'] * P['p2'][0]; pos['w'] -= P['p2f']; pos['p2'] = True
+                    pos['sl'] = pos['e'] + d * P['p2'][1] * pos['risk'] if (pos['sl'] - (pos['e'] + d * P['p2'][1] * pos['risk'])) * d < 0 else pos['sl']
+                for trg, lock in P['steps']:
+                    if pos['best'] >= trg:
+                        ns = pos['e'] + d * lock * pos['risk']; pos['sl'] = max(pos['sl'], ns) if d > 0 else min(pos['sl'], ns)
+                if P['trailm'] != 'none' and pos['best'] >= P['trailfrom']:
+                    if P['trailm'] == 'chand': ns = pos['e'] + d * (pos['best'] * pos['risk']) - d * P['trailk'] * b['atr']
+                    elif P['trailm'] == 'nbar':
+                        win = bars[max(pos['i'] + 1, i - P['trailn'] + 1):i + 1]
+                        ns = min(x['l'] for x in win) if d > 0 else max(x['h'] for x in win)
+                    elif P['trailm'] == 'pday': ns = b['pdl'] if d > 0 else b['pdh']
+                    if ns is not None: pos['sl'] = max(pos['sl'], ns) if d > 0 else min(pos['sl'], ns)
                 if pos['part'] and P['restx'] == 'trail':
                     ns = b['c'] - d * P['trail'] * b['atr']; pos['sl'] = max(pos['sl'], ns) if d > 0 else min(pos['sl'], ns)
                 if pos['tp'] is not None and ((b['h'] >= pos['tp']) if d > 0 else (b['l'] <= pos['tp'])): ex = (pos['tp'], 'TP')
@@ -170,7 +185,7 @@ def run(pair, bars, B, P, start, end=None, usd=None):
                     elif dr == -d: ex = (b['c'], 'Flip')
             if ex:
                 r = pos['banked'] + pos['w'] * R(ex[0]) - cost / pos['risk']
-                res.append(dict(pair=pair, t=pos['t'], tx=b['tc'], d=d, R=r, why=ex[1], **pos['meta'])); pos = None; lastx = b['tc']
+                res.append(dict(pair=pair, t=pos['t'], tx=b['tc'], d=d, R=r, why=ex[1], mfe=pos.get('best', 0.0), **pos['meta'])); pos = None; lastx = b['tc']
             continue
         if pos or pend: continue
         if b['t'] < start or (end and b['t'] >= end): continue
@@ -247,6 +262,9 @@ def run(pair, bars, B, P, start, end=None, usd=None):
                 rk = max(abs(b['c'] - ext) + 0.1 * b['atr'], 0.3 * b['atr']) if P['swsl'] else risk
                 pos = dict(i=i, t=b['tc'], d=dr, e=b['c'], risk=rk, sl=b['c'] - dr * rk, w=1.0, banked=0.0, part=False, meta=meta)
                 pos['tp'] = pos['e'] + dr * P['tp'] * rk if P['tp'] else None
+                if P['tpmode'] != 'R':
+                    lvl = {'pdh': b['pdh'] if dr > 0 else b['pdl'], 'pwh': b['pwh'] if dr > 0 else b['pwl']}[P['tpmode']]
+                    pos['tp'] = lvl if lvl is not None and (lvl - b['c']) * dr >= 1.0 * rk else (pos['e'] + dr * max(P['tp'] or 2, 1) * rk)
             else: wk_done.discard((pair, b['wk']))
         elif P['entry'] in ('SR', 'SRS', 'YO'):
             if P['entry'] == 'YO': cands = [b['yop']]
