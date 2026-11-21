@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — weekly bias + daily checks (history) on the chart.
-// Generated automatically: 2026-11-21 07:47 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
+// Generated automatically: 2026-11-21 07:50 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // Fundamental context only. Not a trade signal.
 //@version=6
@@ -44,8 +44,17 @@ bool   lqLab   = input.bool(true, "$ labels", group = "Liquidity")
 bool   lqByB   = input.bool(true, "Colour by side", group = "Liquidity", tooltip = "On: sellside sweeps in the Bullish colour, buyside sweeps in the Bearish colour. Off: one grey colour, as in the original indicator.")
 color  lqC     = input.color(#5d606b, "Line colour (when not by side)", group = "Liquidity")
 int    lqMax   = input.int(150, "Max sweep lines kept", minval = 10, maxval = 300, group = "Liquidity")
+// fractal structure: a body close beyond the last fractal high / low
+bool   fsOn    = input.bool(true, "Show fractal structure breaks", group = "Fractal structure", tooltip = "Fractal high/low = a candle with N lower highs (higher lows) on each side. A break = a candle CLOSES beyond the last unbroken fractal. The line runs from the fractal to the breaking candle.")
+int    fsN     = input.int(2, "Fractal size (bars each side)", minval = 1, maxval = 10, group = "Fractal structure")
+string fsMode  = input.string("Follow the bias", "Which breaks", options = ["Follow the bias", "Both"], group = "Fractal structure", tooltip = "Follow the bias: BULLISH week → only breaks up, BEARISH week → only breaks down, two-sided weeks → both.")
+bool   fsSwp   = input.bool(false, "Only after a liquidity sweep", group = "Fractal structure", tooltip = "Only breaks that follow a sweep on the other side (sellside sweep → break up, buyside sweep → break down), as in the setup model. Uses the Liquidity sweep timeframe.")
+color  fsC     = input.color(#D9A35B, "Line colour", group = "Fractal structure")
+int    fsW     = input.int(2, "Line width", minval = 1, maxval = 4, group = "Fractal structure")
+bool   fsLab   = input.bool(true, "Break labels", group = "Fractal structure")
+int    fsMax   = input.int(100, "Max break lines kept", minval = 10, maxval = 200, group = "Fractal structure")
 
-// ───────── data (generated 2026-11-21 07:47 UTC) ─────────
+// ───────── data (generated 2026-11-21 07:50 UTC) ─────────
 var string[] PAIRS = array.from("EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD")
 var string[] CCY   = array.from("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "XAU")
 var int[]    wT = array.new_int()     // week start (Sunday 21:00 UTC)
@@ -429,8 +438,6 @@ bool showSellLq = lqMode == "Both" or lqMode == "Sellside only" or (lqMode == "F
 string lqStyle = lqSty == "Dotted" ? line.style_dotted : lqSty == "Dashed" ? line.style_dashed : line.style_solid
 var line[]  lqLines = array.new<line>()
 var label[] lqLbls  = array.new<label>()
-var float lqLastBuy  = na
-var float lqLastSell = na
 f_lqDraw(lqSweep sw, bool buySide) =>
     color c = lqByB ? (buySide ? bearC : bullC) : lqC
     array.push(lqLines, line.new(sw.start, sw.lvl, sw.stop, sw.lvl, xloc = xloc.bar_time, color = c, style = lqStyle, width = lqW))
@@ -442,18 +449,74 @@ f_lqDraw(lqSweep sw, bool buySide) =>
         line.delete(array.shift(lqLines))
     while array.size(lqLbls) > lqMax
         label.delete(array.shift(lqLbls))
-bool lqTfOk = timeframe.in_seconds() / 60 <= lqMin
-bool lqNewBuy  = lqOn and lqTfOk and showBuyLq and not na(lqBuyS) and (na(lqLastBuy) or lqBuyS.lvl != lqLastBuy)
-bool lqNewSell = lqOn and lqTfOk and showSellLq and not na(lqSellS) and (na(lqLastSell) or lqSellS.lvl != lqLastSell)
-if lqNewBuy
-    f_lqDraw(lqBuyS, true)
-    lqLastBuy := lqBuyS.lvl
-if lqNewSell
-    f_lqDraw(lqSellS, false)
-    lqLastSell := lqSellS.lvl
+f_lq() =>
+    var float lastB = na
+    var float lastS = na
+    bool tfOk = timeframe.in_seconds() / 60 <= lqMin
+    bool nb = lqOn and tfOk and showBuyLq and not na(lqBuyS) and (na(lastB) or lqBuyS.lvl != lastB)
+    bool ns = lqOn and tfOk and showSellLq and not na(lqSellS) and (na(lastS) or lqSellS.lvl != lastS)
+    if nb
+        f_lqDraw(lqBuyS, true)
+        lastB := lqBuyS.lvl
+    if ns
+        f_lqDraw(lqSellS, false)
+        lastS := lqSellS.lvl
+    [nb, ns]
+[lqNewBuy, lqNewSell] = f_lq()
 alertcondition(lqNewBuy or lqNewSell, "Liquidity sweep (bias side)", "Liquidity sweep on the side chosen by the week's bias. Context only, not a trade signal.")
 alertcondition(lqNewBuy, "Buyside sweep", "Buyside liquidity swept (high taken).")
 alertcondition(lqNewSell, "Sellside sweep", "Sellside liquidity swept (low taken).")
+
+// ───────── fractal structure breaks (body close), filtered by the week's bias ─────────
+var line[]  fsLines = array.new<line>()
+var label[] fsLbls  = array.new<label>()
+f_fsMark(int t0, float lvl, bool up) =>
+    array.push(fsLines, line.new(t0, lvl, time, lvl, xloc = xloc.bar_time, color = fsC, style = line.style_solid, width = fsW))
+    if fsLab
+        string tip = "Fractal structure break " + (up ? "UP: close above the fractal high " : "DOWN: close below the fractal low ") + str.tostring(lvl, format.mintick) + "\nWeek bias for " + pName + ": " + (hasRec ? f_bname(b) : "no published bias") + "\nContext only, not a trade signal."
+        array.push(fsLbls, label.new(time, lvl, up ? "FB ▲" : "FB ▼", xloc = xloc.bar_time, style = up ? label.style_label_lower_left : label.style_label_upper_left, color = color.new(fsC, 100), textcolor = fsC, size = size.tiny, tooltip = tip))
+    while array.size(fsLines) > fsMax
+        line.delete(array.shift(fsLines))
+    while array.size(fsLbls) > fsMax
+        label.delete(array.shift(fsLbls))
+f_fs() =>
+    var float hiL = na
+    var int   hiT = na
+    var float loL = na
+    var int   loT = na
+    var bool  swSell = false
+    var bool  swBuy  = false
+    float ph = ta.pivothigh(high, fsN, fsN)
+    float pl = ta.pivotlow(low, fsN, fsN)
+    if not na(ph)
+        hiL := ph
+        hiT := time[fsN]
+    if not na(pl)
+        loL := pl
+        loT := time[fsN]
+    if not na(lqSellS)
+        swSell := true
+    if not na(lqBuyS)
+        swBuy := true
+    bool okUp = fsMode == "Both" or not hasRec or b != "D"
+    bool okDn = fsMode == "Both" or not hasRec or b != "U"
+    bool brUp = false
+    bool brDn = false
+    if not na(hiL) and close > hiL
+        if fsOn and okUp and (not fsSwp or swSell)
+            f_fsMark(hiT, hiL, true)
+            brUp := true
+        hiL := na
+        swSell := false
+    if not na(loL) and close < loL
+        if fsOn and okDn and (not fsSwp or swBuy)
+            f_fsMark(loT, loL, false)
+            brDn := true
+        loL := na
+        swBuy := false
+    [brUp, brDn]
+[fsUp, fsDn] = f_fs()
+alertcondition(fsUp or fsDn, "Fractal structure break (bias side)", "Fractal structure break on the side chosen by the week's bias. Context only, not a trade signal.")
 
 // ───────── daily checks on this bar ─────────
 var int ci = 0
