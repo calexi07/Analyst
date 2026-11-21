@@ -1,38 +1,39 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — swing strategy test bench (4H or Daily chart, holds 3–4 days).
-// Generated automatically: 2026-11-21 17:41 UTC. Bias data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
+// Generated automatically: 2026-11-21 17:47 UTC. Bias data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // A test bench for your own rules in the Strategy Tester. Not a trade signal.
 //@version=6
-strategy("Bias Engine · swing test bench", shorttitle = "BE Swing", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = true, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0.005, slippage = 0, max_labels_count = 500)
+strategy("Bias Engine · swing test bench", shorttitle = "BE Swing", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = true, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0.005, slippage = 0, max_labels_count = 500, max_boxes_count = 500)
 
 // ───────── settings ─────────
 string pairIn  = input.string("Auto", "Pair", options = ["Auto", "EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD"], tooltip = "Auto reads the chart symbol (e.g. EURUSD, OANDA:XAUUSD). Built for the 4H chart (Daily works too). Days below are calendar time, so they mean the same on any timeframe.")
 string sigTf   = input.string("4H", "Signal timeframe", options = ["Chart", "4H", "1H", "Daily"], tooltip = "The candles the strategy reads (sweeps, breaks, ATR, trailing). 4H on a 5m or 15m chart: the 4H strategy runs exactly as on the 4H chart, but you see the entries and exits on the lower chart, and stops, targets and entry orders fill on the real 5m path. Chart: use the chart's own candles. Lower charts have less history in TradingView (5m ≈ a few months).")
-string dirMode = input.string("Fundamental bias", "Direction from", options = ["Fundamental bias", "Price trend (SMA)", "Both must agree"], group = "Direction", tooltip = "Fundamental bias: the week's published bias (data only from the first week in the script). Price trend: close above / below the SMA below, works on years of history, so the mechanics can be tested on thousands of trades. Both: only when the two agree.")
+string dirMode = input.string("Both must agree", "Direction from", options = ["Fundamental bias", "Price trend (SMA)", "Both must agree"], group = "Direction", tooltip = "Fundamental bias: the week's published bias (data only from the first week in the script). Price trend: close above / below the SMA below, works on years of history, so the mechanics can be tested on thousands of trades. Both: only when the two agree.")
 string minConv = input.string("Any", "Minimum conviction", options = ["Any", "Medium or high", "High only"], group = "Direction", tooltip = "Bias modes only. Two-sided weeks never trade.")
 int    trLen   = input.int(20, "Trend SMA length (daily closes)", minval = 5, maxval = 400, group = "Direction")
-string cfMode  = input.string("None", "Price confirmation", options = ["None", "Week-to-date", "Close vs 20-day SMA"], group = "Confirmation", tooltip = "Week-to-date: the day's close is above this week's open for longs (below for shorts); Monday's close is the first that can confirm, so the earliest entry is Tuesday. 20-day SMA: the close is on the trade's side of the 20-day average.")
-string enMode  = input.string("S · sweep of yesterday's low/high + reclaim", "Entry", options = ["S · sweep of yesterday's low/high + reclaim", "SD · sweep, else break of yesterday's high/low", "D · break of yesterday's high/low", "A · at the confirming candle's close", "B · pullback to 50% of the confirming candle", "C · break of the confirming candle's high/low"], group = "Entry", tooltip = "S: a 4H candle trades below yesterday's low (long) / above yesterday's high (short) and closes back on the other side; entry at its close. SD: the same sweep enters at once; otherwise a stop order waits at yesterday's high (long) / low (short) for the next candle. D: only that stop order. A/B/C: the earlier entries at, inside or beyond the confirming candle. Backtest on the USD pairs, bias weeks W40–W47: S +19R, SD +18R, A +15R; on 3 years without bias: D +73R, SD +46R, S +9R (the sweep needs the fundamental direction).")
+string cfMode  = input.string("Close vs 20-day SMA", "Price confirmation", options = ["None", "Week-to-date", "Close vs 20-day SMA"], group = "Confirmation", tooltip = "Week-to-date: the day's close is above this week's open for longs (below for shorts); Monday's close is the first that can confirm, so the earliest entry is Tuesday. 20-day SMA: the close is on the trade's side of the 20-day average.")
+string enMode  = input.string("C · break of the confirming candle's high/low", "Entry", options = ["S · sweep of yesterday's low/high + reclaim", "SD · sweep, else break of yesterday's high/low", "D · break of yesterday's high/low", "A · at the confirming candle's close", "B · pullback to 50% of the confirming candle", "C · break of the confirming candle's high/low"], group = "Entry", tooltip = "S: a 4H candle trades below yesterday's low (long) / above yesterday's high (short) and closes back on the other side; entry at its close. SD: the same sweep enters at once; otherwise a stop order waits at yesterday's high (long) / low (short) for the next candle. D: only that stop order. A/B/C: the earlier entries at, inside or beyond the confirming candle. Backtest on the USD pairs, bias weeks W40–W47: S +19R, SD +18R, A +15R; on 3 years without bias: D +73R, SD +46R, S +9R (the sweep needs the fundamental direction).")
 string opMode  = input.string("None", "Price on the trade's side of", options = ["None", "Week open", "Week + month open", "Week + month + year open"], group = "Entry", tooltip = "Long only above these opens, short only below. On 3 years it helped the technical entries (D), on the bias weeks it changed little.")
 bool   noFri   = input.bool(true, "No new entries on Friday", group = "Entry", tooltip = "Fridays would open a trade into the weekend and into next week's new bias.")
 bool   noThu   = input.bool(true, "No new entries on Thursday", group = "Entry", tooltip = "A Thursday trade has only one day left before Friday's close. Backtest (sweep + bias, USD pairs, W40–W47): Thursday entries made 0R on 9 trades; without them the worst drawdown fell from −2.5R to −2.0R, and on 3 years of trend-direction tests the result rose from +9R to +14R.")
 int    coolH   = input.int(24, "Hours to wait after an exit", minval = 0, maxval = 240, group = "Entry", tooltip = "No new trade on this pair for this many hours after a trade closes (0 = the next candle).")
 string slMode  = input.string("ATR × multiple", "Stop loss", options = ["ATR × multiple", "Beyond the confirming candle's low/high"], group = "Exit")
 float  slAtr   = input.float(1.0, "ATR multiple", minval = 0.3, maxval = 5, step = 0.1, group = "Exit")
-string atrTf   = input.string("Daily ATR (14)", "ATR from", options = ["Daily ATR (14)", "Chart ATR (14)"], group = "Exit", tooltip = "Daily ATR sizes the stop for a 3–4 day hold whatever the chart timeframe (≈ one normal day's range). Chart ATR on 4H gives a much tighter stop.")
-string exMode  = input.string("Half at +1R, rest at break-even", "Exit style", options = ["Half at +1R, rest at break-even", "Fixed (one target)"], group = "Exit", tooltip = "Half at +1R: half the position closes at +1R, the stop of the other half moves to the entry price, and it runs to the take profit below, the time stop or Friday's close. Fixed: the whole position has one stop and one target. Backtest on the USD pairs: the half-at-1R exit cut the worst drawdown from −10R to −4R and was better in both halves of the bias weeks.")
-float  tpR     = input.float(0.0, "Take profit (R), 0 = none", minval = 0, maxval = 10, step = 0.5, group = "Exit", tooltip = "For the half-at-1R style this is the target of the second half (default 0 = no target, the chandelier trailing stop below manages it; earlier default 3R). For the fixed style it is the target of the whole position (earlier default: 2R).")
+string atrTf   = input.string("Chart ATR (14)", "ATR from", options = ["Daily ATR (14)", "Chart ATR (14)"], group = "Exit", tooltip = "Daily ATR sizes the stop for a 3–4 day hold whatever the chart timeframe (≈ one normal day's range). Chart ATR on 4H gives a much tighter stop.")
+string exMode  = input.string("Fixed (one target)", "Exit style", options = ["Half at +1R, rest at break-even", "Fixed (one target)"], group = "Exit", tooltip = "Half at +1R: half the position closes at +1R, the stop of the other half moves to the entry price, and it runs to the take profit below, the time stop or Friday's close. Fixed: the whole position has one stop and one target. Backtest on the USD pairs: the half-at-1R exit cut the worst drawdown from −10R to −4R and was better in both halves of the bias weeks.")
+float  tpR     = input.float(3.0, "Take profit (R), 0 = none", minval = 0, maxval = 10, step = 0.5, group = "Exit", tooltip = "For the half-at-1R style this is the target of the second half (0 = no target). Defaults are the user's tested set (21 Nov): Fixed exit, TP 3R, trailing from the close 0.75 × 4H ATR, entry C, both bias and SMA20 must agree. Simulated on the USD pairs W40–W47: +43R, worst drawdown −3.2R (forward test still needed). For the fixed style it is the target of the whole position (earlier default: 2R).")
 int    hold    = input.int(0, "Time stop: close after this many days (0 = hold to Friday)", minval = 0, maxval = 20, group = "Exit", tooltip = "Tested: hold to Friday with the half-at-1R exit; 4 days with the fixed exit.")
 bool   wkExit  = input.bool(true, "Close every trade at Friday's close", group = "Exit")
 bool   flipEx  = input.bool(true, "Close if the direction turns against the trade", group = "Exit")
-string trMode  = input.string("Chandelier after +1R", "Trailing stop", options = ["Chandelier after +1R", "From the close (always on)", "Off"], group = "Exit", tooltip = "Chandelier: once the trade has been +1R in profit, the stop follows the best price reached since entry at the distance below (daily ATR ×). It only moves in the trade's favour. Backtest (sweep + bias, USD pairs, W40–W47), second half trailed at 0.75 ATR with no target, plus no Thursday entries: +21.1R vs +19.3R, worst drawdown −2.0R vs −2.5R, every 2-week block ≥ +3.2R. Small sample (35 trades): treat as a forward test. From the close: the older trailing stop, a fixed distance from each candle's close.")
+string trMode  = input.string("From the close (always on)", "Trailing stop", options = ["Chandelier after +1R", "From the close (always on)", "Off"], group = "Exit", tooltip = "Chandelier: once the trade has been +1R in profit, the stop follows the best price reached since entry at the distance below (daily ATR ×). It only moves in the trade's favour. Backtest (sweep + bias, USD pairs, W40–W47), second half trailed at 0.75 ATR with no target, plus no Thursday entries: +21.1R vs +19.3R, worst drawdown −2.0R vs −2.5R, every 2-week block ≥ +3.2R. Small sample (35 trades): treat as a forward test. From the close: the older trailing stop, a fixed distance from each candle's close.")
 float  trAtr   = input.float(0.75, "Trailing distance (ATR ×)", minval = 0.25, maxval = 6, step = 0.05, group = "Exit")
 bool   trOn    = trMode != "Off"
 int    fromT   = input.time(timestamp("2000-01-01"), "Trade only from this date", group = "Risk", tooltip = "Set it to the first bias week (e.g. 1 Oct 2026) to compare 'Price trend' and 'Fundamental bias' on exactly the same weeks.")
 float  stRisk  = input.float(1.0, "Risk per trade (% of equity)", minval = 0.1, maxval = 5, step = 0.1, group = "Risk")
 color  bullC   = input.color(#22AB94, "Bullish", group = "Colours")
 color  bearC   = input.color(#F23645, "Bearish", group = "Colours")
+bool   zonesOn = input.bool(true, "Show SL / TP zones", group = "Colours", tooltip = "Red box: entry to stop (turns grey once the trailing stop has locked in profit). Green box: entry to take profit. Drawn for every trade.")
 
 // ───────── data (generated) ─────────
 var string[] PAIRS = array.from("EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD")
@@ -310,6 +311,9 @@ var float ent0 = na
 var float risk0 = na
 var float q0 = na
 var bool  partDone = false
+var box   zSl = na
+var box   zTp = na
+var int   zEb = -1
 var float bestP = na
 bool halfOn = exMode == "Half at +1R, rest at break-even"
 bool flat = strategy.position_size == 0
@@ -320,6 +324,10 @@ if not flat and posDir == 0
     partDone := false
     bestP := na
 if flat and posDir != 0
+    if not na(zSl)
+        box.set_right(zSl, bar_index)
+    if not na(zTp)
+        box.set_right(zTp, bar_index)
     posDir := 0
     lastExitT := time
 
@@ -387,6 +395,23 @@ if not flat
         strategy.close(id, comment = "Time " + str.tostring(hold) + "d")
     else if flipEx and dir == -posDir
         strategy.close(id, comment = "Direction flip")
+
+// SL / TP zones, like the long/short position tool
+if not flat and zonesOn
+    int eb = strategy.opentrades.entry_bar_index(0)
+    float ep = strategy.opentrades.entry_price(0)
+    if eb != zEb
+        zEb := eb
+        zSl := box.new(eb, math.max(ep, slLvl), bar_index, math.min(ep, slLvl), border_color = color.new(bearC, 30), bgcolor = color.new(bearC, 80))
+        zTp := na(tpLvl) ? na : box.new(eb, math.max(ep, tpLvl), bar_index, math.min(ep, tpLvl), border_color = color.new(bullC, 30), bgcolor = color.new(bullC, 80))
+    bool locked = (slLvl - ep) * posDir > 0
+    box.set_right(zSl, bar_index)
+    box.set_top(zSl, math.max(ep, slLvl))
+    box.set_bottom(zSl, math.min(ep, slLvl))
+    box.set_bgcolor(zSl, locked ? color.new(color.gray, 75) : color.new(bearC, 80))
+    box.set_border_color(zSl, locked ? color.new(color.gray, 30) : color.new(bearC, 30))
+    if not na(zTp)
+        box.set_right(zTp, bar_index)
 
 plot(not flat ? slLvl : na, "Stop", color = color.new(bearC, 20), style = plot.style_linebr)
 plot(not flat ? tpLvl : na, "Target", color = color.new(bullC, 20), style = plot.style_linebr)
