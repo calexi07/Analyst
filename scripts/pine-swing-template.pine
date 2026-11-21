@@ -17,6 +17,7 @@ string enMode  = input.string("C · break of the confirming candle's high/low", 
 string opMode  = input.string("None", "Price on the trade's side of", options = ["None", "Week open", "Week + month open", "Week + month + year open"], group = "Entry", tooltip = "Long only above these opens, short only below. On 3 years it helped the technical entries (D), on the bias weeks it changed little.")
 bool   noFri   = input.bool(true, "No new entries on Friday", group = "Entry", tooltip = "Fridays would open a trade into the weekend and into next week's new bias.")
 bool   noThu   = input.bool(true, "No new entries on Thursday", group = "Entry", tooltip = "A Thursday trade has only one day left before Friday's close. Backtest (sweep + bias, USD pairs, W40–W47): Thursday entries made 0R on 9 trades; without them the worst drawdown fell from −2.5R to −2.0R, and on 3 years of trend-direction tests the result rose from +9R to +14R.")
+bool   noRoll  = input.bool(false, "No entries 23:00–01:00 (rollover, Bucharest time)", group = "Entry", tooltip = "Spreads widen around the daily rollover (00:00 Bucharest), so a stop entry can be hit by the spread alone. On a 5m chart with 4H signals: pending entry orders are paused 23:00–01:00 and come back after 01:00 while the signal candle still allows it; a market entry due in that window is skipped. On the 4H chart: the candle closing at 00:00 places no order (its order would fill 00:00–04:00). Backtest (USD pairs W40–W47): fills in the 00:00–04:00 candle made +0.2R on 4 trades, so the filter changes little on bid prices; it protects against real spreads.")
 int    coolH   = input.int(24, "Hours to wait after an exit", minval = 0, maxval = 240, group = "Entry", tooltip = "No new trade on this pair for this many hours after a trade closes (0 = the next candle).")
 string slMode  = input.string("ATR × multiple", "Stop loss", options = ["ATR × multiple", "Beyond the confirming candle's low/high"], group = "Exit")
 float  slAtr   = input.float(1.0, "ATR multiple", minval = 0.3, maxval = 5, step = 0.1, group = "Exit")
@@ -152,6 +153,7 @@ bool flat = strategy.position_size == 0
 
 if not flat and posDir == 0
     posDir := strategy.position_size > 0 ? 1 : -1
+    pLive := false
     // ent0 / risk0 / q0 are set when the order is placed (if the half already filled on the entry's next candle, the position is smaller here)
     partDone := false
     bestP := na
@@ -163,10 +165,25 @@ if flat and posDir != 0
     posDir := 0
     lastExitT := time
 
+// rollover window 23:00–01:00 Bucharest
+f_inRoll(int t) =>
+    int h = hour(t, "Europe/Bucharest")
+    h == 23 or h == 0
+// true when the next bar opens inside the window (orders placed or kept now would fill there)
+bool rollNow = noRoll and f_inRoll(time_close)
+// a pending entry: placed now, or paused during the rollover and placed again after it
+var bool  pLive = false
+var float pE = na
+var float pQ = na
+var int   pDir = 0
+var int   pKind = 0
+var string pCmt = ""
+
 // pending orders live one signal candle
 if flat and sBar
     strategy.cancel("L")
     strategy.cancel("S")
+    pLive := false
 
 bool sig = flat and sBar and time >= fromT and dir != 0 and cfOk and opOk and dayOk and time - lastExitT >= coolH * 3600000 and not na(atr)
 if sig
@@ -191,20 +208,33 @@ if sig
         risk0 := risk
         q0 := q
         string cmt = pName + " | " + (dir > 0 ? "long" : "short") + " | bias " + f_bname(b) + " " + f_cname(cv) + " gap " + f_sg(g) + " | trend " + f_wa(dir == tDir) + " | wtd " + f_wa(dir > 0 ? wtdUp : wtdDn) + " | sma20 " + f_wa(dir > 0 ? smUp : smDn) + " | check " + ckS + " | entry " + (ek == "SD" ? (sweepOk ? "SD-sweep" : "SD-break") : ek) + " | SL " + str.tostring(f_pips(risk)) + "p | dir " + dirMode + " | " + array.get(DOW, tDay - 1) + " " + (htfMode ? tfS + " on " + timeframe.period : timeframe.period)
-        string id = dir > 0 ? "L" : "S"
         slLvl := sl
         tpLvl := tpR > 0 ? ent + dir * tpR * risk : na
-        if isA
-            strategy.entry(id, dir > 0 ? strategy.long : strategy.short, qty = q, comment = cmt)
-        else if isB
-            strategy.entry(id, dir > 0 ? strategy.long : strategy.short, qty = q, limit = ent, comment = cmt)
-        else
-            strategy.entry(id, dir > 0 ? strategy.long : strategy.short, qty = q, stop = ent, comment = cmt)
-        if halfOn
-            strategy.exit("H" + id, id, qty_percent = 50, stop = slLvl, limit = ent + dir * risk, comment_loss = "SL", comment_profit = "+1R half")
-            strategy.exit("X" + id, id, qty_percent = 50, stop = slLvl, limit = tpLvl, comment_loss = "SL", comment_profit = "TP")
-        else
-            strategy.exit("X" + id, id, stop = slLvl, limit = tpLvl, comment_loss = "SL", comment_profit = "TP")
+        pLive := not (rollNow and kind == 0)
+        pE := ent
+        pQ := q
+        pDir := dir
+        pKind := kind
+        pCmt := cmt
+
+// place (or re-place) the pending entry and its exits; paused during the rollover window
+if flat and pLive and rollNow
+    strategy.cancel("L")
+    strategy.cancel("S")
+else if flat and pLive
+    string id = pDir > 0 ? "L" : "S"
+    if pKind == 0
+        strategy.entry(id, pDir > 0 ? strategy.long : strategy.short, qty = pQ, comment = pCmt)
+        pLive := false
+    else if pKind == 1
+        strategy.entry(id, pDir > 0 ? strategy.long : strategy.short, qty = pQ, limit = pE, comment = pCmt)
+    else
+        strategy.entry(id, pDir > 0 ? strategy.long : strategy.short, qty = pQ, stop = pE, comment = pCmt)
+    if halfOn
+        strategy.exit("H" + id, id, qty_percent = 50, stop = slLvl, limit = pE + pDir * risk0, comment_loss = "SL", comment_profit = "+1R half")
+        strategy.exit("X" + id, id, qty_percent = 50, stop = slLvl, limit = tpLvl, comment_loss = "SL", comment_profit = "TP")
+    else
+        strategy.exit("X" + id, id, stop = slLvl, limit = tpLvl, comment_loss = "SL", comment_profit = "TP")
 
 if not flat
     string id = posDir > 0 ? "L" : "S"
