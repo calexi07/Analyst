@@ -138,6 +138,7 @@ def run(pair, bars, B, P, start, end=None, usd=None):
         # pending limit order (entry B / E) fills on this bar?
         if pend and pos is None:
             if (b['t'] - pend['t0']).total_seconds() > pend['life'] * 3600 or b['wk'] != pend['wk']: pend = None
+            elif P.get('fillhrs') and b['hl'] not in P['fillhrs']: pass      # outside the trader's hours: the order waits (or expires)
             elif (pend.get('stop') and (b['h'] >= pend['e'] if pend['d'] > 0 else b['l'] <= pend['e'])) or (not pend.get('stop') and (b['l'] <= pend['e'] if pend['d'] > 0 else b['h'] >= pend['e'])):
                 pos = dict(i=i, t=b['t'], d=pend['d'], e=pend['e'], risk=pend['risk'], sl=pend['e'] - pend['d'] * pend['risk'], w=1.0, banked=0.0, part=False, meta=pend['meta'])
                 pos['tp'] = pos['e'] + pos['d'] * P['tp'] * pos['risk'] if P['tp'] else None
