@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — swing strategy test bench (4H or Daily chart, holds 3–4 days).
-// Generated automatically: 2026-11-21 19:47 UTC. Bias data: 2026-W40 → 2026-W48 (9 weeks), 14 daily checks.
+// Generated automatically: 2026-11-21 20:33 UTC. Bias data: 2026-W40 → 2026-W48 (9 weeks), 14 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // A test bench for your own rules in the Strategy Tester. Not a trade signal.
 //@version=6
@@ -14,6 +14,7 @@ string minConv = input.string("Any", "Minimum conviction", options = ["Any", "Me
 int    trLen   = input.int(20, "Trend SMA length (daily closes)", minval = 5, maxval = 400, group = "Direction")
 string cfMode  = input.string("Close vs 20-day SMA", "Price confirmation", options = ["None", "Week-to-date", "Close vs 20-day SMA"], group = "Confirmation", tooltip = "Week-to-date: the day's close is above this week's open for longs (below for shorts); Monday's close is the first that can confirm, so the earliest entry is Tuesday. 20-day SMA: the close is on the trade's side of the 20-day average.")
 string enMode  = input.string("C · break of the confirming candle's high/low", "Entry", options = ["S · sweep of yesterday's low/high + reclaim", "SD · sweep, else break of yesterday's high/low", "D · break of yesterday's high/low", "A · at the confirming candle's close", "B · pullback to 50% of the confirming candle", "C · break of the confirming candle's high/low"], group = "Entry", tooltip = "S: a 4H candle trades below yesterday's low (long) / above yesterday's high (short) and closes back on the other side; entry at its close. SD: the same sweep enters at once; otherwise a stop order waits at yesterday's high (long) / low (short) for the next candle. D: only that stop order. A/B/C: the earlier entries at, inside or beyond the confirming candle. Backtest on the USD pairs, bias weeks W40–W47: S +19R, SD +18R, A +15R; on 3 years without bias: D +73R, SD +46R, S +9R (the sweep needs the fundamental direction).")
+string scMode  = input.string("None", "Signal candle filter", options = ["None", "Closed in the trade's direction", "Close beyond the 20 EMA"], group = "Entry", tooltip = "Extra condition on the signal candle (4H when Signal timeframe = 4H). Closed in the trade's direction: bullish candle for longs, bearish for shorts. Close beyond the 20 EMA: the candle closes above the 20 EMA of the signal timeframe for longs, below for shorts. Simulation (entry C, USD pairs W40–W47, with trailing tightened after +2R and TP 4R): direction filter +55.5R vs +52.7R without, drawdown −4.5R vs −3.2R; EMA filter +37.9R but the most stable on 3 years of trend-direction tests (positive every year).")
 string opMode  = input.string("None", "Price on the trade's side of", options = ["None", "Week open", "Week + month open", "Week + month + year open"], group = "Entry", tooltip = "Long only above these opens, short only below. On 3 years it helped the technical entries (D), on the bias weeks it changed little.")
 bool   noFri   = input.bool(true, "No new entries on Friday", group = "Entry", tooltip = "Fridays would open a trade into the weekend and into next week's new bias.")
 bool   noThu   = input.bool(true, "No new entries on Thursday", group = "Entry", tooltip = "A Thursday trade has only one day left before Friday's close. Backtest (sweep + bias, USD pairs, W40–W47): Thursday entries made 0R on 9 trades; without them the worst drawdown fell from −2.5R to −2.0R, and on 3 years of trend-direction tests the result rose from +9R to +14R.")
@@ -29,6 +30,8 @@ bool   wkExit  = input.bool(true, "Close every trade at Friday's close", group =
 bool   flipEx  = input.bool(true, "Close if the direction turns against the trade", group = "Exit")
 string trMode  = input.string("From the close (always on)", "Trailing stop", options = ["Chandelier after +1R", "From the close (always on)", "Off"], group = "Exit", tooltip = "Chandelier: once the trade has been +1R in profit, the stop follows the best price reached since entry at the distance below (daily ATR ×). It only moves in the trade's favour. Backtest (sweep + bias, USD pairs, W40–W47), second half trailed at 0.75 ATR with no target, plus no Thursday entries: +21.1R vs +19.3R, worst drawdown −2.0R vs −2.5R, every 2-week block ≥ +3.2R. Small sample (35 trades): treat as a forward test. From the close: the older trailing stop, a fixed distance from each candle's close.")
 float  trAtr   = input.float(0.75, "Trailing distance (ATR ×)", minval = 0.25, maxval = 6, step = 0.05, group = "Exit")
+float  trTight = input.float(0.0, "Tighten the trailing to (ATR ×), 0 = off", minval = 0, maxval = 6, step = 0.05, group = "Exit", tooltip = "Once the trade has been this many R in profit (below), the trailing distance changes to this value. Simulation (entry C, USD pairs W40–W47): 0.75 tightened to 0.5 after +2R gave +47.8R vs +43.5R with the same −3.2R drawdown; with TP 4R +52.7R. Better on 3 years of trend-direction tests too (+41R vs +25R).")
+float  trTightR = input.float(2.0, "…after this profit (R)", minval = 0.5, maxval = 10, step = 0.25, group = "Exit")
 bool   trOn    = trMode != "Off"
 int    fromT   = input.time(timestamp("2000-01-01"), "Trade only from this date", group = "Risk", tooltip = "Set it to the first bias week (e.g. 1 Oct 2026) to compare 'Price trend' and 'Fundamental bias' on exactly the same weeks.")
 float  stRisk  = input.float(1.0, "Risk per trade (% of equity)", minval = 0.1, maxval = 5, step = 0.1, group = "Risk")
@@ -271,22 +274,29 @@ float yO = request.security(syminfo.tickerid, "12M", open, lookahead = barmerge.
 // signal candles: the chart's own, or completed higher-timeframe candles read on a lower chart (e.g. 4H on 5m)
 string tfS = sigTf == "4H" ? "240" : sigTf == "1H" ? "60" : sigTf == "Daily" ? "D" : timeframe.period
 bool htfMode = timeframe.in_seconds(tfS) > timeframe.in_seconds()
-[sH, sL, sC, sA, sTc] = request.security(syminfo.tickerid, tfS, [high, low, close, ta.atr(14), time_close], lookahead = barmerge.lookahead_on)
+[sO, sH, sL, sC, sA, sE, sTc] = request.security(syminfo.tickerid, tfS, [open, high, low, close, ta.atr(14), ta.ema(close, 20), time_close], lookahead = barmerge.lookahead_on)
 // the last lower-timeframe bar of each signal candle: its close is the signal candle's close, so the values are complete (no lookahead)
 bool sBar = not htfMode or (not na(sTc) and time_close >= sTc)
 var float kH = na
 var float kL = na
 var float kC = na
 var float kA = na
+var float kO = na
+var float kE = na
 if htfMode and sBar
     kH := sH
     kL := sL
     kC := sC
     kA := sA
+    kO := sO
+    kE := sE
 float hiS = htfMode ? kH : high
 float loS = htfMode ? kL : low
 float clS = htfMode ? kC : close
 float chAtr = ta.atr(14)
+float chEma = ta.ema(close, 20)
+float opS = htfMode ? kO : open
+float emS = htfMode ? kE : chEma
 float cAtr = htfMode ? kA : chAtr
 float atr = atrTf == "Daily ATR (14)" ? dAtr : cAtr
 // trading day in New York terms (the FX day starts at 17:00 New York)
@@ -360,7 +370,8 @@ if flat and sBar
     strategy.cancel("S")
     pLive := false
 
-bool sig = flat and sBar and time >= fromT and dir != 0 and cfOk and opOk and dayOk and time - lastExitT >= coolH * 3600000 and not na(atr)
+bool scOk = scMode == "None" or (scMode == "Closed in the trade's direction" ? (clS - opS) * dir > 0 : not na(emS) and (clS - emS) * dir > 0)
+bool sig = flat and sBar and time >= fromT and dir != 0 and cfOk and opOk and scOk and dayOk and time - lastExitT >= coolH * 3600000 and not na(atr)
 if sig
     string ek = array.get(str.split(enMode, " "), 0)
     bool sweepOk = not na(pdL) and (dir > 0 ? (loS < pdL and clS > pdL) : (hiS > pdH and clS < pdH))
@@ -418,7 +429,8 @@ if not flat
     bool trLive = trMode == "From the close (always on)" or (trMode == "Chandelier after +1R" and (bestP - ent0) * posDir >= risk0)
     // the trailing stop moves only at the close of a signal candle (as on the signal chart)
     if trLive and sBar
-        float trS = trMode == "Chandelier after +1R" ? bestP - posDir * trAtr * atr : clS - posDir * trAtr * atr
+        float trK = trTight > 0 and (bestP - ent0) * posDir >= trTightR * risk0 ? trTight : trAtr
+        float trS = trMode == "Chandelier after +1R" ? bestP - posDir * trK * atr : clS - posDir * trK * atr
         slLvl := posDir > 0 ? math.max(slLvl, trS) : math.min(slLvl, trS)
     if halfOn and not partDone and math.abs(strategy.position_size) < q0 * 0.75
         partDone := true
