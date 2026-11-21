@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — weekly bias + daily checks (history) on the chart.
-// Generated automatically: 2026-11-21 11:08 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
+// Generated automatically: 2026-11-21 11:10 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // Fundamental context only. Not a trade signal.
 //@version=6
@@ -82,7 +82,7 @@ int    fsW     = input.int(2, "Line width", minval = 1, maxval = 4, group = "Str
 bool   fsLab   = input.bool(true, "Break labels", group = "Structure & zones")
 int    fsMax   = input.int(100, "Max break lines kept", minval = 10, maxval = 200, group = "Structure & zones")
 
-// ───────── data (generated 2026-11-21 11:08 UTC) ─────────
+// ───────── data (generated 2026-11-21 11:10 UTC) ─────────
 var string[] PAIRS = array.from("EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD")
 var string[] CCY   = array.from("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "XAU")
 var int[]    wT = array.new_int()     // week start (Sunday 21:00 UTC)
@@ -617,9 +617,9 @@ f_seFib(int dir, float sl, float ext, int tP) =>
         array.set(seLn, 1, line.new(tP, ent, time, ent, xloc = xloc.bar_time, extend = extend.right, color = seEntC, style = line.style_dashed, width = 2))
         array.set(seLn, 2, line.new(tP, ext, time, ext, xloc = xloc.bar_time, extend = extend.right, color = color.new(seEntC, 60), style = line.style_dotted, width = 1))
         array.set(seLn, 3, line.new(tP, tp, time, tp, xloc = xloc.bar_time, extend = extend.right, color = seTpC, style = line.style_solid, width = 1))
-        array.set(seLb, 0, label.new(time, sl, "", xloc = xloc.bar_time, style = label.style_label_left, color = color.new(seSlC, 100), textcolor = seSlC, size = size.tiny))
-        array.set(seLb, 1, label.new(time, ent, "", xloc = xloc.bar_time, style = label.style_label_left, color = color.new(seEntC, 100), textcolor = seEntC, size = size.tiny))
-        array.set(seLb, 2, label.new(time, tp, "", xloc = xloc.bar_time, style = label.style_label_left, color = color.new(seTpC, 100), textcolor = seTpC, size = size.tiny))
+        array.set(seLb, 0, label.new(time, sl, "", xloc = xloc.bar_time, style = label.style_label_lower_left, color = color.new(seSlC, 100), textcolor = seSlC, size = size.tiny))
+        array.set(seLb, 1, label.new(time, ent, "", xloc = xloc.bar_time, style = label.style_label_lower_left, color = color.new(seEntC, 100), textcolor = seEntC, size = size.tiny))
+        array.set(seLb, 2, label.new(time, tp, "", xloc = xloc.bar_time, style = label.style_label_lower_left, color = color.new(seTpC, 100), textcolor = seTpC, size = size.tiny))
     line.set_y1(array.get(seLn, 1), ent)
     line.set_y2(array.get(seLn, 1), ent)
     line.set_y1(array.get(seLn, 2), ext)
@@ -659,7 +659,8 @@ if seAct
             color c = gotS ? bearC : bullC
             array.push(lqLines, line.new(gotS ? bT : sT, lv, tLast, lv, xloc = xloc.bar_time, color = c, style = line.style_dashed, width = 1))
             array.push(lqLbls, label.new(int(math.avg(gotS ? bT : sT, tLast)), lv, "$", xloc = xloc.bar_time, style = label.style_none, textcolor = c, size = size.small, tooltip = (gotS ? "Buyside" : "Sellside") + " liquidity taken and confirmed by the " + lqTf + " close. Waiting for a POC " + (gotS ? "down" : "up") + "."))
-            array.push(lqLbls, label.new(tLast, gotS ? hH : hL, "💧", xloc = xloc.bar_time, style = gotS ? label.style_label_down : label.style_label_up, color = color.new(c, 100), textcolor = c, size = size.normal, tooltip = "Liquidity confirmed on the " + lqTf + " close (" + (gotS ? "high " : "low ") + str.tostring(gotS ? hH : hL, format.mintick) + " = stop for this setup)."))
+            string hrs = str.format_time(hT, "HH:mm", "Europe/Bucharest") + "–" + str.format_time(hT + lqMin * 60000, "HH:mm", "Europe/Bucharest")
+            array.push(lqLbls, label.new(tLast, gotS ? hH : hL, gotS ? "💧\n" + hrs : hrs + "\n💧", xloc = xloc.bar_time, style = gotS ? label.style_label_down : label.style_label_up, color = color.new(c, 100), textcolor = c, size = size.normal, tooltip = "Liquidity confirmed by the " + hrs + " candle (" + lqTf + ", Romania time) at its close (" + (gotS ? "high " : "low ") + str.tostring(gotS ? hH : hL, format.mintick) + " = stop for this setup)."))
             while array.size(lqLines) > lqMax
                 line.delete(array.shift(lqLines))
             while array.size(lqLbls) > lqMax
@@ -701,7 +702,7 @@ if seAct
             seSt := 0
         else if touch and time > seTP0
             seSt := 3
-            label.new(time, seEnt, "▶ 0.5", xloc = xloc.bar_time, style = label.style_label_left, color = color.new(seEntC, 100), textcolor = seEntC, size = size.tiny)
+            label.new(time, seEnt, "▶ 0.5", xloc = xloc.bar_time, style = label.style_label_upper_left, color = color.new(seEntC, 100), textcolor = seEntC, size = size.tiny)
             seEvt := "▶ " + pName + ": price back at 0.5 (" + str.tostring(seEnt, format.mintick) + ")."
         else
             seExt := seDir < 0 ? math.min(seExt, low) : math.max(seExt, high)
