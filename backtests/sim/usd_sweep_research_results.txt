@@ -1,0 +1,48 @@
+BASELINE sweep + bias                         44tr  +9.1/+10.3 = +19.3R  dd -2.5  2wk[+7.5, +1.6, +1.7, +8.5] | 3y trend   +9.1R [+8, -10, +12]
+   per-trade t-stat 3.41
+--- stop
+  SL 0.75×ATR                                 45tr  +6.1/ +6.2 = +12.3R  dd -7.3  2wk[+8.9, -2.7, -3.5, +9.7] | 3y trend   -7.0R [+1, -13, +5]
+  SL 1.25×ATR                                 42tr  +4.4/ +7.4 = +11.9R  dd -4.1  2wk[+5.4, -1.0, +0.2, +7.2] | 3y trend   +9.9R [+7, -5, +8]
+  SL 1.5×ATR                                  42tr  +2.4/ +6.1 =  +8.6R  dd -5.4  2wk[+5.2, -2.8, -0.2, +6.3] | 3y trend  +12.1R [+8, -4, +8]
+--- target of the 2nd half
+  TP 2R                                       44tr  +9.0/ +8.5 = +17.5R  dd -2.5  2wk[+7.4, +1.6, +1.6, +6.9] | 3y trend   +9.0R [+11, -12, +9]
+  TP 4R                                       44tr  +9.1/+10.6 = +19.7R  dd -2.5  2wk[+7.5, +1.6, +1.7, +8.9] | 3y trend   +7.6R [+8, -11, +11]
+  No TP (Friday)                              44tr  +9.1/+10.6 = +19.7R  dd -2.5  2wk[+7.5, +1.6, +1.7, +8.9] | 3y trend   +7.9R [+8, -10, +10]
+--- partial
+  partial 30% at 1R                           44tr  +7.9/+11.9 = +19.8R  dd -2.7  2wk[+7.3, +0.6, +1.8, +10.1] | 3y trend  +15.0R [+8, -7, +14]
+  partial 70% at 1R                           44tr +10.3/ +8.6 = +18.9R  dd -2.4  2wk[+7.6, +2.7, +1.7, +7.0] | 3y trend   +3.2R [+8, -14, +9]
+  partial 50% at 0.75R                        44tr  +8.4/ +9.0 = +17.4R  dd -2.5  2wk[+6.6, +1.9, +1.1, +7.9] | 3y trend   +4.9R [+3, -13, +14]
+  partial 50% at 1.5R                         44tr  +5.2/+11.9 = +17.1R  dd -5.1  2wk[+7.8, -2.6, +2.1, +9.8] | 3y trend  +20.2R [+10, -6, +17]
+  no BE move after partial                    44tr  +7.4/+10.4 = +17.8R  dd -2.3  2wk[+7.6, -0.2, +1.9, +8.5] | 3y trend   +9.0R [+7, -10, +12]
+  BE +0.25R after partial                     44tr  +9.2/+10.0 = +19.2R  dd -2.7  2wk[+7.2, +2.0, +1.5, +8.5] | 3y trend   +8.1R [+7, -12, +13]
+  no partial (one TP 2R)                      44tr  +2.6/+11.1 = +13.8R  dd -7.3  2wk[+7.3, -4.7, +1.9, +9.3] | 3y trend  +23.9R [+16, -6, +14]
+--- trade frequency
+  no cooldown after exit                      47tr  +6.1/+10.3 = +16.5R  dd -5.1  2wk[+7.5, -1.3, +1.8, +8.5] | 3y trend   +3.7R [+6, -14, +11]
+  48h cooldown                                42tr  +9.2/ +9.3 = +18.5R  dd -2.4  2wk[+7.5, +1.7, +0.8, +8.5] | 3y trend   +8.3R [+7, -9, +11]
+  max 1 trade/pair/week                       42tr  +9.2/ +9.3 = +18.5R  dd -2.4  2wk[+7.5, +1.7, +0.8, +8.5] | 3y trend  +10.5R [+7, -9, +13]
+  max 2 trades/pair/week                      44tr  +9.1/+10.3 = +19.3R  dd -2.5  2wk[+7.5, +1.6, +1.7, +8.5] | 3y trend   +9.1R [+8, -10, +12]
+--- sweep quality
+  shallow sweep (≤0.25 ATR)                   43tr  +8.4/ +9.7 = +18.0R  dd -2.4  2wk[+6.7, +1.7, +1.7, +7.9] | 3y trend   +3.3R [+3, -13, +14]
+  deep sweep (≥0.25 ATR)                      12tr  +1.7/ +2.8 =  +4.4R  dd -1.0  2wk[+2.2, -0.5, +2.2, +0.6] | 3y trend   +7.0R [+3, -8, +12]
+  sweep ≥0.1 ATR                              30tr  +4.5/ +4.0 =  +8.5R  dd -5.1  2wk[+6.5, -2.0, +0.5, +3.5] | 3y trend   -2.0R [+3, -7, +2]
+  close in top 50% of candle                  40tr  +7.9/+12.4 = +20.3R  dd -2.2  2wk[+7.3, +0.6, +3.8, +8.6] | 3y trend   -2.3R [-0, -14, +12]
+  close in top 70% of candle                  33tr  +3.9/ +8.4 = +12.4R  dd -3.9  2wk[+3.6, +0.4, -0.2, +8.6] | 3y trend   +7.0R [+4, -15, +17]
+  limit at 50% of the sweep candle            31tr  +3.9/ +5.3 =  +9.2R  dd -3.9  2wk[+4.4, -0.5, +0.5, +4.8] | 3y trend   -4.5R [-2, -13, +11]
+--- time of the sweep candle (Bucharest)
+  Asia 00-08                                  23tr  +0.2/ +4.2 =  +4.5R  dd -3.1  2wk[+1.1, -0.8, -0.3, +4.5] | 3y trend  +19.7R [+1, +5, +14]
+  London 08-15                                33tr  +6.7/ +7.7 = +14.4R  dd -2.8  2wk[+5.8, +0.9, +1.4, +6.3] | 3y trend   +3.9R [-4, -17, +26]
+  New York 15-24                              25tr  +2.6/ +1.6 =  +4.2R  dd -3.7  2wk[+4.6, -1.9, +0.2, +1.4] | 3y trend  -17.3R [+4, -10, -11]
+  08-24 (no Asia)                             38tr  +8.1/+10.1 = +18.2R  dd -2.4  2wk[+7.3, +0.8, +1.9, +8.2] | 3y trend   -3.6R [+9, -21, +8]
+--- fundamental
+  |gap| ≥ 5                                   33tr  +7.2/ +8.5 = +15.8R  dd -1.7  2wk[+7.2, +0.1, +1.9, +6.6]
+  |gap| ≥ 8                                   17tr  +7.3/ +6.6 = +13.9R  dd -0.2  2wk[+5.6, +1.7, +0.0, +6.6]
+  conviction medium/high                      28tr  +3.7/ +7.8 = +11.4R  dd -1.7  2wk[+3.6, +0.1, +1.9, +5.8]
+  bias + trend agree                          31tr  +8.6/ +4.7 = +13.3R  dd -1.4  2wk[+7.2, +1.4, -0.6, +5.3]
+  + week-to-date confirmation                 20tr  +4.0/ +5.6 =  +9.6R  dd -1.7  2wk[+2.9, +1.1, +0.6, +5.0]
+--- weekend
+  no Friday close                             28tr  +9.4/ +5.8 = +15.2R  dd -2.0  2wk[+5.3, +4.1, +1.9, +3.9] | 3y trend  +10.3R [+6, -9, +14]
+--- portfolio (all 8 USD pairs)
+  max 2 open                                  18tr  +3.3/ +7.4 = +10.7R  dd -1.0  2wk[+2.4, +0.9, +3.1, +4.3]
+  max 3 open                                  26tr  +4.9/ +7.3 = +12.2R  dd -2.1  2wk[+3.6, +1.3, +1.1, +6.2]
+  max 4 open                                  34tr  +7.8/+10.7 = +18.4R  dd -2.4  2wk[+5.6, +2.1, +1.7, +8.9]
+  stop the week at -2R                        44tr  +9.1/+10.3 = +19.3R  dd -2.5  2wk[+7.5, +1.6, +1.7, +8.5]

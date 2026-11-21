@@ -99,7 +99,7 @@ def usd_strength(data):
     return {t: sum(v) / len(v) for t, v in acc.items() if len(v) >= 4}
 
 DEF = dict(dirm='bias', cf='wtd', k=1.0, tp=2.0, hold=4, entry='A', sess=False, first=False, exh=None, conv='any', mingap=None,
-           partial=False, be=False, thesis=False, usdcf=False, trlen=20, nomon=False, restx='none', trail=2.0, minwtd=0.0, tsrc='sma20', adx=None, atrp=None, er=None, swsl=False, fri=True, opens='none', vegas='none')
+           partial=False, be=False, thesis=False, usdcf=False, trlen=20, nomon=False, restx='none', trail=2.0, minwtd=0.0, tsrc='sma20', adx=None, atrp=None, er=None, swsl=False, fri=True, opens='none', vegas='none', pf=0.5, pl=1.0, bemove=True, belock=0.0, cool=24, hours=None, maxwk=0, swdepth=(0, 99), swclose=0.0, swlimit=False)
 
 def run(pair, bars, B, P, start, end=None, usd=None):
     P = {**DEF, **P}; pip = pip_of(pair); cost = cost_of(pair) * pip
@@ -150,9 +150,11 @@ def run(pair, bars, B, P, start, end=None, usd=None):
                 gap = (b['o'] < pos['sl']) if d > 0 else (b['o'] > pos['sl'])
                 ex = (b['o'] if gap else pos['sl'], 'SL')
             else:
-                hit1R = (b['h'] >= pos['e'] + pos['risk']) if d > 0 else (b['l'] <= pos['e'] - pos['risk'])
+                pl = P['pl']
+                hit1R = (b['h'] >= pos['e'] + pl * pos['risk']) if d > 0 else (b['l'] <= pos['e'] - pl * pos['risk'])
                 if P['partial'] and not pos['part'] and hit1R:
-                    pos['banked'] += 0.5 * 1.0; pos['w'] = 0.5; pos['part'] = True; pos['sl'] = pos['e']
+                    pos['banked'] += P['pf'] * pl; pos['w'] = 1 - P['pf']; pos['part'] = True
+                    pos['sl'] = pos['e'] + d * P['belock'] * pos['risk'] if P['bemove'] else pos['sl']
                 if P['be'] and not pos['part'] and hit1R: pos['sl'] = pos['e']; pos['part'] = True
                 if pos['part'] and P['restx'] == 'trail':
                     ns = b['c'] - d * P['trail'] * b['atr']; pos['sl'] = max(pos['sl'], ns) if d > 0 else min(pos['sl'], ns)
@@ -172,7 +174,9 @@ def run(pair, bars, B, P, start, end=None, usd=None):
             continue
         if pos or pend: continue
         if b['t'] < start or (end and b['t'] >= end): continue
-        if lastx and (b['tc'] - lastx).total_seconds() < 24 * 3600: continue
+        if lastx and (b['tc'] - lastx).total_seconds() < P['cool'] * 3600: continue
+        if P['hours'] and not (P['hours'][0] <= b['hl'] < P['hours'][1]): continue
+        if P['maxwk'] and sum(1 for x in res if x['pair'] == pair and x['wk'] == b['wk']) >= P['maxwk']: continue
         if b['atr'] is None or dr == 0 or b['dow'] > 3: continue          # Mon–Thu (trading day), no Friday entries
         if P['nomon'] and b['dow'] == 0: continue
         if P['vegas'] != 'none':
@@ -231,6 +235,14 @@ def run(pair, bars, B, P, start, end=None, usd=None):
             lv = {'SWP': b['pdl'] if dr > 0 else b['pdh'], 'SW6': b['sw6l'] if dr > 0 else b['sw6h'], 'SWW': b['pwl'] if dr > 0 else b['pwh']}[P['entry']]
             ok = lv is not None and ((b['l'] < lv < b['c']) if dr > 0 else (b['h'] > lv > b['c']))
             if ok:
+                depth = ((lv - b['l']) if dr > 0 else (b['h'] - lv)) / b['atr']
+                rng = b['h'] - b['l']; clp = ((b['c'] - b['l']) if dr > 0 else (b['h'] - b['c'])) / rng if rng > 0 else 0
+                ok = P['swdepth'][0] <= depth <= P['swdepth'][1] and clp >= P['swclose']
+                meta = {**meta, 'depth': depth, 'clp': clp}
+            if ok and P['swlimit']:
+                ext = b['l'] if dr > 0 else b['h']
+                pend = dict(t0=b['tc'], wk=b['wk'], d=dr, e=(b['c'] + ext) / 2, risk=risk, life=8, meta=meta)
+            elif ok:
                 ext = b['l'] if dr > 0 else b['h']
                 rk = max(abs(b['c'] - ext) + 0.1 * b['atr'], 0.3 * b['atr']) if P['swsl'] else risk
                 pos = dict(i=i, t=b['tc'], d=dr, e=b['c'], risk=rk, sl=b['c'] - dr * rk, w=1.0, banked=0.0, part=False, meta=meta)
