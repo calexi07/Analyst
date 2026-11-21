@@ -168,7 +168,8 @@ writeFileSync('pine/bias-engine.pine', tpl);
 // the same script as a TradingView strategy (Strategy Tester → List of trades → Export), so the setup rules can be measured
 const strat = tpl
   .replace(/indicator\("Bias Engine · weekly bias & daily checks", shorttitle = "Bias Engine", overlay = true,/, 'strategy("Bias Engine · setup strategy (sweep → POC → 0.5)", shorttitle = "BE Setups", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = false,')
-  .replace('// {{STRATEGY_ORDERS}}', ORDERS);
+  .replace('// {{STRATEGY_ORDERS}}', ORDERS)
+  .replace(/^alertcondition\(.*$/gm, '// (alertcondition is not available in strategies; use alert() events)');
 writeFileSync('pine/bias-engine-strategy.pine', strat);
 writeFileSync('pine/history.json', JSON.stringify({ saved_at:gen, daily_observer:supaOk ? 'ok' : 'unavailable (history kept from the last good run)',
   weeks:[...weeks.values()].filter(W => Object.keys(W.pairs).length).sort((a, b) => a.y - b.y || a.w - b.w),
