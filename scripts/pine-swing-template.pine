@@ -89,7 +89,7 @@ float atr = atrTf == "Daily ATR (14)" ? dAtr : cAtr
 // trading day in New York terms (the FX day starts at 17:00 New York)
 int NY7 = 7 * 3600000
 int tDay = dayofweek(time + NY7, "America/New_York")
-int fri17 = timestamp("America/New_York", year(time_close, "America/New_York"), month(time_close, "America/New_York"), dayofmonth(time_close, "America/New_York"), 17, 0)
+int fri17 = timestamp("America/New_York", year(time + NY7, "America/New_York"), month(time + NY7, "America/New_York"), dayofmonth(time + NY7, "America/New_York"), 17, 0)
 bool lastWkBar = tDay == dayofweek.friday and time_close + timeframe.in_seconds() * 1000 > fri17
 [wkO, wkT0] = request.security(syminfo.tickerid, "W", [open, time], lookahead = barmerge.lookahead_on)
 
