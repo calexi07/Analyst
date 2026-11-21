@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — swing strategy test bench (4H or Daily chart, holds 3–4 days).
-// Generated automatically: 2026-11-21 12:24 UTC. Bias data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
+// Generated automatically: 2026-11-21 12:29 UTC. Bias data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // A test bench for your own rules in the Strategy Tester. Not a trade signal.
 //@version=6
@@ -257,7 +257,7 @@ float atr = atrTf == "Daily ATR (14)" ? dAtr : cAtr
 // trading day in New York terms (the FX day starts at 17:00 New York)
 int NY7 = 7 * 3600000
 int tDay = dayofweek(time + NY7, "America/New_York")
-int fri17 = timestamp("America/New_York", year(time_close, "America/New_York"), month(time_close, "America/New_York"), dayofmonth(time_close, "America/New_York"), 17, 0)
+int fri17 = timestamp("America/New_York", year(time + NY7, "America/New_York"), month(time + NY7, "America/New_York"), dayofmonth(time + NY7, "America/New_York"), 17, 0)
 bool lastWkBar = tDay == dayofweek.friday and time_close + timeframe.in_seconds() * 1000 > fri17
 [wkO, wkT0] = request.security(syminfo.tickerid, "W", [open, time], lookahead = barmerge.lookahead_on)
 
