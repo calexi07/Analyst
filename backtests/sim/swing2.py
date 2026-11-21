@@ -51,8 +51,17 @@ def load(pair):
         ph, pl = d['h'], d['l']; hs.append(d['h']); ls.append(d['l'])
         trs.append(d['h'] - d['l'] if prev is None else max(d['h'], prev) - min(d['l'], prev)); cl.append(d['c']); prev = d['c']
     wko, wk = None, None; ema = None; a = 2 / 21
-    for b in bars:
-        if b['wk'] != wk: wk = b['wk']; wko = b['o']
+    dop, dk, mop, mk, pwh, pwl, cwh, cwl = None, None, None, None, None, None, None, None
+    for j, b in enumerate(bars):
+        if b['wk'] != wk:
+            if wk is not None: pwh, pwl = cwh, cwl
+            wk = b['wk']; wko = b['o']; cwh, cwl = b['h'], b['l']
+        else: cwh, cwl = max(cwh, b['h']), min(cwl, b['l'])
+        if b['day'] != dk: dk = b['day']; dop = b['o']
+        if (b['day'].year, b['day'].month) != mk: mk = (b['day'].year, b['day'].month); mop = b['o']
+        b['dop'], b['mop'], b['pwh'], b['pwl'] = dop, mop, pwh, pwl
+        b['sw6l'] = min(x['l'] for x in bars[max(0, j - 6):j]) if j >= 6 else None
+        b['sw6h'] = max(x['h'] for x in bars[max(0, j - 6):j]) if j >= 6 else None
         b['wko'] = wko; b['atr'] = atr.get(b['day']); b['sma20'] = sma[b['day']][20]; b['sma50'] = sma[b['day']][50]
         b['ema_prev'] = ema; ema = b['c'] if ema is None else ema + a * (b['c'] - ema); b['ema'] = ema
         b['pdh'], b['pdl'] = pdhl[b['day']]; b['f'] = feat[b['day']]
@@ -77,7 +86,7 @@ def usd_strength(data):
     return {t: sum(v) / len(v) for t, v in acc.items() if len(v) >= 4}
 
 DEF = dict(dirm='bias', cf='wtd', k=1.0, tp=2.0, hold=4, entry='A', sess=False, first=False, exh=None, conv='any', mingap=None,
-           partial=False, be=False, thesis=False, usdcf=False, trlen=20, nomon=False, restx='none', trail=2.0, minwtd=0.0, tsrc='sma20', adx=None, atrp=None, er=None)
+           partial=False, be=False, thesis=False, usdcf=False, trlen=20, nomon=False, restx='none', trail=2.0, minwtd=0.0, tsrc='sma20', adx=None, atrp=None, er=None, swsl=False)
 
 def run(pair, bars, B, P, start, end=None, usd=None):
     P = {**DEF, **P}; pip = pip_of(pair); cost = cost_of(pair) * pip
@@ -160,6 +169,22 @@ def run(pair, bars, B, P, start, end=None, usd=None):
         elif P['entry'] == 'D' and b['pdh'] is not None:
             e = b['pdh'] if dr > 0 else b['pdl']
             if (e - b['c']) * dr > 0: pend = dict(t0=b['tc'], wk=b['wk'], d=dr, e=e, risk=risk, life=24, meta=meta, stop=True)
+            else: wk_done.discard((pair, b['wk']))
+        elif P['entry'] in ('PDL', 'WO', 'DO', 'MO', 'PWL'):
+            # limit order at a level on the trade's side: yesterday's low/high, week open, day open, month open, last week's low/high
+            lv = {'PDL': b['pdl'] if dr > 0 else b['pdh'], 'WO': b['wko'], 'DO': b['dop'], 'MO': b['mop'], 'PWL': b['pwl'] if dr > 0 else b['pwh']}[P['entry']]
+            life = {'PDL': 24, 'WO': 120, 'DO': 24, 'MO': 120, 'PWL': 120}[P['entry']]
+            if lv is not None and (b['c'] - lv) * dr > 0: pend = dict(t0=b['tc'], wk=b['wk'], d=dr, e=lv, risk=risk, life=life, meta=meta)
+            else: wk_done.discard((pair, b['wk']))
+        elif P['entry'] in ('SWP', 'SW6', 'SWW'):
+            # liquidity sweep and reclaim in the trade's direction: the candle trades through the level and closes back on the right side
+            lv = {'SWP': b['pdl'] if dr > 0 else b['pdh'], 'SW6': b['sw6l'] if dr > 0 else b['sw6h'], 'SWW': b['pwl'] if dr > 0 else b['pwh']}[P['entry']]
+            ok = lv is not None and ((b['l'] < lv < b['c']) if dr > 0 else (b['h'] > lv > b['c']))
+            if ok:
+                ext = b['l'] if dr > 0 else b['h']
+                rk = max(abs(b['c'] - ext) + 0.1 * b['atr'], 0.3 * b['atr']) if P['swsl'] else risk
+                pos = dict(i=i, t=b['tc'], d=dr, e=b['c'], risk=rk, sl=b['c'] - dr * rk, w=1.0, banked=0.0, part=False, meta=meta)
+                pos['tp'] = pos['e'] + dr * P['tp'] * rk if P['tp'] else None
             else: wk_done.discard((pair, b['wk']))
         elif P['entry'] == 'DC' and b['f']['dch'] is not None:
             e = b['f']['dch'] if dr > 0 else b['f']['dcl']
