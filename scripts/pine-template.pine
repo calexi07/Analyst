@@ -388,6 +388,7 @@ f_sdZone(bool up, int t0, float top, float bot, int ft, float ftop, float fbot, 
         array.shift(sdBot)
         array.shift(sdUp)
         array.shift(sdHit)
+    0
 // update active zones: touches and invalidation (close beyond the zone)
 f_sdUpdate(float pLo, float pHi) =>
     int n = array.size(sdBox)
@@ -430,6 +431,8 @@ f_sdUpdate(float pLo, float pHi) =>
                         box.set_text(ob, tx)
                     if not na(fv)
                         box.set_text(fv, sdZone == "FVG only" ? tx : "FVG")
+            int _done = 0
+    0
 f_sd() =>
     var float hiL = na
     var int   hiT = na
