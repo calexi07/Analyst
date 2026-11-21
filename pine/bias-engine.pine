@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — weekly bias + daily checks (history) on the chart.
-// Generated automatically: 2026-11-21 11:10 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
+// Generated automatically: 2026-11-21 11:20 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // Fundamental context only. Not a trade signal.
 //@version=6
@@ -82,7 +82,7 @@ int    fsW     = input.int(2, "Line width", minval = 1, maxval = 4, group = "Str
 bool   fsLab   = input.bool(true, "Break labels", group = "Structure & zones")
 int    fsMax   = input.int(100, "Max break lines kept", minval = 10, maxval = 200, group = "Structure & zones")
 
-// ───────── data (generated 2026-11-21 11:10 UTC) ─────────
+// ───────── data (generated 2026-11-21 11:20 UTC) ─────────
 var string[] PAIRS = array.from("EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD")
 var string[] CCY   = array.from("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "XAU")
 var int[]    wT = array.new_int()     // week start (Sunday 21:00 UTC)
@@ -588,6 +588,20 @@ var int seN = 0
 var int seW = 0
 var int seLs = 0
 var int seX = 0
+// context of the current setup, kept for the breakdown table and the strategy's trade comment
+var string seSess = ""     // session of the 💧 candle (Romania time)
+var string seHr   = ""     // hour of the 💧 candle
+var float  sePocH = na     // hours from 💧 to POC
+var float  seMfe  = 0.0    // best move in R while in the trade
+var string seCv   = "-"
+var float  seGap  = na
+// finished trades: one row each
+var string[] rSess = array.new_string()
+var string[] rSl   = array.new_string()
+var string[] rCv   = array.new_string()
+var string[] rPoc  = array.new_string()
+var float[]  rRes  = array.new_float()
+var float[]  rMfe  = array.new_float()
 f_sePips(float d) => math.round(d / pipSz * 10) / 10
 // move the current setup's drawings into the history (they stop at this candle)
 f_seStore() =>
@@ -654,6 +668,9 @@ if seAct
             float lv = gotS ? bLv : sLv
             seSL := gotS ? hH : hL
             seT0 := time
+            int hh = hour(hT, "Europe/Bucharest")
+            seSess := hh < 9 ? "Asia" : hh < 15 ? "London" : "New York"
+            seHr := str.format_time(hT, "HH:mm", "Europe/Bucharest")
             seExt := gotS ? low : high
             seSt := 1
             color c = gotS ? bearC : bullC
@@ -685,6 +702,7 @@ if seAct
                 line.new(t0, lvl, time, lvl, xloc = xloc.bar_time, color = seDir < 0 ? bearC : bullC, style = line.style_solid, width = 1)
                 label.new(int(math.avg(t0, time)), lvl, "POC", xloc = xloc.bar_time, style = seDir < 0 ? label.style_label_up : label.style_label_down, color = color.new(neutC, 100), textcolor = seDir < 0 ? bearC : bullC, size = size.small)
                 seTP0 := time
+                sePocH := (time - seT0) / 3600000.0
                 seSt := 2
                 seN += 1
                 [e0, t0p] = f_seFib(seDir, seSL, seExt, seTP0)
@@ -702,6 +720,9 @@ if seAct
             seSt := 0
         else if touch and time > seTP0
             seSt := 3
+            seMfe := 0.0
+            seCv := cv
+            seGap := g
             label.new(time, seEnt, "▶ 0.5", xloc = xloc.bar_time, style = label.style_label_upper_left, color = color.new(seEntC, 100), textcolor = seEntC, size = size.tiny)
             seEvt := "▶ " + pName + ": price back at 0.5 (" + str.tostring(seEnt, format.mintick) + ")."
         else
@@ -713,6 +734,17 @@ if seAct
     else if seSt == 3
         bool lose = seDir < 0 ? high >= seSL : low <= seSL
         bool win  = seDir < 0 ? low <= seTP : high >= seTP
+        float rsk = math.abs(seSL - seEnt)
+        if rsk > 0 and not lose
+            seMfe := math.max(seMfe, (seDir < 0 ? seEnt - low : high - seEnt) / rsk)
+        if lose or win
+            float slp = f_sePips(rsk)
+            array.push(rSess, seSess)
+            array.push(rSl, slp < 5 ? "SL < 5 pips" : slp <= 10 ? "SL 5–10 pips" : "SL > 10 pips")
+            array.push(rCv, seCv == "h" ? "Bias high" : seCv == "m" ? "Bias medium" : seCv == "l" ? "Bias low" : "No bias")
+            array.push(rPoc, sePocH < 1 ? "POC < 1h" : sePocH <= 4 ? "POC 1–4h" : "POC > 4h")
+            array.push(rRes, lose ? -1.0 : seRR)
+            array.push(rMfe, lose ? seMfe : math.max(seMfe, seRR))
         if lose
             seLs += 1
             f_seEnd(seDir, "❌ −1R", seSlC)
@@ -726,14 +758,61 @@ if seAct
 if seEvt != ""
     alert(seEvt, alert.freq_once_per_bar)
 var table seTb = na
+// one row of the breakdown: n, win %, net R for the trades whose group equals key
+f_seRow(string[] grp, string key) =>
+    int n = 0
+    int w = 0
+    float r = 0.0
+    if array.size(grp) > 0
+        for i = 0 to array.size(grp) - 1
+            if array.get(grp, i) == key
+                n += 1
+                w += array.get(rRes, i) > 0 ? 1 : 0
+                r += array.get(rRes, i)
+    [n, w, r]
+f_seCell(int row, string name, int n, int w, float r) =>
+    color rc = n == 0 ? tMu : r > 0 ? seTpC : r < 0 ? seSlC : tMu
+    table.cell(seTb, 0, row, name, text_color = tTx, text_size = size.tiny, text_halign = text.align_left)
+    table.cell(seTb, 1, row, str.tostring(n), text_color = tMu, text_size = size.tiny)
+    table.cell(seTb, 2, row, n > 0 ? str.tostring(math.round(100.0 * w / n)) + "%" : "–", text_color = tMu, text_size = size.tiny)
+    table.cell(seTb, 3, row, n > 0 ? (r >= 0 ? "+" : "") + str.tostring(r, "#.#") + "R" : "–", text_color = rc, text_size = size.tiny)
+    0
 if barstate.islast and seAct and seStat
     table.delete(seTb)
-    seTb := table.new(position.bottom_right, 1, 2, bgcolor = tBg, frame_color = tBd, frame_width = 1, border_color = tBd, border_width = 1)
-    int done = seW + seLs
-    float netR = seW * seRR - seLs
+    seTb := table.new(position.bottom_right, 4, 22, bgcolor = tBg, frame_color = tBd, frame_width = 1, border_color = tBd, border_width = 1)
+    int done = array.size(rRes)
+    float netR = 0.0
+    int wins = 0
+    float mfeL = 0.0
+    int nL = 0
+    int nL1 = 0
+    if done > 0
+        for i = 0 to done - 1
+            netR += array.get(rRes, i)
+            wins += array.get(rRes, i) > 0 ? 1 : 0
+            if array.get(rRes, i) < 0
+                nL += 1
+                mfeL += array.get(rMfe, i)
+                nL1 += array.get(rMfe, i) >= 1 ? 1 : 0
     string st = seSt == 1 ? "💧 waiting for a POC" : seSt == 2 ? "📐 waiting for 0.5" : seSt == 3 ? "▶ in the trade" : "idle"
-    table.cell(seTb, 0, 0, "Setups on this chart: " + str.tostring(seN) + " · ✅ " + str.tostring(seW) + " · ❌ " + str.tostring(seLs) + (done > 0 ? " · net " + (netR >= 0 ? "+" : "") + str.tostring(netR, "#.#") + "R" : ""), text_color = tTx, text_size = size.tiny, text_halign = text.align_left)
-    table.cell(seTb, 0, 1, "Now: " + st, text_color = tMu, text_size = size.tiny, text_halign = text.align_left)
+    table.cell(seTb, 0, 0, "Setups · " + pName, text_color = tTx, bgcolor = tHd, text_size = size.tiny, text_halign = text.align_left)
+    table.cell(seTb, 1, 0, "n", text_color = tMu, bgcolor = tHd, text_size = size.tiny)
+    table.cell(seTb, 2, 0, "win", text_color = tMu, bgcolor = tHd, text_size = size.tiny)
+    table.cell(seTb, 3, 0, "net", text_color = tMu, bgcolor = tHd, text_size = size.tiny)
+    f_seCell(1, "All trades (" + str.tostring(seX) + " cancelled)", done, wins, netR)
+    int row = 2
+    for grp in array.from("S", "L", "C", "P")
+        string[] keys = grp == "S" ? array.from("Asia", "London", "New York") : grp == "L" ? array.from("SL < 5 pips", "SL 5–10 pips", "SL > 10 pips") : grp == "C" ? array.from("Bias high", "Bias medium", "Bias low") : array.from("POC < 1h", "POC 1–4h", "POC > 4h")
+        string[] src = grp == "S" ? rSess : grp == "L" ? rSl : grp == "C" ? rCv : rPoc
+        for k in keys
+            [n1, w1, r1] = f_seRow(src, k)
+            f_seCell(row, "  " + k, n1, w1, r1)
+            row += 1
+    table.cell(seTb, 0, row, nL > 0 ? "Losers: avg best move +" + str.tostring(mfeL / nL, "#.#") + "R · " + str.tostring(math.round(100.0 * nL1 / nL)) + "% reached +1R" : "Losers: –", text_color = tMu, text_size = size.tiny, text_halign = text.align_left)
+    table.merge_cells(seTb, 0, row, 3, row)
+    table.cell(seTb, 0, row + 1, "Now: " + st, text_color = tMu, text_size = size.tiny, text_halign = text.align_left)
+    table.merge_cells(seTb, 0, row + 1, 3, row + 1)
+// {{STRATEGY_ORDERS}}
 
 // ───────── fractal structure breaks (body close), filtered by the week's bias ─────────
 var line[]  fsLines = array.new<line>()

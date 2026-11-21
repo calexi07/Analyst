@@ -1,0 +1,1283 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Forex Fundamental Bias Engine — weekly bias + daily checks (history) on the chart.
+// Generated automatically: 2026-11-21 11:20 UTC. Data: 2026-W40 → 2026-W47 (8 weeks), 14 daily checks.
+// Do not edit by hand: the data block is rewritten after every phase and daily check.
+// Fundamental context only. Not a trade signal.
+//@version=6
+strategy("Bias Engine · setup strategy (sweep → POC → 0.5)", shorttitle = "BE Setups", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = false, max_labels_count = 500, max_lines_count = 500, max_boxes_count = 500, max_bars_back = 5000)
+max_bars_back(time, 4999)
+
+// ───────── settings ─────────
+string pairIn  = input.string("Auto", "Pair", options = ["Auto", "EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD"], tooltip = "Auto reads the chart symbol (e.g. EURUSD, OANDA:XAUUSD).")
+string theme   = input.string("Auto", "Theme", options = ["Auto", "Light", "Dark"], group = "Look", tooltip = "Auto follows the chart background.")
+string layout  = input.string("Desktop", "Layout", options = ["Desktop", "Mobile (compact)"], group = "Look", tooltip = "Mobile: smaller table with only bias, last check and note; shorter week labels.")
+string txtSz   = input.string("Small", "Text size", options = ["Tiny", "Small", "Normal"], group = "Look")
+bool   showBg  = input.bool(false, "Shade each week by its bias",   group = "Show")
+bool   showSep = input.bool(true,  "Dotted line at each week start", group = "Show")
+bool   showWk  = input.bool(true,  "Week labels",                   group = "Show")
+bool   showCk  = input.bool(true,  "Daily check markers",           group = "Show")
+string ckMode  = input.string("All days", "Check markers on", options = ["All days", "Only when the status changes"], group = "Show")
+bool   bdFill  = input.bool(false, "Fill the band", group = "Show")
+bool   showTg  = input.bool(true,  "🎯 Typical move in the bias direction", group = "Show", tooltip = "The +1σ (bullish) or −1σ (bearish) level of the week with a ± pips zone. A statistical reference for a normal week, not a trade target. Nothing is drawn for two-sided weeks.")
+string tgScope = input.string("Current week only", "🎯 show for", options = ["Current week only", "All weeks (history)"], group = "Show")
+string bdScope = input.string("All weeks (history)", "Band show for", options = ["Current week only", "All weeks (history)"], group = "Show")
+int    tgPips  = input.int(10, "🎯 zone ± pips", minval = 1, group = "Show")
+color  tgC     = input.color(#22AB94, "🎯 zone colour", group = "Colours")
+bool   showBd  = input.bool(true,  "Typical-week band (±1σ from last week's close)", group = "Show", tooltip = "σ = standard deviation of the last 26 weekly returns of this chart. Shows the normal range for the week; a move outside it against the bias is worth noticing. Context only.")
+string mkStyle = input.string("Emoji + gap", "Check marker", options = ["Emoji", "Emoji + gap", "Emoji + status"], group = "Show", tooltip = "Hover the marker for the full note: what changed, what was confirmed or invalidated, and both currencies.")
+bool   showTb  = input.bool(true,  "Info table",                    group = "Show")
+bool   showDb  = input.bool(false, "All-pairs dashboard",           group = "Show")
+string wkPos   = input.string("Top of the visible chart", "Week label position", options = ["Top of the visible chart", "Above the week's high"], group = "Show")
+string tbPos   = input.string("Top right", "Table position", options = ["Top right", "Bottom right", "Top left", "Bottom left"], group = "Show")
+color  bullC   = input.color(#22AB94, "Bullish",  group = "Colours")
+color  bearC   = input.color(#F23645, "Bearish",  group = "Colours")
+color  neutC   = input.color(#787B86, "Two-sided", group = "Colours")
+// liquidity sweeps (from "Liquidity stop hunt"), filtered by the week's fundamental bias
+bool   lqOn    = input.bool(true, "Show liquidity sweeps", group = "Liquidity", tooltip = "A swept high = buyside liquidity taken; a swept low = sellside liquidity taken. The side shown follows each week's published bias for this pair.")
+string lqMode  = input.string("Follow the bias", "Which side", options = ["Follow the bias", "Opposite to the bias", "Both", "Buyside only", "Sellside only"], group = "Liquidity", tooltip = "Follow the bias: BULLISH week → sellside sweeps (lows taken), BEARISH week → buyside sweeps (highs taken). Opposite: the other side. Both / Buyside only / Sellside only ignore the bias.")
+string lqTwo   = input.string("Both", "Two-sided weeks", options = ["Both", "None"], group = "Liquidity", tooltip = "What to show in weeks with a two-sided bias (or no published bias) when 'Which side' follows the bias.")
+string lqType  = input.string("Wick Only", "Sweep type", options = ["Regular", "Wick Only"], group = "Liquidity", tooltip = "Wick Only: the candle must close back inside the swept level.")
+string lqTf    = input.string("1D", "Sweep timeframe", options = ["3", "5", "15", "30", "60", "120", "180", "240", "480", "960", "1D", "2D", "3D", "4D", "5D", "1W", "1M", "3M"], group = "Liquidity")
+string lqSty   = input.string("Dotted", "Line style", options = ["Solid", "Dotted", "Dashed"], group = "Liquidity")
+int    lqW     = input.int(1, "Line width", minval = 1, maxval = 4, group = "Liquidity")
+bool   lqLab   = input.bool(true, "$ labels", group = "Liquidity")
+bool   lqByB   = input.bool(true, "Colour by side", group = "Liquidity", tooltip = "On: sellside sweeps in the Bullish colour, buyside sweeps in the Bearish colour. Off: one grey colour, as in the original indicator.")
+color  lqC     = input.color(#5d606b, "Line colour (when not by side)", group = "Liquidity")
+int    lqMax   = input.int(150, "Max sweep lines kept", minval = 10, maxval = 300, group = "Liquidity")
+// setup engine: 1H liquidity (confirmed on the 1H close) → POC on the chart's candles in the bias direction → fib 0.5 entry, SL at the sweep candle, TP 2R
+bool   seOn    = input.bool(true, "Setup engine (sweep → POC → fib 0.5)", group = "Setup engine", tooltip = "Works on a chart lower than the Sweep timeframe (e.g. 1H liquidity on a 5m chart). 1) a liquidity sweep on the side the week's bias wants (bearish → buyside, bullish → sellside) is confirmed when its 1H candle closes: dashed line, $ and 💧. 2) the engine waits for a POC (BOS/CHoCH by candle close) on the chart's candles in the bias direction. 3) a fib is drawn from the sweep candle's high/low (1 = SL) to the low/high of the move (0); entry at 0.5, TP at 2R. Your own rules, drawn automatically; not advice.")
+bool   seTwo   = input.bool(false, "Also in two-sided weeks (both sides)", group = "Setup engine")
+int    seLen   = input.int(5, "POC structure length (chart candles)", minval = 2, maxval = 50, group = "Setup engine", tooltip = "Same swing logic as the BOS/CHoCH indicator: highs and lows alternate; a POC is a candle CLOSE beyond the last swing.")
+int    seExp   = input.int(24, "Wait for the POC at most (hours)", minval = 1, maxval = 120, group = "Setup engine")
+float  seRR    = input.float(2.0, "Take profit (R)", minval = 0.5, maxval = 10, step = 0.5, group = "Setup engine")
+int    seKeep  = input.int(20, "Finished setups kept on the chart", minval = 1, maxval = 60, group = "Setup engine")
+bool   seStat  = input.bool(true, "Results table (setups on this chart)", group = "Setup engine")
+color  seEntC  = input.color(#D9A35B, "Entry 0.5", group = "Setup engine")
+color  seSlC   = input.color(#F23645, "Stop loss (1)", group = "Setup engine")
+color  seTpC   = input.color(#22AB94, "Take profit", group = "Setup engine")
+// fractal structure: a body close beyond the last fractal high / low
+string sdMode  = input.string("Off", "Structure", options = ["BOS + displacement (OB/FVG zones)", "Fractal breaks (simple)", "Off"], group = "Structure & zones", tooltip = "BOS + displacement (recommended): a swing (pivot of the length below) is broken by a candle CLOSE, the move has a big body (≥ the ATR multiple) and leaves a fair value gap. The order block (last opposite candle before the move) and the FVG are drawn as the supply/demand zone.\nFractal breaks: the simple version (any close beyond a small fractal).")
+int    sdLen   = input.int(5, "Swing length (bars each side)", minval = 2, maxval = 20, group = "Structure & zones")
+string sdShow  = input.string("All grades", "Zones to show", options = ["All grades", "A + B", "Only A"], group = "Structure & zones", tooltip = "Every BOS leaves a zone at the origin of its leg. Grade A = displacement + FVG (+ a sweep before it, if 'Grade A needs a sweep' is on). B = one of the two. C = neither (a slow, stepped leg). C zones are drawn fainter.")
+bool   sdWhy   = input.bool(true, "Grade on the BOS label", group = "Structure & zones")
+bool   sdInt   = input.bool(true, "Also zones from internal structure", group = "Structure & zones", tooltip = "Adds the smaller breaks inside a leg (internal swings), so a stepped move leaves a zone at every step, closer to price. Internal breaks: thin dashed line, label iBOS, zone text 'int'.")
+int    sdLenI  = input.int(2, "Internal swing length", minval = 1, maxval = 10, group = "Structure & zones")
+float  sdDisp  = input.float(1.2, "Displacement: body ≥ ATR(14) ×", minval = 0.5, maxval = 4, step = 0.1, group = "Structure & zones", tooltip = "The biggest body of the breaking candle and the 2 before it must be at least this many ATRs. Higher = fewer, stronger breaks.")
+string sdZone  = input.string("Order block + FVG", "Zones to draw", options = ["Order block + FVG", "Order block only", "FVG only"], group = "Structure & zones")
+int    sdMaxZ  = input.int(10, "Fresh zones kept", minval = 1, maxval = 30, group = "Structure & zones", tooltip = "Untouched zones still waiting for price. The oldest is dropped when a new one appears.")
+bool   sdHist  = input.bool(false, "Show history (touched and broken zones)", group = "Structure & zones", tooltip = "Off: only the current, untouched zones. On: also the zones that were touched (yellow) or broken (black), so you can see how they played out.")
+int    sdHistN = input.int(30, "History: zones kept", minval = 5, maxval = 120, group = "Structure & zones")
+int    sdExt   = input.int(4, "Box ends this many candles after the touch / break", minval = 0, maxval = 20, group = "Structure & zones")
+int    sdWatch = input.int(30, "After a touch, watch for a break for (candles)", minval = 1, maxval = 300, group = "Structure & zones", tooltip = "A touched zone turns black if a candle closes beyond it within this many candles; otherwise it stays yellow (it did its job).")
+color  sdTchC  = input.color(color.new(#E2B93B, 80), "Touched zone", group = "Structure & zones")
+color  sdBrkC  = input.color(color.new(#000000, 55), "Broken zone", group = "Structure & zones")
+color  sdDemC  = input.color(color.new(#22AB94, 85), "Demand zone", group = "Structure & zones")
+color  sdSupC  = input.color(color.new(#F23645, 85), "Supply zone", group = "Structure & zones")
+bool   fsOn    = sdMode == "Fractal breaks (simple)"
+int    fsN     = input.int(2, "Fractal size (bars each side, simple mode)", minval = 1, maxval = 10, group = "Structure & zones")
+string fsMode  = input.string("Follow the bias", "Which breaks", options = ["Follow the bias", "Both"], group = "Structure & zones", tooltip = "Follow the bias: BULLISH week → only breaks up, BEARISH week → only breaks down, two-sided weeks → both.")
+bool   fsSwp   = input.bool(false, "Grade A needs a sweep", group = "Structure & zones", tooltip = "On: a zone is grade A only if its BOS came after a sweep on the other side (sellside sweep → BOS up, buyside sweep → BOS down), as in the setup model. In simple fractal mode: only breaks after a sweep. Uses the Liquidity sweep timeframe.")
+color  fsC     = input.color(#D9A35B, "Break line colour", group = "Structure & zones")
+int    fsW     = input.int(2, "Line width", minval = 1, maxval = 4, group = "Structure & zones")
+bool   fsLab   = input.bool(true, "Break labels", group = "Structure & zones")
+int    fsMax   = input.int(100, "Max break lines kept", minval = 10, maxval = 200, group = "Structure & zones")
+
+// ───────── data (generated 2026-11-21 11:20 UTC) ─────────
+var string[] PAIRS = array.from("EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD")
+var string[] CCY   = array.from("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD", "NZD", "XAU")
+var int[]    wT = array.new_int()     // week start (Sunday 21:00 UTC)
+var string[] wN = array.new_string()  // week name and phase
+var string[] wD = array.new_string()  // per pair: bias U/D/N + conviction h/m/l + gap
+var string[] wS = array.new_string()  // currency scores in CCY order
+var int[]    cT = array.new_int()     // day of the check (00:00 Bucharest)
+var string[] cN = array.new_string()  // check name
+var string[] cD = array.new_string()  // per pair: status + today's gap
+var string[] cH = array.new_string()  // per pair: the check's one-line note (newest checks only)
+var string[] cC = array.new_string()  // per currency: status~note (newest checks only)
+// the data is split into several short blocks (Pine limits the size of one if block)
+f_data0() =>
+    array.push(wT, timestamp("UTC", 2026, 9, 27, 21, 0))
+    array.push(wN, "2026-W40")
+    array.push(wD, "Dm-9,D--10,U-12,U-6,U-14,D--9,D--14,Nl1,Nl3,Nl-3,N-0,D-5,U-5,Nl2,Dl-4,Nl-1,D-4,Dl4,N-3,N--3,U-5,Ul5,N--2,D--8,N--10,N--2,D--8,U-6,?")
+    array.push(wS, "9,0,-1,-3,3,-5,0,-5,?")
+    0
+f_data1() =>
+    array.push(wT, timestamp("UTC", 2026, 10, 4, 21, 0))
+    array.push(wN, "2026-W41")
+    array.push(wD, "Dm-5,Nl-2,Um6,Dl-3,Uh10,Nl-3,Dh-10,Dl-3,Nl1,Dm-8,Dl-2,Um5,Um5,Ul4,Dm-5,Ul1,Um8,Um8,Ul3,Dm-6,Um7,Um7,Dl-4,Dh-13,Nl0,Nl-4,Dh-13,Um9,Dm-7")
+    array.push(wS, "4,-1,2,-2,7,-6,1,-6,-3")
+    0
+f_data2() =>
+    array.push(wT, timestamp("UTC", 2026, 10, 11, 21, 0))
+    array.push(wN, "2026-W42")
+    array.push(wD, "Dm-9,Dm-8,Um8,Ul4,Um9,Dl-3,Dm-6,Nl-1,Nl-1,Dm-5,Dm-6,Dl-3,Nl0,Nl0,Dl-4,Dm-5,Nl-2,Nl1,Um5,Nl1,Ul3,Um6,Nl2,Nl-2,Ul3,Nl-1,Dm-5,Ul4,Dm-6")
+    array.push(wS, "5,-4,-3,-3,1,-4,2,-1,-1")
+    0
+f_data3() =>
+    array.push(wT, timestamp("UTC", 2026, 10, 18, 21, 0))
+    array.push(wN, "2026-W43")
+    array.push(wD, "Dh-10,Dm-6,Um6,Ul3,Um7,Dm-5,Dm-7,Dl-4,Dl-4,Dm-7,Dm-5,Dl-3,Dl-3,Nl0,Dl-3,Nl-1,Nl1,Nl1,Nl1,Nl-2,Nl2,Nl2,Nl-1,Dl-4,Nl0,Nl-1,Dl-4,Ul3,Dl-4")
+    array.push(wS, "5,-5,-1,-1,2,-2,0,-2,1")
+    0
+f_data4() =>
+    array.push(wT, timestamp("UTC", 2026, 10, 25, 21, 0))
+    array.push(wN, "2026-W44")
+    array.push(wD, "Dm-7,Nl-1,Nl0,Ul3,Ul4,Ul3,Nl-2,Dm-6,Dm-7,Dl-4,Dh-10,Dm-5,Dl-3,Nl-1,Nl2,Dl-4,Nl1,Ul3,Ul3,Um6,Um5,Um7,Nl-2,Nl1,Nl2,Dl-4,Nl-1,Dl-3,Nl1")
+    array.push(wS, "2,-5,1,2,-1,-2,5,0,3")
+    0
+f_data5() =>
+    array.push(wT, timestamp("UTC", 2026, 11, 1, 21, 0))
+    array.push(wN, "2026-W45")
+    array.push(wD, "Dm-6,Nl2,Nl0,Um5,Ul4,Ul3,Nl-1,Dm-8,Dm-6,Nl-1,Dm-9,Dm-5,Nl-2,Nl2,Um7,Nl-1,Ul3,Um6,Ul3,Um8,Ul4,Um7,Nl-1,Ul4,Ul3,Dl-4,Nl1,Dm-5,Nl0")
+    array.push(wS, "2,-4,4,2,-3,-2,5,1,2")
+    0
+f_data6() =>
+    array.push(wT, timestamp("UTC", 2026, 11, 8, 21, 0))
+    array.push(wN, "2026-W46 FINAL")
+    array.push(wD, "Dh-10,Dh-10,Um5,Um7,Um13,Dm-7,Dm-10,Nl0,Dm-5,Dl-3,Dl-3,Nl0,Ul3,Dm-5,Dl-3,Dl-3,Nl0,Ul3,Nl-2,Nl0,Ul3,Um6,Dm-5,Dl-3,Ul3,Dm-8,Dm-6,Nl-2,Um7")
+    array.push(wS, "7,-3,-3,2,0,-6,0,-3,14")
+    0
+f_data7() =>
+    array.push(wT, timestamp("UTC", 2026, 11, 15, 21, 0))
+    array.push(wN, "2026-W47 FINAL")
+    array.push(wD, "Dm-8,Dl-4,Um5,Um8,Ul9,Nl-2,Dl-4,Dl-4,Dl-3,Nl0,Dm-6,Dl-4,Nl1,Nl1,Ul4,Nl-2,Nl0,Ul5,Ul3,Um6,Nl2,Ul7,Nl1,Ul4,Ul5,Dl-4,Nl-1,Dl-3,Dl-3")
+    array.push(wS, "5,-3,1,0,-3,-4,3,1,2")
+    0
+f_data8() =>
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 11, 0, 0))
+    array.push(cN, "Wed 11 Nov · evening")
+    array.push(cD, "C-10,C-10,W5,C7,C13,C-7,C-10,T0,S-5,F-3,F-3,T0,F3,S-5,F-3,F-3,T0,F3,W-2,T0,F3,C6,S-5,F-3,F3,S-8,C-6,W-2,P4")
+    array.push(cH, "Same direction as Monday, only with more fuel in the dollar's tank.|The pound is holding its breath for Thursday; the dollar isn't waiting for anyone.|Both characters spoke up today, but one of them clearly spoke louder.|A busy day for the dollar, a silent one for the franc. Advantage unchanged.|The widest gap on our board got a little more supporting evidence on both sides.|A quiet day down under, a loud one in the US. The lean only gets clearer.|The kiwi is waiting for news. The dollar is making it.|Two stuck currencies, still stuck. Thursday may finally move one of them.|The euro's lean lower holds; the 'much stronger yen' twist got less likely.|Thin margin, quiet day. The euro's small disadvantage is still there.|No new chapters today, so the thin lead stays with the Aussie.|Stand-off continues. Both sides stayed in their corners.|The euro's small lead got a little help from the oil market.|Sterling waits for Thursday; the yen's 'extra-strong' scenario fades a little.|Nothing moved today. The franc keeps its thin edge.|Two currencies waiting for news. The Aussie's slim lead holds.|Still level at −3 each. Tomorrow could change that.|The pound did nothing today, and still kept its lead. Thank the oil market.|Still no edge here, and the twist that could create one got less likely.|Zero against zero, and nobody moved.|Two quiet neighbours. The Aussie keeps its slim lead.|Nothing changed for the Aussie; more pressure arrived for the loonie.|The kiwi waits; the yen's story becomes clearer, not bigger.|Quiet in Wellington, quiet in Zurich. The franc's thin edge holds.|Both are having a tough week, but the oil market just made the loonie's tougher.|The weakest currency on our board got weaker news; the yen got clearer news.|The franc did nothing today. The loonie's problems did the work.|Two safe havens, still no winner. One possible twist faded today.|Gold caught its breath, but its biggest enemy is still in the room.")
+    array.push(cC, "CONFIRMED (strengthened)~Logan/Paulson/Bowman hawkish; December 88–91%, January >60%. Shadow +7 (hysteresis).|CONFIRMED~ECB December pricing trimmed to 78% as oil cooled; no French item.|CONFIRMED~No new item; UK Q3 GDP tomorrow 09:00.|INVALIDATED (toward stronger; +6 less li~BoJ December OIS 75%, swaps 70% → R2 0 better supported.|CONFIRMED~No new item.|CONFIRMED~OPEC+ October output +2 mb/d supports the bearish case.|CONFIRMED~No new item.|CONFIRMED~No new item.|INVALIDATED by written rule (model still~Gold own score +7 or +4; XAU +14 or +11.")
+    0
+f_data9() =>
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 12, 0, 0))
+    array.push(cN, "Thu 12 Nov · morning")
+    array.push(cD, "C-10,C-10,W5,C7,C13,C-7,C-10,T0,W-5,W-3,W-3,T0,F3,S-5,F-3,F-3,T0,F3,W-2,T0,F3,C6,S-5,F-3,F3,S-8,C-6,W-2,P4")
+    array.push(cH, "The euro got a little breathing room, but the dollar is still the one setting the pace.|Sterling's big exam is this morning, and the dollar walks in with top marks already.|Tokyo cleared its throat as the pair crept toward 160.|A quiet night for the franc, another firm one for the dollar.|Oil slipped again in Asia, and the loonie had nowhere to hide.|The Aussie slid to a seven-month low while the dollar kept collecting hike bets.|No news from Wellington, and that suits the dollar side just fine.|Both sides are waiting for news, and one of them gets it this morning.|This pair can now move both ways in our math, and that makes it one to watch.|The euro's French weight got lighter, and this thin bearish lean could disappear.|A softer French stress meter puts this knife-edge pair at risk of going flat.|Still a stand-off, with the euro inching up from the floor.|Two struggling currencies, but the euro's struggle may be getting lighter.|The pound waits for its GDP verdict while Tokyo warns the market again.|One number this morning could decide whether this thin lean survives.|Two currencies with fading rate stories, and only one of them faces a test today.|A stand-off where one player gets a turn this morning.|Oil kept sliding, giving this slim lean a quiet tailwind.|Still level on the published numbers, but Tokyo keeps adding to the yen's side.|Nothing new on either side, so the stand-off continues.|The Aussie keeps a thin edge over its neighbour on a quiet night.|Oil's slide keeps the commodity cousins apart.|A silent kiwi meets a yen that Tokyo keeps defending.|Two quiet currencies, one thin lean.|The kiwi keeps its thin lead because oil keeps falling.|The weakest currency on our board meets a yen with officials on guard.|Oil down again, franc unchanged: the lean holds.|Two safe havens, and Tokyo just raised its voice.|Gold dipped below $4,000, and the reasons behind it haven't gone away.")
+    array.push(cC, "CONFIRMED (strengthened)~December hike priced 87–91%, 13% for 50bp. No bearish invalidation met.|WEAKENED (scenario −1)~OAT–Bund spread down to 142.4bp from 161.8bp; still above the 130bp line, Senate votes ahead.|CONFIRMED~No new item; UK Q3 GDP 09:00 Bucharest is the test.|INVALIDATED (toward stronger; +6 less li~Mimura warning refreshes the intervention shield; no fresh BoJ December pricing (last 70–75%).|CONFIRMED~No new SNB item; calmer risk mood is the watch.|CONFIRMED~Oil lower again, API crude build; supports the bearish case.|CONFIRMED~Inflation expectations unchanged at 5.3%; no RBA item.|CONFIRMED~No new item; dairy auction 17 Nov.|INVALIDATED by written rule (model still~Gold own score +7 or +4 if real yields keep rising; XAU +14 or +11.")
+    0
+f_data10() =>
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 12, 0, 0))
+    array.push(cN, "Thu 12 Nov · evening")
+    array.push(cD, "C-10,C-10,W5,C7,C13,C-7,C-10,T0,W-5,W-3,W-3,T0,F3,S-5,F-3,F-3,T0,F3,W-2,T0,F3,C6,S-5,F-3,F3,S-8,C-6,W-2,P4")
+    array.push(cH, "Another day, another push for the dollar, while the euro waits for fresh French clues.|The pound passed its growth test, but it didn't win the day.|A Bank of Japan dove spoke up, and the yen's December hopes got a little quieter.|The franc stayed silent again, and the dollar kept the floor.|Oil stayed soft, and the widest gap on our board stayed wide.|A quiet day in Australia left the dollar doing all the talking.|The kiwi had another empty page, and the Fed kept writing.|The pound took its test and passed it quietly, so the stand-off goes on.|Today's BoJ news pulled the yen's strongest scenario further away.|No new French data and no Swiss news: the thin lean stays thin.|The knife-edge pair is still balancing, with no new push from either side.|Two quiet currencies, one more day without a winner.|Oil softened again, and the slim euro lean stayed on its feet.|Sterling's growth number came in as expected, and a BoJ dove trimmed the yen's upside scenario.|The pound cleared its hurdle without drama, so the lean stays thin.|The UK's growth report landed on target, and the Aussie kept its narrow edge.|The pound had its turn, and the stand-off survived it.|Oil drifted lower again while the pound got an on-target growth report.|A dovish voice in Tokyo made the bearish scenario for this pair less likely.|Another day without a tie-breaker.|Two quiet neighbours, and the Aussie keeps its thin lead.|Oil's soft start on Thursday kept the commodity cousins apart.|The kiwi stayed quiet, and Tokyo's message turned mixed.|Neither side spoke today, so the thin lean is unchanged.|Oil's slide kept the kiwi's thin lead in place.|Oil weaker and a BoJ dove: the lean holds, the extreme scenario fades.|Weaker oil, a silent franc: the lean holds.|Two safe havens, and tonight the yen's case got a little softer.|Gold's slide continued, and its main enemy, higher rates, is still in the room.")
+    array.push(cC, "CONFIRMED (strengthened)~Hammack and Goolsbee hawkish; December hike 91%; claims 200k vs 195k (medium, no score effect).|WEAKENED (scenario −1)~No new OAT–Bund reading since 142.4bp (10 Nov); euro-area GDP tomorrow 12:00 Bucharest.|CONFIRMED~UK Q3 GDP +0.7% q/q in line (Sept +0.2% vs 0.0%); not a clear beat. Dec BoE hike priced 66–73%.|INVALIDATED (toward stronger, carried); ~BoJ's Asada urged caution on the pace of hikes; Kihara: weak yen a problem. No fresh December pricing.|CONFIRMED~No new SNB item or Swiss data.|CONFIRMED~Brent $91.3, WTI $85.3 early Thursday; EIA figure not verified.|CONFIRMED~No verifiable RBA item or Australian release today.|CONFIRMED~No new item; dairy auction 17 Nov.|INVALIDATED by written rule (model still~Gold own score +7, or +4 if real yields keep rising; gold at its lowest since 4 Nov early Thursday.")
+    0
+f_data11() =>
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 13, 0, 0))
+    array.push(cN, "Fri 13 Nov · morning")
+    array.push(cD, "C-10,C-10,W5,C7,C13,C-7,C-10,T0,S-5,F-3,F-3,T0,F3,S-5,F-3,F-3,T0,F3,W-2,T0,F3,C6,S-5,F-3,F3,S-8,C-6,W-2,P4")
+    array.push(cH, "French bond stress crept back up just as the Fed's doves turned out to be hawks too.|The pound had a quiet night while the Fed's leadership circle added to the hawkish chorus.|The yen poked through 160 overnight, and Tokyo's warning lights are blinking again.|A wobble on Wall Street, a steady dollar, and a franc that still has nothing new to say.|Oil bounced hard on Middle East attacks, giving the loonie its first good headline in days.|The Aussie slipped toward its 2026 lows while the Fed kept turning the screw.|The kiwi's factories kept growing, just a little slower, while the Fed kept talking tough.|The French bond gap widened again, but not enough to break the tie with sterling.|Both of this pair's open questions moved toward the base case overnight.|The euro's escape route narrowed again, so the thin bearish lean is back on firmer ground.|French bond stress ticked higher, and the knife-edge pair leaned back toward its call.|A softer factory survey in New Zealand, a wider French spread, and still no winner.|Oil's sharp rebound gave Canada a lift, testing a lean that was already thin.|Quiet in London, loud around 160 in Tokyo.|No news for either side, and a small dose of Wall Street nerves in the background.|Two quiet currencies, and the Aussie keeps its slim lead on paper.|The kiwi's factories cooled a touch, but the tie with sterling holds.|Oil's bounce gave the loonie a breather, and this thin lean felt it.|The yen hit 160 against the dollar, and the bearish path for this pair didn't get closer.|Wall Street flinched a little, but not enough to pick a winner here.|The kiwi's factory survey cooled, nudging this thin lean the right way.|Oil bounced, and the commodity cousins' gap faces its first real test.|Kiwi factories cooled, and the yen sat right on Tokyo's red line.|A cooler kiwi factory survey and a jumpier Wall Street, both nudging the same way.|Oil's rebound gave Canada a lift, and this fragile lean got squeezed from both sides.|Oil jumped, the yen sank to 160: the lean holds, the extreme case still waits.|Oil rallied and markets got jumpier: a mixed night for this pair.|Two safe havens, one at Tokyo's red line, and still no clear winner.|Gold's three-day slide hit its lowest since October 2025, then bounced in Asia.")
+    array.push(cC, "CONFIRMED (strengthened)~Daly and Williams lean to more hikes; December fully priced, 12–13% for 50bp; US PPI today 15:30 Bucharest.|CONFIRMED (scenario −1 less likely)~OAT–Bund spread re-widened to 145.7bp (11 Nov) and 147.2bp (12 Nov) from 142.4bp; euro-area GDP today 12:00 Bucharest.|CONFIRMED~No new BoE or UK item overnight; UK labour data Tue 17 Nov.|INVALIDATED (bullish direction, written ~USD/JPY briefly above 160; officials warned against one-sided moves; no new BoJ December pricing.|CONFIRMED~No SNB or Swiss item; VIX 18.70 (+6.9%) after the Nvidia CEO news is information only.|CONFIRMED (watch oil)~Brent settled $95.82 (+3.3%) on Saudi/Hormuz attack reports; still lower on the week; N1 re-measured next PHASE 1.|CONFIRMED~No RBA comment or Australian release overnight.|CONFIRMED~BusinessNZ manufacturing PMI 54.9 from 56.5 (MEDIUM, no factor).|INVALIDATED by written rule; model still~Gold fell 6.35% in three sessions to its lowest since Oct 2025 as the 10-year yield hit 5.10%; no ETF data.")
+    0
+f_data12() =>
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 15, 0, 0))
+    array.push(cN, "Sun 15 Nov · evening")
+    array.push(cD, "C-8,C-4,C5,C8,C9,T-2,C-4,C-4,F-3,T0,C-6,C-4,T1,T1,C4,T-2,T0,C5,F3,C6,T2,C7,T1,C4,C5,C-4,T-1,F-3,F-3")
+    array.push(cH, "Sunday was quiet, but the French Senate had quietly done the euro a small favour.|Both sides spent the weekend saving energy for a loaded week.|Tokyo stayed silent this weekend, and the 160 line is still being watched.|A calm Sunday suits this story: calm is exactly what keeps the franc on the back foot.|Carney talked progress, but a deal is still not on paper.|Still a stand-off. Neither side got a push this weekend.|The kiwi rested this weekend while the vote count carried on in the background.|Paris made a small step forward; London did not need to move.|Thin margin, quiet weekend: this one could tip on a single release.|Dead level at −3 each, and the weekend did nothing to break the tie.|The Aussie keeps its carry crown; the euro waits for Paris.|Two currencies, two very different vote counts.|A stand-off where both sides got a small headline, and neither changed a score.|The pound and the yen both took the weekend off.|The pound's lead over the franc survived a sleepy Sunday.|No winner yet, and no new evidence to pick one.|Level at +1 each, and still level tonight.|The loonie heard warmer trade words, but the pound keeps its lead.|A small lean on a thin cushion, heading into a busy Asian Monday.|Carry against zero yield: the weekend did not change the maths.|The Tasman neighbours are still shoulder to shoulder.|The loonie collected two possible tailwinds; the Aussie collected none, and still leads.|The kiwi and the yen both start the week from the same line.|A lean built on calm and dairy, still standing after a calm weekend.|Dairy versus oil, and oil might get a boost when markets reopen.|The loonie's weekend was busier than the yen's.|Two weak currencies, and the loonie got the better headlines.|Two old safe havens, both silent this weekend.|A Middle East headline is the only thing that could help gold right now.")
+    array.push(cC, "CONFIRMED~No Fed remarks after the FINAL check; December hike 91% read unchanged; Warsh speaks Mon 19:00 Bucharest.|CONFIRMED~Senate passed the PLFSS revenue part 200–110 (13 Nov, before the PHASE 1 cutoff; M note); spread test (< 137bp) not met.|CONFIRMED~No new BoE item; UK jobs Tue 09:00 and CPI Wed 09:00 Bucharest.|CONFIRMED~No new MoF/BoJ comment since Katayama's 13 Nov warning; Q3 GDP Mon 01:50 Bucharest.|CONFIRMED~No SNB item; Swiss Q3 GDP flash Mon 10:00 Bucharest.|CONFIRMED (watch)~Carney: talks 'making progress', no deal, tariffs unchanged; Bab el-Mandeb news may lift oil (information only); CPI Mon 15:30.|CONFIRMED~No RBA or Australian item; China activity data Mon 04:00 Bucharest.|CONFIRMED~No new vote tally or RBNZ item; GDT auction Tue 14:00 Bucharest.|CONFIRMED · fragile (gap −3)~Gold factor −3 unchanged; no ETF/central-bank data; Yemen strait headline is context only.")
+    0
+f_data13() =>
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 16, 0, 0))
+    array.push(cN, "Mon 16 Nov · morning")
+    array.push(cD, "C-8,C-4,S5,C8,C9,T-2,C-4,C-4,W-3,T0,C-6,C-4,T1,T1,C4,T-2,T0,C5,F3,C6,T2,C7,T1,C4,C5,W-4,T-1,W-3,F-3")
+    array.push(cH, "The dollar opened the week at a 19-month high, and Paris sent nothing new to answer it.|Sterling waits for Tuesday while the greenback starts Monday on the front foot.|Japan's economy stalled in the third quarter, and the yen lost a little more footing.|The franc had nothing to lean on overnight, and the dollar index sat at a 19-month high.|Oil slipped again at the open, giving the loonie one more worry before its CPI.|China's October numbers missed across the board, but the stand-off holds.|Weak Chinese demand is a small cloud over the kiwi's dairy story.|A quiet Asian night for two European currencies whose stories start later today.|The yen's side of this lean got weaker overnight.|Still dead level, with the franc's data due this morning.|China's soft data took a little shine off the Aussie, but not enough to matter.|Both sides start the week waiting: the euro on Paris, the kiwi on dairy.|Cheaper oil nudged this stand-off slightly toward the euro, on paper only.|The yen stumbled on GDP, but the pound has not shown up yet.|No fear in Asia, no help for the franc.|China's slowdown gives the pound a sliver of hope in this tie.|Level at +1 each, and Asia's data did not split them.|Oil gave the pound a small helping hand before Canada's inflation test.|Two Asian data misses, and they pulled in opposite directions.|The carry gap survived China's soft numbers.|China's slowdown hits both neighbours, so it does not separate them.|Oil dipped, China missed, and the lean barely noticed.|The yen blinked first, but the stand-off stays.|A calm Asian session keeps the kiwi's lean over the franc.|Oil gave way a little more, and the dairy side is still waiting for its auction.|Both legs got weaker overnight, so this lean is under watch.|Two weak currencies, and cheaper oil did the loonie no favours.|The yen's small edge over the franc wobbled on Japan's GDP.|Gold got no new fuel overnight, and the dollar stayed firm.")
+    array.push(cC, "CONFIRMED~Dec 25bp hike priced 92–94%, 50bp tail down to 6–8% (from 11.5% Fri); no Fed policy shift overnight; Warsh 19:00 Bucharest.|CONFIRMED~No French spread or budget item overnight; Senate resumes the PLFSS spending debate today.|CONFIRMED~No BoE item overnight; UK jobs Tue 09:00 and CPI Wed 09:00 Bucharest.|WEAKENED (watch)~Q3 GDP −0.1% ann. vs +0.3% exp.: shadow R3 −1, raw −0.9 held at 0; BoJ Dec pricing fade not seen; no MoF comment.|CONFIRMED~No SNB item; Swiss Q3 GDP flash 10:00 Bucharest (after this check).|CONFIRMED (watch)~Brent −1% to $94.86 early Monday on IEA surplus view (N1 info only); Canada CPI 15:30, poll 3.2%.|CONFIRMED (watch)~China Oct data missed (IP 4.8%, retail 0.4%, FAI −8.1% YTD): MEDIUM, no factor; RBA minutes Tue 02:30.|CONFIRMED (watch)~China's soft retail sales are a dairy-demand risk; no RBNZ or vote update; GDT Tue 14:00.|CONFIRMED · fragile (gap −3)~Gold factor −3 unchanged; no ETF/central-bank data; 10y 5.14%; Bab el-Mandeb did not trigger risk-off.")
+    0
+f_data14() =>
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 16, 0, 0))
+    array.push(cN, "Mon 16 Nov · evening")
+    array.push(cD, "C-8,C-4,S5,C8,S9,T-2,C-4,C-4,W-3,T0,C-6,C-4,T1,T1,C4,T-2,T0,S5,F3,C6,T2,S7,T1,C4,S5,W-4,T-1,W-3,F-3")
+    array.push(cH, "Warsh took the stage and talked about AI, not rates, so the dollar keeps its lead over the euro.|The pound is still waiting for its jobs report, and Warsh gave the greenback no reason to slow down.|No rate hints from Warsh, no words from Tokyo: the gap holds at +5.|Switzerland's economy grew a little in Q3, which neither helps nor hurts the franc's case.|Canada's inflation came in softer than expected, and the loonie's case got a little weaker.|The Aussie had a silent Monday, and the dollar got no new push either.|The kiwi spent Monday waiting for milk prices, while the Fed chair talked about artificial intelligence.|Two European currencies, two quiet days, and a lean that did not move.|The yen's soft spot from the morning is still there, and the euro did nothing to exploit it.|Swiss growth came in modestly positive, and the tie at 0 stays a tie.|The Aussie kept its edge on a day with no Australian news at all.|No news from Paris or Wellington, so the −4 lean simply carries over.|Canada's soft inflation tilted this stand-off a touch toward the euro, but not enough to pick a side.|The yen is still nursing its GDP miss; the pound is still waiting for its turn.|Swiss GDP grew modestly, and the franc's haven role stayed asleep.|Both sides spent Monday waiting for Tuesday.|Level at +1 each, with both currencies' first big tests now less than a day away.|Canada's soft CPI handed the pound a little more room in this matchup.|A quiet Aussie and a still-wobbly yen keep this lean just above the line.|Carry beats a modest Swiss growth number.|Neither neighbour had news, so the +2 tie stays.|Canada's CPI came in cool, and the Aussie's lead over the loonie edged wider on paper.|The kiwi and the yen both had a quiet afternoon, and the stand-off holds at +1.|Swiss growth stayed positive, the kiwi stayed patient, and the +4 lean survived.|Softer Canadian inflation gave the kiwi a slightly bigger cushion.|Both legs are softer today, and they pull this gap in opposite directions.|Canada's soft inflation nudged this stand-off slightly toward the franc.|The franc got a modest growth print; the yen got no help from Tokyo.|Gold touched a new low for the year, but the model's gold factor did not move.")
+    array.push(cC, "CONFIRMED~Warsh's AI/productivity speech gave no rate guidance; Dec 25bp priced 94% (6% for 50bp); Collins/Schmid/Jefferson hawkish.|CONFIRMED~No OAT–Bund reading after 13 Nov (151.8bp); Senate PLFSS spending debate continues; no relief signal.|CONFIRMED~No verified BoE item; Pill speech flagged but text unpublished; UK jobs Tue 09:00, CPI Wed 09:00 Bucharest.|WEAKENED (watch)~Q3 GDP miss carried: shadow R3 −1, raw −0.9 held at 0; no MoF/BoJ comment verified today.|CONFIRMED~Swiss Q3 GDP flash +0.2% q/q (industry up, services flat); no consensus, no surprise; SNB silent.|CONFIRMED (bearish reinforced)~Oct CPI 3.1% vs 3.2% exp., m/m 0.2% vs 0.3%, trim 1.8%, median 2.0%: shadow R3 −1, raw −4.5 held at −4.|CONFIRMED~No Australian or RBA item today; RBA minutes Tue 02:30 Bucharest.|CONFIRMED~No NZ or RBNZ item today; GDT auction Tue 14:00 Bucharest.|CONFIRMED · fragile (gap −3)~Gold factor −3 unchanged; gold at a year low $3,855 (price context); no ETF/central-bank data; 10y 5.14%.")
+    0
+f_data15() =>
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 17, 0, 0))
+    array.push(cN, "Tue 17 Nov · morning")
+    array.push(cD, "C-8,C-4,S5,C8,S9,T-2,C-4,C-4,F-3,T0,C-6,C-4,T1,T1,C4,T-2,T0,S5,W3,C6,T2,S7,T1,C4,S5,C-4,T-1,F-3,F-3")
+    array.push(cH, "Wall Street had a rough Monday, yet the euro could not use the dollar's wobble because Paris got worse.|Pill's hawkish words reached us in full, and the pound now walks into its jobs report with a December hike in its pocket.|The yen got two pieces of help overnight: a market scare and firmer BoJ hike bets.|The fear gauge jumped, and the franc's alarm is starting to ring, though not loudly enough yet.|Oil fell another 3.5% and the loonie's day got even worse.|The RBA minutes sounded tough, but the Aussie still had the worst night in the G10.|The kiwi walked into a risk-off night with no news of its own to lean on.|Paris widened, London talked tough: the lean toward the pound got a little firmer, though the score stays.|The yen's weak spot from Monday is healing, while the euro's French bruise got darker.|Both sides of this tie lost a little overnight, so it stays a tie.|The Aussie stumbled overnight, but its six-point lead over the euro is too wide to lose in one night.|A worse day for France than for New Zealand keeps the kiwi in front.|Cheap oil and a wider French spread hit both sides, and the stand-off survives.|The pound got a hawkish voice and the yen got firmer BoJ bets: still level.|Sterling found a hawkish ally, but rising market fear is the risk to watch here.|The Aussie slipped overnight; the pound's chance to tip the scale comes at 09:00.|Two tie-breakers land today, five hours apart.|Oil kept falling and the pound kept its hawks: this lean got a little more room.|This is the pair where the overnight scare matters most.|High yield versus zero yield, on a night when fear came back a little.|Both Antipodeans felt the risk-off night, so the gap stays +2.|Even after a soft night for the Aussie, the loonie's oil problem is bigger.|Risk-off nights usually favour the yen over the kiwi, but the scores did not move.|A nervous market is the franc's best friend, so this lean is worth watching today.|Dairy has not spoken yet, but oil already did, and it was bad news for the loonie.|Cheap oil, firmer BoJ bets and a risk scare all point the same way here.|Oil weighed on the loonie and fear helped the franc, but the stand-off holds.|Two havens on a nervous night: the yen got the extra help.|Markets got scared on Monday, and gold still fell.")
+    array.push(cC, "CONFIRMED~Equities −1.9%, VIX 22.91, yet Dec 25bp still 91% priced (50bp 9%); retail sales today 15:30 Bucharest.|CONFIRMED (bearish reinforced)~OAT–Bund widened to 155.0bp on 16 Nov (151.8bp on 13 Nov), further from the 137bp relief level.|CONFIRMED~Pill (FT, 14 Nov) backs a December hike, matching 73% pricing; UK jobs 09:00, CPI Wed 09:00 Bucharest.|CONFIRMED (watch)~BoJ Dec hike 85% priced (MUFG, one source) after the GDP miss; shadow R3 −1, raw −0.9 held at 0.|CONFIRMED (watch)~VIX 22.91 nears the franc's 25 trigger but is below it; no SNB item.|CONFIRMED (bearish reinforced)~Brent −3.55% to $92.44, $91.8 in Asia; CPI miss carried: shadow raw −4.5 held at −4.|WEAKENED (watch)~RBA minutes split 6–3 for the hike, peak priced ( 22bp cuts by end-2027); risk scare partial (VIX 22.9).|CONFIRMED~No verified NZ or RBNZ item overnight; GDT auction 14:00 Bucharest today.|CONFIRMED · fragile (gap −3)~Gold −0.86% to $3,853 on a risk-off day (price context); gold factor −3 unchanged; 10y 5.12%.")
+    0
+f_data16() =>
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 17, 0, 0))
+    array.push(cN, "Tue 17 Nov · evening")
+    array.push(cD, "S-9,S-5,S6,S9,S10,X-3,S-5,S-4,F-3,T0,C-6,C-4,T1,T1,S4,T-2,T0,S5,W3,C6,T2,S7,T1,C4,S5,C-4,T-1,F-3,F-3")
+    array.push(cH, "American shoppers kept spending where it counts, and the dollar side of this pair grew one notch.|Britain's jobs report gave the pound a cleaner headline, but America's shoppers gave the dollar more.|The dollar leg picked up fresh fuel while Tokyo only repeated its warning.|A firmer American consumer widened the distance between a hiking Fed and a 0% SNB.|Two weak spots for the loonie this week, and now a stronger greenback on the other side.|This stand-off just tipped: one dollar point is enough to give the pair a lean.|The kiwi waited for dairy news while the dollar collected a stronger data point.|A lower UK jobless rate leaned the right way for this pair, without moving a score yet.|Neither side got a decisive push today, so the thin lean toward the yen survives.|A tie with no new ammunition on either side.|The Aussie is still bruised from the minutes, but the euro never got its chance to close the gap.|Dairy day came and went without a verified number, so the kiwi keeps its small lead.|Two tired currencies, one quiet afternoon, still level.|Sterling got a jobs report it can argue about; the yen got another warning from Tokyo.|Better British jobless numbers keep this lean intact, with a small upside if they count as hawkish.|The pound's report could narrow this gap, but not enough to create a lean.|The tie-breakers arrived, but only one could be checked.|Two possible upgrades sit behind this pair's five-point lean.|The risk-mood pair heads into tonight's Nvidia results with a weakened Aussie leg.|Carry against zero yield held up through a data day that belonged to others.|The kiwi's dairy test is still unread, so the Tasman tie holds.|The loonie's soft inflation is still the stronger story in this commodity matchup.|A kiwi without a verified dairy number meets a yen with another verbal shield.|Nothing moved either leg, so the four-point lean rests where it was.|Dairy is unconfirmed, but the loonie's own weakness keeps this lean healthy.|The loonie's soft spot and the yen's verbal shield both stay in place.|A one-point gap between two weak currencies, unchanged by a quiet day.|Two former havens, and only the yen got even a verbal boost today.|The dollar got stronger in the shadow, but gold's own model did not move.")
+    array.push(cC, "CONFIRMED (strengthened)~Retail sales +0.2% in line but control group +0.6% vs +0.4%; Musalem: several hikes by spring. Shadow R3 +2, raw 6.3 → +6.|CONFIRMED~No new OAT–Bund reading after 155.0bp (16 Nov); Senate PLFSS vote expected 18 Nov.|CONFIRMED (mixed data)~Jobless 4.6% vs 4.7% but payrolls −34k, pay slowing; Dec BoE odds 80–90%. +2 if scored hawkish.|CONFIRMED (watch)~Katayama repeats US coordination and readiness to act; shadow R3 −1, raw −0.9 held at 0.|CONFIRMED (watch)~No SNB item; VIX-25 trigger not confirmed by a verified close.|CONFIRMED (bearish reinforced)~No new Canadian item; CPI miss carried: shadow raw −4.5 held at −4.|WEAKENED (watch)~No verified Australian item since the morning; RBA 6–3 split still the latest signal; wages Wed 02:30.|CONFIRMED~GDT auction result not verified at check time; no RBNZ item.|CONFIRMED · fragile (gap −3)~Gold factor G −3 unchanged; XAU shadow = G + USD shadow = +3; no ETF or central-bank data.")
+    0
+f_data17() =>
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 18, 0, 0))
+    array.push(cN, "Wed 18 Nov · morning")
+    array.push(cD, "S-9,S-5,S6,P9,S10,X-3,S-5,S-4,F-3,T0,C-6,C-4,T1,T1,P4,T-2,T0,S5,W3,P6,T2,S7,T1,P4,S5,C-4,T-1,P-3,F-3")
+    array.push(cH, "Williams closed the door on a jumbo hike, yet the dollar still walked into Wednesday holding the extra notch.|Sterling's big test lands at 09:00, and the greenback arrives at it with Williams' blessing for more, but smaller, hikes.|The pair hovered just under 160 all night while Tokyo kept its warnings in the drawer.|The franc's alarm finally rang: the fear gauge closed above 25.|Oil settled a touch higher, but the loonie still carries its soft-inflation bruise into the minutes.|Australian wages jumped, yet the tipped stand-off stays tipped.|The kiwi slid to its weakest level since 2020 on the charts, but its model score did not budge.|Two verdicts arrive today for this cross: UK inflation at breakfast and French senators later on.|Three points of distance, and both sides spent the night saying nothing.|The franc's fear trigger fired at Tuesday's close, but in a tie that only matters if Friday agrees.|A wage surprise in Sydney gave the Aussie side of this matchup fresh support.|The kiwi's chart looks grim, but this cross is judged on fundamentals, and those did not change.|Oil's small settle gain and France's quiet night leave this cross without a direction.|The pound gets its answer at 09:00; the yen waits until Friday.|The franc's comeback condition was met on paper, just as the pound heads into its inflation test.|Australia moved first with a wage surprise; Britain answers with inflation this morning.|Level at +1 each, and only one of them has a catalyst today.|Two routes to a bigger lean, and one of them could open at 09:00.|Strong wages on one side, a risk scare on the other: the classic carry cross is pulled both ways.|High yield versus safe haven, and Tuesday's close tilted the board toward the haven.|Across the Tasman, only one side had news, and it was good news for Canberra.|A wage beat in Australia and a quiet loonie keep this commodity-currency lean healthy.|A sliding kiwi and a silent Tokyo: the stand-off survives another night.|The VIX crossed the franc's line at Tuesday's close, and the kiwi had no news to push back.|The kiwi's slide on the charts does not change the fact that the loonie's fundamentals are weaker.|Both legs are held by the one-point rule, and the night brought nothing to break the hold.|The franc's trigger fired at the close, which matters in this tie only if Friday confirms it.|Two havens, and Tuesday's fear spike favoured the one that was losing.|Gold printed a fresh 14-month low in Asia, but its gap is set by inputs, not by the price.")
+    array.push(cC, "CONFIRMED (strengthened)~Williams: no 'dramatic action' needed (no 50bp), more hikes likely; 25bp December 98%. Shadow R3 +2, raw 6.3 → +6.|CONFIRMED~No OAT–Bund reading after 155.0bp (16 Nov); Senate PLFSS vote today (time not verified).|CONFIRMED (mixed data)~No BoE item overnight; +1 central, +2 if the labour data are scored hawkish. UK CPI 09:00 today.|CONFIRMED (watch)~No MoF/BoJ comment overnight; USD/JPY 159.4; exports up a 14th month (not scored). Raw −0.9 held at 0.|INVALIDATED (bullish condition met, mode~VIX closed 25.46 on 17 Nov: the 'VIX above 25' condition is met; regime re-measured only from Friday closes, so shadow stays −3.|CONFIRMED (bearish reinforced)~Brent settled $93.14 (+0.76%), $92.6 in Asia; no Canadian release. Raw −4.5 held at −4.|WEAKENED (watch)~Q3 wages +1.1% q/q vs 1.0% exp (3.5% y/y): R3 shadow +1, raw 3.6 held at +3; risk scare (VIX >25) offsets.|CONFIRMED~No NZ data or RBNZ item overnight; kiwi at its lowest since 2020 is price context only.|CONFIRMED · fragile (gap −3)~G −3 unchanged; XAU shadow = G + USD shadow = +3. Fresh low near $3,825 in Asia is context only.")
+    0
+f_data18() =>
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 18, 0, 0))
+    array.push(cN, "Wed 18 Nov · evening")
+    array.push(cD, "S-9,S-5,S6,P9,S10,X-3,S-5,W-4,F-3,T0,C-6,C-4,T1,T1,P4,T-2,T0,W5,W3,P6,T2,S7,T1,P4,S5,C-4,T-1,P-3,F-3")
+    array.push(cH, "Paris stayed silent all day, and the dollar walks into the Fed minutes still one notch heavier.|UK inflation hit 3.6%, right on the poll, and that was not enough to give cable a lift.|Another day parked under 160, and Tokyo's officials let the level speak for itself.|The franc's alarm from Tuesday is still ringing, even though the model will not listen until Friday.|Brent sagged toward $92, close to its weakest since late August, and the loonie got no help from it.|The Aussie spent the day digesting its wage beat, and the tipped stand-off stayed tipped.|Wellington had nothing to say today, and the kiwi's fundamentals did not move an inch.|The pound's inflation test came back merely in line, and that takes some shine off the bearish lean.|The thinnest possible lean survived another quiet session on both ends.|A tie at −3 apiece, with the franc's paper trigger waiting for Friday's verdict.|The Aussie's wage surprise is still the freshest fact in this matchup.|No news from Paris, no news from Wellington, and the four-point lean simply carried on.|Cheaper oil nudges against the loonie, but not enough to break this stalemate.|The pound's CPI test passed without fireworks, so the stand-off goes on.|Both legs gave ground on paper today: the pound's inflation was tame and the franc's trigger still stands.|Australia's wage beat still outweighs Britain's middling inflation print.|Britain had its inflation day, New Zealand had a blank one, and the tie held.|One of the two routes to a bigger lean narrowed this morning; the oil route stays open.|The carry cross still feels Tuesday's fear spike, even with fresh wage strength behind the Aussie.|The high-yielder versus the haven, and the haven's trigger is still lit.|Across the Tasman the score is still +3 against +1, one point short of a call.|Wages up in Australia, oil down for Canada: this commodity cross kept its tilt.|Two quiet currencies, one point apart, and still no reason to pick a side.|The kiwi had nothing to say, and the franc's comeback condition from Tuesday is still met.|Oil kept sliding, and that is the side of the story that matters for this cross today.|Cheaper oil and a silent Tokyo kept both legs right where they were.|The franc's trigger sits on the table; this tie waits for Friday to decide if it counts.|A haven duel where the weaker haven's rescue condition was met on Tuesday and has not been cancelled.|Gold slipped under $3,800 today, yet its gap is decided by inputs, and none of them changed.")
+    array.push(cC, "CONFIRMED (strengthened)~No new Fed remark verified today; December 25bp 96%. Shadow R3 +2, raw 6.3 → +6. FOMC minutes 21:00 Bucharest.|CONFIRMED~No verified Senate PLFSS result and no OAT–Bund reading after 155.0bp (16 Nov).|WEAKENED (watch)~UK CPI 3.6% (in line, BoE saw 3.7%), services 3.7% vs 3.8%; Dec hike odds 74%. Bearish condition half met; +1 held.|CONFIRMED (watch)~No verified MoF/BoJ comment today; raw −0.9 held at 0. Japan CPI Fri 01:30 Bucharest.|INVALIDATED (bullish condition met, mode~Tuesday's VIX close 25.46 still meets the 'VIX above 25' condition; regime re-measured only from Friday closes.|CONFIRMED (bearish reinforced)~Brent $92, near its lowest since 31 Aug; no Canadian release. Raw −4.5 held at −4.|WEAKENED (watch)~No new item after the Q3 wage beat (raw 3.6, held +3); October jobs Thu 02:30 Bucharest.|CONFIRMED~No NZ data, RBNZ or election item today.|CONFIRMED · fragile (gap −3)~G −3 unchanged; XAU shadow = G + USD shadow = +3. Gold below $3,800 is price context only.")
+    0
+f_data19() =>
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 19, 0, 0))
+    array.push(cN, "Thu 19 Nov · morning")
+    array.push(cD, "S-9,S-5,S6,W9,S10,X-3,S-5,W-4,F-3,T0,P-6,C-4,T1,T1,W4,T-2,T0,W5,P3,P6,T2,P7,T1,W4,S5,C-4,T-1,W-3,F-3")
+    array.push(cH, "The Fed's own minutes said what the speakers have been saying all week: more hikes are coming.|A cooler UK inflation print yesterday, a hawkish set of Fed minutes last night: both nudges point the same way.|Hawkish minutes gave the dollar side another push, while Tokyo stayed with words rather than action.|The fear gauge slipped back under 25, so the franc's comeback trigger is no longer live, only close.|Oil slid again and the Fed minutes leaned hawkish: two winds blowing in the dollar's favour.|Australia lost 43,500 jobs in October, and the stand-off is now leaning clearly toward the dollar.|No news from Wellington again, while the Fed minutes kept the dollar's engine running.|France cleared one Senate hurdle, Britain is still digesting softer inflation, and the lean has not moved.|A Senate vote for the euro and a fresh warning for the yen, but neither moved this three-point lean.|With the VIX back under 25, the franc's route to a lean in this tie has closed for now.|The Aussie's jobs report collapsed overnight, and this euro-weak lean just lost some of its footing.|Only one side of this cross had news, and it did not help the euro.|Cheaper oil and a wider French spread: both legs got a little heavier, and the tie stays a tie.|The pound came out of its data run weaker, the yen held steady, and neither has a lead.|Both legs are on watch: a softer pound after CPI and a franc whose fear trigger just went quiet.|Australia's jobs shock lands in a pair that was already a stand-off.|Two currencies at +1 and a quiet night for both.|Oil sank again for the loonie, but the pound's own softness keeps this lean under watch.|The carry currency's labour market cracked overnight, and this three-point lean is now hanging by a thread.|High yield met a weak jobs report, while the haven's trigger cooled just below 25.|The Australian jobs report was the one release this cross was waiting for, and it went against the Aussie.|Both commodity currencies took a hit: jobs for the Aussie, oil for the loonie.|Wellington silent, Tokyo repeating itself: the stand-off continues.|The franc's fear trigger switched off at Wednesday's close, but only by a whisker.|Oil kept sliding, and that is the loonie's problem in this matchup.|Two legs held in place by rounding, and the night did not break either hold.|The franc's trigger cooled and the loonie's oil weighed: still no winner.|A haven duel where both havens have soft spots this morning.|Gold fell 3.5% after hawkish minutes, but its gap is set by inputs, and those did not change.")
+    array.push(cC, "CONFIRMED (strengthened)~FOMC minutes: nearly all officials see more hikes as likely appropriate; Waller backs considering 50bp; December 25bp priced 90–95%.|CONFIRMED~Senate adopted the PLFSS 201–124 (deficit €14bn vs €12.7bn); OAT–Bund widened to 156.3bp on 17 Nov; CMP 26 Nov.|WEAKENED (watch)~No new BoE item; carried from CPI 3.6% below the BoE 3.7% projection (central +1, dovish R3 scenario still +1).|CONFIRMED (watch)~Katayama repeats US coordination and readiness to act (no action); BoJ December hike still expected; raw −0.9 held at 0.|WEAKENED (watch)~VIX closed 24.56 on 18 Nov, back below the 25 trigger met on 17 Nov; HY spread 3.43%; regime re-measured on Friday.|CONFIRMED (bearish reinforced)~Brent settled $91.95 (−1.3%), WTI $83.26 (−3.2%); no verified US–Canada deal; raw −4.5 held at −4.|INVALIDATED (bearish direction)~October jobs −43.5k vs +25k, unemployment 4.9% vs 4.7%: weakness condition met; shadow +3 central, 0 if R2 turns −1.|CONFIRMED~No NZ release or RBNZ remark after T0.|CONFIRMED (fragile)~Gold factor −3 unchanged; gold settled $3,728.80 (−3.5%), price context only; XAU shadow = G + USD shadow.")
+    0
+f_data20() =>
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 19, 0, 0))
+    array.push(cN, "Thu 19 Nov · evening")
+    array.push(cD, "S-9,S-5,S6,P9,S10,X-3,S-5,W-4,F-3,T0,P-6,C-4,T1,T1,P4,T-2,T0,W5,P3,P6,T2,P7,T1,P4,S5,C-4,T-1,P-3,F-3")
+    array.push(cH, "US factories wobbled today, yet the dollar's case barely flinched, and Paris had nothing to offer the euro.|Sterling sits at its lowest in a year against the greenback, and today's news did not hand it a rope.|Tokyo kept talking, the Fed kept leaning hawkish, and the pair stays tilted toward the dollar ahead of Japan's CPI.|Wall Street lurched lower and the fear gauge shot above 28 intraday: the franc's comeback trigger is back on.|Carney met Trump in Shenzhen and came back with warm words but no deal, while crude kept leaking lower.|A day after the jobs shock, rate markets dropped every trace of another RBA hike.|The kiwi found some support from its own rate market, but not enough to change the matchup.|Neither side moved on the scoreboard today; the pound's softer tone is still the open question.|Global stocks slid and the yen stayed steady, so this three-point lean keeps hanging by its thread.|The fear trigger that favours the franc lit up again, but this tie needs a score change to break.|The Aussie's rate story turned from 'one more hike?' to 'when is the first cut?', and that eats into this lean.|New Zealand's rate market still expects a hike, which keeps the kiwi a step ahead of a stuck euro.|Canada left Shenzhen empty-handed on the US deal, and the euro waited for Paris: still a coin toss.|The pound drifted and the yen waited for tonight's inflation figure: no lean yet.|Both legs went the wrong way for this lean today: a cautious Bailey and a frightened stock market.|Rate cuts are now priced for Australia, but even that does not create a winner here.|One central bank is still expected to hike, the other just trimmed its 2027 path: the scores stay level.|The loonie missed its US deal again, yet the softer pound keeps this lean under watch.|Risk-off and a dovish RBA repricing on the same day: the carry cross is losing both its supports.|A rate-cut story for the Aussie and a fear spike for the franc: this lean is being squeezed from both ends.|The two rate markets pulled apart today, cuts for Australia and a hike for New Zealand, but the scores have not.|Australia's rate market turned dovish just as Canada's US deal slipped again; the stronger leg is the one cracking.|The kiwi's hike odds and the yen's verbal shield both held: still no lean.|A risk scare is the franc's friend and the kiwi's enemy, and Thursday delivered one intraday.|Canada got no US deal and cheaper oil, while the kiwi kept its hike odds: the lean holds.|Two currencies held by rounding, one with a missed trade deal and one with an inflation test tonight.|The franc's fear trigger fired intraday and the loonie stayed heavy, but the tie survives on paper.|In this haven duel, the franc just got the risk shock its comeback condition describes.|Gold slipped again even as stocks fell, so the haven channel has not helped it yet.")
+    array.push(cC, "CONFIRMED (strengthened)~Second-tier data mixed (claims 203k, Philly 6.3) but prices paid jumped to 58.2; hike path intact.|CONFIRMED~No new spread print after 156.3bp (17 Nov); Senate budget debate from Friday.|WEAKENED (watch)~Bailey balanced (no pre-set path); 2027 BoE pricing trimmed to 80bp.|CONFIRMED (watch)~Katayama repeats the warning; December BoJ hike expected; CPI tonight.|INVALIDATED (bullish direction)~VIX 27–28 intraday meets the franc condition (two consistent sources); close pending; score re-measured Friday.|CONFIRMED (bearish reinforced)~Carney after meeting Trump: deal possible but not yet there; oil lower.|INVALIDATED (bearish direction)~Swaps price no RBA hike and a 68% cut by June; shadow +3 central, 0 if R2 is cut.|CONFIRMED~RBNZ 25bp hike priced at 78%; no score change.|CONFIRMED (fragile)~Gold factor −3 unchanged; XAU shadow +3 only via the USD shadow.")
+    0
+f_data21() =>
+    array.push(cT, timestamp("Europe/Bucharest", 2026, 11, 20, 0, 0))
+    array.push(cN, "Fri 20 Nov · morning")
+    array.push(cD, "S-9,S-5,S8,P9,S10,X-3,S-5,W-4,X-1,T0,P-6,C-4,T1,X3,P4,T-2,T0,W5,P5,P6,T2,P7,X3,P4,C5,X-2,T-1,X-1,F-3")
+    array.push(cH, "Wall Street had its worst day in weeks, and the dollar still walked away with the stronger hand.|Sterling slept through the night while American shares tumbled, and the greenback kept its edge.|Tokyo's inflation came in a touch cooler than hoped, and the yen lost another piece of its story.|The fear gauge closed well above 25, and that is the franc's alarm bell ringing for real this time.|No news from Ottawa overnight, and the loonie's case stayed as soft as it was on Thursday.|The Aussie's bad week found no relief overnight, so the bearish shadow from Thursday holds.|The kiwi had no headlines of its own, which left the dollar to set the tone again.|Neither side spoke overnight, so this pair waits on London's shoppers and Lagarde's microphone.|Japan's softer core inflation took the bite out of the yen, and the bearish lean here slipped into a stand-off.|A genuine risk-off close lands right on this pair's fault line, but the scores have not moved yet.|The Aussie is still limping after Thursday's jobs shock, which keeps this bearish view under strain.|Two quiet currencies met overnight, and the bearish read stayed exactly where it was.|Still a stand-off: the euro's French trouble and the loonie's soft inflation cancel each other out.|A softer Japanese inflation print turned this stand-off into a pound lean, at least in the shadow.|The franc's fear trigger has now been met on a close, and that leans hard against this pound lean.|A stand-off between two leaking boats: the pound's soft inflation and the Aussie's jobs shock.|Level pegging again, with neither side giving the other an opening overnight.|The pound's softer week keeps this bullish view under watch, even with the loonie still weak.|Japan's cooler core CPI helped this pair on paper, but the Aussie's wound keeps it under pressure.|Weak Australian jobs on one side and a risk-off close on the other: this lean is under fire twice.|Still a draw, and the Aussie's weak jobs make a kiwi lean more likely than an Aussie one.|The Aussie's jobs hit keeps pressure on this bullish view, even though the loonie offered no help overnight.|The yen slipped on softer inflation, and this quiet stand-off tipped into a kiwi lean in the shadow.|A true risk-off close puts this kiwi lean on shaky ground ahead of Friday's measurement.|Two quiet commodity currencies, and the kiwi still holds the better hand.|The yen's soft inflation cut away the support under this bearish view, and the shadow now shows a stand-off.|Still a stand-off on the scores, but a risk-off regime tonight could break it toward the franc.|Japan's softer core inflation pulled the yen down, and this bearish lean drifted into a stand-off.|Gold kept sliding through a stock-market rout, so the haven story has not saved it yet.")
+    array.push(cC, "CONFIRMED (strengthened)~Stocks fell 2% but December hike odds held near 96%; Barr: inflation too high.|CONFIRMED~No spread print after 156.3bp (17 Nov); Senate budget (PLF) debate opens today.|WEAKENED (watch)~No BoE item overnight; UK retail sales at 09:00 are the next test.|WEAKENED (watch)~Core CPI 2.2% vs 2.3% expected (second soft surprise after GDP): shadow −2; 0 if read as in line.|INVALIDATED (bullish direction)~VIX closed about 28.4: the franc condition is met on a close; score re-measured from Friday closes.|CONFIRMED (bearish reinforced)~No Canadian item overnight; retail sales at 15:30 Bucharest.|INVALIDATED (bearish direction)~Jobs-miss condition still met; shadow +3 central, 0 if the RBA outlook (R2) is cut.|CONFIRMED~No New Zealand item overnight; most exposed to a −2 risk regime at Friday close.|CONFIRMED (fragile)~Gold factor −3 unchanged (spot near $3,675); XAU shadow +3 only via the USD shadow.")
+    0
+if barstate.isfirst
+    f_data0()
+    f_data1()
+    f_data2()
+    f_data3()
+    f_data4()
+    f_data5()
+    f_data6()
+    f_data7()
+    f_data8()
+    f_data9()
+    f_data10()
+    f_data11()
+    f_data12()
+    f_data13()
+    f_data14()
+    f_data15()
+    f_data16()
+    f_data17()
+    f_data18()
+    f_data19()
+    f_data20()
+    f_data21()
+
+// ───────── helpers ─────────
+f_col(string b) => b == "U" ? bullC : b == "D" ? bearC : neutC
+f_tr(string c)  => c == "h" ? 76 : c == "m" ? 84 : 91
+f_bname(string b) => b == "U" ? "BULLISH" : b == "D" ? "BEARISH" : "TWO-SIDED"
+f_cname(string c) => c == "h" ? "high" : c == "m" ? "medium" : c == "l" ? "low" : "–"
+f_arrow(string b) => b == "U" ? "▲" : b == "D" ? "▼" : "◆"
+f_sg(float g) => na(g) ? "–" : g > 0 ? "+" + str.tostring(g) : str.tostring(g)
+f_emo(string s) => s == "C" ? "✅" : s == "S" ? "✅" : s == "F" ? "🟡" : s == "W" ? "👀" : s == "P" ? "⚠️" : s == "X" ? "❌" : s == "T" ? "⚪" : "•"
+f_short(string s) => s == "C" ? "CONF" : s == "S" ? "CONF+" : s == "F" ? "FRAGILE" : s == "W" ? "WATCH" : s == "P" ? "PRESSURE" : s == "X" ? "INVALID" : s == "T" ? "2-SIDED" : "?"
+f_sname(string s) => s == "C" ? "Confirmed" : s == "S" ? "Confirmed, could get stronger" : s == "F" ? "Confirmed but fragile" : s == "W" ? "Under watch" : s == "P" ? "Under pressure" : s == "X" ? "Invalidated" : s == "T" ? "Still two-sided" : "No status"
+f_item(string row, int i) =>
+    string[] parts = str.split(row, ",")
+    i >= 0 and i < array.size(parts) ? array.get(parts, i) : "?"
+f_num(string s) => str.tonumber(s)
+f_part(string row, string sep, int i) =>
+    string[] parts = str.split(row, sep)
+    i >= 0 and i < array.size(parts) ? array.get(parts, i) : ""
+// break a long text into lines of about n characters (tooltips and table cells do not wrap by themselves)
+f_wrap(string txt, int n) =>
+    string[] words = str.split(txt, " ")
+    string out = ""
+    string ln = ""
+    for w in words
+        if ln != "" and str.length(ln) + str.length(w) + 1 > n
+            out := out == "" ? ln : out + "\n" + ln
+            ln := w
+        else
+            ln := ln == "" ? w : ln + " " + w
+    out == "" ? ln : out + "\n" + ln
+// one currency's status and note in a check
+f_leg(int ci, string ccy) =>
+    int k = array.indexof(CCY, ccy)
+    string row = array.get(cC, ci)
+    string it = row == "" or k < 0 ? "" : f_part(row, "|", k)
+    string st = f_part(it, "~", 0)
+    string nt = f_part(it, "~", 1)
+    it == "" ? "" : ccy + " · " + (st == "-" ? "" : st) + (nt == "-" or nt == "" ? "" : "\n" + f_wrap(nt, 60))
+f_score(int wk, string ccy) =>
+    int k = array.indexof(CCY, ccy)
+    string v = wk >= 0 and k >= 0 ? f_item(array.get(wS, math.max(wk, 0)), k) : "?"
+    v == "?" ? "?" : f_sg(f_num(v))
+// mini bar for a currency score: 5 blocks, 1 block ≈ 3 points
+f_bar(string ccy, string sc) =>
+    float v = f_num(sc)
+    int n = na(v) ? 0 : math.min(5, int(math.round(math.abs(v) / 3)))
+    string blk = ""
+    for k = 1 to 5
+        blk += k <= n ? "■" : "□"
+    ccy + " " + (na(v) ? "?" : v > 0 ? "▲" : v < 0 ? "▼" : "•") + blk + " " + (na(v) ? "?" : f_sg(v))
+f_pos(string p) => p == "Top right" ? position.top_right : p == "Bottom right" ? position.bottom_right : p == "Top left" ? position.top_left : position.bottom_left
+
+// ───────── look ─────────
+float bgLum = (0.299 * color.r(chart.bg_color) + 0.587 * color.g(chart.bg_color) + 0.114 * color.b(chart.bg_color)) / 255
+bool  dark  = theme == "Dark" or (theme == "Auto" and bgLum < 0.5)
+bool  mob   = layout == "Mobile (compact)"
+color tBg   = dark ? #1E222D : #FFFFFF
+color tHd   = dark ? #131722 : #F0F3FA
+color tBd   = dark ? #363A45 : #D1D4DC
+color tTx   = dark ? #D1D4DC : #131722
+color tMu   = dark ? #8C8F99 : #6A6D78
+string TS   = txtSz == "Tiny" ? size.tiny : txtSz == "Normal" ? size.normal : size.small
+f_stc(string s) => s == "C" or s == "S" ? bullC : s == "F" ? #E2A400 : s == "W" ? #2962FF : s == "P" ? #FF9800 : s == "X" ? bearC : neutC
+
+// ───────── which pair ─────────
+string symA = syminfo.basecurrency + syminfo.currency
+string tk   = str.upper(syminfo.ticker)
+string symB = str.length(tk) >= 6 ? str.substring(tk, 0, 6) : tk
+int pIdx = pairIn != "Auto" ? array.indexof(PAIRS, pairIn) : array.indexof(PAIRS, symA) >= 0 ? array.indexof(PAIRS, symA) : array.indexof(PAIRS, symB)
+string pName = pIdx >= 0 ? array.get(PAIRS, pIdx) : "—"
+
+// ───────── week of this bar ─────────
+int WEEK_MS = 7 * 86400000
+var int wi = -1
+while wi + 1 < array.size(wT) and time >= array.get(wT, wi + 1)
+    wi += 1
+bool inWk = wi >= 0 and time < array.get(wT, math.max(wi, 0)) + WEEK_MS
+string rec = inWk and pIdx >= 0 ? f_item(array.get(wD, math.max(wi, 0)), pIdx) : "?"
+bool hasRec = rec != "?" and str.length(rec) >= 2
+string b  = hasRec ? str.substring(rec, 0, 1) : "N"
+string cv = hasRec ? str.substring(rec, 1, 2) : "-"
+float  g  = hasRec and str.length(rec) > 2 ? f_num(str.substring(rec, 2)) : na
+
+bgcolor(showBg and hasRec ? color.new(f_col(b), f_tr(cv)) : na, title = "Week bias")
+// the week's published gap for the Setup Planner indicator (Settings → Bias Engine link); not drawn on the chart
+plot(hasRec ? g : na, "Bias gap (for Setup Planner)", color = color.new(neutC, 100), display = display.data_window)
+
+float atrPad = ta.atr(14) * 0.5
+// highest high of the bars currently visible (labels go above it)
+var float visHi = na
+bool isVis = time >= chart.left_visible_bar_time and time <= chart.right_visible_bar_time
+var float visLo = na
+if isVis
+    visHi := na(visHi) ? high : math.max(visHi, high)
+    visLo := na(visLo) ? low : math.min(visLo, low)
+// two rows above the price: checks (lower) and week labels (higher), spaced in proportion to the visible range
+float vRng = na(visHi) or na(visLo) or visHi == visLo ? ta.atr(14) * 8 : visHi - visLo
+var label[] wkLbl = array.new<label>()
+var float[] wkTop = array.new_float()
+bool newWk = hasRec and (wi != nz(wi[1], -1) or not inWk[1])
+if hasRec and not newWk and array.size(wkTop) > 0
+    array.set(wkTop, array.size(wkTop) - 1, math.max(array.get(wkTop, array.size(wkTop) - 1), high))
+// typical-week band: last week's close ± 1σ of weekly returns (this chart's own data, 26 weeks)
+[wkPrevC, wkSig] = request.security(syminfo.tickerid, "W", [close[1], ta.stdev(math.log(close[1] / close[2]), 26)], lookahead = barmerge.lookahead_on)
+bool isCurWk = wi >= 0 and array.get(wT, math.max(wi, 0)) <= timenow and array.get(wT, math.max(wi, 0)) + WEEK_MS > timenow
+if showBd and newWk and (bdScope == "All weeks (history)" or isCurWk) and not na(wkPrevC) and not na(wkSig)
+    int t1 = array.get(wT, wi) + 5 * 86400000 + 3 * 3600000
+    float up = wkPrevC * math.exp(wkSig)
+    float dn = wkPrevC * math.exp(-wkSig)
+    color bc = f_col(b)
+    if bdFill
+        box.new(time, up, t1, dn, xloc = xloc.bar_time, border_color = color.new(bc, 100), bgcolor = color.new(bc, dark ? 94 : 96))
+    line.new(time, up, t1, up, xloc = xloc.bar_time, color = color.new(bc, 45), style = line.style_dashed, width = 1)
+    line.new(time, dn, t1, dn, xloc = xloc.bar_time, color = color.new(bc, 45), style = line.style_dashed, width = 1)
+    line.new(time, wkPrevC, t1, wkPrevC, xloc = xloc.bar_time, color = color.new(tMu, 50), style = line.style_dotted, width = 1)
+    label.new(t1, up, "+1σ", xloc = xloc.bar_time, style = label.style_none, textcolor = color.new(bc, 30), size = size.tiny)
+    label.new(t1, dn, "−1σ " + str.tostring(wkSig * 100, "#.##") + "%", xloc = xloc.bar_time, style = label.style_none, textcolor = color.new(bc, 30), size = size.tiny)
+// 🎯 the typical move in the direction of the week's bias, with a ± pips zone; marked when price reaches it
+float pipSz = str.contains(pName, "JPY") ? 0.01 : str.contains(pName, "XAU") ? 0.1 : 0.0001
+var label tgLbl = na
+var box   tgBox = na
+var float tgLvl = na
+var bool  tgHit = false
+if showTg and newWk
+    tgLvl := na
+    tgHit := false
+    if b != "N" and (tgScope == "All weeks (history)" or isCurWk) and not na(wkPrevC) and not na(wkSig)
+        int t2 = array.get(wT, wi) + 5 * 86400000 + 3 * 3600000
+        tgLvl := b == "U" ? wkPrevC * math.exp(wkSig) : wkPrevC * math.exp(-wkSig)
+        float zH = tgLvl + tgPips * pipSz
+        float zL = tgLvl - tgPips * pipSz
+        tgBox := box.new(time, zH, t2, zL, xloc = xloc.bar_time, border_color = color.new(tgC, 20), border_width = 1, bgcolor = color.new(tgC, 80))
+        tgLbl := label.new(t2, tgLvl, "🎯", xloc = xloc.bar_time, style = label.style_label_left, color = color.new(tgC, 100), textcolor = tgC, size = mob ? size.small : size.normal, tooltip = "Typical " + (b == "U" ? "+1σ" : "−1σ") + " move for the week in the bias direction: " + str.tostring(tgLvl, format.mintick) + " (± " + str.tostring(tgPips) + " pips).\nStatistical reference, not a trade target.")
+if showTg and inWk and not na(tgLvl) and not tgHit and not newWk
+    bool reached = b == "U" ? high >= tgLvl - tgPips * pipSz : low <= tgLvl + tgPips * pipSz
+    if reached
+        tgHit := true
+        label.set_text(tgLbl, "🎯 ✓")
+        label.set_tooltip(tgLbl, label.get_text(tgLbl) + " reached on " + str.format_time(time, "EEE d MMM HH:mm", "Europe/Bucharest") + "\nTypical move in the bias direction: " + str.tostring(tgLvl, format.mintick) + ". Statistical reference, not a trade target.")
+        box.set_bgcolor(tgBox, color.new(tgC, 60))
+if showSep and newWk
+    line.new(bar_index, low, bar_index, high, extend = extend.both, style = line.style_dotted, color = color.new(f_col(b), 55), width = 1)
+if showWk and newWk
+    string base  = str.substring(pName, 0, 3)
+    string quote = str.substring(pName, 3, 6)
+    string wkS = str.replace_all(str.replace_all(array.get(wN, wi), "2026-", ""), "PHASE 1", "P1")
+    string bars = f_bar(base, f_score(wi, base)) + "   " + f_bar(quote, f_score(wi, quote))
+    string txt = mob ? wkS + " " + f_arrow(b) + " " + f_sg(g) : array.get(wN, wi) + "\n" + f_arrow(b) + " " + f_bname(b) + " · " + f_cname(cv) + " · gap " + f_sg(g) + "\n" + bars
+    string tip = pName + " · " + array.get(wN, wi) + "\n" + base + " " + f_score(wi, base) + " vs " + quote + " " + f_score(wi, quote) + "\nFundamental bias only, not a trade signal."
+    array.push(wkLbl, label.new(bar_index, high, txt, yloc = yloc.price, style = label.style_label_down, color = color.new(f_col(b), dark ? 25 : 10), textcolor = color.white, size = mob ? size.tiny : TS, tooltip = tip))
+    array.push(wkTop, high)
+if barstate.islast and array.size(wkLbl) > 0
+    for j = 0 to array.size(wkLbl) - 1
+        float y = wkPos == "Above the week's high" or na(visHi) ? array.get(wkTop, j) : visHi
+        label.set_y(array.get(wkLbl, j), y + vRng * (mob ? 0.10 : 0.14))
+
+// ───────── liquidity sweeps, side chosen by the week's bias ─────────
+// Detection is the "Liquidity stop hunt" logic: a swing high/low on the sweep timeframe that the current candle trades through.
+type lqSweep
+    float lvl = na
+    int   start = na
+    int   stop = na
+int lqMin = switch lqTf
+    "1D" => 1440
+    "2D" => 2880
+    "3D" => 4320
+    "4D" => 5760
+    "5D" => 7200
+    "1W" => 10080
+    "1M" => 43200
+    "3M" => 129600
+    => int(str.tonumber(lqTf))
+f_lqFind(string sweepType, int t) =>
+    lqSweep bearS = na
+    lqSweep bullS = na
+    float thLo = 99999.0
+    float thHi = 0.0
+    for i = 1 to 4499 by 1
+        if high[i] >= thHi or na(thHi)
+            thHi := high[i]
+        if high[i] >= high or thHi >= high
+            break
+        if high[i + 1] <= high[i] and high[i - 1] <= high[i] and high >= high[i] and open <= high[i] and high[i] >= thHi
+            if sweepType == "Regular" or (sweepType == "Wick Only" and close <= high[i])
+                bearS := lqSweep.new(high[i], time - t * 60000 * i, time + t * 60000)
+    for j = 1 to 4499 by 1
+        if low[j] <= thLo or na(thLo)
+            thLo := low[j]
+        if low[j] <= low or thLo <= low
+            break
+        if low[j + 1] >= low[j] and low[j - 1] >= low[j] and low <= low[j] and open >= low[j] and low[j] <= thLo
+            if sweepType == "Regular" or (sweepType == "Wick Only" and close >= low[j])
+                bullS := lqSweep.new(low[j], time - t * 60000 * j, time + t * 60000)
+    [bearS, bullS]
+[lqBuyS, lqSellS] = request.security(syminfo.tickerid, lqTf, f_lqFind(lqType, lqMin), barmerge.gaps_off, barmerge.lookahead_on)
+// which side this week: bullish → sellside (lows taken), bearish → buyside (highs taken)
+bool lqBiasN = not hasRec or b == "N"
+bool showBuyLq  = lqMode == "Both" or lqMode == "Buyside only" or (lqMode == "Follow the bias" and (lqBiasN ? lqTwo == "Both" : b == "D")) or (lqMode == "Opposite to the bias" and (lqBiasN ? lqTwo == "Both" : b == "U"))
+bool showSellLq = lqMode == "Both" or lqMode == "Sellside only" or (lqMode == "Follow the bias" and (lqBiasN ? lqTwo == "Both" : b == "U")) or (lqMode == "Opposite to the bias" and (lqBiasN ? lqTwo == "Both" : b == "D"))
+string lqStyle = lqSty == "Dotted" ? line.style_dotted : lqSty == "Dashed" ? line.style_dashed : line.style_solid
+var line[]  lqLines = array.new<line>()
+var label[] lqLbls  = array.new<label>()
+f_lqDraw(lqSweep sw, bool buySide) =>
+    color c = lqByB ? (buySide ? bearC : bullC) : lqC
+    array.push(lqLines, line.new(sw.start, sw.lvl, sw.stop, sw.lvl, xloc = xloc.bar_time, color = c, style = lqStyle, width = lqW))
+    if lqLab
+        string bTxt = hasRec ? f_bname(b) : "no published bias"
+        string tip = (buySide ? "Buyside liquidity swept (" + lqTf + " high taken)" : "Sellside liquidity swept (" + lqTf + " low taken)") + " at " + str.tostring(sw.lvl, format.mintick) + "\nWeek bias for " + pName + ": " + bTxt + "\nContext only, not a trade signal."
+        array.push(lqLbls, label.new(int(math.avg(sw.start, sw.stop)), sw.lvl, "$", xloc = xloc.bar_time, yloc = yloc.price, style = label.style_none, textcolor = color.new(c, 10), size = size.small, tooltip = tip))
+    while array.size(lqLines) > lqMax
+        line.delete(array.shift(lqLines))
+    while array.size(lqLbls) > lqMax
+        label.delete(array.shift(lqLbls))
+f_lq() =>
+    var float lastB = na
+    var float lastS = na
+    bool tfOk = timeframe.in_seconds() / 60 <= lqMin and not (seOn and timeframe.in_seconds() / 60 < lqMin)
+    bool nb = lqOn and tfOk and showBuyLq and not na(lqBuyS) and (na(lastB) or lqBuyS.lvl != lastB)
+    bool ns = lqOn and tfOk and showSellLq and not na(lqSellS) and (na(lastS) or lqSellS.lvl != lastS)
+    if nb
+        f_lqDraw(lqBuyS, true)
+        lastB := lqBuyS.lvl
+    if ns
+        f_lqDraw(lqSellS, false)
+        lastS := lqSellS.lvl
+    [nb, ns]
+[lqNewBuy, lqNewSell] = f_lq()
+alertcondition(lqNewBuy or lqNewSell, "Liquidity sweep (bias side)", "Liquidity sweep on the side chosen by the week's bias. Context only, not a trade signal.")
+alertcondition(lqNewBuy, "Buyside sweep", "Buyside liquidity swept (high taken).")
+alertcondition(lqNewSell, "Sellside sweep", "Sellside liquidity swept (low taken).")
+
+// ───────── setup engine: 1H sweep (confirmed) → POC on chart candles → fib 0.5 entry ─────────
+// the last CLOSED candle of the sweep timeframe (no repainting: it only changes once that candle has closed)
+[hT, hO, hH, hL, hC] = request.security(syminfo.tickerid, lqTf, [time[1], open[1], high[1], low[1], close[1]], lookahead = barmerge.lookahead_on)
+var int[]   HT = array.new_int()
+var float[] HO = array.new_float()
+var float[] HH = array.new_float()
+var float[] HL = array.new_float()
+var float[] HC = array.new_float()
+bool seAct = seOn and timeframe.in_seconds() / 60 < lqMin
+bool hNew = seAct and not na(hT) and hT != nz(hT[1], -1)
+if hNew
+    array.push(HT, hT)
+    array.push(HO, hO)
+    array.push(HH, hH)
+    array.push(HL, hL)
+    array.push(HC, hC)
+    if array.size(HT) > 600
+        array.shift(HT)
+        array.shift(HO)
+        array.shift(HH)
+        array.shift(HL)
+        array.shift(HC)
+// same rule as "Liquidity stop hunt", run on the stored 1H candles: the newest candle trades through an older swing high/low
+// and (Wick Only) closes back inside it. Returns [buyside level, its time, sellside level, its time].
+f_seSweep() =>
+    int n = array.size(HT)
+    float bLv = na
+    int   bT  = na
+    float sLv = na
+    int   sT  = na
+    if n >= 4
+        int c = n - 1
+        float cH = array.get(HH, c)
+        float cL = array.get(HL, c)
+        float cO = array.get(HO, c)
+        float cC = array.get(HC, c)
+        float thHi = 0.0
+        for i = 1 to math.min(n - 2, 500)
+            float hi = array.get(HH, c - i)
+            if hi >= thHi
+                thHi := hi
+            if hi >= cH or thHi >= cH
+                break
+            if array.get(HH, c - i - 1) <= hi and array.get(HH, c - i + 1) <= hi and cH >= hi and cO <= hi and hi >= thHi
+                if lqType == "Regular" or cC <= hi
+                    bLv := hi
+                    bT := array.get(HT, c - i)
+        float thLo = 99999999.0
+        for j = 1 to math.min(n - 2, 500)
+            float lo = array.get(HL, c - j)
+            if lo <= thLo
+                thLo := lo
+            if lo <= cL or thLo <= cL
+                break
+            if array.get(HL, c - j - 1) >= lo and array.get(HL, c - j + 1) >= lo and cL <= lo and cO >= lo and lo <= thLo
+                if lqType == "Regular" or cC >= lo
+                    sLv := lo
+                    sT := array.get(HT, c - j)
+    [bLv, bT, sLv, sT]
+// POC structure on the chart's own candles (leg logic of the BOS/CHoCH indicator)
+var int seLeg = 0
+bool seLH = high[seLen] > ta.highest(seLen)
+bool seLL = low[seLen] < ta.lowest(seLen)
+seLeg := seLH ? 0 : seLL ? 1 : seLeg
+bool seTop = ta.change(seLeg) != 0 and seLeg == 0
+bool seBot = ta.change(seLeg) != 0 and seLeg == 1
+var float seShP = na
+var int   seShT = na
+var float seSlP = na
+var int   seSlT = na
+if seTop
+    seShP := high[seLen]
+    seShT := time[seLen]
+if seBot
+    seSlP := low[seLen]
+    seSlT := time[seLen]
+// state: 0 idle · 1 sweep confirmed, waiting for the POC · 2 POC done, waiting for 0.5 · 3 in the trade
+var int   seSt   = 0
+var int   seDir  = 0      // -1 short (buyside swept), +1 long (sellside swept)
+var float seSL   = na     // sweep candle high / low = fib 1 = stop loss
+var int   seT0   = na     // time the sweep was confirmed
+var float seExt  = na     // low (short) / high (long) of the move since the sweep = fib 0
+var float seEnt  = na
+var float seTP   = na
+var int   seTP0  = na     // POC time
+var line[]  seLn = array.new<line>(4)    // 0 SL, 1 entry, 2 fib 0, 3 TP
+var label[] seLb = array.new<label>(4)   // 0 SL, 1 entry, 2 TP, 3 result
+var line[]  seOld = array.new<line>()
+var label[] seOldL = array.new<label>()
+var int seN = 0
+var int seW = 0
+var int seLs = 0
+var int seX = 0
+// context of the current setup, kept for the breakdown table and the strategy's trade comment
+var string seSess = ""     // session of the 💧 candle (Romania time)
+var string seHr   = ""     // hour of the 💧 candle
+var float  sePocH = na     // hours from 💧 to POC
+var float  seMfe  = 0.0    // best move in R while in the trade
+var string seCv   = "-"
+var float  seGap  = na
+// finished trades: one row each
+var string[] rSess = array.new_string()
+var string[] rSl   = array.new_string()
+var string[] rCv   = array.new_string()
+var string[] rPoc  = array.new_string()
+var float[]  rRes  = array.new_float()
+var float[]  rMfe  = array.new_float()
+f_sePips(float d) => math.round(d / pipSz * 10) / 10
+// move the current setup's drawings into the history (they stop at this candle)
+f_seStore() =>
+    for i = 0 to 3
+        line x = array.get(seLn, i)
+        if not na(x)
+            line.set_extend(x, extend.none)
+            line.set_x2(x, time)
+            array.push(seOld, x)
+        array.set(seLn, i, na)
+        label y = array.get(seLb, i)
+        if not na(y)
+            array.push(seOldL, y)
+        array.set(seLb, i, na)
+    while array.size(seOld) > seKeep * 4
+        line.delete(array.shift(seOld))
+    while array.size(seOldL) > seKeep * 4
+        label.delete(array.shift(seOldL))
+    0
+f_seFib(int dir, float sl, float ext, int tP) =>
+    // fib 1 = SL (sweep candle extreme), 0 = extreme of the move, entry 0.5, TP at seRR × risk beyond the entry
+    float ent = (sl + ext) / 2
+    float tp = ent + dir * seRR * math.abs(sl - ent)
+    string px = format.mintick
+    if na(array.get(seLn, 0))
+        array.set(seLn, 0, line.new(tP, sl, time, sl, xloc = xloc.bar_time, extend = extend.right, color = seSlC, style = line.style_solid, width = 1))
+        array.set(seLn, 1, line.new(tP, ent, time, ent, xloc = xloc.bar_time, extend = extend.right, color = seEntC, style = line.style_dashed, width = 2))
+        array.set(seLn, 2, line.new(tP, ext, time, ext, xloc = xloc.bar_time, extend = extend.right, color = color.new(seEntC, 60), style = line.style_dotted, width = 1))
+        array.set(seLn, 3, line.new(tP, tp, time, tp, xloc = xloc.bar_time, extend = extend.right, color = seTpC, style = line.style_solid, width = 1))
+        array.set(seLb, 0, label.new(time, sl, "", xloc = xloc.bar_time, style = label.style_label_lower_left, color = color.new(seSlC, 100), textcolor = seSlC, size = size.tiny))
+        array.set(seLb, 1, label.new(time, ent, "", xloc = xloc.bar_time, style = label.style_label_lower_left, color = color.new(seEntC, 100), textcolor = seEntC, size = size.tiny))
+        array.set(seLb, 2, label.new(time, tp, "", xloc = xloc.bar_time, style = label.style_label_lower_left, color = color.new(seTpC, 100), textcolor = seTpC, size = size.tiny))
+    line.set_y1(array.get(seLn, 1), ent)
+    line.set_y2(array.get(seLn, 1), ent)
+    line.set_y1(array.get(seLn, 2), ext)
+    line.set_y2(array.get(seLn, 2), ext)
+    line.set_y1(array.get(seLn, 3), tp)
+    line.set_y2(array.get(seLn, 3), tp)
+    label.set_xy(array.get(seLb, 0), time, sl)
+    label.set_xy(array.get(seLb, 1), time, ent)
+    label.set_xy(array.get(seLb, 2), time, tp)
+    label.set_text(array.get(seLb, 0), "1 · SL " + str.tostring(sl, px) + " (" + str.tostring(f_sePips(math.abs(sl - ent))) + " pips)")
+    label.set_text(array.get(seLb, 1), "0.5 · entry " + str.tostring(ent, px))
+    label.set_text(array.get(seLb, 2), "TP " + str.tostring(seRR) + "R " + str.tostring(tp, px))
+    [ent, tp]
+f_seEnd(int dir, string txt, color c) =>
+    array.set(seLb, 3, label.new(time, dir < 0 ? high : low, txt, xloc = xloc.bar_time, style = dir < 0 ? label.style_label_down : label.style_label_up, color = color.new(c, 15), textcolor = color.white, size = size.small))
+    f_seStore()
+    0
+string seEvt = ""
+if seAct
+    bool wantShort = hasRec ? b == "D" or (b == "N" and seTwo) : seTwo
+    bool wantLong  = hasRec ? b == "U" or (b == "N" and seTwo) : seTwo
+    // 1) a 1H candle just closed: look for a sweep on the side the bias wants
+    if hNew
+        [bLv, bT, sLv, sT] = f_seSweep()
+        bool gotS = wantShort and not na(bLv)
+        bool gotL = wantLong and not na(sLv)
+        if (gotS or gotL) and seSt <= 2
+            if seSt == 2
+                f_seStore()
+            int tLast = time - timeframe.in_seconds() * 1000
+            seDir := gotS ? -1 : 1
+            float lv = gotS ? bLv : sLv
+            seSL := gotS ? hH : hL
+            seT0 := time
+            int hh = hour(hT, "Europe/Bucharest")
+            seSess := hh < 9 ? "Asia" : hh < 15 ? "London" : "New York"
+            seHr := str.format_time(hT, "HH:mm", "Europe/Bucharest")
+            seExt := gotS ? low : high
+            seSt := 1
+            color c = gotS ? bearC : bullC
+            array.push(lqLines, line.new(gotS ? bT : sT, lv, tLast, lv, xloc = xloc.bar_time, color = c, style = line.style_dashed, width = 1))
+            array.push(lqLbls, label.new(int(math.avg(gotS ? bT : sT, tLast)), lv, "$", xloc = xloc.bar_time, style = label.style_none, textcolor = c, size = size.small, tooltip = (gotS ? "Buyside" : "Sellside") + " liquidity taken and confirmed by the " + lqTf + " close. Waiting for a POC " + (gotS ? "down" : "up") + "."))
+            string hrs = str.format_time(hT, "HH:mm", "Europe/Bucharest") + "–" + str.format_time(hT + lqMin * 60000, "HH:mm", "Europe/Bucharest")
+            array.push(lqLbls, label.new(tLast, gotS ? hH : hL, gotS ? "💧\n" + hrs : hrs + "\n💧", xloc = xloc.bar_time, style = gotS ? label.style_label_down : label.style_label_up, color = color.new(c, 100), textcolor = c, size = size.normal, tooltip = "Liquidity confirmed by the " + hrs + " candle (" + lqTf + ", Romania time) at its close (" + (gotS ? "high " : "low ") + str.tostring(gotS ? hH : hL, format.mintick) + " = stop for this setup)."))
+            while array.size(lqLines) > lqMax
+                line.delete(array.shift(lqLines))
+            while array.size(lqLbls) > lqMax
+                label.delete(array.shift(lqLbls))
+            seEvt := "💧 " + pName + ": " + (gotS ? "buyside" : "sellside") + " liquidity confirmed (" + lqTf + "). Waiting for a POC " + (gotS ? "down." : "up.")
+    // 2) waiting for the POC (candle close beyond the last chart swing in the bias direction)
+    if seSt == 1
+        bool slHit = seDir < 0 ? high > seSL : low < seSL
+        if slHit
+            seSt := 0
+            seX += 1
+            label.new(time, seDir < 0 ? high : low, "✖", xloc = xloc.bar_time, style = seDir < 0 ? label.style_label_down : label.style_label_up, color = color.new(neutC, 100), textcolor = neutC, size = size.small, tooltip = "Setup cancelled: price went beyond the sweep candle before a POC.")
+        else if time - seT0 > seExp * 3600000
+            seSt := 0
+            seX += 1
+        else
+            seExt := seDir < 0 ? math.min(seExt, low) : math.max(seExt, high)
+            bool poc = seDir < 0 ? (not na(seSlP) and close < seSlP and close[1] >= seSlP) : (not na(seShP) and close > seShP and close[1] <= seShP)
+            if poc
+                float lvl = seDir < 0 ? seSlP : seShP
+                int t0 = seDir < 0 ? seSlT : seShT
+                line.new(t0, lvl, time, lvl, xloc = xloc.bar_time, color = seDir < 0 ? bearC : bullC, style = line.style_solid, width = 1)
+                label.new(int(math.avg(t0, time)), lvl, "POC", xloc = xloc.bar_time, style = seDir < 0 ? label.style_label_up : label.style_label_down, color = color.new(neutC, 100), textcolor = seDir < 0 ? bearC : bullC, size = size.small)
+                seTP0 := time
+                sePocH := (time - seT0) / 3600000.0
+                seSt := 2
+                seN += 1
+                [e0, t0p] = f_seFib(seDir, seSL, seExt, seTP0)
+                seEnt := e0
+                seTP := t0p
+                seEvt := "📐 " + pName + ": POC " + (seDir < 0 ? "down" : "up") + ". Entry 0.5 " + str.tostring(e0, format.mintick) + ", SL " + str.tostring(seSL, format.mintick) + ", TP " + str.tostring(t0p, format.mintick)
+    // 3) after the POC: the move may extend (fib 0 follows it) until price comes back to 0.5
+    else if seSt == 2
+        bool slHit2 = seDir < 0 ? high >= seSL : low <= seSL
+        bool touch = seDir < 0 ? high >= seEnt : low <= seEnt
+        if slHit2
+            seN -= 1
+            seX += 1
+            f_seEnd(seDir, "✖ no entry", neutC)
+            seSt := 0
+        else if touch and time > seTP0
+            seSt := 3
+            seMfe := 0.0
+            seCv := cv
+            seGap := g
+            label.new(time, seEnt, "▶ 0.5", xloc = xloc.bar_time, style = label.style_label_upper_left, color = color.new(seEntC, 100), textcolor = seEntC, size = size.tiny)
+            seEvt := "▶ " + pName + ": price back at 0.5 (" + str.tostring(seEnt, format.mintick) + ")."
+        else
+            seExt := seDir < 0 ? math.min(seExt, low) : math.max(seExt, high)
+            [e1, t1p] = f_seFib(seDir, seSL, seExt, seTP0)
+            seEnt := e1
+            seTP := t1p
+    // 4) in the trade: SL first if both are hit in the same candle
+    else if seSt == 3
+        bool lose = seDir < 0 ? high >= seSL : low <= seSL
+        bool win  = seDir < 0 ? low <= seTP : high >= seTP
+        float rsk = math.abs(seSL - seEnt)
+        if rsk > 0 and not lose
+            seMfe := math.max(seMfe, (seDir < 0 ? seEnt - low : high - seEnt) / rsk)
+        if lose or win
+            float slp = f_sePips(rsk)
+            array.push(rSess, seSess)
+            array.push(rSl, slp < 5 ? "SL < 5 pips" : slp <= 10 ? "SL 5–10 pips" : "SL > 10 pips")
+            array.push(rCv, seCv == "h" ? "Bias high" : seCv == "m" ? "Bias medium" : seCv == "l" ? "Bias low" : "No bias")
+            array.push(rPoc, sePocH < 1 ? "POC < 1h" : sePocH <= 4 ? "POC 1–4h" : "POC > 4h")
+            array.push(rRes, lose ? -1.0 : seRR)
+            array.push(rMfe, lose ? seMfe : math.max(seMfe, seRR))
+        if lose
+            seLs += 1
+            f_seEnd(seDir, "❌ −1R", seSlC)
+            seSt := 0
+            seEvt := "❌ " + pName + ": stop loss hit (−1R)."
+        else if win
+            seW += 1
+            f_seEnd(seDir, "✅ +" + str.tostring(seRR) + "R", seTpC)
+            seSt := 0
+            seEvt := "✅ " + pName + ": take profit hit (+" + str.tostring(seRR) + "R)."
+if seEvt != ""
+    alert(seEvt, alert.freq_once_per_bar)
+var table seTb = na
+// one row of the breakdown: n, win %, net R for the trades whose group equals key
+f_seRow(string[] grp, string key) =>
+    int n = 0
+    int w = 0
+    float r = 0.0
+    if array.size(grp) > 0
+        for i = 0 to array.size(grp) - 1
+            if array.get(grp, i) == key
+                n += 1
+                w += array.get(rRes, i) > 0 ? 1 : 0
+                r += array.get(rRes, i)
+    [n, w, r]
+f_seCell(int row, string name, int n, int w, float r) =>
+    color rc = n == 0 ? tMu : r > 0 ? seTpC : r < 0 ? seSlC : tMu
+    table.cell(seTb, 0, row, name, text_color = tTx, text_size = size.tiny, text_halign = text.align_left)
+    table.cell(seTb, 1, row, str.tostring(n), text_color = tMu, text_size = size.tiny)
+    table.cell(seTb, 2, row, n > 0 ? str.tostring(math.round(100.0 * w / n)) + "%" : "–", text_color = tMu, text_size = size.tiny)
+    table.cell(seTb, 3, row, n > 0 ? (r >= 0 ? "+" : "") + str.tostring(r, "#.#") + "R" : "–", text_color = rc, text_size = size.tiny)
+    0
+if barstate.islast and seAct and seStat
+    table.delete(seTb)
+    seTb := table.new(position.bottom_right, 4, 22, bgcolor = tBg, frame_color = tBd, frame_width = 1, border_color = tBd, border_width = 1)
+    int done = array.size(rRes)
+    float netR = 0.0
+    int wins = 0
+    float mfeL = 0.0
+    int nL = 0
+    int nL1 = 0
+    if done > 0
+        for i = 0 to done - 1
+            netR += array.get(rRes, i)
+            wins += array.get(rRes, i) > 0 ? 1 : 0
+            if array.get(rRes, i) < 0
+                nL += 1
+                mfeL += array.get(rMfe, i)
+                nL1 += array.get(rMfe, i) >= 1 ? 1 : 0
+    string st = seSt == 1 ? "💧 waiting for a POC" : seSt == 2 ? "📐 waiting for 0.5" : seSt == 3 ? "▶ in the trade" : "idle"
+    table.cell(seTb, 0, 0, "Setups · " + pName, text_color = tTx, bgcolor = tHd, text_size = size.tiny, text_halign = text.align_left)
+    table.cell(seTb, 1, 0, "n", text_color = tMu, bgcolor = tHd, text_size = size.tiny)
+    table.cell(seTb, 2, 0, "win", text_color = tMu, bgcolor = tHd, text_size = size.tiny)
+    table.cell(seTb, 3, 0, "net", text_color = tMu, bgcolor = tHd, text_size = size.tiny)
+    f_seCell(1, "All trades (" + str.tostring(seX) + " cancelled)", done, wins, netR)
+    int row = 2
+    for grp in array.from("S", "L", "C", "P")
+        string[] keys = grp == "S" ? array.from("Asia", "London", "New York") : grp == "L" ? array.from("SL < 5 pips", "SL 5–10 pips", "SL > 10 pips") : grp == "C" ? array.from("Bias high", "Bias medium", "Bias low") : array.from("POC < 1h", "POC 1–4h", "POC > 4h")
+        string[] src = grp == "S" ? rSess : grp == "L" ? rSl : grp == "C" ? rCv : rPoc
+        for k in keys
+            [n1, w1, r1] = f_seRow(src, k)
+            f_seCell(row, "  " + k, n1, w1, r1)
+            row += 1
+    table.cell(seTb, 0, row, nL > 0 ? "Losers: avg best move +" + str.tostring(mfeL / nL, "#.#") + "R · " + str.tostring(math.round(100.0 * nL1 / nL)) + "% reached +1R" : "Losers: –", text_color = tMu, text_size = size.tiny, text_halign = text.align_left)
+    table.merge_cells(seTb, 0, row, 3, row)
+    table.cell(seTb, 0, row + 1, "Now: " + st, text_color = tMu, text_size = size.tiny, text_halign = text.align_left)
+    table.merge_cells(seTb, 0, row + 1, 3, row + 1)
+
+// ───────── strategy orders (strategy build only): the same setup as a real order, 1% risk, for the Strategy Tester export ─────────
+float stRisk = input.float(1.0, "Risk per trade (% of equity)", minval = 0.1, maxval = 5, step = 0.1, group = "Strategy")
+// status of the latest daily check for this pair at this time
+f_ckNow() =>
+    string out = "none"
+    if pIdx >= 0 and array.size(cT) > 0
+        for j = 0 to array.size(cT) - 1
+            if array.get(cT, j) <= time
+                string r = f_item(array.get(cD, j), pIdx)
+                out := r == "?" ? out : f_sname(str.substring(r, 0, 1))
+    out
+float seRiskP = math.abs(seSL - seEnt)
+if seAct and seSt == 2 and seRiskP > 0 and strategy.position_size == 0
+    float q = strategy.equity * stRisk / 100 / (seRiskP * syminfo.pointvalue)
+    string cmt = pName + " | " + (seDir < 0 ? "short" : "long") + " | bias " + f_bname(b) + " " + f_cname(cv) + " gap " + f_sg(g) + " | check " + f_ckNow() + " | sweep " + seHr + " " + seSess + " | SL " + str.tostring(f_sePips(seRiskP)) + "p | POC after " + str.tostring(sePocH, "#.#") + "h"
+    strategy.entry("Setup", seDir < 0 ? strategy.short : strategy.long, qty = q, limit = seEnt, comment = cmt)
+    strategy.exit("Exit", "Setup", stop = seSL, limit = seTP, comment_loss = "SL −1R", comment_profit = "TP +" + str.tostring(seRR) + "R")
+if seAct and seSt != 2 and strategy.position_size == 0
+    strategy.cancel("Setup")
+
+
+// ───────── fractal structure breaks (body close), filtered by the week's bias ─────────
+var line[]  fsLines = array.new<line>()
+var label[] fsLbls  = array.new<label>()
+f_fsMark(int t0, float lvl, bool up) =>
+    array.push(fsLines, line.new(t0, lvl, time, lvl, xloc = xloc.bar_time, color = fsC, style = line.style_solid, width = fsW))
+    if fsLab
+        string tip = "Fractal structure break " + (up ? "UP: close above the fractal high " : "DOWN: close below the fractal low ") + str.tostring(lvl, format.mintick) + "\nWeek bias for " + pName + ": " + (hasRec ? f_bname(b) : "no published bias") + "\nContext only, not a trade signal."
+        array.push(fsLbls, label.new(time, lvl, up ? "FB ▲" : "FB ▼", xloc = xloc.bar_time, style = up ? label.style_label_lower_left : label.style_label_upper_left, color = color.new(fsC, 100), textcolor = fsC, size = size.tiny, tooltip = tip))
+    while array.size(fsLines) > fsMax
+        line.delete(array.shift(fsLines))
+    while array.size(fsLbls) > fsMax
+        label.delete(array.shift(fsLbls))
+f_fs() =>
+    var float hiL = na
+    var int   hiT = na
+    var float loL = na
+    var int   loT = na
+    var bool  swSell = false
+    var bool  swBuy  = false
+    float ph = ta.pivothigh(high, fsN, fsN)
+    float pl = ta.pivotlow(low, fsN, fsN)
+    if not na(ph)
+        hiL := ph
+        hiT := time[fsN]
+    if not na(pl)
+        loL := pl
+        loT := time[fsN]
+    if not na(lqSellS)
+        swSell := true
+    if not na(lqBuyS)
+        swBuy := true
+    bool okUp = fsMode == "Both" or not hasRec or b != "D"
+    bool okDn = fsMode == "Both" or not hasRec or b != "U"
+    bool brUp = false
+    bool brDn = false
+    if not na(hiL) and close > hiL
+        if fsOn and okUp and (not fsSwp or swSell)
+            f_fsMark(hiT, hiL, true)
+            brUp := true
+        hiL := na
+        swSell := false
+    if not na(loL) and close < loL
+        if fsOn and okDn and (not fsSwp or swBuy)
+            f_fsMark(loT, loL, false)
+            brDn := true
+        loL := na
+        swBuy := false
+    [brUp, brDn]
+[fsUp, fsDn] = f_fs()
+alertcondition(fsUp or fsDn, "Fractal structure break (bias side)", "Fractal structure break on the side chosen by the week's bias. Context only, not a trade signal.")
+
+// ───────── BOS + displacement with order block / FVG zones (supply & demand) ─────────
+var box[]   sdBox = array.new<box>()
+var box[]   sdFvg = array.new<box>()
+var float[] sdTop = array.new_float()
+var float[] sdBot = array.new_float()
+var bool[]  sdUp  = array.new_bool()
+var int[]   sdSt  = array.new_int()   // 0 fresh, 1 touched (watching for a break)
+var int[]   sdTI  = array.new_int()   // bar of the touch
+var string[] sdG  = array.new_string() // grade A/B/C
+var box[]   sdHB  = array.new<box>()  // finished zones kept as history
+f_bd(color c) => color.new(c, math.max(color.t(c) - 45, 0))
+// a zone is finished: keep it as history or delete it
+f_sdArch(box o, box f) =>
+    if sdHist
+        if not na(o)
+            array.push(sdHB, o)
+        if not na(f)
+            array.push(sdHB, f)
+        while array.size(sdHB) > sdHistN * 2
+            box x = array.shift(sdHB)
+            if not na(x)
+                box.delete(x)
+    else
+        if not na(o)
+            box.delete(o)
+        if not na(f)
+            box.delete(f)
+    0
+// recolour a zone and stop it a few candles after this bar
+f_sdPaint(box o, box f, color c, string tx) =>
+    int tEnd = time + sdExt * timeframe.in_seconds() * 1000
+    if not na(o)
+        box.set_extend(o, extend.none)
+        box.set_right(o, tEnd)
+        box.set_bgcolor(o, c)
+        box.set_border_color(o, f_bd(c))
+        box.set_text(o, tx)
+        box.set_text_color(o, f_bd(c))
+    if not na(f)
+        box.set_extend(f, extend.none)
+        box.set_right(f, tEnd)
+        box.set_bgcolor(f, color.new(c, math.min(color.t(c) + 7, 100)))
+        box.set_border_color(f, color.new(f_bd(c), 60))
+    0
+f_sdDrop(int k) =>
+    array.remove(sdBox, k)
+    array.remove(sdFvg, k)
+    array.remove(sdTop, k)
+    array.remove(sdBot, k)
+    array.remove(sdUp, k)
+    array.remove(sdSt, k)
+    array.remove(sdTI, k)
+    array.remove(sdG, k)
+    0
+f_sdZone(bool intl, bool up, int t0, float top, float bot, int ft, float ftop, float fbot, float lvl, string g) =>
+    // the same zone already tracked (main and internal break on the same leg): skip
+    // a fresh zone of the same side that overlaps the new one is widened to cover both (one zone instead of two)
+    bool dup = false
+    float nTop = sdZone == "FVG only" ? ftop : top
+    float nBot = sdZone == "FVG only" ? fbot : bot
+    if array.size(sdTop) > 0
+        for k = 0 to array.size(sdTop) - 1
+            if array.get(sdUp, k) == up and array.get(sdSt, k) == 0 and nTop >= array.get(sdBot, k) and nBot <= array.get(sdTop, k)
+                float mTop = math.max(nTop, array.get(sdTop, k))
+                float mBot = math.min(nBot, array.get(sdBot, k))
+                array.set(sdTop, k, mTop)
+                array.set(sdBot, k, mBot)
+                box eo = array.get(sdBox, k)
+                if not na(eo)
+                    box.set_top(eo, mTop)
+                    box.set_bottom(eo, mBot)
+                    box.set_left(eo, math.min(box.get_left(eo), t0))
+                    string g0 = array.get(sdG, k)
+                    string gm = g0 == "A" or g == "A" ? "A" : g0 == "B" or g == "B" ? "B" : "C"
+                    array.set(sdG, k, gm)
+                    box.set_text(eo, gm + " " + (up ? "demand" : "supply") + " · fresh")
+                box ef = array.get(sdFvg, k)
+                if sdZone != "Order block only" and not na(ftop)
+                    if na(ef)
+                        color zc0 = up ? sdDemC : sdSupC
+                        array.set(sdFvg, k, box.new(ft, ftop, time, fbot, xloc = xloc.bar_time, extend = extend.right, border_color = color.new(f_bd(zc0), 60), border_style = line.style_dotted, bgcolor = color.new(zc0, math.min(color.t(zc0) + 7, 100)), text = "FVG", text_size = size.tiny, text_color = f_bd(zc0), text_halign = text.align_right))
+                    else
+                        box.set_top(ef, math.max(box.get_top(ef), ftop))
+                        box.set_bottom(ef, math.min(box.get_bottom(ef), fbot))
+                        box.set_left(ef, math.min(box.get_left(ef), ft))
+                if sdZone == "FVG only" and not na(eo)
+                    box.set_top(eo, mTop)
+                dup := true
+                break
+    if not dup
+        color zc0 = up ? sdDemC : sdSupC
+        color zc = g == "C" ? color.new(zc0, math.min(color.t(zc0) + 8, 100)) : zc0
+        color zb = f_bd(zc)
+        box ob = sdZone != "FVG only" ? box.new(t0, top, time, bot, xloc = xloc.bar_time, extend = extend.right, border_color = zb, border_width = g == "A" ? 2 : 1, border_style = g == "C" ? line.style_dotted : line.style_solid, bgcolor = zc, text = g + " " + (intl ? "int " : "") + (up ? "demand · fresh" : "supply · fresh"), text_size = size.tiny, text_color = zb, text_halign = text.align_right, text_valign = text.align_center) : na
+        box fv = sdZone != "Order block only" and not na(ftop) ? box.new(ft, ftop, time, fbot, xloc = xloc.bar_time, extend = extend.right, border_color = color.new(zb, 60), border_style = line.style_dotted, bgcolor = color.new(zc, math.min(color.t(zc) + 7, 100)), text = sdZone == "FVG only" ? (up ? "demand FVG · fresh" : "supply FVG · fresh") : "FVG", text_size = size.tiny, text_color = zb, text_halign = text.align_right) : na
+        array.push(sdBox, ob)
+        array.push(sdFvg, fv)
+        array.push(sdTop, sdZone == "FVG only" ? ftop : top)
+        array.push(sdBot, sdZone == "FVG only" ? fbot : bot)
+        array.push(sdUp, up)
+        array.push(sdSt, 0)
+        array.push(sdTI, bar_index)
+        array.push(sdG, g)
+        // too many fresh zones: drop the oldest fresh one
+        int nf = 0
+        for k = 0 to array.size(sdSt) - 1
+            nf += array.get(sdSt, k) == 0 ? 1 : 0
+        if nf > sdMaxZ
+            for k = 0 to array.size(sdSt) - 1
+                if array.get(sdSt, k) == 0
+                    box o1 = array.get(sdBox, k)
+                    box o2 = array.get(sdFvg, k)
+                    if not na(o1)
+                        box.delete(o1)
+                    if not na(o2)
+                        box.delete(o2)
+                    f_sdDrop(k)
+                    break
+    0
+    // each bar: fresh → touched (yellow) → broken (black); the box stops a few candles after the event
+f_sdUpdate() =>
+    int n = array.size(sdBox)
+    if n > 0
+        for k = n - 1 to 0
+            float zt = array.get(sdTop, k)
+            float zb = array.get(sdBot, k)
+            bool  up = array.get(sdUp, k)
+            int   st = array.get(sdSt, k)
+            box o = array.get(sdBox, k)
+            box f = array.get(sdFvg, k)
+            bool broken = up ? close < zb : close > zt
+            bool touch  = up ? low <= zt : high >= zb
+            if broken
+                f_sdPaint(o, f, sdBrkC, array.get(sdG, k) + " " + (up ? "demand" : "supply") + " · broken")
+                f_sdArch(o, f)
+                f_sdDrop(k)
+            else if st == 0 and touch
+                f_sdPaint(o, f, sdTchC, array.get(sdG, k) + " " + (up ? "demand" : "supply") + " · touched")
+                if sdHist
+                    array.set(sdSt, k, 1)
+                    array.set(sdTI, k, bar_index)
+                else
+                    f_sdArch(o, f)
+                    f_sdDrop(k)
+            else if st == 1 and bar_index - array.get(sdTI, k) >= sdWatch
+                f_sdArch(o, f)
+                f_sdDrop(k)
+            int _done = 0
+    0
+f_sd(simple int len, bool intl) =>
+    var float hiL = na
+    var int   hiT = na
+    var float loL = na
+    var int   loT = na
+    var int   hiI = na
+    var int   loI = na
+    var bool  swSell = false
+    var bool  swBuy  = false
+    float ph = ta.pivothigh(high, len, len)
+    float pl = ta.pivotlow(low, len, len)
+    float atr = ta.atr(14)
+    if not na(ph)
+        hiL := ph
+        hiT := time[len]
+        hiI := bar_index - len
+    if not na(pl)
+        loL := pl
+        loT := time[len]
+        loI := bar_index - len
+    if not na(lqSellS)
+        swSell := true
+    if not na(lqBuyS)
+        swBuy := true
+    float bodyMax = math.max(math.abs(close - open), math.abs(close[1] - open[1]), math.abs(close[2] - open[2]))
+    bool disp = bodyMax >= sdDisp * atr
+    bool okUp = fsMode == "Both" or not hasRec or b != "D"
+    bool okDn = fsMode == "Both" or not hasRec or b != "U"
+    bool brUp = false
+    bool brDn = false
+    if sdMode == "BOS + displacement (OB/FVG zones)" and (not intl or sdInt)
+        if not intl
+            f_sdUpdate()
+        if not na(hiL) and close > hiL
+            if okUp
+                // the leg = from its origin (lowest low since the broken swing high) to this candle
+                int span = math.min(math.max(bar_index - nz(hiI, bar_index - 30), 3), 300)
+                int lowK = 0
+                for k = 0 to span
+                    if low[k] < low[lowK]
+                        lowK := k
+                float legBody = 0.0
+                for k = 0 to lowK
+                    legBody := math.max(legBody, math.abs(close[k] - open[k]))
+                bool dispL = legBody >= sdDisp * atr
+                // FVG anywhere in the leg; the one nearest the origin is kept
+                float ft = na
+                float fb = na
+                int   fT = na
+                for k = 0 to math.max(lowK - 1, 0)
+                    if low[k] > high[k + 2]
+                        ft := low[k]
+                        fb := high[k + 2]
+                        fT := time[k + 1]
+                int ob = -1
+                for k = lowK to math.min(lowK + 10, 300)
+                    if close[k] < open[k]
+                        ob := k
+                        break
+                bool swOk = not fsSwp or swSell
+                string gr = dispL and not na(ft) and swOk ? "A" : dispL or not na(ft) ? "B" : "C"
+                bool hasZ = ob > 0 or (sdZone == "FVG only" and not na(ft))
+                bool zOk = hasZ and (sdShow == "All grades" or (sdShow == "A + B" and gr != "C") or gr == "A")
+                string why = not hasZ ? "no order block" : gr + (zOk ? "" : " (hidden)")
+                array.push(fsLines, line.new(hiT, hiL, time, hiL, xloc = xloc.bar_time, color = intl ? color.new(fsC, 30) : fsC, style = intl ? line.style_dashed : line.style_solid, width = intl ? 1 : fsW))
+                if fsLab
+                    array.push(fsLbls, label.new(time, hiL, (intl ? "iBOS ▲" : "BOS ▲") + (not sdWhy ? "" : " · " + why), xloc = xloc.bar_time, style = label.style_label_lower_left, color = color.new(fsC, 100), textcolor = zOk ? fsC : color.new(fsC, 45), size = size.tiny))
+                if zOk
+                    f_sdZone(intl, true, ob > 0 ? time[ob] : fT, ob > 0 ? high[ob] : ft, ob > 0 ? low[ob] : fb, fT, ft, fb, hiL, gr)
+                    brUp := true
+            hiL := na
+            swSell := false
+        if not na(loL) and close < loL
+            if okDn
+                int span2 = math.min(math.max(bar_index - nz(loI, bar_index - 30), 3), 300)
+                int highK = 0
+                for k = 0 to span2
+                    if high[k] > high[highK]
+                        highK := k
+                float legBody2 = 0.0
+                for k = 0 to highK
+                    legBody2 := math.max(legBody2, math.abs(close[k] - open[k]))
+                bool dispL2 = legBody2 >= sdDisp * atr
+                float ft2 = na
+                float fb2 = na
+                int   fT2 = na
+                for k = 0 to math.max(highK - 1, 0)
+                    if high[k] < low[k + 2]
+                        ft2 := low[k + 2]
+                        fb2 := high[k]
+                        fT2 := time[k + 1]
+                int ob2 = -1
+                for k = highK to math.min(highK + 10, 300)
+                    if close[k] > open[k]
+                        ob2 := k
+                        break
+                bool swOk2 = not fsSwp or swBuy
+                string gr2 = dispL2 and not na(ft2) and swOk2 ? "A" : dispL2 or not na(ft2) ? "B" : "C"
+                bool hasZ2 = ob2 > 0 or (sdZone == "FVG only" and not na(ft2))
+                bool zOk2 = hasZ2 and (sdShow == "All grades" or (sdShow == "A + B" and gr2 != "C") or gr2 == "A")
+                string why2 = not hasZ2 ? "no order block" : gr2 + (zOk2 ? "" : " (hidden)")
+                array.push(fsLines, line.new(loT, loL, time, loL, xloc = xloc.bar_time, color = intl ? color.new(fsC, 30) : fsC, style = intl ? line.style_dashed : line.style_solid, width = intl ? 1 : fsW))
+                if fsLab
+                    array.push(fsLbls, label.new(time, loL, (intl ? "iBOS ▼" : "BOS ▼") + (not sdWhy ? "" : " · " + why2), xloc = xloc.bar_time, style = label.style_label_upper_left, color = color.new(fsC, 100), textcolor = zOk2 ? fsC : color.new(fsC, 45), size = size.tiny))
+                if zOk2
+                    f_sdZone(intl, false, ob2 > 0 ? time[ob2] : fT2, ob2 > 0 ? high[ob2] : ft2, ob2 > 0 ? low[ob2] : fb2, fT2, ft2, fb2, loL, gr2)
+                    brDn := true
+            loL := na
+            swBuy := false
+        while array.size(fsLines) > fsMax
+            line.delete(array.shift(fsLines))
+        while array.size(fsLbls) > fsMax
+            label.delete(array.shift(fsLbls))
+    [brUp, brDn]
+[sdUpM, sdDnM] = f_sd(sdLen, false)
+[sdUpI, sdDnI] = f_sd(sdLenI, true)
+bool sdUpB = sdUpM or sdUpI
+bool sdDnB = sdDnM or sdDnI
+alertcondition(sdUpB or sdDnB, "BOS + displacement (bias side)", "Structure break with displacement on the side chosen by the week's bias; a new supply/demand zone is drawn. Context only, not a trade signal.")
+
+// ───────── daily checks on this bar ─────────
+var int ci = 0
+int barEnd = time + timeframe.in_seconds() * 1000
+string ckTxt = ""
+string ckTip = ""
+var string prevS = ""
+bool ckChg = false
+while ci < array.size(cT) and array.get(cT, ci) < barEnd
+    if array.get(cT, ci) >= time - 3 * 86400000 and pIdx >= 0
+        string r = f_item(array.get(cD, ci), pIdx)
+        if r != "?"
+            string s = str.substring(r, 0, 1)
+            float tg = str.length(r) > 1 ? f_num(str.substring(r, 1)) : na
+            string chg = prevS == "" ? "" : prevS == s ? "unchanged since the last check" : "changed: " + f_emo(prevS) + " " + f_sname(prevS) + " → " + f_emo(s) + " " + f_sname(s)
+            string gapTxt = "gap " + f_sg(g) + " published → " + f_sg(tg) + " today" + (na(g) or na(tg) ? "" : tg == g ? " (same)" : math.abs(tg) > math.abs(g) and math.sign(tg) == math.sign(g) ? " (stronger)" : " (weaker)")
+            string hk = f_part(array.get(cH, ci), "|", pIdx)
+            string bL = f_leg(ci, str.substring(pName, 0, 3))
+            string qL = f_leg(ci, str.substring(pName, 3, 6))
+            ckTxt := mkStyle == "Emoji" ? f_emo(s) : mkStyle == "Emoji + gap" ? f_emo(s) + " " + f_sg(tg) : f_emo(s) + " " + f_short(s) + " " + f_sg(tg)
+            ckTip += (ckTip == "" ? "" : "\n\n") + "▌" + array.get(cN, ci) + "\n" + f_emo(s) + " " + f_sname(s) + "\n" + gapTxt + (chg == "" ? "" : "\n" + chg) + (hk == "" or hk == "-" ? "" : "\n\n" + f_wrap(hk, 60)) + (bL == "" ? "" : "\n\n" + bL) + (qL == "" ? "" : "\n" + qL)
+            // a change = a different status group than the previous check (Confirmed and "could get stronger" count as the same);
+            // the very first check counts only if it is not a plain confirmation of the weekly bias
+            string gN = s == "S" ? "C" : s
+            string gP = prevS == "S" ? "C" : prevS
+            ckChg := ckChg or (prevS == "" ? gN != "C" : gP != gN)
+            prevS := s
+    ci += 1
+var label[] ckLbl = array.new<label>()
+var int[] ckWk = array.new_int()
+if showCk and ckTxt != "" and (ckMode == "All days" or ckChg)
+    color ckC = color.new(f_stc(prevS), dark ? 20 : 5)
+    array.push(ckWk, array.size(wkTop) - 1)
+    array.push(ckLbl, label.new(bar_index, high, ckTxt, yloc = yloc.price, style = label.style_label_down, color = ckC, textcolor = color.white, size = mob ? size.small : size.normal, tooltip = ckTip + "\n\nMarker = latest check of the day. Fundamental context only, not a trade signal."))
+// checks sit on the same line as the week labels, just under it
+if barstate.islast and array.size(ckLbl) > 0
+    for j = 0 to array.size(ckLbl) - 1
+        int wq = array.get(ckWk, j)
+        float y = wkPos == "Above the week's high" and wq >= 0 and wq < array.size(wkTop) ? array.get(wkTop, wq) : na(visHi) ? high : visHi
+        label.set_y(array.get(ckLbl, j), y + vRng * 0.035)
+
+// ───────── info table and dashboard ─────────
+f_curWeek() =>
+    int k = -1
+    for j = 0 to array.size(wT) - 1
+        if array.get(wT, j) <= timenow
+            k := j
+    k
+f_lastCheck(int p) =>
+    int k = -1
+    int n = array.size(cT)
+    for j = 0 to math.max(n - 1, 0)
+        if j >= n
+            break
+        if p >= 0 and f_item(array.get(cD, j), p) != "?"
+            k := j
+    k
+
+var table tb = na
+f_c(int col, int row, string txt, color tc, color bg, string sz) =>
+    table.cell(tb, col, row, txt, text_color = tc, bgcolor = bg, text_size = sz, text_halign = text.align_left)
+if barstate.islast and (showTb or showDb)
+    table.delete(tb)
+    int kw = f_curWeek()
+    if showDb
+        tb := table.new(f_pos(tbPos), 5, array.size(PAIRS) + 1, bgcolor = tBg, frame_color = tBd, frame_width = 1, border_color = tBd, border_width = 1)
+        string dz = mob ? size.tiny : (TS == size.normal ? size.small : size.tiny)
+        f_c(0, 0, "Pair", tMu, tHd, dz)
+        f_c(1, 0, kw >= 0 ? array.get(wN, kw) : "Week", tMu, tHd, dz)
+        f_c(2, 0, "Conv.", tMu, tHd, dz)
+        f_c(3, 0, "Gap", tMu, tHd, dz)
+        f_c(4, 0, "Check", tMu, tHd, dz)
+        for j = 0 to array.size(PAIRS) - 1
+            string rr = kw >= 0 ? f_item(array.get(wD, kw), j) : "?"
+            bool ok = rr != "?" and str.length(rr) >= 2
+            string bb = ok ? str.substring(rr, 0, 1) : "N"
+            int lc = f_lastCheck(j)
+            string cr = lc >= 0 ? f_item(array.get(cD, lc), j) : "?"
+            string cs = cr != "?" ? str.substring(cr, 0, 1) : ""
+            color rowC = j == pIdx ? color.new(f_col(bb), 85) : tBg
+            f_c(0, j + 1, array.get(PAIRS, j), tTx, rowC, dz)
+            f_c(1, j + 1, ok ? f_arrow(bb) + " " + f_bname(bb) : "–", ok ? f_col(bb) : tMu, rowC, dz)
+            f_c(2, j + 1, ok ? f_cname(str.substring(rr, 1, 2)) : "–", tTx, rowC, dz)
+            f_c(3, j + 1, ok and str.length(rr) > 2 ? f_sg(f_num(str.substring(rr, 2))) : "–", tTx, rowC, dz)
+            f_c(4, j + 1, cr != "?" ? f_emo(cs) : "–", cr != "?" ? f_stc(cs) : tMu, rowC, dz)
+            if cr != "?"
+                table.cell_set_tooltip(tb, 4, j + 1, array.get(cN, lc) + ": " + f_sname(cs))
+    else
+        tb := table.new(f_pos(tbPos), 2, 8, bgcolor = tBg, frame_color = tBd, frame_width = 1, border_color = tBd, border_width = 1)
+        if pIdx < 0
+            f_c(0, 0, "Bias Engine", tMu, tHd, TS)
+            f_c(1, 0, "Symbol not tracked: choose a pair in Settings", tTx, tHd, TS)
+        else
+            string rr = kw >= 0 ? f_item(array.get(wD, kw), pIdx) : "?"
+            bool ok = rr != "?" and str.length(rr) >= 2
+            string bb = ok ? str.substring(rr, 0, 1) : "N"
+            string gp = ok and str.length(rr) > 2 ? f_sg(f_num(str.substring(rr, 2))) : "–"
+            string base  = str.substring(pName, 0, 3)
+            string quote = str.substring(pName, 3, 6)
+            int lc = f_lastCheck(pIdx)
+            string cr = lc >= 0 ? f_item(array.get(cD, lc), pIdx) : "?"
+            string cs = cr != "?" ? str.substring(cr, 0, 1) : ""
+            string hk = lc >= 0 ? f_part(array.get(cH, lc), "|", pIdx) : ""
+            int nx = kw + 1 < array.size(wT) ? kw + 1 : -1
+            string nr = nx >= 0 ? f_item(array.get(wD, nx), pIdx) : "?"
+            bool nok = nr != "?" and str.length(nr) >= 2
+            color hdrC = ok ? color.new(f_col(bb), dark ? 20 : 0) : tHd
+            int row = 0
+            // header: pair + week bias
+            table.cell(tb, 0, row, pName, text_color = color.white, bgcolor = hdrC, text_size = TS, text_halign = text.align_left)
+            table.cell(tb, 1, row, (ok ? f_arrow(bb) + " " + f_bname(bb) + " · " + f_cname(str.substring(rr, 1, 2)) : "no analysis") + " · gap " + gp, text_color = color.white, bgcolor = hdrC, text_size = TS, text_halign = text.align_left)
+            row += 1
+            if not mob
+                f_c(0, row, "Week", tMu, tBg, TS)
+                f_c(1, row, kw >= 0 ? array.get(wN, kw) : "–", tTx, tBg, TS)
+                row += 1
+                f_c(0, row, "Scores", tMu, tBg, TS)
+                f_c(1, row, base + " " + f_score(kw, base) + "   vs   " + quote + " " + f_score(kw, quote), tTx, tBg, TS)
+                row += 1
+                f_c(0, row, "Next week", tMu, tBg, TS)
+                f_c(1, row, nok ? array.get(wN, nx) + " · " + f_arrow(str.substring(nr, 0, 1)) + " " + f_bname(str.substring(nr, 0, 1)) + " · " + f_cname(str.substring(nr, 1, 2)) : "not published yet", nok ? f_col(str.substring(nr, 0, 1)) : tMu, tBg, TS)
+                row += 1
+            color stBg = cs != "" ? color.new(f_stc(cs), dark ? 75 : 85) : tBg
+            f_c(0, row, mob ? "Check" : "Last check", tMu, stBg, TS)
+            f_c(1, row, (lc >= 0 ? array.get(cN, lc) + "\n" : "") + (cr != "?" ? f_emo(cs) + " " + f_sname(cs) + " · gap " + f_sg(str.length(cr) > 1 ? f_num(str.substring(cr, 1)) : na) : "–"), tTx, stBg, TS)
+            row += 1
+            f_c(0, row, "Note", tMu, tBg, TS)
+            f_c(1, row, hk == "" or hk == "?" or hk == "-" ? "–" : f_wrap(hk, mob ? 34 : 50), tTx, tBg, TS)
