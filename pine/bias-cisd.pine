@@ -4,7 +4,7 @@
 // ══════════════════════════════════════════════════════════
 // Author:  Willy | WillyAlgoTrader
 // Version: 1.7.1 — converted to a strategy for the Forex Fundamental Bias Engine (engine bias filter, orders, sizing).
-// Generated automatically: 2026-11-22 11:02 UTC. Bias data: 2026-W40 → 2026-W48 (9 weeks), 14 daily checks.
+// Generated automatically: 2026-11-22 11:51 UTC. Bias data: 2026-W40 → 2026-W48 (9 weeks), 14 daily checks.
 
 // ══════════════════════════════════════════════════════════
 strategy(
@@ -130,7 +130,8 @@ stPivotInput     = input.bool(false, "New Short Term Pivot (Candle Close)", grou
      tooltip = "Trigger when a 3-candle HTF swing low (long) / high (short) is confirmed on HTF close.")
 
 // ── Step 2: entry ──
-entryAtInput = input.enum(EntryAt.brC, "Entry At", group = GRP_ENTRY,
+// Defaults tuned on EURUSD 15m, bias weeks W40–W47 (Python port of this script, 2,160 + 6,912 runs): FVG Close entry, Pivot stop, Market, TP 1 / 2.5 / 4R, no break-even → 28 trades, +34.6R, both halves positive. EURUSD only, not yet confirmed on other pairs.
+entryAtInput = input.enum(EntryAt.fvgC, "Entry At", group = GRP_ENTRY,
      tooltip = "Entry price model on the chart timeframe. The selected PD array is required for a setup.\n" +
                "• FVG Close / IFVG Open = near edge, Open / Close = far edge, c.e. = midpoint\n" +
                "• Crossed Candle = the candle that confirmed the PD array")
@@ -245,14 +246,14 @@ volMaxInput      = input.float(100.0, "  └ Max ATR Percentile (100 = off)", mi
      tooltip = "Skip setups in extreme volatility.")
 
 // ── Risk management ──
-entryModeInput = input.string("Limit", "Entry Mode", options = ["Limit", "Market"], group = GRP_RISK,
+entryModeInput = input.string("Market", "Entry Mode", options = ["Limit", "Market"], group = GRP_RISK,
      tooltip = "• Limit: a pending order at the PD array price; the trade opens when price returns to it\n" +
                "• Market: the trade opens at the close of the signal bar (strict signal-trade parity)")
 slModeInput    = input.string("Structure", "SL Mode", options = ["Structure", "Wick-Anchored", "ATR"], group = GRP_RISK,
      tooltip = "• Structure: at the swept extreme / chosen PD array (recommended for this model)\n" +
                "• Wick-Anchored: beyond the signal bar wick + 0.25×ATR, min 0.5×ATR from entry\n" +
                "• ATR: SL Multiplier × ATR from entry")
-riskPresetInput = input.string("Balanced", "Risk Preset", options = ["Conservative", "Balanced", "Aggressive", "Scalping", "Custom"], group = GRP_RISK,
+riskPresetInput = input.string("Custom", "Risk Preset", options = ["Conservative", "Balanced", "Aggressive", "Scalping", "Custom"], group = GRP_RISK,
      tooltip = "TP multipliers (and the SL multiplier of the ATR mode):\n" +
                "• Conservative: SL 2.5×ATR, TP 1R/2R/4R\n• Balanced: SL 1.5×ATR, TP 1R/2R/3R\n" +
                "• Aggressive: SL 1.0×ATR, TP 1.5R/2.5R/4R\n• Scalping: SL 0.8×ATR, TP 0.8R/1.5R/2R\n" +
@@ -261,13 +262,13 @@ slMultInput  = input.float(1.5, "SL Multiplier (×ATR)", minval = 0.5, maxval = 
      tooltip = "Custom preset, ATR mode only.\n• Scalping 0.8–1.2 | Swing 1.5–2.5")
 tp1MultInput = input.float(1.0, "TP1 (×Risk)", minval = 0.5, maxval = 5.0, step = 0.1, group = GRP_RISK,
      tooltip = "Custom preset. TP1 as multiple of the actual SL distance. A trade is a win once TP1 is touched.")
-tp2MultInput = input.float(2.0, "TP2 (×Risk)", minval = 1.0, maxval = 10.0, step = 0.1, group = GRP_RISK,
+tp2MultInput = input.float(2.5, "TP2 (×Risk)", minval = 1.0, maxval = 10.0, step = 0.1, group = GRP_RISK,
      tooltip = "Custom preset. TP2 as multiple of risk.")
-tp3MultInput = input.float(3.0, "TP3 (×Risk)", minval = 1.5, maxval = 15.0, step = 0.1, group = GRP_RISK,
+tp3MultInput = input.float(4.0, "TP3 (×Risk)", minval = 1.5, maxval = 15.0, step = 0.1, group = GRP_RISK,
      tooltip = "Custom preset. Final target; closes the trade.")
 beInput       = input.bool(false, "Break-Even After TP1", group = GRP_RISK,
      tooltip = "Move the stop to entry once TP1 is reached.\nPositions stopped at break-even after TP1 count as wins.")
-intrabarModelInput = input.string("Optimistic", "Intrabar Conflict Model", options = ["Optimistic", "Conservative"], group = GRP_RISK,
+intrabarModelInput = input.string("Conservative", "Intrabar Conflict Model", options = ["Optimistic", "Conservative"], group = GRP_RISK,
      tooltip = "When one bar touches both the stop and a target, OHLC cannot tell which came first.\n" +
                "• Optimistic (standard TP priority): the target counts first, but the trade still\n" +
                "  closes at the stop if the bar closes beyond it\n" +
