@@ -38,7 +38,10 @@ def run(p, data, P, start, end):
         x0 = b5[idx[0]]
         if x0['t'] < start or x0['t'] >= end or x0['lt'].weekday() > 4: continue
         bi = B.get((p, b5[idx[len(idx) // 2]]['wk']), ('-',))[0]; bd = 1 if bi == 'U' else -1 if bi == 'D' else 0
+        if P['dirm'] in ('long', 'short'): bd = 1
         pdx = prevd.get(b5[idx[len(idx) // 2]]['day'], {})
+        if P['dirm'] in ('long', 'short'): bd = 1 if P['dirm'] == 'long' else -1
+        if P['dirm'] == 'anti': bd = -bd
         if P['dirm'] == 'trend':
             s_ = pdx.get('sma'); bd = 0 if s_ is None else (1 if x0['c'] > s_ else -1)
         if bd == 0: continue
