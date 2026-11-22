@@ -202,6 +202,17 @@ if(existsSync('scripts/pine-swing-template.pine')){
       ['Hours to wait after an exit', '24', '4'], ['ATR multiple', '1.0', '1.0'], ['Take profit (R), 0 = none', '4.0', '6.0'],
       ['Trailing stop', '"From the close (always on)"', '"Off"']]));
 }
+// the intraday ORB strategy (5m chart): same data, its own template
+if(existsSync('scripts/pine-intraday-template.pine')){
+  const it = readFileSync('scripts/pine-intraday-template.pine', 'utf8')
+    .replace('{{GENERATED}}', gen)
+    .replace('{{COVERAGE}}', `${wkKey(first.y, first.w)} → ${wkKey(last.y, last.w)} (${wl.length} weeks), ${cl.length} daily checks`)
+    .replace('{{PAIRS}}', PAIRS.map(p => `"${p}"`).join(', '))
+    .replace('{{PAIR_OPTIONS}}', ['"Auto"', ...PAIRS.map(p => `"${p}"`)].join(', '))
+    .replace('{{CCY}}', CCY.map(c => `"${c}"`).join(', '))
+    .replace('{{DATA}}', dataBlocks(L));
+  writeFileSync('pine/bias-intraday.pine', it);
+}
 // the sweep strategy (1H chart): same data, its own template
 if(existsSync('scripts/pine-sweep-template.pine')){
   const sp = readFileSync('scripts/pine-sweep-template.pine', 'utf8')

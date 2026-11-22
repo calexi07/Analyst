@@ -1,0 +1,212 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Forex Fundamental Bias Engine — intraday opening-range breakouts (5m chart): one European-morning trade and one New York trade a day.
+// Generated automatically: {{GENERATED}}. Bias data: {{COVERAGE}}.
+// Do not edit by hand: the data block is rewritten after every phase and daily check.
+// A test bench for your own rules in the Strategy Tester. Not a trade signal.
+//@version=6
+strategy("Bias Engine · intraday ORB (Europe + New York)", shorttitle = "BE Intraday", overlay = true, initial_capital = 10000, pyramiding = 1, process_orders_on_close = false, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0.005, slippage = 0, max_labels_count = 500, max_boxes_count = 500)
+float fxRate = nz(request.currency_rate(syminfo.currency, strategy.account_currency, ignore_invalid_currency = true), 1)  // quote currency -> account currency, so 1% risk is 1% whatever the pair
+
+// ───────── settings ─────────
+string pairIn  = input.string("Auto", "Pair", options = [{{PAIR_OPTIONS}}], tooltip = "Auto reads the chart symbol. Built for the 5m chart (15m works). Symbols outside the 29 pairs (e.g. GER40) have no fundamental bias and use the daily SMA20 trend.")
+string dirMode = input.string("Auto", "Direction from", options = ["Auto", "Fundamental bias", "Price trend (SMA20 daily)", "Both sides (first break)"], group = "Direction", tooltip = "Auto: the week's fundamental bias on the 29 pairs (two-sided weeks do not trade), the daily SMA20 trend on anything else. Simulation, TP 2R, max 4h, bias weeks W40–W47: New York ORB with the bias GBPUSD +9R (20 trades), XAUUSD +8.7R (14); against the bias GBPUSD −6.8R, XAUUSD −5.5R, EURUSD −5.7R. Morning ORB EURUSD +15.6R with the bias (25), +17.1R both sides (38).")
+string minConv = input.string("Any", "Minimum conviction", options = ["Any", "Medium or high", "High only"], group = "Direction")
+int    trLen   = input.int(20, "Trend SMA length (daily closes)", minval = 5, maxval = 400, group = "Direction")
+string timesIn = input.string("Auto", "Session times", options = ["Auto", "Custom"], group = "Sessions (Bucharest time)", tooltip = "Auto: FX and gold — morning range 09:00–10:00, orders until 13:00; New York range 15:30–16:00, orders until 18:00. Indices (GER40 etc.) — morning session off, US range 16:30–17:00, orders until 19:00 (the tested setups). Custom: the times below.")
+bool   euOn    = input.bool(true, "Morning (Europe/London) trade", group = "Sessions (Bucharest time)")
+int    euR0    = input.int(540, "  range from (minute of day)", minval = 0, maxval = 1439, group = "Sessions (Bucharest time)", tooltip = "Minutes after midnight, Bucharest: 540 = 09:00, 600 = 10:00, 780 = 13:00, 930 = 15:30, 960 = 16:00, 990 = 16:30, 1020 = 17:00, 1080 = 18:00, 1140 = 19:00. Used only with Session times = Custom.")
+int    euR1    = input.int(600, "  range to", minval = 0, maxval = 1439, group = "Sessions (Bucharest time)")
+int    euEnd   = input.int(780, "  orders until", minval = 0, maxval = 1439, group = "Sessions (Bucharest time)")
+bool   nyOn    = input.bool(true, "New York trade", group = "Sessions (Bucharest time)")
+int    nyR0    = input.int(930, "  range from (minute of day)", minval = 0, maxval = 1439, group = "Sessions (Bucharest time)")
+int    nyR1    = input.int(960, "  range to", minval = 0, maxval = 1439, group = "Sessions (Bucharest time)")
+int    nyEnd   = input.int(1080, "  orders until", minval = 0, maxval = 1439, group = "Sessions (Bucharest time)")
+string slMode  = input.string("Other side of the range", "Stop loss", options = ["Other side of the range", "Middle of the range"], group = "Exit")
+float  tpR     = input.float(2.0, "Take profit (R)", minval = 0.5, maxval = 10, step = 0.5, group = "Exit", tooltip = "Simulation: TP 1.5–3R all positive on the tested setups; 2R is the middle choice.")
+int    tMax    = input.int(240, "Close after (minutes)", minval = 15, maxval = 720, group = "Exit", tooltip = "Time stop from the entry: 240 = 4 hours (tested 3 and 4 hours).")
+int    dayEnd  = input.int(1315, "Close everything at (minute of day)", minval = 0, maxval = 1439, group = "Exit", tooltip = "1315 = 21:55 Bucharest, before the rollover.")
+int    fromT   = input.time(timestamp("2000-01-01"), "Trade only from this date", group = "Risk")
+float  stRisk  = input.float(1.0, "Risk per trade (% of equity)", minval = 0.1, maxval = 5, step = 0.1, group = "Risk")
+color  bullC   = input.color(#22AB94, "Bullish", group = "Colours")
+color  bearC   = input.color(#F23645, "Bearish", group = "Colours")
+bool   boxOn   = input.bool(true, "Show the opening ranges", group = "Colours")
+
+// ───────── data (generated) ─────────
+var string[] PAIRS = array.from({{PAIRS}})
+var string[] CCY   = array.from({{CCY}})
+var int[]    wT = array.new_int()
+var string[] wN = array.new_string()
+var string[] wD = array.new_string()
+var string[] wS = array.new_string()
+var int[]    cT = array.new_int()
+var string[] cN = array.new_string()
+var string[] cD = array.new_string()
+var string[] cH = array.new_string()
+var string[] cC = array.new_string()
+{{DATA}}
+
+// ───────── helpers ─────────
+f_item(string row, int i) =>
+    string[] parts = str.split(row, ",")
+    i >= 0 and i < array.size(parts) ? array.get(parts, i) : "?"
+f_bname(string b) => b == "U" ? "BULLISH" : b == "D" ? "BEARISH" : b == "N" ? "TWO-SIDED" : "none"
+f_cname(string c) => c == "h" ? "high" : c == "m" ? "medium" : c == "l" ? "low" : "-"
+f_sg(float v) => na(v) ? "0" : v > 0 ? "+" + str.tostring(v) : str.tostring(v)
+f_sname(string s) => s == "C" ? "Confirmed" : s == "S" ? "Confirmed, could get stronger" : s == "F" ? "Confirmed but fragile" : s == "W" ? "Under watch" : s == "P" ? "Under pressure" : s == "X" ? "Invalidated" : s == "T" ? "Still two-sided" : "none"
+f_wa(bool ok) => ok ? "with" : "against"
+var string[] DOW = array.from("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+
+// ───────── pair and week ─────────
+string symA = syminfo.basecurrency + syminfo.currency
+string tk   = str.upper(syminfo.ticker)
+string symB = str.length(tk) >= 6 ? str.substring(tk, 0, 6) : tk
+int pIdx = pairIn != "Auto" ? array.indexof(PAIRS, pairIn) : array.indexof(PAIRS, symA) >= 0 ? array.indexof(PAIRS, symA) : array.indexof(PAIRS, symB)
+string pName = pIdx >= 0 ? array.get(PAIRS, pIdx) : syminfo.ticker
+float pipSz = str.contains(pName, "JPY") ? 0.01 : str.contains(pName, "XAU") ? 0.1 : 0.0001
+f_pips(float d) => math.round(d / pipSz * 10) / 10
+
+int WEEK_MS = 7 * 86400000
+var int wi = -1
+while wi + 1 < array.size(wT) and time >= array.get(wT, wi + 1)
+    wi += 1
+bool inWk = wi >= 0 and time < array.get(wT, math.max(wi, 0)) + WEEK_MS
+string rec = inWk and pIdx >= 0 ? f_item(array.get(wD, math.max(wi, 0)), pIdx) : "?"
+bool hasRec = rec != "?" and str.length(rec) >= 2
+string b  = hasRec ? str.substring(rec, 0, 1) : "-"
+string cv = hasRec ? str.substring(rec, 1, 2) : "-"
+float  g  = hasRec and str.length(rec) > 2 ? str.tonumber(str.substring(rec, 2)) : na
+
+
+// ───────── direction ─────────
+[smaT, dCl] = request.security(syminfo.tickerid, "D", [ta.sma(close, trLen)[1], close[1]], lookahead = barmerge.lookahead_on)
+int biasDir = b == "U" ? 1 : b == "D" ? -1 : 0
+bool convOk = minConv == "Any" or (minConv == "High only" ? cv == "h" : cv == "h" or cv == "m")
+int bDir = convOk ? biasDir : 0
+int tDir = na(smaT) or na(dCl) ? 0 : dCl > smaT ? 1 : dCl < smaT ? -1 : 0
+bool isFx = pIdx >= 0
+int dir = dirMode == "Fundamental bias" ? bDir : dirMode == "Price trend (SMA20 daily)" ? tDir : dirMode == "Both sides (first break)" ? 2 : isFx ? bDir : tDir
+
+// ───────── sessions (Bucharest) ─────────
+bool autoT = timesIn == "Auto"
+int e0 = autoT ? 540 : euR0
+int e1 = autoT ? 600 : euR1
+int eE = autoT ? 780 : euEnd
+int n0 = autoT ? (isFx ? 930 : 990) : nyR0
+int n1 = autoT ? (isFx ? 960 : 1020) : nyR1
+int nE = autoT ? (isFx ? 1080 : 1140) : nyEnd
+bool euUse = euOn and (not autoT or isFx)
+int mm = hour(time, "Europe/Bucharest") * 60 + minute(time, "Europe/Bucharest")
+int wd = dayofweek(time, "Europe/Bucharest")
+bool weekday = wd != dayofweek.saturday and wd != dayofweek.sunday
+int dKey = year(time, "Europe/Bucharest") * 10000 + month(time, "Europe/Bucharest") * 100 + dayofmonth(time, "Europe/Bucharest")
+
+// one session: build the range, then a stop order beyond it in the day's direction (both sides when dir = 2), once per day
+f_qty(float e, float sl) => math.max(strategy.equity * stRisk / 100 / (math.abs(e - sl) * syminfo.pointvalue * fxRate), 0)
+var float euHi = na
+var float euLo = na
+var int   euDay = 0
+var bool  euDone = false
+var float nyHi = na
+var float nyLo = na
+var int   nyDay = 0
+var bool  nyDone = false
+var box   euBox = na
+var box   nyBox = na
+bool live = time >= fromT and weekday
+// European range
+if euUse and live and mm >= e0 and mm < e1
+    if euDay != dKey
+        euDay := dKey
+        euHi := high
+        euLo := low
+        euDone := false
+        if boxOn
+            euBox := box.new(bar_index, high, bar_index, low, border_color = color.new(color.gray, 40), bgcolor = color.new(color.gray, 88))
+    else
+        euHi := math.max(euHi, high)
+        euLo := math.min(euLo, low)
+        if boxOn and not na(euBox)
+            box.set_right(euBox, bar_index)
+            box.set_top(euBox, euHi)
+            box.set_bottom(euBox, euLo)
+// New York range
+if nyOn and live and mm >= n0 and mm < n1
+    if nyDay != dKey
+        nyDay := dKey
+        nyHi := high
+        nyLo := low
+        nyDone := false
+        if boxOn
+            nyBox := box.new(bar_index, high, bar_index, low, border_color = color.new(color.orange, 40), bgcolor = color.new(color.orange, 88))
+    else
+        nyHi := math.max(nyHi, high)
+        nyLo := math.min(nyLo, low)
+        if boxOn and not na(nyBox)
+            box.set_right(nyBox, bar_index)
+            box.set_top(nyBox, nyHi)
+            box.set_bottom(nyBox, nyLo)
+
+// fills first: mark the session done (before new orders are sent), remember nothing else; the exits are attached
+if strategy.opentrades > 0
+    for i = 0 to strategy.opentrades - 1
+        string id = strategy.opentrades.entry_id(i)
+        if str.startswith(id, "EU") and euDay == dKey
+            euDone := true
+        if str.startswith(id, "NY") and nyDay == dKey
+            nyDone := true
+// a trade that opened and closed inside one bar still counts as the session's trade
+if strategy.closedtrades > nz(strategy.closedtrades[1])
+    string cid = strategy.closedtrades.entry_id(strategy.closedtrades - 1)
+    if str.startswith(cid, "EU") and euDay == dKey
+        euDone := true
+    if str.startswith(cid, "NY") and nyDay == dKey
+        nyDone := true
+
+// orders live from the end of the range until the deadline, once per session per day; long and/or short stop orders
+bool euWin = euUse and live and euDay == dKey and not euDone and mm >= e1 and mm < eE and dir != 0 and euHi > euLo
+bool nyWin = nyOn and live and nyDay == dKey and not nyDone and mm >= n1 and mm < nE and dir != 0 and nyHi > nyLo
+bool slOther = slMode == "Other side of the range"
+if euWin and (dir == 1 or dir == 2)
+    float sl = slOther ? euLo : (euHi + euLo) / 2
+    strategy.entry("EU L", strategy.long, qty = f_qty(euHi, sl), stop = euHi, comment = "EU long", oca_name = "EU", oca_type = strategy.oca.cancel)
+    strategy.exit("EU XL", "EU L", stop = sl, limit = euHi + tpR * (euHi - sl), comment_loss = "SL", comment_profit = "TP")
+if euWin and (dir == -1 or dir == 2)
+    float sl = slOther ? euHi : (euHi + euLo) / 2
+    strategy.entry("EU S", strategy.short, qty = f_qty(euLo, sl), stop = euLo, comment = "EU short", oca_name = "EU", oca_type = strategy.oca.cancel)
+    strategy.exit("EU XS", "EU S", stop = sl, limit = euLo - tpR * (sl - euLo), comment_loss = "SL", comment_profit = "TP")
+if not euWin
+    strategy.cancel("EU L")
+    strategy.cancel("EU S")
+if nyWin and (dir == 1 or dir == 2)
+    float sl = slOther ? nyLo : (nyHi + nyLo) / 2
+    strategy.entry("NY L", strategy.long, qty = f_qty(nyHi, sl), stop = nyHi, comment = "NY long", oca_name = "NY", oca_type = strategy.oca.cancel)
+    strategy.exit("NY XL", "NY L", stop = sl, limit = nyHi + tpR * (nyHi - sl), comment_loss = "SL", comment_profit = "TP")
+if nyWin and (dir == -1 or dir == 2)
+    float sl = slOther ? nyHi : (nyHi + nyLo) / 2
+    strategy.entry("NY S", strategy.short, qty = f_qty(nyLo, sl), stop = nyLo, comment = "NY short", oca_name = "NY", oca_type = strategy.oca.cancel)
+    strategy.exit("NY XS", "NY S", stop = sl, limit = nyLo - tpR * (sl - nyLo), comment_loss = "SL", comment_profit = "TP")
+if not nyWin
+    strategy.cancel("NY L")
+    strategy.cancel("NY S")
+
+// time stop and end of day
+if strategy.opentrades > 0
+    for i = strategy.opentrades - 1 to 0
+        string id = strategy.opentrades.entry_id(i)
+        int et = strategy.opentrades.entry_time(i)
+        if time_close - et >= tMax * 60000 or mm >= dayEnd
+            strategy.close(id, comment = mm >= dayEnd ? "Day end" : "Time " + str.tostring(tMax) + "m")
+
+bgcolor(dir == 1 ? color.new(bullC, 96) : dir == -1 ? color.new(bearC, 96) : na, title = "Direction")
+var table tb = table.new(position.bottom_right, 2, 4, bgcolor = color.new(#1E222D, 10), border_width = 1)
+if barstate.islast
+    table.cell(tb, 0, 0, "BE Intraday · " + pName, text_color = color.white, text_size = size.small)
+    table.cell(tb, 1, 0, isFx ? "bias" : "SMA20 trend", text_color = color.white, text_size = size.small)
+    table.cell(tb, 0, 1, "Bias", text_color = color.gray, text_size = size.small)
+    table.cell(tb, 1, 1, isFx ? f_bname(b) + " " + f_cname(cv) + " " + f_sg(g) : "n/a", text_color = biasDir > 0 ? bullC : biasDir < 0 ? bearC : color.gray, text_size = size.small)
+    table.cell(tb, 0, 2, "Direction today", text_color = color.gray, text_size = size.small)
+    table.cell(tb, 1, 2, dir == 1 ? "long" : dir == -1 ? "short" : dir == 2 ? "both" : "none", text_color = dir == 1 ? bullC : dir == -1 ? bearC : color.gray, text_size = size.small)
+    table.cell(tb, 0, 3, "Sessions", text_color = color.gray, text_size = size.small)
+    table.cell(tb, 1, 3, (euUse ? str.format("{0,number,00}:{1,number,00} ", e0 / 60, e0 % 60) : "") + (nyOn ? str.format("{0,number,00}:{1,number,00}", n0 / 60, n0 % 60) : ""), text_color = color.white, text_size = size.small)
+if timeframe.in_seconds() > 900 and barstate.islast
+    label.new(bar_index, high, "BE Intraday is built for the 5m chart (15m at most).", style = label.style_label_down, color = color.orange, textcolor = color.white)
