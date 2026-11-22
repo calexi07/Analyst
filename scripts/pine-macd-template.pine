@@ -5,6 +5,7 @@
 // A test bench for your own rules in the Strategy Tester. Not a trade signal.
 //@version=6
 strategy("Bias Engine · MACD strategy (bias + MACD cross)", shorttitle = "BE MACD", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = true, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0.005, slippage = 0, max_labels_count = 500, max_boxes_count = 500)
+float fxRate = nz(request.currency_rate(syminfo.currency, strategy.account_currency, ignore_invalid_currency = true), 1)  // quote currency -> account currency, so 1% risk is 1% whatever the pair
 
 // ───────── settings ─────────
 string pairIn  = input.string("Auto", "Pair", options = [{{PAIR_OPTIONS}}], tooltip = "Auto reads the chart symbol (e.g. EURUSD, OANDA:XAUUSD). Built for the 1H chart.")
@@ -20,6 +21,8 @@ bool   hrsOn   = input.bool(true, "Only signals in my hours (Bucharest)", group 
 int    hrsFrom = input.int(6, "From (hour)", minval = 0, maxval = 23, group = "Filters", inline = "hrs")
 int    hrsTo   = input.int(22, "to (hour)", minval = 1, maxval = 24, group = "Filters", inline = "hrs")
 bool   noFri   = input.bool(false, "No new entries on Friday", group = "Filters")
+bool   dayStop = input.bool(false, "Stop for the day after a losing trade", group = "Filters", tooltip = "No new entry on this pair for the rest of the day (Bucharest) after a trade closes at a loss. Simulation (1H, 14 pairs, W40–W47): 163 trades, +88R, +0.54R per trade vs 213 trades, +95R, +0.45R without; both halves positive. On your 15m exports: +43R on 154 trades vs +70R on 407.")
+int    wkStop  = input.int(0, "Stop for the week after this many losses (0 = off)", minval = 0, maxval = 20, group = "Filters", tooltip = "Per pair. Simulation (1H, 14 pairs, W40–W47) with 3: 204 trades, +100R vs +95R; both halves slightly better.")
 float  slAtr   = input.float(1.5, "Stop loss (ATR × )", minval = 0.3, maxval = 5, step = 0.1, group = "Exit", tooltip = "ATR(14) of the chart. Simulation: 1.5 ATR +0.45R per trade vs 1.0 ATR +0.24R.")
 float  tpR     = input.float(3.0, "Take profit (R), 0 = none", minval = 0, maxval = 10, step = 0.5, group = "Exit", tooltip = "Simulation: TP 3R +95R, TP 2R +22R with the 1 ATR stop; exits on the opposite cross gave less.")
 bool   oppEx   = input.bool(false, "Close on the opposite cross", group = "Exit")
@@ -104,8 +107,21 @@ int fri17 = timestamp("America/New_York", year(time + NY7, "America/New_York"), 
 bool lastWkBar = tDay == dayofweek.friday and time_close + timeframe.in_seconds() * 1000 > fri17
 bool live = time >= fromT and not na(atr) and not na(hist[1])
 
-bool goL = live and xUp and upOk and longOk and hrsOk and dayOk
-bool goS = live and xDn and dnOk and shortOk and hrsOk and dayOk
+// losses today / this week on this pair (closed trades)
+int dKey = year(time, "Europe/Bucharest") * 10000 + month(time, "Europe/Bucharest") * 100 + dayofmonth(time, "Europe/Bucharest")
+int wKey = weekofyear(time + NY7, "America/New_York") + 100 * year(time + NY7, "America/New_York")
+var int lossDay = 0
+var int lossWk = 0
+var int wkLosses = 0
+if wKey != lossWk
+    lossWk := wKey
+    wkLosses := 0
+if strategy.closedtrades > nz(strategy.closedtrades[1]) and strategy.closedtrades.profit(strategy.closedtrades - 1) < 0
+    lossDay := dKey
+    wkLosses += 1
+bool lossOk = not (dayStop and lossDay == dKey) and not (wkStop > 0 and wkLosses >= wkStop)
+bool goL = live and xUp and upOk and longOk and hrsOk and dayOk and lossOk
+bool goS = live and xDn and dnOk and shortOk and hrsOk and dayOk and lossOk
 
 // ───────── orders (at the signal candle's close) ─────────
 var float ent0 = na
@@ -124,7 +140,7 @@ if not flat and wkExit and lastWkBar
 if flat and (goL or goS)
     int d = goL ? 1 : -1
     float r = slAtr * atr
-    float q = math.max(strategy.equity * stRisk / 100 / (r * syminfo.pointvalue), 0)
+    float q = math.max(strategy.equity * stRisk / 100 / (r * syminfo.pointvalue * fxRate), 0)
     ent0 := close
     risk0 := r
     posDir := d

@@ -1,10 +1,11 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — swing strategy on 1H signal candles (1H chart, holds hours to 2 days). Defaults: bias-week grid, USD pairs W40–W47.
-// Generated automatically: 2026-11-22 14:21 UTC. Bias data: 2026-W40 → 2026-W48 (9 weeks), 14 daily checks.
+// Generated automatically: 2026-11-22 15:13 UTC. Bias data: 2026-W40 → 2026-W48 (9 weeks), 14 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // A test bench for your own rules in the Strategy Tester. Not a trade signal.
 //@version=6
 strategy("Bias Engine · swing 1H", shorttitle = "BE Swing 1H", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = true, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0.005, slippage = 0, max_labels_count = 500, max_boxes_count = 500)
+float fxRate = nz(request.currency_rate(syminfo.currency, strategy.account_currency, ignore_invalid_currency = true), 1)  // quote currency -> account currency, so 1% risk is 1% whatever the pair
 
 // ───────── settings ─────────
 string pairIn  = input.string("Auto", "Pair", options = ["Auto", "EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD", "EURGBP", "EURJPY", "EURCHF", "EURAUD", "EURNZD", "EURCAD", "GBPJPY", "GBPCHF", "GBPAUD", "GBPNZD", "GBPCAD", "AUDJPY", "AUDCHF", "AUDNZD", "AUDCAD", "NZDJPY", "NZDCHF", "NZDCAD", "CADJPY", "CADCHF", "CHFJPY", "XAUUSD"], tooltip = "Auto reads the chart symbol (e.g. EURUSD, OANDA:XAUUSD). Built for the 4H chart (Daily works too). Days below are calendar time, so they mean the same on any timeframe.")
@@ -393,7 +394,7 @@ if sig
     float sl = slMode == "ATR × multiple" ? ent - dir * slAtr * atr : (dir > 0 ? loS - 0.1 * atr : hiS + 0.1 * atr)
     float risk = math.abs(ent - sl)
     if go and risk > 0 and (dir > 0 ? sl < ent : sl > ent)
-        float qRaw = strategy.equity * stRisk / 100 / (risk * syminfo.pointvalue)
+        float qRaw = strategy.equity * stRisk / 100 / (risk * syminfo.pointvalue * fxRate)
         // an even size, so the two halves are equal and no 1-unit remainder is left behind
         // large sizes (FX units) are rounded to an even number; small sizes (gold ounces, indices) keep 2 decimals, so the risk stays at 1%
         float q = halfOn and qRaw >= 20 ? math.floor(qRaw / 2) * 2 : math.round(qRaw, 2)

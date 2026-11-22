@@ -5,6 +5,7 @@
 // A test bench for your own rules in the Strategy Tester. Not a trade signal.
 //@version=6
 strategy("Bias Engine · structure (BOS → discount → CHoCH)", shorttitle = "BE Structure", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = true, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0.005, slippage = 0, max_labels_count = 500, max_lines_count = 500, max_boxes_count = 500)
+float fxRate = nz(request.currency_rate(syminfo.currency, strategy.account_currency, ignore_invalid_currency = true), 1)  // quote currency -> account currency, so 1% risk is 1% whatever the pair
 
 // ───────── settings ─────────
 string pairIn  = input.string("Auto", "Pair", options = [{{PAIR_OPTIONS}}], tooltip = "Auto reads the chart symbol. Built for the 1H chart: the pivot lengths below are in candles of the chart.")
@@ -188,7 +189,7 @@ if active
                     if risk > 0 and risk <= maxRisk * atr
                         float lq = dir > 0 ? swH : swL
                         float tp = tpMode == "None" ? na : tpMode == "Swing liquidity (min 2R)" and not na(lq) and (lq - close) * dir >= 2 * risk ? lq : close + dir * tpR * risk
-                        float qRaw = strategy.equity * stRisk / 100 / (risk * syminfo.pointvalue)
+                        float qRaw = strategy.equity * stRisk / 100 / (risk * syminfo.pointvalue * fxRate)
                         float q = qRaw >= 20 ? math.floor(qRaw) : math.round(qRaw, 2)
                         string id = dir > 0 ? "L" : "S"
                         string cmt = pName + " | " + (dir > 0 ? "long" : "short") + " | bias " + f_bname(b) + " " + f_cname(cv) + " gap " + f_sg(g) + " | BOS " + str.tostring(sLvl, format.mintick) + " | CHoCH | SL " + str.tostring(f_pips(risk)) + "p | " + array.get(DOW, tDay - 1) + " " + timeframe.period

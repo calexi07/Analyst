@@ -5,6 +5,7 @@
 // A test bench for your own rules in the Strategy Tester. Not a trade signal.
 //@version=6
 strategy("Bias Engine · sweep strategy (daily sweep → breaker)", shorttitle = "BE Sweep", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = false, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0.005, slippage = 0, max_labels_count = 500, max_boxes_count = 500, max_bars_back = 500)
+float fxRate = nz(request.currency_rate(syminfo.currency, strategy.account_currency, ignore_invalid_currency = true), 1)  // quote currency -> account currency, so 1% risk is 1% whatever the pair
 
 // ───────── settings ─────────
 string pairIn  = input.string("Auto", "Pair", options = [{{PAIR_OPTIONS}}], tooltip = "Auto reads the chart symbol (e.g. EURUSD, OANDA:XAUUSD). Built for the 1H chart (4H works too: tested on 3 years with the daily sweep).")
@@ -278,7 +279,7 @@ if (sigL or sigS) and flat
     pSl := sgSl
     pR := math.abs(sgE - sgSl)
     pTp := f_tp(pDir, pE, pR)
-    pQ := math.max(strategy.equity * stRisk / 100 / (pR * syminfo.pointvalue), 0)
+    pQ := math.max(strategy.equity * stRisk / 100 / (pR * syminfo.pointvalue * fxRate), 0)
     pBar := bar_index
     pLive := true
     label.new(bar_index, pDir > 0 ? low : high, pDir > 0 ? "sweep ↑" : "sweep ↓", style = pDir > 0 ? label.style_label_up : label.style_label_down, color = color.new(pDir > 0 ? bullC : bearC, 20), textcolor = color.white, size = size.tiny)

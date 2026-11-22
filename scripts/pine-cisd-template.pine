@@ -22,6 +22,7 @@ strategy(
      commission_value    = 0.005,
      margin_long         = 1,
      margin_short        = 1)
+float fxRate = nz(request.currency_rate(syminfo.currency, strategy.account_currency, ignore_invalid_currency = true), 1)  // quote currency -> account currency, so 1% risk is 1% whatever the pair
 
 // ══════════════════════════════════════════════════════════
 // 2. CONSTANTS
@@ -2589,7 +2590,7 @@ var float oSl = na
 var float oTp1 = na
 var float oTp3 = na
 var int   oDir = 0
-f_qty(float en, float sl) => math.max(strategy.equity * stRisk / 100 / (math.abs(en - sl) * syminfo.pointvalue), 0)
+f_qty(float en, float sl) => math.max(strategy.equity * stRisk / 100 / (math.abs(en - sl) * syminfo.pointvalue * fxRate), 0)
 if evReversal
     strategy.close_all(comment = "Reversal")
 if evPendCancel
