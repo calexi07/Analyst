@@ -299,6 +299,10 @@ if pLive and flat and bar_index - pBar >= lifeB
     pLive := false
 if not flat
     pLive := false
+// a limit that filled and was stopped on the same candle must not be placed again
+if pLive and strategy.closedtrades > nz(strategy.closedtrades[1])
+    strategy.cancel(pDir > 0 ? "L" : "S")
+    pLive := false
 if sig
     float r = math.abs(sgE - sgSl)
     pDir := sgD
