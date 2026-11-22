@@ -80,7 +80,7 @@ def run(p, data, P, start, end):
                 px = None
                 if (x['l'] <= pos['sl']) if d > 0 else (x['h'] >= pos['sl']): px = min(x['o'], pos['sl']) if d > 0 else max(x['o'], pos['sl'])
                 elif (x['h'] >= pos['tp']) if d > 0 else (x['l'] <= pos['tp']): px = max(x['o'], pos['tp']) if d > 0 else min(x['o'], pos['tp'])
-                elif j - pos['j'] >= P['tmax'] or mm >= 22 * 60 - 5: px = x['c']
+                elif j - pos['j'] >= P['tmax'] or mm >= P.get('eod', 22 * 60 - 5): px = x['c']
                 if px is not None:
                     res.append(dict(p=p, d=d, t=pos['t'], tx=x['tc'], wk=x['wk'], R=d * (px - pos['e']) / pos['r'] - cost / pos['r'], cd=cd)); pos = None
                 continue
