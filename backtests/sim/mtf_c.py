@@ -16,12 +16,15 @@ def prep4(p):
         b['atr4'] = a if i >= 13 else None; pc = b['c']
     return bars
 
-DEF = dict(sqf=None, sqx=None, trm='atr', stp=10, stm=3.0, stat=1.0, sttf='4h', slm='atr', stf=False, mingap=0, slk=1.0, entry='C', tp=4, trk=0.75, trk2=0.5, trat=2.0, hours=None, cool=24, dirm='both', maxdow=2, sc=None, fri=True)
+DEF = dict(mcf=None, mcx=None, sqf=None, sqx=None, trm='atr', stp=10, stm=3.0, stat=1.0, sttf='4h', slm='atr', stf=False, mingap=0, slk=1.0, entry='C', tp=4, trk=0.75, trk2=0.5, trat=2.0, hours=None, cool=24, dirm='both', maxdow=2, sc=None, fri=True)
 
 def run_c(p, b4, h1, B, P, start, end):
     P = {**DEF, **P}; cost = cost_of(p) * pip_of(p)
     i1 = {b['t']: k for k, b in enumerate(h1)}
     res, lastx, k4 = [], None, 0
+    if P['mcf'] or P['mcx']:
+        import macd as _mc
+        _m, _sg, _hs = _mc.macd(b4); ix4 = {b4[q]['tc']: q for q in range(len(b4))}
     if P['sqf'] or P['sqx']:
         import sqz as _sq
         _v, _on, _off = _sq.squeeze(b4); ix4 = {b4[q]['tc']: q for q in range(len(b4))}
@@ -51,6 +54,12 @@ def run_c(p, b4, h1, B, P, start, end):
             ok = {'pos': v_ * dr > 0, 'rising': (v_ - v1_) * dr > 0, 'both': v_ * dr > 0 and (v_ - v1_) * dr > 0,
                   'nosqz': not _on[i], 'sqzon': bool(_on[i]), 'fired': bool(_on[max(0, i - 6):i].any()) and not _on[i],
                   'notfade': not (v_ * dr > 0 and (v_ - v1_) * dr < 0), 'neg_rising': v_ * dr < 0 and (v_ - v1_) * dr > 0}[P['sqf']]
+            if not ok: i += 1; continue
+        if P['mcf']:
+            m_, h_, h1_ = _m[i], _hs[i], _hs[i - 1]
+            if h_ != h_ or h1_ != h1_: i += 1; continue
+            ok = {'above': h_ * dr > 0, 'trend': m_ * dr > 0, 'both': h_ * dr > 0 and m_ * dr > 0, 'hrising': (h_ - h1_) * dr > 0,
+                  'notfade': not (h_ * dr > 0 and (h_ - h1_) * dr < 0), 'pullback': m_ * dr > 0 and h_ * dr < 0}[P['mcf']]
             if not ok: i += 1; continue
         if P['mingap'] and (bi[2] is None or abs(bi[2]) < P['mingap']): i += 1; continue
         lvl = s['h'] if dr > 0 else s['l']; risk = s['atr4'] * P['slk']
@@ -119,6 +128,11 @@ def run_c(p, b4, h1, B, P, start, end):
                 if P['trm'] == 'st' and P['sttf'] == '1h': ns = sl
                 sl = max(sl, ns) if dr > 0 else min(sl, ns)
                 d2, _ = dir_at(c4)
+                if P['mcx']:
+                    q = ix4[c4['tc']]; h_, h1_, h2_ = _hs[q], _hs[q - 1], _hs[q - 2]
+                    xx = {'cross': h_ * dr < 0, 'cross_1R': best >= 1 and h_ * dr < 0, 'cross_2R': best >= 2 and h_ * dr < 0,
+                          'fade2_1R': best >= 1 and (h_ - h1_) * dr < 0 and (h1_ - h2_) * dr < 0}[P['mcx']]
+                    if xx: exitp, why, jx = b['c'], 'MACD', jj; break
                 if P['sqx']:
                     q = ix4[c4['tc']]; v_, v1_, v2_ = _v[q], _v[q - 1], _v[q - 2]
                     xx = {'fade2': (v_ - v1_) * dr < 0 and (v1_ - v2_) * dr < 0, 'zero': v_ * dr < 0,
