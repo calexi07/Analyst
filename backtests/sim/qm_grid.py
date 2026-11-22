@@ -5,7 +5,7 @@ import qm, ltf
 from smc import prep, B, H
 from harness import B1
 B.clear(); B.update(B1)
-h1 = prep('EURUSD')
+import harness as _hh; h1 = _hh.D1['EURUSD']   # real 1H (prep() is patched to 4H once smc_3y is imported)
 DATA = {'5m': ltf.load('EURUSD', '5'), '15m': ltf.load('EURUSD', '15'), '30m': ltf.load('EURUSD', '30')}
 CTX = {k: ltf.struct_ctx(h1, v) for k, v in DATA.items()}
 def ev(args):

@@ -4,7 +4,7 @@
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from smc import B, cost_of, pip_of
-DEF = dict(slb=0.1, cancel1R=True, ctx=None, tpm='R', lifeH=48, L=3, tpR=3, life=48, minR=0.3, maxR=3.0, entry='shoulder', bias=True, hours=None)
+DEF = dict(poi=None, slb=0.1, cancel1R=True, ctx=None, tpm='R', lifeH=48, L=3, tpR=3, life=48, minR=0.3, maxR=3.0, entry='shoulder', bias=True, hours=None)
 def run(p, b, P, start, end):
     P = {**DEF, **P}; L = P['L']; cost = cost_of(p) * pip_of(p); res = []; pos = None; pend = None
     pivs = []   # (index, +1 high / -1 low, price)
@@ -54,6 +54,7 @@ def run(p, b, P, start, end):
             if not ((L2[2] < L1[2]) if d > 0 else (L2[2] > L1[2])): continue
             # price must not have closed beyond H1 between L2 and now (this is the first break)
             if any(((b[j]['c'] > H1[2]) if d > 0 else (b[j]['c'] < H1[2])) for j in range(L2[0], i)): continue
+            if P['poi'] is not None and not P['poi'](d, b[L2[0]]['t'], L2[2], x['t']): continue
             used.add((L1[0], L2[0], H1[0]))
             e = L1[2] if P['entry'] == 'shoulder' else (L1[2] + L2[2]) / 2 if P['entry'] == 'mid' else (L1[2] + x['c']) / 2 if P['entry'] == 'half' else x['c']
             if P['entry'] == 'break':
