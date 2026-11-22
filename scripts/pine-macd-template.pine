@@ -1,0 +1,157 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Forex Fundamental Bias Engine — MACD strategy (1H chart): MACD crosses its signal line in the week's bias direction.
+// Generated automatically: {{GENERATED}}. Bias data: {{COVERAGE}}.
+// Do not edit by hand: the data block is rewritten after every phase and daily check.
+// A test bench for your own rules in the Strategy Tester. Not a trade signal.
+//@version=6
+strategy("Bias Engine · MACD strategy (bias + MACD cross)", shorttitle = "BE MACD", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = true, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0.005, slippage = 0, max_labels_count = 500, max_boxes_count = 500)
+
+// ───────── settings ─────────
+string pairIn  = input.string("Auto", "Pair", options = [{{PAIR_OPTIONS}}], tooltip = "Auto reads the chart symbol (e.g. EURUSD, OANDA:XAUUSD). Built for the 1H chart.")
+string dirMode = input.string("Fundamental bias", "Direction from", options = ["Fundamental bias", "Price trend (SMA)", "Both directions"], group = "Direction", tooltip = "Fundamental bias: only crosses in the week's published bias direction (two-sided weeks never trade). Simulation (14 pairs, 1H, W40–W47, 06–22): 213 trades, +95R, +0.45R per trade; random entries in the bias direction with the same stop and target made +0.19R per trade.")
+string minConv = input.string("Any", "Minimum conviction", options = ["Any", "Medium or high", "High only"], group = "Direction")
+int    trLen   = input.int(20, "Trend SMA length (daily closes)", minval = 5, maxval = 400, group = "Direction")
+int    fastL   = input.int(12, "MACD fast", minval = 1, group = "MACD", inline = "m")
+int    slowL   = input.int(26, "slow", minval = 2, group = "MACD", inline = "m")
+int    sigL    = input.int(9, "signal", minval = 1, group = "MACD", inline = "m")
+string sigT    = input.string("SMA", "Signal line", options = ["SMA", "EMA"], group = "MACD", tooltip = "SMA as in CM_MacD_Ult_MTF (the tested version); EMA is the standard MACD.")
+string xMode   = input.string("Any cross", "Cross", options = ["Any cross", "Only below zero (long) / above zero (short)", "Only above zero (long) / below zero (short)"], group = "MACD", tooltip = "Any cross was the best in the bias weeks (+0.45R per trade). Below/above zero: the pullback cross (+0.0R) or the trend-side cross (+0.25R) in the simulation.")
+bool   hrsOn   = input.bool(true, "Only signals in my hours (Bucharest)", group = "Filters")
+int    hrsFrom = input.int(6, "From (hour)", minval = 0, maxval = 23, group = "Filters", inline = "hrs")
+int    hrsTo   = input.int(22, "to (hour)", minval = 1, maxval = 24, group = "Filters", inline = "hrs")
+bool   noFri   = input.bool(false, "No new entries on Friday", group = "Filters")
+float  slAtr   = input.float(1.5, "Stop loss (ATR × )", minval = 0.3, maxval = 5, step = 0.1, group = "Exit", tooltip = "ATR(14) of the chart. Simulation: 1.5 ATR +0.45R per trade vs 1.0 ATR +0.24R.")
+float  tpR     = input.float(3.0, "Take profit (R), 0 = none", minval = 0, maxval = 10, step = 0.5, group = "Exit", tooltip = "Simulation: TP 3R +95R, TP 2R +22R with the 1 ATR stop; exits on the opposite cross gave less.")
+bool   oppEx   = input.bool(false, "Close on the opposite cross", group = "Exit")
+bool   wkExit  = input.bool(false, "Close every trade at Friday's close", group = "Exit")
+int    fromT   = input.time(timestamp("2000-01-01"), "Trade only from this date", group = "Risk")
+float  stRisk  = input.float(1.0, "Risk per trade (% of equity)", minval = 0.1, maxval = 5, step = 0.1, group = "Risk")
+color  bullC   = input.color(#22AB94, "Bullish", group = "Colours")
+color  bearC   = input.color(#F23645, "Bearish", group = "Colours")
+bool   zonesOn = input.bool(true, "Show SL / TP zones", group = "Colours")
+
+// ───────── data (generated) ─────────
+var string[] PAIRS = array.from({{PAIRS}})
+var string[] CCY   = array.from({{CCY}})
+var int[]    wT = array.new_int()
+var string[] wN = array.new_string()
+var string[] wD = array.new_string()
+var string[] wS = array.new_string()
+var int[]    cT = array.new_int()
+var string[] cN = array.new_string()
+var string[] cD = array.new_string()
+var string[] cH = array.new_string()
+var string[] cC = array.new_string()
+{{DATA}}
+
+// ───────── helpers ─────────
+f_item(string row, int i) =>
+    string[] parts = str.split(row, ",")
+    i >= 0 and i < array.size(parts) ? array.get(parts, i) : "?"
+f_bname(string b) => b == "U" ? "BULLISH" : b == "D" ? "BEARISH" : b == "N" ? "TWO-SIDED" : "none"
+f_cname(string c) => c == "h" ? "high" : c == "m" ? "medium" : c == "l" ? "low" : "-"
+f_sg(float v) => na(v) ? "0" : v > 0 ? "+" + str.tostring(v) : str.tostring(v)
+f_sname(string s) => s == "C" ? "Confirmed" : s == "S" ? "Confirmed, could get stronger" : s == "F" ? "Confirmed but fragile" : s == "W" ? "Under watch" : s == "P" ? "Under pressure" : s == "X" ? "Invalidated" : s == "T" ? "Still two-sided" : "none"
+f_wa(bool ok) => ok ? "with" : "against"
+var string[] DOW = array.from("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+
+// ───────── pair and week ─────────
+string symA = syminfo.basecurrency + syminfo.currency
+string tk   = str.upper(syminfo.ticker)
+string symB = str.length(tk) >= 6 ? str.substring(tk, 0, 6) : tk
+int pIdx = pairIn != "Auto" ? array.indexof(PAIRS, pairIn) : array.indexof(PAIRS, symA) >= 0 ? array.indexof(PAIRS, symA) : array.indexof(PAIRS, symB)
+string pName = pIdx >= 0 ? array.get(PAIRS, pIdx) : syminfo.ticker
+float pipSz = str.contains(pName, "JPY") ? 0.01 : str.contains(pName, "XAU") ? 0.1 : 0.0001
+f_pips(float d) => math.round(d / pipSz * 10) / 10
+
+int WEEK_MS = 7 * 86400000
+var int wi = -1
+while wi + 1 < array.size(wT) and time >= array.get(wT, wi + 1)
+    wi += 1
+bool inWk = wi >= 0 and time < array.get(wT, math.max(wi, 0)) + WEEK_MS
+string rec = inWk and pIdx >= 0 ? f_item(array.get(wD, math.max(wi, 0)), pIdx) : "?"
+bool hasRec = rec != "?" and str.length(rec) >= 2
+string b  = hasRec ? str.substring(rec, 0, 1) : "-"
+string cv = hasRec ? str.substring(rec, 1, 2) : "-"
+float  g  = hasRec and str.length(rec) > 2 ? str.tonumber(str.substring(rec, 2)) : na
+
+// ───────── direction ─────────
+[smaT, dCl] = request.security(syminfo.tickerid, "D", [ta.sma(close, trLen)[1], close[1]], lookahead = barmerge.lookahead_on)
+int biasDir = b == "U" ? 1 : b == "D" ? -1 : 0
+bool convOk = minConv == "Any" or (minConv == "High only" ? cv == "h" : cv == "h" or cv == "m")
+int bDir = convOk ? biasDir : 0
+int tDir = na(smaT) or na(dCl) ? 0 : dCl > smaT ? 1 : dCl < smaT ? -1 : 0
+int dir = dirMode == "Fundamental bias" ? bDir : dirMode == "Price trend (SMA)" ? tDir : 2
+bool longOk  = dir == 1 or dir == 2
+bool shortOk = dir == -1 or dir == 2
+
+// ───────── MACD signal ─────────
+float macdL = ta.ema(close, fastL) - ta.ema(close, slowL)
+float sigLn = sigT == "SMA" ? ta.sma(macdL, sigL) : ta.ema(macdL, sigL)
+float hist = macdL - sigLn
+bool xUp = hist > 0 and hist[1] <= 0
+bool xDn = hist < 0 and hist[1] >= 0
+bool upOk = xMode == "Any cross" or (xMode == "Only below zero (long) / above zero (short)" ? macdL < 0 : macdL > 0)
+bool dnOk = xMode == "Any cross" or (xMode == "Only below zero (long) / above zero (short)" ? macdL > 0 : macdL < 0)
+float atr = ta.atr(14)
+
+int NY7 = 7 * 3600000
+int tDay = dayofweek(time + NY7, "America/New_York")
+int hrB = hour(time, "Europe/Bucharest")
+bool hrsOk = not hrsOn or (hrB >= hrsFrom and hrB < hrsTo)
+bool dayOk = not (noFri and tDay == dayofweek.friday)
+int fri17 = timestamp("America/New_York", year(time + NY7, "America/New_York"), month(time + NY7, "America/New_York"), dayofmonth(time + NY7, "America/New_York"), 17, 0)
+bool lastWkBar = tDay == dayofweek.friday and time_close + timeframe.in_seconds() * 1000 > fri17
+bool live = time >= fromT and not na(atr) and not na(hist[1])
+
+bool goL = live and xUp and upOk and longOk and hrsOk and dayOk
+bool goS = live and xDn and dnOk and shortOk and hrsOk and dayOk
+
+// ───────── orders (at the signal candle's close) ─────────
+var float ent0 = na
+var float risk0 = na
+var float slLvl = na
+var float tpLvl = na
+var int   posDir = 0
+var box   zSl = na
+var box   zTp = na
+bool flat = strategy.position_size == 0
+// opposite cross / Friday close first, so a new entry on the same close starts flat
+if not flat and oppEx and (posDir > 0 ? xDn : xUp)
+    strategy.close_all(comment = "Opposite cross")
+if not flat and wkExit and lastWkBar
+    strategy.close_all(comment = "Friday")
+if flat and (goL or goS)
+    int d = goL ? 1 : -1
+    float r = slAtr * atr
+    float q = math.max(strategy.equity * stRisk / 100 / (r * syminfo.pointvalue), 0)
+    ent0 := close
+    risk0 := r
+    posDir := d
+    slLvl := close - d * r
+    tpLvl := tpR > 0 ? close + d * tpR * r : na
+    string id = d > 0 ? "L" : "S"
+    strategy.entry(id, d > 0 ? strategy.long : strategy.short, qty = q, comment = d > 0 ? "MACD L" : "MACD S")
+    strategy.exit("X" + id, id, stop = slLvl, limit = tpLvl, comment_loss = "SL", comment_profit = "TP")
+    if zonesOn
+        zSl := box.new(bar_index, math.max(ent0, slLvl), bar_index + 1, math.min(ent0, slLvl), border_color = color.new(bearC, 30), bgcolor = color.new(bearC, 80))
+        zTp := na(tpLvl) ? na : box.new(bar_index, math.max(ent0, tpLvl), bar_index + 1, math.min(ent0, tpLvl), border_color = color.new(bullC, 30), bgcolor = color.new(bullC, 80))
+if strategy.position_size != 0 and zonesOn and not na(zSl)
+    box.set_right(zSl, bar_index)
+    if not na(zTp)
+        box.set_right(zTp, bar_index)
+
+plot(strategy.position_size != 0 ? slLvl : na, "Stop", color = color.new(bearC, 20), style = plot.style_linebr)
+plot(strategy.position_size != 0 ? tpLvl : na, "Target", color = color.new(bullC, 20), style = plot.style_linebr)
+plotshape(goL and flat, "Long signal", shape.triangleup, location.belowbar, bullC, size = size.tiny)
+plotshape(goS and flat, "Short signal", shape.triangledown, location.abovebar, bearC, size = size.tiny)
+bgcolor(dir == 1 ? color.new(bullC, 95) : dir == -1 ? color.new(bearC, 95) : na, title = "Direction")
+
+var table tb = table.new(position.bottom_right, 2, 3, bgcolor = color.new(#1E222D, 10), border_width = 1)
+if barstate.islast
+    table.cell(tb, 0, 0, "BE MACD · " + pName, text_color = color.white, text_size = size.small)
+    table.cell(tb, 1, 0, dirMode, text_color = color.white, text_size = size.small)
+    table.cell(tb, 0, 1, "Bias", text_color = color.gray, text_size = size.small)
+    table.cell(tb, 1, 1, f_bname(b) + " " + f_cname(cv) + " " + f_sg(g), text_color = biasDir > 0 ? bullC : biasDir < 0 ? bearC : color.gray, text_size = size.small)
+    table.cell(tb, 0, 2, "MACD", text_color = color.gray, text_size = size.small)
+    table.cell(tb, 1, 2, hist > 0 ? "above signal" : "below signal", text_color = hist > 0 ? bullC : bearC, text_size = size.small)
