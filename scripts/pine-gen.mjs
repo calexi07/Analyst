@@ -226,6 +226,17 @@ if(existsSync('scripts/pine-smc5-template.pine')){
     .replace('{{DATA}}', dataBlocks(L));
   writeFileSync('pine/bias-smc5.pine', sm);
 }
+// the supply / demand zones indicator: same data, its own template
+if(existsSync('scripts/pine-zones-template.pine')){
+  const zn = readFileSync('scripts/pine-zones-template.pine', 'utf8')
+    .replace('{{GENERATED}}', gen)
+    .replace('{{COVERAGE}}', `${wkKey(first.y, first.w)} → ${wkKey(last.y, last.w)} (${wl.length} weeks), ${cl.length} daily checks`)
+    .replace('{{PAIRS}}', PAIRS.map(p => `"${p}"`).join(', '))
+    .replace('{{PAIR_OPTIONS}}', ['"Auto"', ...PAIRS.map(p => `"${p}"`)].join(', '))
+    .replace('{{CCY}}', CCY.map(c => `"${c}"`).join(', '))
+    .replace('{{DATA}}', dataBlocks(L));
+  writeFileSync('pine/bias-zones.pine', zn);
+}
 // the intraday ORB strategy (5m chart): same data, its own template
 if(existsSync('scripts/pine-intraday-template.pine')){
   const it = withAlerts(readFileSync('scripts/pine-intraday-template.pine', 'utf8'))
