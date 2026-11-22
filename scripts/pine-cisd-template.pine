@@ -2611,7 +2611,7 @@ if evNewPending
 // keep the limit order working while the indicator's order is pending
 if pendDir != 0 and strategy.position_size == 0
     strategy.entry(pendDir > 0 ? "CISD L" : "CISD S", pendDir > 0 ? strategy.long : strategy.short, qty = f_qty(pendEntry, pendSL), limit = pendEntry, comment = pendDir > 0 ? "CISD L" : "CISD S")
-if pendDir == 0 and not evFill and strategy.position_size == 0
+if pendDir == 0 and not evFill and not (evLongEntry or evShortEntry) and strategy.position_size == 0
     strategy.cancel("CISD L")
     strategy.cancel("CISD S")
 // stop (moved to break-even when the indicator moves it) and TP3
