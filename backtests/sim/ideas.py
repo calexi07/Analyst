@@ -18,7 +18,7 @@ def _days(b):
     for i, x in enumerate(b): D.setdefault(x['day'], []).append(i)
     return D
 
-DEF = dict(idea='asia_bo', sl='struct', slk=1.0, tpR=3, maxR=3.0, minR=0.3, life=6, bias=True, hours=None)
+DEF = dict(tmax=None, idea='asia_bo', sl='struct', slk=1.0, tpR=3, maxR=3.0, minR=0.3, life=6, bias=True, hours=None)
 def run(p, b, P, start, end):
     P = {**DEF, **P}; cost = cost_of(p) * pip_of(p); I = P['idea']
     days = _days(b); dkeys = list(days); dix = {d: k for k, d in enumerate(dkeys)}
@@ -40,6 +40,7 @@ def run(p, b, P, start, end):
             d = pos['d']; px = None
             if (x['l'] <= pos['sl']) if d > 0 else (x['h'] >= pos['sl']): px = min(x['o'], pos['sl']) if d > 0 else max(x['o'], pos['sl'])
             elif (x['h'] >= pos['tp']) if d > 0 else (x['l'] <= pos['tp']): px = max(x['o'], pos['tp']) if d > 0 else min(x['o'], pos['tp'])
+            elif P['tmax'] and i - pos.get('i', i) >= P['tmax']: px = x['c']
             if px is not None:
                 res.append(dict(p=p, d=d, t=pos['t'], tx=x['tc'], wk=pos['wk'], R=d * (px - pos['e']) / pos['r'] - cost / pos['r'])); pos = None
         # ---- pending order
@@ -52,7 +53,7 @@ def run(p, b, P, start, end):
                     if pend['kind'] == 'stop': e = max(x['o'], pend['e']) if d > 0 else min(x['o'], pend['e'])
                     else: e = min(x['o'], pend['e']) if d > 0 else max(x['o'], pend['e'])
                     r = abs(e - pend['sl'])
-                    pos = dict(d=d, e=e, r=r, sl=pend['sl'], tp=e + d * P['tpR'] * r, t=x['t'], wk=x['wk']); pend = None
+                    pos = dict(d=d, e=e, r=r, sl=pend['sl'], tp=e + d * P['tpR'] * r, t=x['t'], wk=x['wk'], i=i); pend = None
                     if (x['l'] <= pos['sl']) if d > 0 else (x['h'] >= pos['sl']):   # worst case on the fill bar
                         res.append(dict(p=p, d=d, t=x['t'], tx=x['tc'], wk=x['wk'], R=-1 - cost / r)); pos = None
         # S/D zones: register (needs bars i-4..i), regardless of the window
@@ -85,18 +86,18 @@ def run(p, b, P, start, end):
             ah, al = asia[d0]
             if d > 0 and dlow[d0] < al and x['c'] > al and x['c'] > x['o']:
                 sl = dlow[d0] - 0.1 * A; r = x['c'] - sl
-                if P['minR'] * A <= r <= P['maxR'] * A: pos = dict(d=d, e=x['c'], r=r, sl=sl, tp=x['c'] + P['tpR'] * r, t=x['t'], wk=x['wk']); done.add(key)
+                if P['minR'] * A <= r <= P['maxR'] * A: pos = dict(d=d, e=x['c'], r=r, sl=sl, tp=x['c'] + P['tpR'] * r, t=x['t'], wk=x['wk'], i=i); done.add(key)
             elif d < 0 and dhigh[d0] > ah and x['c'] < ah and x['c'] < x['o']:
                 sl = dhigh[d0] + 0.1 * A; r = sl - x['c']
-                if P['minR'] * A <= r <= P['maxR'] * A: pos = dict(d=d, e=x['c'], r=r, sl=sl, tp=x['c'] - P['tpR'] * r, t=x['t'], wk=x['wk']); done.add(key)
+                if P['minR'] * A <= r <= P['maxR'] * A: pos = dict(d=d, e=x['c'], r=r, sl=sl, tp=x['c'] - P['tpR'] * r, t=x['t'], wk=x['wk'], i=i); done.add(key)
         elif I == 'ny_rev' and 15 <= hr < 21 and key not in done and d0 in lon:
             lh, ll = lon[d0]
             if d > 0 and x['l'] < ll and x['c'] > ll:
                 sl = x['l'] - 0.1 * A; r = x['c'] - sl
-                if P['minR'] * A <= r <= P['maxR'] * A: pos = dict(d=d, e=x['c'], r=r, sl=sl, tp=x['c'] + P['tpR'] * r, t=x['t'], wk=x['wk']); done.add(key)
+                if P['minR'] * A <= r <= P['maxR'] * A: pos = dict(d=d, e=x['c'], r=r, sl=sl, tp=x['c'] + P['tpR'] * r, t=x['t'], wk=x['wk'], i=i); done.add(key)
             elif d < 0 and x['h'] > lh and x['c'] < lh:
                 sl = x['h'] + 0.1 * A; r = sl - x['c']
-                if P['minR'] * A <= r <= P['maxR'] * A: pos = dict(d=d, e=x['c'], r=r, sl=sl, tp=x['c'] - P['tpR'] * r, t=x['t'], wk=x['wk']); done.add(key)
+                if P['minR'] * A <= r <= P['maxR'] * A: pos = dict(d=d, e=x['c'], r=r, sl=sl, tp=x['c'] - P['tpR'] * r, t=x['t'], wk=x['wk'], i=i); done.add(key)
         elif I == 'sd_zone':
             for z in reversed(piv):
                 if z[0] != d or not z[4] or z[3] >= i: continue
@@ -107,7 +108,7 @@ def run(p, b, P, start, end):
                         # touched this bar: treat as a limit filled at the zone edge (worst case: stop checked from the next bar)
                         e = min(x['o'], e) if d > 0 else max(x['o'], e)
                         if (x['l'] <= sl) if d > 0 else (x['h'] >= sl): res.append(dict(p=p, d=d, t=x['t'], tx=x['tc'], wk=x['wk'], R=-1 - cost / abs(e - sl)))
-                        else: pos = dict(d=d, e=e, r=abs(e - sl), sl=sl, tp=e + d * P['tpR'] * abs(e - sl), t=x['t'], wk=x['wk'])
+                        else: pos = dict(d=d, e=e, r=abs(e - sl), sl=sl, tp=e + d * P['tpR'] * abs(e - sl), t=x['t'], wk=x['wk'], i=i)
                     break
         elif I == 'nr_day' and key not in done and 9 <= hr < 21:
             k = dix[d0]
@@ -122,12 +123,12 @@ def run(p, b, P, start, end):
             move = (dopen[d0] - dlow[d0]) if d > 0 else (dhigh[d0] - dopen[d0])
             if move >= 0.5 * adr[d0] and (x['c'] - b[i - 1]['h'] if d > 0 else b[i - 1]['l'] - x['c']) > 0:
                 sl = (dlow[d0] if d > 0 else dhigh[d0]) - d * 0.1 * A; r = abs(x['c'] - sl)
-                if P['minR'] * A <= r <= P['maxR'] * A: pos = dict(d=d, e=x['c'], r=r, sl=sl, tp=x['c'] + d * P['tpR'] * r, t=x['t'], wk=x['wk']); done.add(key)
+                if P['minR'] * A <= r <= P['maxR'] * A: pos = dict(d=d, e=x['c'], r=r, sl=sl, tp=x['c'] + d * P['tpR'] * r, t=x['t'], wk=x['wk'], i=i); done.add(key)
         elif I == 'round':
             lv = (np.floor(x['c'] / step) * step) if d > 0 else (np.ceil(x['c'] / step) * step)
             if (d > 0 and x['l'] < lv < x['c'] and b[i - 1]['c'] > lv) or (d < 0 and x['h'] > lv > x['c'] and b[i - 1]['c'] < lv):
                 sl = (x['l'] if d > 0 else x['h']) - d * 0.1 * A; r = abs(x['c'] - sl)
-                if P['minR'] * A <= r <= P['maxR'] * A: pos = dict(d=d, e=x['c'], r=r, sl=sl, tp=x['c'] + d * P['tpR'] * r, t=x['t'], wk=x['wk'])
+                if P['minR'] * A <= r <= P['maxR'] * A: pos = dict(d=d, e=x['c'], r=r, sl=sl, tp=x['c'] + d * P['tpR'] * r, t=x['t'], wk=x['wk'], i=i)
         if 2 <= hr < 9: a_ = asia.setdefault(d0, [x['h'], x['l']]); a_[0] = max(a_[0], x['h']); a_[1] = min(a_[1], x['l'])
         if 9 <= hr < 15: l_ = lon.setdefault(d0, [x['h'], x['l']]); l_[0] = max(l_[0], x['h']); l_[1] = min(l_[1], x['l'])
     return res
