@@ -8,7 +8,7 @@ strategy("Bias Engine · swing test bench", shorttitle = "BE Swing", overlay = t
 
 // ───────── settings ─────────
 string pairIn  = input.string("Auto", "Pair", options = [{{PAIR_OPTIONS}}], tooltip = "Auto reads the chart symbol (e.g. EURUSD, OANDA:XAUUSD). Built for the 4H chart (Daily works too). Days below are calendar time, so they mean the same on any timeframe.")
-string sigTf   = input.string("4H", "Signal timeframe", options = ["Chart", "4H", "1H", "Daily"], tooltip = "The candles the strategy reads (sweeps, breaks, ATR, trailing). 4H on a 5m or 15m chart: the 4H strategy runs exactly as on the 4H chart, but you see the entries and exits on the lower chart, and stops, targets and entry orders fill on the real 5m path. Chart: use the chart's own candles. Lower charts have less history in TradingView (5m ≈ a few months).")
+string sigTf   = input.string("4H", "Signal timeframe", options = ["Chart", "4H", "1H", "15m", "Daily"], tooltip = "The candles the strategy reads (sweeps, breaks, ATR, trailing). 4H on a 5m or 15m chart: the 4H strategy runs exactly as on the 4H chart, but you see the entries and exits on the lower chart, and stops, targets and entry orders fill on the real 5m path. Chart: use the chart's own candles. Lower charts have less history in TradingView (5m ≈ a few months).")
 string dirMode = input.string("Both must agree", "Direction from", options = ["Fundamental bias", "Price trend (SMA)", "Both must agree"], group = "Direction", tooltip = "Fundamental bias: the week's published bias (data only from the first week in the script). Price trend: close above / below the SMA below, works on years of history, so the mechanics can be tested on thousands of trades. Both: only when the two agree.")
 string minConv = input.string("Any", "Minimum conviction", options = ["Any", "Medium or high", "High only"], group = "Direction", tooltip = "Bias modes only. Two-sided weeks never trade.")
 int    trLen   = input.int(20, "Trend SMA length (daily closes)", minval = 5, maxval = 400, group = "Direction")
@@ -100,7 +100,7 @@ string ckS = ck == "?" or ci < 0 or time - array.get(cT, math.max(ci, 0)) > 3 * 
 float mO = request.security(syminfo.tickerid, "M", open, lookahead = barmerge.lookahead_on)
 float yO = request.security(syminfo.tickerid, "12M", open, lookahead = barmerge.lookahead_on)
 // signal candles: the chart's own, or completed higher-timeframe candles read on a lower chart (e.g. 4H on 5m)
-string tfS = sigTf == "4H" ? "240" : sigTf == "1H" ? "60" : sigTf == "Daily" ? "D" : timeframe.period
+string tfS = sigTf == "4H" ? "240" : sigTf == "1H" ? "60" : sigTf == "15m" ? "15" : sigTf == "Daily" ? "D" : timeframe.period
 bool htfMode = timeframe.in_seconds(tfS) > timeframe.in_seconds()
 [sO, sH, sL, sC, sA, sE, sTc] = request.security(syminfo.tickerid, tfS, [open, high, low, close, ta.atr(14), ta.ema(close, 20), time_close], lookahead = barmerge.lookahead_on)
 // the last lower-timeframe bar of each signal candle: its close is the signal candle's close, so the values are complete (no lookahead)
@@ -308,5 +308,5 @@ if barstate.islast
     table.cell(tb, 1, 2, dir > 0 ? "long" : dir < 0 ? "short" : "none", text_color = dir > 0 ? bullC : dir < 0 ? bearC : color.gray, text_size = size.small)
     table.cell(tb, 0, 3, "Confirmed", text_color = color.gray, text_size = size.small)
     table.cell(tb, 1, 3, dir == 0 ? "–" : cfOk ? "yes" : "no", text_color = color.white, text_size = size.small)
-if timeframe.in_seconds() < 3600 and not htfMode and barstate.islast
+if sigTf == "Chart" and timeframe.in_seconds() < 3600 and barstate.islast
     label.new(bar_index, high, "BE Swing reads 4H signals: set 'Signal timeframe' to 4H on this chart.", style = label.style_label_down, color = color.orange, textcolor = color.white)

@@ -181,6 +181,26 @@ if(existsSync('scripts/pine-swing-template.pine')){
     .replace('{{CCY}}', CCY.map(c => `"${c}"`).join(', '))
     .replace('{{DATA}}', dataBlocks(L));
   writeFileSync('pine/bias-swing.pine', sw);
+  // the same strategy with signal candles of 1H and 15m (defaults from the bias-week grid, 22 Nov)
+  const variant = (src, title, short, note, sets) => {
+    let o = src.replace('strategy("Bias Engine · swing test bench", shorttitle = "BE Swing"', `strategy("${title}", shorttitle = "${short}"`)
+      .replace('// Forex Fundamental Bias Engine — swing strategy test bench (4H or Daily chart, holds 3–4 days).', `// Forex Fundamental Bias Engine — ${note}`);
+    for (const [label, from, to] of sets) {
+      const re = new RegExp(`input\\.(string|float|int|bool)\\(${from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}, "${label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`);
+      if (!re.test(o)) throw new Error(`swing variant ${short}: input "${label}" with default ${from} not found`);
+      o = o.replace(re, (m0, ty) => `input.${ty}(${to}, "${label}"`);
+    }
+    return o;
+  };
+  writeFileSync('pine/bias-swing-1h.pine', variant(sw, 'Bias Engine · swing 1H', 'BE Swing 1H',
+    'swing strategy on 1H signal candles (1H chart, holds hours to 2 days). Defaults: bias-week grid, USD pairs W40–W47.', [
+      ['Signal timeframe', '"4H"', '"1H"'], ['Hours to wait after an exit', '24', '12'], ['ATR multiple', '1.0', '1.0'],
+      ['Take profit (R), 0 = none', '4.0', '6.0'], ['Trailing distance (ATR ×)', '0.75', '1.5'], ['Tighten the trailing to (ATR ×), 0 = off', '0.5', '0.0']]));
+  writeFileSync('pine/bias-swing-15m.pine', variant(sw, 'Bias Engine · swing 15m', 'BE Swing 15m',
+    'swing strategy on 15m signal candles (15m chart, intraday to 1 day). Defaults: bias-week grid on EURUSD only (other pairs untested).', [
+      ['Signal timeframe', '"4H"', '"15m"'], ['Direction from', '"Both must agree"', '"Fundamental bias"'], ['Price confirmation', '"Close vs 20-day SMA"', '"None"'],
+      ['Hours to wait after an exit', '24', '4'], ['ATR multiple', '1.0', '1.0'], ['Take profit (R), 0 = none', '4.0', '6.0'],
+      ['Trailing stop', '"From the close (always on)"', '"Off"']]));
 }
 // the sweep strategy (1H chart): same data, its own template
 if(existsSync('scripts/pine-sweep-template.pine')){
