@@ -18,6 +18,8 @@ float  tpR     = input.float(3.0, "Take profit (R)", minval = 0.5, maxval = 10, 
 int    lifeH   = input.int(48, "Limit order valid for (hours)", minval = 1, maxval = 240, group = "Quasimodo")
 float  minRk   = input.float(0.3, "Min risk (ATR × )", minval = 0.05, maxval = 5, step = 0.05, group = "Quasimodo")
 float  maxRk   = input.float(6.0, "Max risk (ATR × )", minval = 0.5, maxval = 20, step = 0.5, group = "Quasimodo")
+bool   atrOn   = input.bool(true, "Only when daily ATR is expanding", group = "Filters", tooltip = "The day of the QM's head must have ATR(5) of the previous daily bars above ATR(20). Simulation EURUSD 15m (W40–W47): +1.87R per trade on 15 trades (73% win, drawdown −1.1R) vs +1.45R on 19 without; QMs on contracting-ATR days lost. Same effect on 5m.")
+string poiMode = input.string("Off", "Head must form in a point of interest", options = ["Off", "1H/4H zone or FVG", "Sweep of yesterday's low/high"], group = "Filters", tooltip = "1H/4H zone or FVG: the head trades into an unmitigated 1H or 4H demand/supply zone (pivot candle followed by a 1.5 ATR move) or an unfilled fair value gap, built from closed 1H/4H candles. Simulation EURUSD 15m: 14 trades, 71% win, +1.79R per trade. Sweep of yesterday's low/high: 7 trades, 86% win, +2.38R. Both cut the number of trades.")
 bool   hrsOn   = input.bool(true, "Only signals in my hours (Bucharest)", group = "Filters")
 int    hrsFrom = input.int(6, "From (hour)", minval = 0, maxval = 23, group = "Filters", inline = "hrs")
 int    hrsTo   = input.int(22, "to (hour)", minval = 1, maxval = 24, group = "Filters", inline = "hrs")
@@ -112,6 +114,78 @@ if bar_index >= 2 * pivL
         array.shift(pvT)
         array.shift(pvP)
 
+// ───────── higher-timeframe points of interest (closed 1H / 4H candles only) ─────────
+var int[]   zD = array.new_int()      // +1 demand / bullish FVG, -1 supply / bearish FVG
+var int[]   zLive = array.new_int()
+var int[]   zDead = array.new_int()   // 0 = still live
+var int[]   zKind = array.new_int()   // 0 zone, 1 FVG
+var float[] zTop = array.new_float()
+var float[] zBot = array.new_float()
+var int[]   lastTc = array.from(0, 0)
+f_addZ(int d, int live, int kind, float top, float bot) =>
+    array.push(zD, d)
+    array.push(zLive, live)
+    array.push(zDead, 0)
+    array.push(zKind, kind)
+    array.push(zTop, top)
+    array.push(zBot, bot)
+    if array.size(zD) > 400
+        array.shift(zD)
+        array.shift(zLive)
+        array.shift(zDead)
+        array.shift(zKind)
+        array.shift(zTop)
+        array.shift(zBot)
+f_poi(simple string tf, int slot) =>
+    // offsets 1..6 = the last six closed candles of tf (1 = newest)
+    [h1_, h2_, h3_, h4_, h5_, h6_] = request.security(syminfo.tickerid, tf, [high[1], high[2], high[3], high[4], high[5], high[6]], lookahead = barmerge.lookahead_on)
+    [l1_, l2_, l3_, l4_, l5_, l6_] = request.security(syminfo.tickerid, tf, [low[1], low[2], low[3], low[4], low[5], low[6]], lookahead = barmerge.lookahead_on)
+    [o3_, c3_, o4_, c4_, c1_] = request.security(syminfo.tickerid, tf, [open[3], close[3], open[4], close[4], close[1]], lookahead = barmerge.lookahead_on)
+    [a2_, a3_, a4_, tc1] = request.security(syminfo.tickerid, tf, [ta.atr(14)[2], ta.atr(14)[3], ta.atr(14)[4], time_close[1]], lookahead = barmerge.lookahead_on)
+    if poiMode == "1H/4H zone or FVG" and not na(tc1) and tc1 != array.get(lastTc, slot) and not na(h6_)
+        array.set(lastTc, slot, tc1)
+        // mitigation / fill by the newest closed candle
+        int nz = array.size(zD)
+        if nz > 0
+            for k = 0 to nz - 1
+                if array.get(zDead, k) == 0 and array.get(zLive, k) < tc1
+                    int d = array.get(zD, k)
+                    bool dead = array.get(zKind, k) == 0 ? (d > 0 ? c1_ < array.get(zBot, k) : c1_ > array.get(zTop, k)) : (d > 0 ? l1_ <= array.get(zBot, k) : h1_ >= array.get(zTop, k))
+                    if dead
+                        array.set(zDead, k, tc1)
+        // FVG centred on candle 2: candle 1 vs candle 3
+        if l1_ > h3_ and l1_ - h3_ >= 0.1 * a2_
+            f_addZ(1, tc1, 1, l1_, h3_)
+        if h1_ < l3_ and l3_ - h1_ >= 0.1 * a2_
+            f_addZ(-1, tc1, 1, l3_, h1_)
+        // demand/supply: pivot candle 3 (displacement by candle 2 or 1) or candle 4 (displacement only by candle 1)
+        if l3_ < math.min(l4_, l5_, l2_, l1_) and (h2_ - h3_ >= 1.5 * a3_ or h1_ - h3_ >= 1.5 * a3_)
+            f_addZ(1, tc1, 0, math.max(o3_, c3_), l3_)
+        if h3_ > math.max(h4_, h5_, h2_, h1_) and (l3_ - l2_ >= 1.5 * a3_ or l3_ - l1_ >= 1.5 * a3_)
+            f_addZ(-1, tc1, 0, h3_, math.min(o3_, c3_))
+        if l4_ < math.min(l5_, l6_, l3_, l2_) and h3_ - h4_ < 1.5 * a4_ and h2_ - h4_ < 1.5 * a4_ and h1_ - h4_ >= 1.5 * a4_
+            f_addZ(1, tc1, 0, math.max(o4_, c4_), l4_)
+        if h4_ > math.max(h5_, h6_, h3_, h2_) and l4_ - l3_ < 1.5 * a4_ and l4_ - l2_ < 1.5 * a4_ and l4_ - l1_ >= 1.5 * a4_
+            f_addZ(-1, tc1, 0, h4_, math.min(o4_, c4_))
+    true
+f_poi("60", 0)
+f_poi("240", 1)
+f_inPoi(int d, int th, float hp) =>
+    bool ok = false
+    int nz = array.size(zD)
+    if nz > 0
+        for k = 0 to nz - 1
+            if array.get(zD, k) == d and array.get(zLive, k) <= th and (array.get(zDead, k) == 0 or array.get(zDead, k) > th)
+                float t = array.get(zTop, k)
+                float bt = array.get(zBot, k)
+                if d > 0 ? (hp <= t and hp >= bt - 0.5 * (t - bt)) : (hp >= bt and hp <= t + 0.5 * (t - bt))
+                    ok := true
+                    break
+    ok
+// daily ATR regime and yesterday's range, per bar (looked up at the head's bar)
+[dA5, dA20, pdLo, pdHi] = request.security(syminfo.tickerid, "D", [ta.sma(ta.tr(true), 5)[1], ta.sma(ta.tr(true), 20)[1], low[1], high[1]], lookahead = barmerge.lookahead_on)
+bool atrUp = not na(dA20) and dA5 > dA20
+
 // ───────── Quasimodo detection on this close ─────────
 int hrB = hour(time, "Europe/Bucharest")
 bool hrsOk = not hrsOn or (hrB >= hrsFrom and hrB < hrsTo)
@@ -194,7 +268,13 @@ if live and flat and not pLive and dir != 0 and hrsOk
         int d = dir == 2 ? (side == 0 ? 1 : -1) : dir
         if side == 1 and dir != 2
             break
-        [ok, sh, hd, hdI, nk, nkI, key] = f_qm(d)
+        [ok0, sh, hd, hdI, nk, nkI, key] = f_qm(d)
+        bool ok = ok0
+        if ok
+            int bk = bar_index - hdI
+            bool fAtr = not atrOn or atrUp[bk]
+            bool fPoi = poiMode == "Off" or (poiMode == "Sweep of yesterday's low/high" ? (d > 0 ? hd < pdLo[bk] : hd > pdHi[bk]) : f_inPoi(d, time[bk], hd))
+            ok := fAtr and fPoi
         if ok
             array.push(used, key)
             if array.size(used) > 300
