@@ -16,12 +16,15 @@ def prep4(p):
         b['atr4'] = a if i >= 13 else None; pc = b['c']
     return bars
 
-DEF = dict(xf=None, xx=None, tvf=None, tvx=None, mcf=None, mcx=None, sqf=None, sqx=None, trm='atr', stp=10, stm=3.0, stat=1.0, sttf='4h', slm='atr', stf=False, mingap=0, slk=1.0, entry='C', tp=4, trk=0.75, trk2=0.5, trat=2.0, hours=None, cool=24, dirm='both', maxdow=2, sc=None, fri=True)
+DEF = dict(rsf=None, xf=None, xx=None, tvf=None, tvx=None, mcf=None, mcx=None, sqf=None, sqx=None, trm='atr', stp=10, stm=3.0, stat=1.0, sttf='4h', slm='atr', stf=False, mingap=0, slk=1.0, entry='C', tp=4, trk=0.75, trk2=0.5, trat=2.0, hours=None, cool=24, dirm='both', maxdow=2, sc=None, fri=True)
 
 def run_c(p, b4, h1, B, P, start, end):
     P = {**DEF, **P}; cost = cost_of(p) * pip_of(p)
     i1 = {b['t']: k for k, b in enumerate(h1)}
     res, lastx, k4 = [], None, 0
+    if P['rsf']:
+        import bbrsi as _br
+        _bas, _sd, _rsi = _br.calc(b4, 20, 6)
     if P['xf'] or P['xx']:
         import new5 as _n5
         _XF = _n5.ctx_state(P['xf'][0], b4) if P['xf'] else None
@@ -63,6 +66,9 @@ def run_c(p, b4, h1, B, P, start, end):
                   'nosqz': not _on[i], 'sqzon': bool(_on[i]), 'fired': bool(_on[max(0, i - 6):i].any()) and not _on[i],
                   'notfade': not (v_ * dr > 0 and (v_ - v1_) * dr < 0), 'neg_rising': v_ * dr < 0 and (v_ - v1_) * dr > 0}[P['sqf']]
             if not ok: i += 1; continue
+        if P['rsf']:
+            r_ = _rsi[i]; inside = _bas[i] == _bas[i] and abs(s['c'] - _bas[i]) < 2 * _sd[i]
+            if r_ != r_ or not {'agree': (r_ - 50) * dr > 0, 'against': (r_ - 50) * dr < 0, 'inside': inside}[P['rsf']]: i += 1; continue
         if P['xf']:
             v_ = _XF[i]
             if not {'agree': v_ == dr, 'notagainst': v_ != -dr, 'against': v_ == -dr}[P['xf'][1]]: i += 1; continue

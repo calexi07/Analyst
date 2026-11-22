@@ -41,3 +41,16 @@ def go(run, P, hours=(6, 22)):
     yr = ','.join('%+.0f' % sum(x['R'] for x in y) for y in ys)
     return (f"1H {a[0]:3}tr {a[1]:+6.1f}R dd{a[2]:+5.1f} | pre {pre[0]:3}tr {pre[1]:+6.1f}R | 4H {b[0]:3}tr {b[1]:+5.1f}R | "
             f"3y {c[0]:3}tr {c[1]:+6.1f}R {c[1] / max(1, c[0]):+.2f}/tr dd{c[2]:+5.1f} [{yr}]")
+
+def go_bias(run, P, hours=(6, 22), data=None):
+    """Bias weeks only (W40-47, 14 pairs, 1H): count, trades per pair per week, R/trade, halves, drawdown, USD/EUR split."""
+    import collections
+    B.clear(); B.update(B1); data = data or D1
+    hs = [sum([run(p, data[p], {**P, 'bias': True, 'hours': hours}, s, e) for p in ALL], []) for s, e in H]
+    t = sorted(hs[0] + hs[1], key=lambda x: x['tx']); eq = pk = dd = 0
+    for x in t: eq += x['R']; pk = max(pk, eq); dd = min(dd, eq - pk)
+    pp = collections.defaultdict(float)
+    for x in t: pp[x['p']] += x['R']
+    n = max(1, len(t)); usd = sum(x['R'] for x in t if x['p'] in USDP); eur = eq - usd
+    return (f"{len(t):3}tr {len(t) / (len(ALL) * 8):.1f}/pair/wk win {sum(x['R'] > 0 for x in t) / n:.0%} {eq / n:+.2f}R/tr | "
+            f"{sum(x['R'] for x in hs[0]):+5.1f}/{sum(x['R'] for x in hs[1]):+5.1f} = {eq:+6.1f}R dd {dd:+5.1f} | USD {usd:+5.1f} EUR {eur:+5.1f} | pairs<0 {sum(v < 0 for v in pp.values())}")
