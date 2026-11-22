@@ -22,7 +22,7 @@ def htf_key(x, htf):
 
 DEF = dict(htf='D', piv=3, wait=36, age=120, disp=0.5, minr=0.25, maxr=3.0, tp=(1, 2, 3), pend=60, lookback=10,
            hours=None, bias=False, dirs=(1, -1), cool=0,
-           tpR=3, be=1, belock=0, part=0, pfrac=0.5, trail=0, trail2=0, tr2at=2, tract=1, trref='close', swtrail=False, stm=0, liq=False, liqmin=1, tmax=0)
+           tpR=3, be=1, belock=0, part=0, pfrac=0.5, trail=0, trail2=0, tr2at=2, tract=1, trref='close', swtrail=False, stm=0, sqf=None, liq=False, liqmin=1, tmax=0)
 
 def run_dir(p, b0, d, P, start, end):
     P = {**DEF, **P}; b = mirror(b0, d); cost = cost_of(p) * pip_of(p); n = len(b)
@@ -31,6 +31,9 @@ def run_dir(p, b0, d, P, start, end):
     piv = []                     # confirmed pivot highs: (pivot index, high, close)
     piv_l = []
     L = P['piv']
+    if P['sqf']:
+        import sqz as _sq
+        _v = d * _sq.squeeze(b0)[0]
     if P['stm']:
         import st as _st
         stup = _st.supertrend(b, 10, P['stm'])[0]
@@ -96,6 +99,9 @@ def run_dir(p, b0, d, P, start, end):
         bi_ = B.get((p, x['wk']), ('-',))[0]; bd = 1 if bi_ == 'U' else -1 if bi_ == 'D' else 0
         if P['bias'] and bd != d: continue
         if P['hours'] and not (P['hours'][0] <= x['hr'] < P['hours'][1]): continue
+        if P['sqf'] == 'pos' and not _v[i] > 0: continue
+        if P['sqf'] == 'rising' and not _v[i] > _v[i - 1]: continue
+        if P['sqf'] == 'neg' and not _v[i] < 0: continue
         lv = next(((pb, ph, pc) for pb, ph, pc in reversed(piv) if pb < ctx['extBar'] and pb + L <= i), None)
         if lv and x['c'] > lv[1] and x['c'] - x['o'] >= P['disp'] * A:
             e = lv[2]; sl = ctx['ext']; r = e - sl

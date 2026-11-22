@@ -16,12 +16,15 @@ def prep4(p):
         b['atr4'] = a if i >= 13 else None; pc = b['c']
     return bars
 
-DEF = dict(trm='atr', stp=10, stm=3.0, stat=1.0, sttf='4h', slm='atr', stf=False, mingap=0, slk=1.0, entry='C', tp=4, trk=0.75, trk2=0.5, trat=2.0, hours=None, cool=24, dirm='both', maxdow=2, sc=None, fri=True)
+DEF = dict(sqf=None, sqx=None, trm='atr', stp=10, stm=3.0, stat=1.0, sttf='4h', slm='atr', stf=False, mingap=0, slk=1.0, entry='C', tp=4, trk=0.75, trk2=0.5, trat=2.0, hours=None, cool=24, dirm='both', maxdow=2, sc=None, fri=True)
 
 def run_c(p, b4, h1, B, P, start, end):
     P = {**DEF, **P}; cost = cost_of(p) * pip_of(p)
     i1 = {b['t']: k for k, b in enumerate(h1)}
     res, lastx, k4 = [], None, 0
+    if P['sqf'] or P['sqx']:
+        import sqz as _sq
+        _v, _on, _off = _sq.squeeze(b4); ix4 = {b4[q]['tc']: q for q in range(len(b4))}
     if P['trm'] != 'atr':
         import st as _st
         _up, _dn, _tr, _ = _st.supertrend(b4, P['stp'], P['stm']); stl = {b4[q]['tc']: (_up[q], _dn[q]) for q in range(len(b4))}
@@ -42,6 +45,13 @@ def run_c(p, b4, h1, B, P, start, end):
         if dr == 0 or s['dow'] > P['maxdow']: i += 1; continue
         if P['sc'] == 'dir' and (s['c'] - s['o']) * dr <= 0: i += 1; continue
         if P['sc'] == 'ema' and (s['ema'] is None or (s['c'] - s['ema']) * dr <= 0): i += 1; continue
+        if P['sqf']:
+            v_, v1_ = _v[i], _v[i - 1]
+            if v_ != v_ or v1_ != v1_: i += 1; continue
+            ok = {'pos': v_ * dr > 0, 'rising': (v_ - v1_) * dr > 0, 'both': v_ * dr > 0 and (v_ - v1_) * dr > 0,
+                  'nosqz': not _on[i], 'sqzon': bool(_on[i]), 'fired': bool(_on[max(0, i - 6):i].any()) and not _on[i],
+                  'notfade': not (v_ * dr > 0 and (v_ - v1_) * dr < 0), 'neg_rising': v_ * dr < 0 and (v_ - v1_) * dr > 0}[P['sqf']]
+            if not ok: i += 1; continue
         if P['mingap'] and (bi[2] is None or abs(bi[2]) < P['mingap']): i += 1; continue
         lvl = s['h'] if dr > 0 else s['l']; risk = s['atr4'] * P['slk']
         if P['stf'] or P['slm'] != 'atr':
@@ -109,6 +119,11 @@ def run_c(p, b4, h1, B, P, start, end):
                 if P['trm'] == 'st' and P['sttf'] == '1h': ns = sl
                 sl = max(sl, ns) if dr > 0 else min(sl, ns)
                 d2, _ = dir_at(c4)
+                if P['sqx']:
+                    q = ix4[c4['tc']]; v_, v1_, v2_ = _v[q], _v[q - 1], _v[q - 2]
+                    xx = {'fade2': (v_ - v1_) * dr < 0 and (v1_ - v2_) * dr < 0, 'zero': v_ * dr < 0,
+                          'fade_2R': best >= 2 and (v_ - v1_) * dr < 0, 'fade2_1R': best >= 1 and (v_ - v1_) * dr < 0 and (v1_ - v2_) * dr < 0}[P['sqx']]
+                    if xx: exitp, why, jx = b['c'], 'SQZ', jj; break
                 if d2 == -dr: exitp, why, jx = b['c'], 'Flip', jj; break
             if P['fri'] and b['dow'] == 4 and b['last_of_day']: exitp, why, jx = b['c'], 'Fri', jj; break
             jj += 1
