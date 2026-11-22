@@ -1,10 +1,10 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — intraday opening-range breakouts (5m chart): one European-morning trade and one New York trade a day.
-// Generated automatically: 2026-11-22 18:45 UTC. Bias data: 2026-W40 → 2026-W48 (9 weeks), 15 daily checks.
+// Generated automatically: 2026-11-22 18:50 UTC. Bias data: 2026-W40 → 2026-W48 (9 weeks), 15 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // A test bench for your own rules in the Strategy Tester. Not a trade signal.
 //@version=6
-strategy("Bias Engine · intraday ORB (Europe + New York)", shorttitle = "BE Intraday", overlay = true, initial_capital = 10000, pyramiding = 2, process_orders_on_close = false, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0.005, slippage = 0, max_labels_count = 500, max_boxes_count = 500)
+strategy("Bias Engine · intraday ORB (Europe + New York)", shorttitle = "BE Intraday", overlay = true, initial_capital = 10000, pyramiding = 2, close_entries_rule = "ANY", process_orders_on_close = false, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0.005, slippage = 0, max_labels_count = 500, max_boxes_count = 500)
 float fxRate = nz(request.currency_rate(syminfo.currency, strategy.account_currency, ignore_invalid_currency = true), 1)  // quote currency -> account currency, so 1% risk is 1% whatever the pair
 
 // ───────── settings ─────────
