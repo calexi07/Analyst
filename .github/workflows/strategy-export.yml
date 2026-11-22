@@ -1,0 +1,33 @@
+name: Strategy trades export (strategy review)
+
+on:
+  schedule:
+    - cron: '30 20 * * 1-5'   # every trading day 22:30 Bucharest (winter), after the intraday closes
+    - cron: '0 6 * * 6'       # Saturday 08:00 Bucharest
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency: strategy-export
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Export strategy trades and alerts from Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: node scripts/strategy-export.mjs
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main || true
+          git add exports/strategy-*.json
+          git diff --cached --quiet && echo "No change" || (git commit -m "Strategy trades export" && git push)
