@@ -1,0 +1,209 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Forex Fundamental Bias Engine — BE SMC 5m: LuxAlgo-style internal CHoCH, then a limit at the internal order block, in the bias (or trend) direction.
+// Generated automatically: {{GENERATED}}. Bias data: {{COVERAGE}}.
+// Do not edit by hand: the data block is rewritten after every phase and daily check.
+// A test bench for your own rules in the Strategy Tester. Not a trade signal.
+//@version=6
+strategy("Bias Engine · SMC 5m (CHoCH → order block)", shorttitle = "BE SMC 5m", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = false, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0.005, slippage = 0, max_labels_count = 500, max_boxes_count = 500, max_lines_count = 500)
+float fxRate = nz(request.currency_rate(syminfo.currency, strategy.account_currency, ignore_invalid_currency = true), 1)  // quote currency -> account currency, so 1% risk is 1% whatever the pair
+
+// ───────── settings ─────────
+string pairIn  = input.string("Auto", "Pair", options = [{{PAIR_OPTIONS}}], tooltip = "Auto reads the chart symbol. Built for the 5m chart: EURUSD, GBPUSD, XAUUSD (bias) and indices such as GER40 (SMA20 trend).")
+string dirMode = input.string("Auto", "Direction from", options = ["Auto", "Fundamental bias", "Price trend (SMA20 daily)"], group = "Direction", tooltip = "Auto: the weekly fundamental bias for forex and gold, the daily SMA20 trend for indices (no bias there). Both directions lost in every test (−32R), so there is no 'both' option.")
+string minConv = input.string("Any", "Minimum conviction", options = ["Any", "Medium or high", "High only"], group = "Direction")
+int    trLen   = input.int(20, "Trend SMA length (daily closes)", minval = 5, maxval = 200, group = "Direction")
+int    legLen  = input.int(5, "Internal structure length", minval = 2, maxval = 50, group = "Structure", tooltip = "LuxAlgo Smart Money Concepts internal structure (5). Simulation on 5m (Aug–Nov 2026): CHoCH → internal OB retest with the bias: 47 trades, +20R, +0.43R per trade, both halves positive; with the SMA20 trend incl. GER40: 94 trades, +36R. Without a direction: −32R. On 10 years of 15m without bias it did not work: the edge comes from the direction.")
+int    obBars  = input.int(24, "OB limit order valid (bars)", minval = 1, maxval = 200, group = "Entry", tooltip = "After the CHoCH, a limit order waits at the internal order block (bull: OB high, bear: OB low) for this many bars, the same day and before 21:00.")
+int    wFrom   = input.int(9, "CHoCH only from (hour, Bucharest)", minval = 0, maxval = 23, group = "Entry", inline = "w")
+int    wTo     = input.int(18, "to", minval = 1, maxval = 24, group = "Entry", inline = "w")
+float  tpR     = input.float(2.0, "Take profit (R)", minval = 0.5, maxval = 10, step = 0.5, group = "Exit", tooltip = "TP 2R +20R, TP 3R +19R in the bias test.")
+int    tMaxB   = input.int(48, "Max hold (bars)", minval = 1, maxval = 500, group = "Exit", tooltip = "48 bars = 4 hours on 5m. The trade is also closed at 21:45 Bucharest and when the day changes.")
+int    fromT   = input.time(timestamp("2000-01-01"), "Trade only from this date", group = "Risk")
+float  stRisk  = input.float(0.5, "Risk per trade (% of equity)", minval = 0.05, maxval = 5, step = 0.05, group = "Risk")
+color  bullC   = input.color(#22AB94, "Bullish", group = "Colours")
+color  bearC   = input.color(#F23645, "Bearish", group = "Colours")
+bool   showStr = input.bool(true, "Show CHoCH / BOS and the order block", group = "Colours")
+
+// ───────── data (generated) ─────────
+var string[] PAIRS = array.from({{PAIRS}})
+var string[] CCY   = array.from({{CCY}})
+var int[]    wT = array.new_int()
+var string[] wN = array.new_string()
+var string[] wD = array.new_string()
+var string[] wS = array.new_string()
+var int[]    cT = array.new_int()
+var string[] cN = array.new_string()
+var string[] cD = array.new_string()
+var string[] cH = array.new_string()
+var string[] cC = array.new_string()
+{{DATA}}
+
+// ───────── helpers ─────────
+f_item(string row, int i) =>
+    string[] parts = str.split(row, ",")
+    i >= 0 and i < array.size(parts) ? array.get(parts, i) : "?"
+f_bname(string b) => b == "U" ? "BULLISH" : b == "D" ? "BEARISH" : b == "N" ? "TWO-SIDED" : "none"
+f_cname(string c) => c == "h" ? "high" : c == "m" ? "medium" : c == "l" ? "low" : "-"
+f_sg(float v) => na(v) ? "0" : v > 0 ? "+" + str.tostring(v) : str.tostring(v)
+f_sname(string s) => s == "C" ? "Confirmed" : s == "S" ? "Confirmed, could get stronger" : s == "F" ? "Confirmed but fragile" : s == "W" ? "Under watch" : s == "P" ? "Under pressure" : s == "X" ? "Invalidated" : s == "T" ? "Still two-sided" : "none"
+f_wa(bool ok) => ok ? "with" : "against"
+var string[] DOW = array.from("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+
+// ───────── pair and week ─────────
+string symA = syminfo.basecurrency + syminfo.currency
+string tk   = str.upper(syminfo.ticker)
+string symB = str.length(tk) >= 6 ? str.substring(tk, 0, 6) : tk
+int pIdx = pairIn != "Auto" ? array.indexof(PAIRS, pairIn) : array.indexof(PAIRS, symA) >= 0 ? array.indexof(PAIRS, symA) : array.indexof(PAIRS, symB)
+string pName = pIdx >= 0 ? array.get(PAIRS, pIdx) : syminfo.ticker
+float pipSz = str.contains(pName, "JPY") ? 0.01 : str.contains(pName, "XAU") ? 0.1 : 0.0001
+f_pips(float d) => math.round(d / pipSz * 10) / 10
+
+int WEEK_MS = 7 * 86400000
+var int wi = -1
+while wi + 1 < array.size(wT) and time >= array.get(wT, wi + 1)
+    wi += 1
+bool inWk = wi >= 0 and time < array.get(wT, math.max(wi, 0)) + WEEK_MS
+string rec = inWk and pIdx >= 0 ? f_item(array.get(wD, math.max(wi, 0)), pIdx) : "?"
+bool hasRec = rec != "?" and str.length(rec) >= 2
+string b  = hasRec ? str.substring(rec, 0, 1) : "-"
+string cv = hasRec ? str.substring(rec, 1, 2) : "-"
+float  g  = hasRec and str.length(rec) > 2 ? str.tonumber(str.substring(rec, 2)) : na
+
+// ───────── direction ─────────
+[smaT, dCl] = request.security(syminfo.tickerid, "D", [ta.sma(close, trLen)[1], close[1]], lookahead = barmerge.lookahead_on)
+int biasDir = b == "U" ? 1 : b == "D" ? -1 : 0
+bool convOk = minConv == "Any" or (minConv == "High only" ? cv == "h" : cv == "h" or cv == "m")
+int bDir = convOk ? biasDir : 0
+int tDir = na(smaT) or na(dCl) ? 0 : dCl > smaT ? 1 : dCl < smaT ? -1 : 0
+bool isFx = pIdx >= 0
+int dir = dirMode == "Fundamental bias" ? bDir : dirMode == "Price trend (SMA20 daily)" ? tDir : isFx ? bDir : tDir
+
+// ───────── time ─────────
+int mm = hour(time, "Europe/Bucharest") * 60 + minute(time, "Europe/Bucharest")
+int dKey = year(time, "Europe/Bucharest") * 10000 + month(time, "Europe/Bucharest") * 100 + dayofmonth(time, "Europe/Bucharest")
+int tDay = dayofweek(time, "Europe/Bucharest")
+float atr = ta.atr(14)
+
+// ───────── LuxAlgo internal structure (leg → pivots → CHoCH / BOS) ─────────
+var int   leg = -1
+var float phLvl = na
+var int   phIdx = na
+var bool  phX = true
+var float plLvl = na
+var int   plIdx = na
+var bool  plX = true
+var int   trend = 0
+float hiN = ta.highest(high, legLen)
+float loN = ta.lowest(low, legLen)
+int nLeg = leg
+if bar_index >= legLen
+    if high[legLen] > hiN
+        nLeg := 0
+    else if low[legLen] < loN
+        nLeg := 1
+if nLeg != leg and leg != -1
+    if nLeg == 0
+        phLvl := high[legLen]
+        phIdx := bar_index - legLen
+        phX := false
+    else
+        plLvl := low[legLen]
+        plIdx := bar_index - legLen
+        plX := false
+leg := nLeg
+int evDir = 0
+bool evChoch = false
+int evPv = na
+if not na(phLvl) and not phX and close > phLvl and close[1] <= phLvl
+    evDir := 1
+    evChoch := trend == -1
+    evPv := phIdx
+    phX := true
+    trend := 1
+if not na(plLvl) and not plX and close < plLvl and close[1] >= plLvl
+    evDir := -1
+    evChoch := trend == 1
+    evPv := plIdx
+    plX := true
+    trend := -1
+if showStr and evDir != 0
+    float lv = evDir > 0 ? phLvl : plLvl
+    line.new(math.max(evPv, bar_index - 450), lv, bar_index, lv, color = color.new(evDir > 0 ? bullC : bearC, 30), style = evChoch ? line.style_solid : line.style_dashed)
+    label.new(bar_index, lv, evChoch ? "CHoCH" : "BOS", style = evDir > 0 ? label.style_label_down : label.style_label_up, color = color(na), textcolor = evDir > 0 ? bullC : bearC, size = size.tiny)
+
+// ───────── orders ─────────
+var float pE = na
+var float pSl = na
+var float pTp = na
+var int   pDir = 0
+var int   pBar = na
+var int   pDay = 0
+var int   tradedDay = 0
+var int   fillBar = na
+var int   entDay = 0
+var float slLvl = na
+var float tpLvl = na
+bool flat = strategy.position_size == 0
+// a fill: remember the bar and the day
+if not flat and na(fillBar)
+    fillBar := bar_index
+    entDay := dKey
+    tradedDay := dKey
+    pDir := 0
+if flat
+    fillBar := na
+// pending order expires
+if pDir != 0 and flat and (bar_index - pBar >= obBars or dKey != pDay or mm >= 1260)
+    strategy.cancel("SMC L")
+    strategy.cancel("SMC S")
+    pDir := 0
+// new CHoCH in the allowed direction → limit at the internal order block
+bool inWin = mm >= wFrom * 60 and mm < wTo * 60 and tDay != dayofweek.saturday and tDay != dayofweek.sunday
+if evChoch and evDir == dir and dir != 0 and inWin and flat and tradedDay != dKey and time >= fromT and not na(atr) and not na(evPv)
+    int n = math.min(bar_index - evPv, 450)
+    int k = 0
+    for j = 0 to n
+        if evDir > 0 ? low[j] < low[k] : high[j] > high[k]
+            k := j
+    float obH = high[k]
+    float obL = low[k]
+    float e = evDir > 0 ? obH : obL
+    float sl = (evDir > 0 ? obL : obH) - evDir * 0.1 * atr
+    float r = math.abs(e - sl)
+    if r >= 0.5 * atr and r <= 6 * atr
+        strategy.cancel("SMC L")
+        strategy.cancel("SMC S")
+        pE := e
+        pSl := sl
+        pTp := e + evDir * tpR * r
+        pDir := evDir
+        pBar := bar_index
+        pDay := dKey
+        if showStr
+            box.new(bar_index - math.min(k, 450), obH, bar_index + obBars, obL, border_color = color.new(evDir > 0 ? bullC : bearC, 40), bgcolor = color.new(evDir > 0 ? bullC : bearC, 85))
+if pDir != 0 and flat
+    float q = math.max(strategy.equity * stRisk / 100 / (math.abs(pE - pSl) * syminfo.pointvalue * fxRate), 0)
+    string id = pDir > 0 ? "SMC L" : "SMC S"
+    strategy.entry(id, pDir > 0 ? strategy.long : strategy.short, qty = q, limit = pE, comment = pName + " | " + (pDir > 0 ? "long" : "short") + " | CHoCH → OB | " + (isFx and dirMode != "Price trend (SMA20 daily)" ? "bias " + f_bname(b) + " " + f_cname(cv) : "SMA20 trend"))
+    strategy.exit(pDir > 0 ? "SMC XL" : "SMC XS", id, stop = pSl, limit = pTp, comment_loss = "SL", comment_profit = "TP")
+    slLvl := pSl
+    tpLvl := pTp
+// time exits
+if not flat and not na(fillBar) and (bar_index - fillBar >= tMaxB or mm >= 1305 or dKey != entDay)
+    strategy.close_all(comment = dKey != entDay ? "Next day" : mm >= 1305 ? "Day end" : "Time " + str.tostring(tMaxB) + " bars")
+
+plot(not flat ? slLvl : na, "Stop", color = color.new(bearC, 20), style = plot.style_linebr)
+plot(not flat ? tpLvl : na, "Target", color = color.new(bullC, 20), style = plot.style_linebr)
+plot(pDir != 0 and flat ? pE : na, "Pending OB limit", color = color.new(color.gray, 20), style = plot.style_linebr)
+bgcolor(dir == 1 ? color.new(bullC, 96) : dir == -1 ? color.new(bearC, 96) : na, title = "Direction")
+
+var table tb = table.new(position.bottom_right, 2, 3, bgcolor = color.new(#1E222D, 10), border_width = 1)
+if barstate.islast
+    table.cell(tb, 0, 0, "BE SMC 5m · " + pName, text_color = color.white, text_size = size.small)
+    table.cell(tb, 1, 0, isFx and dirMode != "Price trend (SMA20 daily)" ? "bias" : "SMA20 trend", text_color = color.white, text_size = size.small)
+    table.cell(tb, 0, 1, "Bias", text_color = color.gray, text_size = size.small)
+    table.cell(tb, 1, 1, isFx ? f_bname(b) + " " + f_cname(cv) + " " + f_sg(g) : "n/a", text_color = biasDir > 0 ? bullC : biasDir < 0 ? bearC : color.gray, text_size = size.small)
+    table.cell(tb, 0, 2, "Direction today", text_color = color.gray, text_size = size.small)
+    table.cell(tb, 1, 2, dir == 1 ? "long only" : dir == -1 ? "short only" : "none", text_color = dir == 1 ? bullC : dir == -1 ? bearC : color.gray, text_size = size.small)
+if timeframe.in_seconds() != 300 and barstate.islast
+    label.new(bar_index, high, "BE SMC 5m is built for the 5m chart.", style = label.style_label_down, color = color.orange, textcolor = color.white)

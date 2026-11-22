@@ -215,6 +215,17 @@ if(existsSync('scripts/pine-biasday-template.pine')){
     .replace('{{DATA}}', dataBlocks(L));
   writeFileSync('pine/bias-biasday.pine', bd);
 }
+// the SMC 5m strategy (LuxAlgo CHoCH → OB): same data, its own template
+if(existsSync('scripts/pine-smc5-template.pine')){
+  const sm = readFileSync('scripts/pine-smc5-template.pine', 'utf8')
+    .replace('{{GENERATED}}', gen)
+    .replace('{{COVERAGE}}', `${wkKey(first.y, first.w)} → ${wkKey(last.y, last.w)} (${wl.length} weeks), ${cl.length} daily checks`)
+    .replace('{{PAIRS}}', PAIRS.map(p => `"${p}"`).join(', '))
+    .replace('{{PAIR_OPTIONS}}', ['"Auto"', ...PAIRS.map(p => `"${p}"`)].join(', '))
+    .replace('{{CCY}}', CCY.map(c => `"${c}"`).join(', '))
+    .replace('{{DATA}}', dataBlocks(L));
+  writeFileSync('pine/bias-smc5.pine', sm);
+}
 // the intraday ORB strategy (5m chart): same data, its own template
 if(existsSync('scripts/pine-intraday-template.pine')){
   const it = withAlerts(readFileSync('scripts/pine-intraday-template.pine', 'utf8'))
