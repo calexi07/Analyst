@@ -1,0 +1,123 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Forex Fundamental Bias Engine — Bias Day (1H chart): one intraday trade a day in the week's bias direction, when the morning move agrees.
+// Generated automatically: {{GENERATED}}. Bias data: {{COVERAGE}}.
+// Do not edit by hand: the data block is rewritten after every phase and daily check.
+// A test bench for your own rules in the Strategy Tester. Not a trade signal.
+//@version=6
+strategy("Bias Engine · Bias Day (intraday, bias direction)", shorttitle = "BE Bias Day", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = true, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0.005, slippage = 0, max_labels_count = 500, max_boxes_count = 500)
+float fxRate = nz(request.currency_rate(syminfo.currency, strategy.account_currency, ignore_invalid_currency = true), 1)  // quote currency -> account currency, so 1% risk is 1% whatever the pair
+
+// ───────── settings ─────────
+string pairIn  = input.string("Auto", "Pair", options = [{{PAIR_OPTIONS}}], tooltip = "Auto reads the chart symbol (e.g. EURUSD, OANDA:XAUUSD). Built for the 1H chart; forex pairs and gold only (indices have no bias).")
+string minConv = input.string("Any", "Minimum conviction", options = ["Any", "Medium or high", "High only"], group = "Direction", tooltip = "Two-sided weeks never trade.")
+bool   momOn   = input.bool(true, "Morning move must agree with the bias", group = "Entry", tooltip = "The move from the open of the morning-start hour to the entry time must be in the bias direction. Simulation (14 pairs, 1H, W40–W47): with it +75R on 227 trades (+0.33R each, TP 3R); without it, entry at 10:00, +73R on 430 trades. Against the bias the same entries lost −96R.")
+int    mStart  = input.int(9, "Morning move from (hour, Bucharest)", minval = 0, maxval = 23, group = "Entry")
+int    entH    = input.int(12, "Entry time (hour, Bucharest)", minval = 1, maxval = 22, group = "Entry", tooltip = "Market entry at this hour (the close of the 1H candle before it).")
+int    exitH   = input.int(22, "Close the trade at (hour, Bucharest)", minval = 1, maxval = 24, group = "Exit", tooltip = "The trade is closed at this time if stop and target were not hit. It is also closed if the day changes (early close on holidays).")
+float  slAtr   = input.float(1.0, "Stop loss (ATR(14) 1H × )", minval = 0.3, maxval = 5, step = 0.1, group = "Exit")
+float  tpR     = input.float(3.0, "Take profit (R), 0 = none", minval = 0, maxval = 10, step = 0.5, group = "Exit", tooltip = "Simulation: TP 3R +75R, TP 2R +57R (calmer weeks).")
+bool   noFri   = input.bool(false, "No new entries on Friday", group = "Filters")
+int    fromT   = input.time(timestamp("2000-01-01"), "Trade only from this date", group = "Risk")
+float  stRisk  = input.float(0.3, "Risk per trade (% of equity)", minval = 0.05, maxval = 5, step = 0.05, group = "Risk", tooltip = "0.3%: in the simulation the worst day was about 6 losing trades at once across the pairs (all USD), so 1% per trade would mean −6% in a day.")
+color  bullC   = input.color(#22AB94, "Bullish", group = "Colours")
+color  bearC   = input.color(#F23645, "Bearish", group = "Colours")
+
+// ───────── data (generated) ─────────
+var string[] PAIRS = array.from({{PAIRS}})
+var string[] CCY   = array.from({{CCY}})
+var int[]    wT = array.new_int()
+var string[] wN = array.new_string()
+var string[] wD = array.new_string()
+var string[] wS = array.new_string()
+var int[]    cT = array.new_int()
+var string[] cN = array.new_string()
+var string[] cD = array.new_string()
+var string[] cH = array.new_string()
+var string[] cC = array.new_string()
+{{DATA}}
+
+// ───────── helpers ─────────
+f_item(string row, int i) =>
+    string[] parts = str.split(row, ",")
+    i >= 0 and i < array.size(parts) ? array.get(parts, i) : "?"
+f_bname(string b) => b == "U" ? "BULLISH" : b == "D" ? "BEARISH" : b == "N" ? "TWO-SIDED" : "none"
+f_cname(string c) => c == "h" ? "high" : c == "m" ? "medium" : c == "l" ? "low" : "-"
+f_sg(float v) => na(v) ? "0" : v > 0 ? "+" + str.tostring(v) : str.tostring(v)
+f_sname(string s) => s == "C" ? "Confirmed" : s == "S" ? "Confirmed, could get stronger" : s == "F" ? "Confirmed but fragile" : s == "W" ? "Under watch" : s == "P" ? "Under pressure" : s == "X" ? "Invalidated" : s == "T" ? "Still two-sided" : "none"
+f_wa(bool ok) => ok ? "with" : "against"
+var string[] DOW = array.from("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+
+// ───────── pair and week ─────────
+string symA = syminfo.basecurrency + syminfo.currency
+string tk   = str.upper(syminfo.ticker)
+string symB = str.length(tk) >= 6 ? str.substring(tk, 0, 6) : tk
+int pIdx = pairIn != "Auto" ? array.indexof(PAIRS, pairIn) : array.indexof(PAIRS, symA) >= 0 ? array.indexof(PAIRS, symA) : array.indexof(PAIRS, symB)
+string pName = pIdx >= 0 ? array.get(PAIRS, pIdx) : syminfo.ticker
+float pipSz = str.contains(pName, "JPY") ? 0.01 : str.contains(pName, "XAU") ? 0.1 : 0.0001
+f_pips(float d) => math.round(d / pipSz * 10) / 10
+
+int WEEK_MS = 7 * 86400000
+var int wi = -1
+while wi + 1 < array.size(wT) and time >= array.get(wT, wi + 1)
+    wi += 1
+bool inWk = wi >= 0 and time < array.get(wT, math.max(wi, 0)) + WEEK_MS
+string rec = inWk and pIdx >= 0 ? f_item(array.get(wD, math.max(wi, 0)), pIdx) : "?"
+bool hasRec = rec != "?" and str.length(rec) >= 2
+string b  = hasRec ? str.substring(rec, 0, 1) : "-"
+string cv = hasRec ? str.substring(rec, 1, 2) : "-"
+float  g  = hasRec and str.length(rec) > 2 ? str.tonumber(str.substring(rec, 2)) : na
+
+// ───────── direction ─────────
+int biasDir = b == "U" ? 1 : b == "D" ? -1 : 0
+bool convOk = minConv == "Any" or (minConv == "High only" ? cv == "h" : cv == "h" or cv == "m")
+int dir = convOk ? biasDir : 0
+
+// ───────── the day ─────────
+int hB = hour(time, "Europe/Bucharest")
+int hC = hour(time_close, "Europe/Bucharest")
+int dKey = year(time, "Europe/Bucharest") * 10000 + month(time, "Europe/Bucharest") * 100 + dayofmonth(time, "Europe/Bucharest")
+int tDay = dayofweek(time, "Europe/Bucharest")
+float atr = ta.atr(14)
+var float mOpen = na
+var int   mDay = 0
+var int   doneDay = 0
+var int   entDay = 0
+var float slLvl = na
+var float tpLvl = na
+var float ent0 = na
+if hB == mStart
+    mOpen := open
+    mDay := dKey
+bool flat = strategy.position_size == 0
+// time exit (or the day changed: holiday early close / weekend)
+if not flat and (hC == exitH % 24 or dKey != entDay)
+    strategy.close_all(comment = dKey != entDay ? "Next day" : "Close " + str.tostring(exitH) + ":00")
+// entry at the close of the candle that ends at the entry hour
+bool atEntry = hC == entH and timeframe.in_seconds() == 3600
+bool momAgrees = mDay == dKey and not na(mOpen) and (close - mOpen) * dir > 0
+if flat and atEntry and dir != 0 and doneDay != dKey and time >= fromT and not na(atr) and (not momOn or momAgrees) and not (noFri and tDay == dayofweek.friday) and tDay != dayofweek.saturday and tDay != dayofweek.sunday
+    float r = slAtr * atr
+    float q = math.max(strategy.equity * stRisk / 100 / (r * syminfo.pointvalue * fxRate), 0)
+    ent0 := close
+    slLvl := close - dir * r
+    tpLvl := tpR > 0 ? close + dir * tpR * r : na
+    doneDay := dKey
+    entDay := dKey
+    strategy.entry(dir > 0 ? "BD L" : "BD S", dir > 0 ? strategy.long : strategy.short, qty = q, comment = pName + " | " + (dir > 0 ? "long" : "short") + " | bias " + f_bname(b) + " " + f_cname(cv) + " gap " + f_sg(g) + " | morning " + (momAgrees ? "with" : "against") + " | SL " + str.tostring(f_pips(r)) + "p")
+    strategy.exit(dir > 0 ? "BD XL" : "BD XS", dir > 0 ? "BD L" : "BD S", stop = slLvl, limit = tpLvl, comment_loss = "SL", comment_profit = "TP")
+
+plot(strategy.position_size != 0 ? slLvl : na, "Stop", color = color.new(bearC, 20), style = plot.style_linebr)
+plot(strategy.position_size != 0 ? tpLvl : na, "Target", color = color.new(bullC, 20), style = plot.style_linebr)
+plot(strategy.position_size != 0 ? ent0 : na, "Entry", color = color.new(color.gray, 30), style = plot.style_linebr)
+bgcolor(dir == 1 ? color.new(bullC, 95) : dir == -1 ? color.new(bearC, 95) : na, title = "Bias")
+
+var table tb = table.new(position.bottom_right, 2, 3, bgcolor = color.new(#1E222D, 10), border_width = 1)
+if barstate.islast
+    table.cell(tb, 0, 0, "BE Bias Day · " + pName, text_color = color.white, text_size = size.small)
+    table.cell(tb, 1, 0, str.tostring(entH) + ":00 → " + str.tostring(exitH) + ":00", text_color = color.white, text_size = size.small)
+    table.cell(tb, 0, 1, "Bias", text_color = color.gray, text_size = size.small)
+    table.cell(tb, 1, 1, f_bname(b) + " " + f_cname(cv) + " " + f_sg(g), text_color = biasDir > 0 ? bullC : biasDir < 0 ? bearC : color.gray, text_size = size.small)
+    table.cell(tb, 0, 2, "Morning move", text_color = color.gray, text_size = size.small)
+    table.cell(tb, 1, 2, mDay != dKey or na(mOpen) ? "–" : (close - mOpen) * dir > 0 ? "with the bias" : "against", text_color = color.white, text_size = size.small)
+if timeframe.in_seconds() != 3600 and barstate.islast
+    label.new(bar_index, high, "BE Bias Day is built for the 1H chart.", style = label.style_label_down, color = color.orange, textcolor = color.white)
