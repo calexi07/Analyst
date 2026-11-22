@@ -6,8 +6,8 @@ NY = ZoneInfo('America/New_York')
 HERE = os.path.dirname(os.path.abspath(__file__))
 USD = ['EURUSD', 'GBPUSD', 'AUDUSD', 'NZDUSD', 'USDJPY', 'USDCHF', 'USDCAD', 'XAUUSD']
 
-def pip_of(p): return 0.01 if 'JPY' in p else 0.1 if 'XAU' in p else 0.0001
-def cost_of(p): return 3.0 if 'XAU' in p else 1.0
+def pip_of(p): return 1.0 if p in ('GER40', 'US30', 'NAS100', 'SPX500', 'UK100') else 0.01 if 'JPY' in p else 0.1 if 'XAU' in p else 0.0001
+def cost_of(p): return 1.5 if p in ('GER40', 'US30', 'NAS100', 'SPX500', 'UK100') else 3.0 if 'XAU' in p else 1.0
 
 def load(pair):
     bars = []

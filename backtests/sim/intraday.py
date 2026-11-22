@@ -44,7 +44,7 @@ def prep(p):
         I15[x['tc']] = dict(k=k, h=hs[k], h1=hs[k - 1] if k else float('nan'), e20=e20, e50=e50, atr=x['atr'], o=x['o'], c=x['c'], l=x['l'], hh=x['h'])
     return b5, prevd, I15
 
-DEF = dict(idea='lon_orb', tp=2.0, tmax=48, dirm='bias', sl='range', k=1.5, start=(9, 0), last=(18, 0), maxtr=1)
+DEF = dict(r0=540, r1=600, until=780, idea='lon_orb', tp=2.0, tmax=48, dirm='bias', sl='range', k=1.5, start=(9, 0), last=(18, 0), maxtr=1)
 def run(p, data, P, start, end):
     P = {**DEF, **P}; b5, prevd, I15 = data; cost = cost_of(p) * pip_of(p); res = []
     byday = collections.OrderedDict()
@@ -101,6 +101,11 @@ def run(p, data, P, start, end):
             if I == 'lon_orb' and mm >= 10 * 60 and lon1[0] and mm < 13 * 60:
                 hi, lo = lon1; sl = (lo if d > 0 else hi) if P['sl'] == 'range' else (hi + lo) / 2
                 pend = dict(e=hi if d > 0 else lo, sl=sl, until=13 * 60); continue
+            if I == 'orb' and mm >= P['r1'] and mm < P['until']:
+                hi, lo = rng(P['r0'], P['r1'])
+                if hi is None: continue
+                sl = (lo if d > 0 else hi) if P['sl'] == 'range' else (hi + lo) / 2
+                pend = dict(e=hi if d > 0 else lo, sl=sl, until=P['until']); continue
             if I == 'asia_bo' and mm >= 9 * 60 and asia[0] and mm < 13 * 60:
                 hi, lo = asia; sl = (hi + lo) / 2 if P['sl'] != 'range' else (lo if d > 0 else hi)
                 pend = dict(e=hi if d > 0 else lo, sl=sl, until=13 * 60); continue
