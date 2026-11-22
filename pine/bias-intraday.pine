@@ -1,10 +1,10 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — intraday opening-range breakouts (5m chart): one European-morning trade and one New York trade a day.
-// Generated automatically: 2026-11-22 18:44 UTC. Bias data: 2026-W40 → 2026-W48 (9 weeks), 15 daily checks.
+// Generated automatically: 2026-11-22 18:45 UTC. Bias data: 2026-W40 → 2026-W48 (9 weeks), 15 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // A test bench for your own rules in the Strategy Tester. Not a trade signal.
 //@version=6
-strategy("Bias Engine · intraday ORB (Europe + New York)", shorttitle = "BE Intraday", overlay = true, initial_capital = 10000, pyramiding = 1, process_orders_on_close = false, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0.005, slippage = 0, max_labels_count = 500, max_boxes_count = 500)
+strategy("Bias Engine · intraday ORB (Europe + New York)", shorttitle = "BE Intraday", overlay = true, initial_capital = 10000, pyramiding = 2, process_orders_on_close = false, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0.005, slippage = 0, max_labels_count = 500, max_boxes_count = 500)
 float fxRate = nz(request.currency_rate(syminfo.currency, strategy.account_currency, ignore_invalid_currency = true), 1)  // quote currency -> account currency, so 1% risk is 1% whatever the pair
 
 // ───────── settings ─────────
@@ -21,6 +21,8 @@ bool   nyOn    = input.bool(true, "New York trade", group = "Sessions (Bucharest
 int    nyR0    = input.int(930, "  range from (minute of day)", minval = 0, maxval = 1439, group = "Sessions (Bucharest time)")
 int    nyR1    = input.int(960, "  range to", minval = 0, maxval = 1439, group = "Sessions (Bucharest time)")
 int    nyEnd   = input.int(1080, "  orders until", minval = 0, maxval = 1439, group = "Sessions (Bucharest time)")
+string pbMode  = input.string("Auto", "15m EMA20 pullback trade", options = ["Auto", "On", "Off"], group = "EMA20 pullback (15m)", tooltip = "One more trade a day: on a closed 15m candle, EMA20 above EMA50 (long; below for short), the candle touches EMA20 and closes beyond it in the day's direction; entry at that close, stop 0.2 × 15m ATR beyond the candle, target below, 09:00–18:00 Bucharest, the same 4-hour time stop. Auto: on for XAUUSD only (simulation, bias weeks: 15 trades, +17R with TP 3R, +10R with TP 2R; against the bias +3.8R; EURUSD −0.4R, GBPUSD +5.5R on 12 trades).")
+float  pbTpR   = input.float(3.0, "  take profit (R)", minval = 0.5, maxval = 10, step = 0.5, group = "EMA20 pullback (15m)")
 string slMode  = input.string("Other side of the range", "Stop loss", options = ["Other side of the range", "Middle of the range"], group = "Exit")
 float  tpR     = input.float(2.0, "Take profit (R)", minval = 0.5, maxval = 10, step = 0.5, group = "Exit", tooltip = "Simulation: TP 1.5–3R all positive on the tested setups; 2R is the middle choice.")
 int    tMax    = input.int(240, "Close after (minutes)", minval = 15, maxval = 720, group = "Exit", tooltip = "Time stop from the entry: 240 = 4 hours (tested 3 and 4 hours).")
@@ -339,41 +341,60 @@ var float nySlL = na
 var float nyTpL = na
 var float nySlS = na
 var float nyTpS = na
+var float pbSl = na
+var float pbTp = na
 var box euZs = na
 var box euZt = na
 var int euZb = -1
 var box nyZs = na
 var box nyZt = na
 var int nyZb = -1
+var box pbZs = na
+var box pbZt = na
+var int pbZb = -1
+var int pbDay = 0
+f_zone(int eb, float ep, float zsl, float ztp) =>
+    [box.new(eb, math.max(ep, zsl), bar_index, math.min(ep, zsl), border_color = color.new(bearC, 30), bgcolor = color.new(bearC, 80)), box.new(eb, math.max(ep, ztp), bar_index, math.min(ep, ztp), border_color = color.new(bullC, 30), bgcolor = color.new(bullC, 80))]
 // fills first: mark the session done (before new orders are sent) and draw / extend the SL / TP zones of open trades
 if strategy.opentrades > 0
     for i = 0 to strategy.opentrades - 1
         string id = strategy.opentrades.entry_id(i)
         int eb = strategy.opentrades.entry_bar_index(i)
         float ep = strategy.opentrades.entry_price(i)
-        bool isEu = str.startswith(id, "EU")
+        string tag = str.substring(id, 0, 2)
         bool isL = str.endswith(id, "L")
-        if isEu and euDay == dKey
+        if tag == "EU" and euDay == dKey
             euDone := true
-        if not isEu and nyDay == dKey
+        if tag == "NY" and nyDay == dKey
             nyDone := true
         if zonesOn
-            float zsl = isEu ? (isL ? euSlL : euSlS) : (isL ? nySlL : nySlS)
-            float ztp = isEu ? (isL ? euTpL : euTpS) : (isL ? nyTpL : nyTpS)
-            if isEu and eb != euZb and not na(zsl)
-                euZb := eb
-                euZs := box.new(eb, math.max(ep, zsl), bar_index, math.min(ep, zsl), border_color = color.new(bearC, 30), bgcolor = color.new(bearC, 80))
-                euZt := box.new(eb, math.max(ep, ztp), bar_index, math.min(ep, ztp), border_color = color.new(bullC, 30), bgcolor = color.new(bullC, 80))
-            if not isEu and eb != nyZb and not na(zsl)
-                nyZb := eb
-                nyZs := box.new(eb, math.max(ep, zsl), bar_index, math.min(ep, zsl), border_color = color.new(bearC, 30), bgcolor = color.new(bearC, 80))
-                nyZt := box.new(eb, math.max(ep, ztp), bar_index, math.min(ep, ztp), border_color = color.new(bullC, 30), bgcolor = color.new(bullC, 80))
-            if isEu and not na(euZs)
-                box.set_right(euZs, bar_index)
-                box.set_right(euZt, bar_index)
-            if not isEu and not na(nyZs)
-                box.set_right(nyZs, bar_index)
-                box.set_right(nyZt, bar_index)
+            if tag == "EU"
+                if eb != euZb and not na(isL ? euSlL : euSlS)
+                    euZb := eb
+                    [z1, z2] = f_zone(eb, ep, isL ? euSlL : euSlS, isL ? euTpL : euTpS)
+                    euZs := z1
+                    euZt := z2
+                if not na(euZs)
+                    box.set_right(euZs, bar_index)
+                    box.set_right(euZt, bar_index)
+            else if tag == "NY"
+                if eb != nyZb and not na(isL ? nySlL : nySlS)
+                    nyZb := eb
+                    [z1, z2] = f_zone(eb, ep, isL ? nySlL : nySlS, isL ? nyTpL : nyTpS)
+                    nyZs := z1
+                    nyZt := z2
+                if not na(nyZs)
+                    box.set_right(nyZs, bar_index)
+                    box.set_right(nyZt, bar_index)
+            else if tag == "PB"
+                if eb != pbZb and not na(pbSl)
+                    pbZb := eb
+                    [z1, z2] = f_zone(eb, ep, pbSl, pbTp)
+                    pbZs := z1
+                    pbZt := z2
+                if not na(pbZs)
+                    box.set_right(pbZs, bar_index)
+                    box.set_right(pbZt, bar_index)
 // a trade that opened and closed inside one bar still counts as the session's trade
 if strategy.closedtrades > nz(strategy.closedtrades[1])
     string cid = strategy.closedtrades.entry_id(strategy.closedtrades - 1)
@@ -417,6 +438,31 @@ if not nyWin
     strategy.cancel("NY L")
     strategy.cancel("NY S")
 
+// ───────── 15m EMA20 pullback (gold) ─────────
+[pO, pH, pL, pC, pE20, pE50, pA, pTc] = request.security(syminfo.tickerid, "15", [open, high, low, close, ta.ema(close, 20), ta.ema(close, 50), ta.atr(14), time_close], lookahead = barmerge.lookahead_on)
+bool pbUse = pbMode == "On" or (pbMode == "Auto" and str.contains(pName, "XAU"))
+bool p15 = not na(pTc) and time_close >= pTc and timeframe.in_seconds() < 900   // the last chart bar of a 15m candle: its values are complete
+if strategy.closedtrades > nz(strategy.closedtrades[1]) and str.startswith(strategy.closedtrades.entry_id(strategy.closedtrades - 1), "PB")
+    pbDay := dKey
+bool pbOpen = false
+if strategy.opentrades > 0
+    for i = 0 to strategy.opentrades - 1
+        if str.startswith(strategy.opentrades.entry_id(i), "PB")
+            pbOpen := true
+            pbDay := dKey
+if pbUse and live and p15 and pbDay != dKey and not pbOpen and (dir == 1 or dir == -1) and mm >= 540 and mm < 1080
+    bool upP = dir == 1 and pE20 > pE50 and pL <= pE20 and pC >= pE20 and pC > pO
+    bool dnP = dir == -1 and pE20 < pE50 and pH >= pE20 and pC <= pE20 and pC < pO
+    if upP or dnP
+        float sl = upP ? pL - 0.2 * pA : pH + 0.2 * pA
+        float r = math.abs(pC - sl)
+        if r >= 0.3 * pA and r <= 4 * pA
+            pbSl := sl
+            pbTp := pC + dir * pbTpR * r
+            pbDay := dKey
+            strategy.entry(upP ? "PB L" : "PB S", upP ? strategy.long : strategy.short, qty = f_qty(pC, sl), comment = upP ? "PB long" : "PB short")
+            strategy.exit(upP ? "PB XL" : "PB XS", upP ? "PB L" : "PB S", stop = sl, limit = pbTp, comment_loss = "SL", comment_profit = "TP")
+
 // time stop and end of day
 if strategy.opentrades > 0
     for i = strategy.opentrades - 1 to 0
@@ -426,7 +472,7 @@ if strategy.opentrades > 0
             strategy.close(id, comment = mm >= dayEnd ? "Day end" : "Time " + str.tostring(tMax) + "m")
 
 bgcolor(dir == 1 ? color.new(bullC, 96) : dir == -1 ? color.new(bearC, 96) : na, title = "Direction")
-var table tb = table.new(position.bottom_right, 2, 4, bgcolor = color.new(#1E222D, 10), border_width = 1)
+var table tb = table.new(position.bottom_right, 2, 5, bgcolor = color.new(#1E222D, 10), border_width = 1)
 if barstate.islast
     table.cell(tb, 0, 0, "BE Intraday · " + pName, text_color = color.white, text_size = size.small)
     table.cell(tb, 1, 0, isFx ? "bias" : "SMA20 trend", text_color = color.white, text_size = size.small)
@@ -436,5 +482,7 @@ if barstate.islast
     table.cell(tb, 1, 2, dir == 1 ? "long" : dir == -1 ? "short" : dir == 2 ? "both" : "none", text_color = dir == 1 ? bullC : dir == -1 ? bearC : color.gray, text_size = size.small)
     table.cell(tb, 0, 3, "Sessions", text_color = color.gray, text_size = size.small)
     table.cell(tb, 1, 3, (euUse ? str.format("{0,number,00}:{1,number,00} ", e0 / 60, e0 % 60) : "") + (nyOn ? str.format("{0,number,00}:{1,number,00}", n0 / 60, n0 % 60) : ""), text_color = color.white, text_size = size.small)
+    table.cell(tb, 0, 4, "EMA20 pullback", text_color = color.gray, text_size = size.small)
+    table.cell(tb, 1, 4, pbUse ? "on (15m)" : "off", text_color = color.white, text_size = size.small)
 if timeframe.in_seconds() > 900 and barstate.islast
     label.new(bar_index, high, "BE Intraday is built for the 5m chart (15m at most).", style = label.style_label_down, color = color.orange, textcolor = color.white)
