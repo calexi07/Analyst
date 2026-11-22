@@ -16,12 +16,17 @@ def prep4(p):
         b['atr4'] = a if i >= 13 else None; pc = b['c']
     return bars
 
-DEF = dict(tvf=None, tvx=None, mcf=None, mcx=None, sqf=None, sqx=None, trm='atr', stp=10, stm=3.0, stat=1.0, sttf='4h', slm='atr', stf=False, mingap=0, slk=1.0, entry='C', tp=4, trk=0.75, trk2=0.5, trat=2.0, hours=None, cool=24, dirm='both', maxdow=2, sc=None, fri=True)
+DEF = dict(xf=None, xx=None, tvf=None, tvx=None, mcf=None, mcx=None, sqf=None, sqx=None, trm='atr', stp=10, stm=3.0, stat=1.0, sttf='4h', slm='atr', stf=False, mingap=0, slk=1.0, entry='C', tp=4, trk=0.75, trk2=0.5, trat=2.0, hours=None, cool=24, dirm='both', maxdow=2, sc=None, fri=True)
 
 def run_c(p, b4, h1, B, P, start, end):
     P = {**DEF, **P}; cost = cost_of(p) * pip_of(p)
     i1 = {b['t']: k for k, b in enumerate(h1)}
     res, lastx, k4 = [], None, 0
+    if P['xf'] or P['xx']:
+        import new5 as _n5
+        _XF = _n5.ctx_state(P['xf'][0], b4) if P['xf'] else None
+        _XX = _n5.ctx_state(P['xx'], b4) if P['xx'] else None
+        ix4 = {b4[q]['tc']: q for q in range(len(b4))}
     if P['tvf'] or P['tvx']:
         import tvp as _tv
         _T = _tv.tvp(b4); ix4 = {b4[q]['tc']: q for q in range(len(b4))}
@@ -58,6 +63,9 @@ def run_c(p, b4, h1, B, P, start, end):
                   'nosqz': not _on[i], 'sqzon': bool(_on[i]), 'fired': bool(_on[max(0, i - 6):i].any()) and not _on[i],
                   'notfade': not (v_ * dr > 0 and (v_ - v1_) * dr < 0), 'neg_rising': v_ * dr < 0 and (v_ - v1_) * dr > 0}[P['sqf']]
             if not ok: i += 1; continue
+        if P['xf']:
+            v_ = _XF[i]
+            if not {'agree': v_ == dr, 'notagainst': v_ != -dr, 'against': v_ == -dr}[P['xf'][1]]: i += 1; continue
         if P['tvf']:
             a_, pc_ = _T['act'][i], _T['poc'][i]
             ok = {'trend': a_ == dr, 'notagainst': a_ != -dr, 'poc': pc_ == pc_ and (s['c'] - pc_) * dr > 0,
@@ -136,6 +144,7 @@ def run_c(p, b4, h1, B, P, start, end):
                 if P['trm'] == 'st' and P['sttf'] == '1h': ns = sl
                 sl = max(sl, ns) if dr > 0 else min(sl, ns)
                 d2, _ = dir_at(c4)
+                if P['xx'] and _XX[ix4[c4['tc']]] == -dr: exitp, why, jx = b['c'], 'X', jj; break
                 if P['tvx']:
                     q = ix4[c4['tc']]
                     if P['tvx'] == 'flip' and _T['act'][q] == -dr: exitp, why, jx = b['c'], 'TVP', jj; break
