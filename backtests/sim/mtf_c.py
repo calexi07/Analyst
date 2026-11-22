@@ -16,12 +16,15 @@ def prep4(p):
         b['atr4'] = a if i >= 13 else None; pc = b['c']
     return bars
 
-DEF = dict(entry='C', tp=4, trk=0.75, trk2=0.5, trat=2.0, hours=None, cool=24, dirm='both', maxdow=2, sc=None, fri=True)
+DEF = dict(trm='atr', stp=10, stm=3.0, stat=1.0, entry='C', tp=4, trk=0.75, trk2=0.5, trat=2.0, hours=None, cool=24, dirm='both', maxdow=2, sc=None, fri=True)
 
 def run_c(p, b4, h1, B, P, start, end):
     P = {**DEF, **P}; cost = cost_of(p) * pip_of(p)
     i1 = {b['t']: k for k, b in enumerate(h1)}
     res, lastx, k4 = [], None, 0
+    if P['trm'] != 'atr':
+        import st as _st
+        _up, _dn, _tr, _ = _st.supertrend(b4, P['stp'], P['stm']); stl = {b4[q]['tc']: (_up[q], _dn[q]) for q in range(len(b4))}
     def dir_at(b):
         bi = B.get((p, b['wk']), ('-', '-', None)); bd = 1 if bi[0] == 'U' else -1 if bi[0] == 'D' else 0
         td = 0 if b['sma20'] is None else (1 if b['c'] > b['sma20'] else -1)
@@ -77,7 +80,14 @@ def run_c(p, b4, h1, B, P, start, end):
             if k4 < len(b4) and b4[k4]['tc'] == b['tc']:
                 c4 = b4[k4]; A = c4['atr4']
                 kk = P['trk2'] if P['trk2'] and best >= P['trat'] else P['trk']
-                ns = c4['c'] - dr * kk * A; sl = max(sl, ns) if dr > 0 else min(sl, ns)
+                ns = c4['c'] - dr * kk * A
+                if P['trm'] != 'atr':
+                    u_, d_ = stl.get(c4['tc'], (None, None)); ln = u_ if dr > 0 else d_
+                    if ln is None: ln = sl
+                    if P['trm'] == 'st': ns = ln
+                    elif P['trm'] == 'tighter': ns = max(ns, ln) if dr > 0 else min(ns, ln)
+                    elif P['trm'] == 'st_after' and best >= P['stat']: ns = ln
+                sl = max(sl, ns) if dr > 0 else min(sl, ns)
                 d2, _ = dir_at(c4)
                 if d2 == -dr: exitp, why, jx = b['c'], 'Flip', jj; break
             if P['fri'] and b['dow'] == 4 and b['last_of_day']: exitp, why, jx = b['c'], 'Fri', jj; break

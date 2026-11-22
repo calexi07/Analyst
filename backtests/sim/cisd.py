@@ -22,7 +22,7 @@ def htf_key(x, htf):
 
 DEF = dict(htf='D', piv=3, wait=36, age=120, disp=0.5, minr=0.25, maxr=3.0, tp=(1, 2, 3), pend=60, lookback=10,
            hours=None, bias=False, dirs=(1, -1), cool=0,
-           tpR=3, be=1, belock=0, part=0, pfrac=0.5, trail=0, trail2=0, tr2at=2, tract=1, trref='close', swtrail=False, liq=False, liqmin=1, tmax=0)
+           tpR=3, be=1, belock=0, part=0, pfrac=0.5, trail=0, trail2=0, tr2at=2, tract=1, trref='close', swtrail=False, stm=0, liq=False, liqmin=1, tmax=0)
 
 def run_dir(p, b0, d, P, start, end):
     P = {**DEF, **P}; b = mirror(b0, d); cost = cost_of(p) * pip_of(p); n = len(b)
@@ -31,6 +31,9 @@ def run_dir(p, b0, d, P, start, end):
     piv = []                     # confirmed pivot highs: (pivot index, high, close)
     piv_l = []
     L = P['piv']
+    if P['stm']:
+        import st as _st
+        stup = _st.supertrend(b, 10, P['stm'])[0]
     for i, x in enumerate(b):
         A = x['atr']
         # HTF candles
@@ -66,6 +69,7 @@ def run_dir(p, b0, d, P, start, end):
                     k = P['trail2'] if P['trail2'] and best >= pos['e'] + P['tr2at'] * r else P['trail']
                     ref = x['c'] if P['trref'] == 'close' else best
                     pos['sl'] = max(pos['sl'], ref - k * A)
+                if P['stm'] and best >= pos['e'] + P['tract'] * r and stup[i] is not None: pos['sl'] = max(pos['sl'], stup[i])
                 if P['swtrail'] and best >= pos['e'] + P['tract'] * r and piv_l:
                     lv_ = piv_l[-1]
                     if lv_[0] > pos['i']: pos['sl'] = max(pos['sl'], lv_[1] - 0.1 * A)
