@@ -16,7 +16,7 @@ def prep4(p):
         b['atr4'] = a if i >= 13 else None; pc = b['c']
     return bars
 
-DEF = dict(trm='atr', stp=10, stm=3.0, stat=1.0, entry='C', tp=4, trk=0.75, trk2=0.5, trat=2.0, hours=None, cool=24, dirm='both', maxdow=2, sc=None, fri=True)
+DEF = dict(trm='atr', stp=10, stm=3.0, stat=1.0, sttf='4h', slm='atr', stf=False, mingap=0, slk=1.0, entry='C', tp=4, trk=0.75, trk2=0.5, trat=2.0, hours=None, cool=24, dirm='both', maxdow=2, sc=None, fri=True)
 
 def run_c(p, b4, h1, B, P, start, end):
     P = {**DEF, **P}; cost = cost_of(p) * pip_of(p)
@@ -25,6 +25,10 @@ def run_c(p, b4, h1, B, P, start, end):
     if P['trm'] != 'atr':
         import st as _st
         _up, _dn, _tr, _ = _st.supertrend(b4, P['stp'], P['stm']); stl = {b4[q]['tc']: (_up[q], _dn[q]) for q in range(len(b4))}
+    if P['trm'] != 'atr' or P['slm'] != 'atr' or P['stf']:
+        import st as _st
+        _u4, _d4, _t4, _ = _st.supertrend(b4, P['stp'], P['stm']); st4 = {b4[q]['tc']: (_u4[q], _d4[q], _t4[q]) for q in range(len(b4))}
+        _u1, _d1, _t1, _ = _st.supertrend(h1, P['stp'], P['stm'])
     def dir_at(b):
         bi = B.get((p, b['wk']), ('-', '-', None)); bd = 1 if bi[0] == 'U' else -1 if bi[0] == 'D' else 0
         td = 0 if b['sma20'] is None else (1 if b['c'] > b['sma20'] else -1)
@@ -38,7 +42,19 @@ def run_c(p, b4, h1, B, P, start, end):
         if dr == 0 or s['dow'] > P['maxdow']: i += 1; continue
         if P['sc'] == 'dir' and (s['c'] - s['o']) * dr <= 0: i += 1; continue
         if P['sc'] == 'ema' and (s['ema'] is None or (s['c'] - s['ema']) * dr <= 0): i += 1; continue
-        lvl = s['h'] if dr > 0 else s['l']; risk = s['atr4']
+        if P['mingap'] and (bi[2] is None or abs(bi[2]) < P['mingap']): i += 1; continue
+        lvl = s['h'] if dr > 0 else s['l']; risk = s['atr4'] * P['slk']
+        if P['stf'] or P['slm'] != 'atr':
+            u4, d4, t4 = st4.get(s['tc'], (None, None, None))
+            if P['stf'] and t4 != dr: i += 1; continue
+            if P['slm'] != 'atr':
+                ln = u4 if dr > 0 else d4
+                if ln is None: i += 1; continue
+                dist = abs(lvl - ln) + (0.1 * s['atr4'] if P['slm'] == 'st' else 0)
+                if P['slm'] == 'st': risk = dist
+                elif P['slm'] == 'wider': risk = max(risk, dist)
+                elif P['slm'] == 'tighter': risk = min(risk, dist)
+                if not (0.4 * s['atr4'] <= risk <= 3 * s['atr4']): i += 1; continue
         # 1H bars of the next 4H candle (the order's life); retest / pullback modes get one more 4H candle
         k = i1.get(s['tc'])
         if k is None: i += 1; continue
@@ -75,18 +91,22 @@ def run_c(p, b4, h1, B, P, start, end):
                 g = (b['o'] < sl) if dr > 0 else (b['o'] > sl); exitp, why = (b['o'] if g else sl), 'SL'; jx = jj; break
             if tpl is not None and ((b['h'] >= tpl) if dr > 0 else (b['l'] <= tpl)): exitp, why, jx = tpl, 'TP', jj; break
             best = max(best, ((b['h'] if dr > 0 else b['l']) - e) * dr / risk)
+            if P['sttf'] == '1h' and P['trm'] != 'atr' and (P['trm'] != 'st_after' or best >= P['stat']):
+                ln1 = _u1[jj] if dr > 0 else _d1[jj]
+                if ln1 is not None and _t1[jj] == dr: sl = max(sl, ln1) if dr > 0 else min(sl, ln1)
             # 4H close: trailing and direction flip
             while k4 < len(b4) and b4[k4]['tc'] < b['tc']: k4 += 1
             if k4 < len(b4) and b4[k4]['tc'] == b['tc']:
                 c4 = b4[k4]; A = c4['atr4']
                 kk = P['trk2'] if P['trk2'] and best >= P['trat'] else P['trk']
                 ns = c4['c'] - dr * kk * A
-                if P['trm'] != 'atr':
+                if P['trm'] != 'atr' and P['sttf'] == '4h':
                     u_, d_ = stl.get(c4['tc'], (None, None)); ln = u_ if dr > 0 else d_
                     if ln is None: ln = sl
                     if P['trm'] == 'st': ns = ln
                     elif P['trm'] == 'tighter': ns = max(ns, ln) if dr > 0 else min(ns, ln)
                     elif P['trm'] == 'st_after' and best >= P['stat']: ns = ln
+                if P['trm'] == 'st' and P['sttf'] == '1h': ns = sl
                 sl = max(sl, ns) if dr > 0 else min(sl, ns)
                 d2, _ = dir_at(c4)
                 if d2 == -dr: exitp, why, jx = b['c'], 'Flip', jj; break
