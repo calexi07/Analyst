@@ -204,6 +204,17 @@ if(existsSync('scripts/pine-macd-template.pine')){
     .replace('{{DATA}}', dataBlocks(L));
   writeFileSync('pine/bias-macd.pine', mc);
 }
+// the Quasimodo strategy (15m chart): same data, its own template
+if(existsSync('scripts/pine-qm-template.pine')){
+  const qm = readFileSync('scripts/pine-qm-template.pine', 'utf8')
+    .replace('{{GENERATED}}', gen)
+    .replace('{{COVERAGE}}', `${wkKey(first.y, first.w)} → ${wkKey(last.y, last.w)} (${wl.length} weeks), ${cl.length} daily checks`)
+    .replace('{{PAIRS}}', PAIRS.map(p => `"${p}"`).join(', '))
+    .replace('{{PAIR_OPTIONS}}', ['"Auto"', ...PAIRS.map(p => `"${p}"`)].join(', '))
+    .replace('{{CCY}}', CCY.map(c => `"${c}"`).join(', '))
+    .replace('{{DATA}}', dataBlocks(L));
+  writeFileSync('pine/bias-qm.pine', qm);
+}
 // the structure strategy (1H chart): same data, its own template
 if(existsSync('scripts/pine-structure-template.pine')){
   const st = readFileSync('scripts/pine-structure-template.pine', 'utf8')

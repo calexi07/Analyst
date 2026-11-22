@@ -1,0 +1,275 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Forex Fundamental Bias Engine — Quasimodo strategy (15m chart): shoulder → lower low → break of the neck high, in the bias direction.
+// Generated automatically: {{GENERATED}}. Bias data: {{COVERAGE}}.
+// Do not edit by hand: the data block is rewritten after every phase and daily check.
+// A test bench for your own rules in the Strategy Tester. Not a trade signal.
+//@version=6
+strategy("Bias Engine · Quasimodo strategy (bias + QM)", shorttitle = "BE QM", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = false, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0.005, slippage = 0, max_labels_count = 500, max_lines_count = 500, max_boxes_count = 500, max_bars_back = 1000)
+
+// ───────── settings ─────────
+string pairIn  = input.string("Auto", "Pair", options = [{{PAIR_OPTIONS}}], tooltip = "Auto reads the chart symbol. Built and tested on EURUSD 15m (5m and 30m also tested).")
+string dirMode = input.string("Fundamental bias", "Direction from", options = ["Fundamental bias", "Price trend (SMA)", "Both directions"], group = "Direction", tooltip = "Fundamental bias: only QMs in the week's published bias direction. Simulation EURUSD 15m W40–W47: +1.45R per trade with bias; without bias the same rules made much less.")
+string minConv = input.string("Any", "Minimum conviction", options = ["Any", "Medium or high", "High only"], group = "Direction")
+int    trLen   = input.int(20, "Trend SMA length (daily closes)", minval = 5, maxval = 400, group = "Direction")
+int    pivL    = input.int(3, "Pivot length (bars each side)", minval = 1, maxval = 10, group = "Quasimodo", tooltip = "Swing points need this many bars on each side. Simulation (15m): 2 and 3 both worked; 3 is the default.")
+string enMode  = input.string("Half way: shoulder ↔ break close", "Entry", options = ["Half way: shoulder ↔ break close", "At the shoulder (left low/high)", "At the break close (market)"], group = "Quasimodo", tooltip = "Half way: a limit order halfway between the shoulder and the close that broke the neck (+1.45R per trade on EURUSD 15m). Shoulder: limit at the left shoulder (+0.83R). Break: enter at the break candle's close (+0.73R).")
+float  slBuf   = input.float(0.1, "Stop beyond the head (ATR × )", minval = 0, maxval = 2, step = 0.05, group = "Quasimodo")
+float  tpR     = input.float(3.0, "Take profit (R)", minval = 0.5, maxval = 10, step = 0.5, group = "Quasimodo")
+int    lifeH   = input.int(48, "Limit order valid for (hours)", minval = 1, maxval = 240, group = "Quasimodo")
+float  minRk   = input.float(0.3, "Min risk (ATR × )", minval = 0.05, maxval = 5, step = 0.05, group = "Quasimodo")
+float  maxRk   = input.float(6.0, "Max risk (ATR × )", minval = 0.5, maxval = 20, step = 0.5, group = "Quasimodo")
+bool   hrsOn   = input.bool(true, "Only signals in my hours (Bucharest)", group = "Filters")
+int    hrsFrom = input.int(6, "From (hour)", minval = 0, maxval = 23, group = "Filters", inline = "hrs")
+int    hrsTo   = input.int(22, "to (hour)", minval = 1, maxval = 24, group = "Filters", inline = "hrs")
+bool   wkExit  = input.bool(false, "Close every trade at Friday's close", group = "Exit")
+int    fromT   = input.time(timestamp("2000-01-01"), "Trade only from this date", group = "Risk")
+float  stRisk  = input.float(1.0, "Risk per trade (% of equity)", minval = 0.1, maxval = 5, step = 0.1, group = "Risk")
+color  bullC   = input.color(#22AB94, "Bullish", group = "Colours")
+color  bearC   = input.color(#F23645, "Bearish", group = "Colours")
+bool   zonesOn = input.bool(true, "Show SL / TP zones and the QM", group = "Colours")
+
+// ───────── data (generated) ─────────
+var string[] PAIRS = array.from({{PAIRS}})
+var string[] CCY   = array.from({{CCY}})
+var int[]    wT = array.new_int()
+var string[] wN = array.new_string()
+var string[] wD = array.new_string()
+var string[] wS = array.new_string()
+var int[]    cT = array.new_int()
+var string[] cN = array.new_string()
+var string[] cD = array.new_string()
+var string[] cH = array.new_string()
+var string[] cC = array.new_string()
+{{DATA}}
+
+// ───────── helpers ─────────
+f_item(string row, int i) =>
+    string[] parts = str.split(row, ",")
+    i >= 0 and i < array.size(parts) ? array.get(parts, i) : "?"
+f_bname(string b) => b == "U" ? "BULLISH" : b == "D" ? "BEARISH" : b == "N" ? "TWO-SIDED" : "none"
+f_cname(string c) => c == "h" ? "high" : c == "m" ? "medium" : c == "l" ? "low" : "-"
+f_sg(float v) => na(v) ? "0" : v > 0 ? "+" + str.tostring(v) : str.tostring(v)
+f_sname(string s) => s == "C" ? "Confirmed" : s == "S" ? "Confirmed, could get stronger" : s == "F" ? "Confirmed but fragile" : s == "W" ? "Under watch" : s == "P" ? "Under pressure" : s == "X" ? "Invalidated" : s == "T" ? "Still two-sided" : "none"
+f_wa(bool ok) => ok ? "with" : "against"
+var string[] DOW = array.from("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+
+// ───────── pair and week ─────────
+string symA = syminfo.basecurrency + syminfo.currency
+string tk   = str.upper(syminfo.ticker)
+string symB = str.length(tk) >= 6 ? str.substring(tk, 0, 6) : tk
+int pIdx = pairIn != "Auto" ? array.indexof(PAIRS, pairIn) : array.indexof(PAIRS, symA) >= 0 ? array.indexof(PAIRS, symA) : array.indexof(PAIRS, symB)
+string pName = pIdx >= 0 ? array.get(PAIRS, pIdx) : syminfo.ticker
+float pipSz = str.contains(pName, "JPY") ? 0.01 : str.contains(pName, "XAU") ? 0.1 : 0.0001
+f_pips(float d) => math.round(d / pipSz * 10) / 10
+
+int WEEK_MS = 7 * 86400000
+var int wi = -1
+while wi + 1 < array.size(wT) and time >= array.get(wT, wi + 1)
+    wi += 1
+bool inWk = wi >= 0 and time < array.get(wT, math.max(wi, 0)) + WEEK_MS
+string rec = inWk and pIdx >= 0 ? f_item(array.get(wD, math.max(wi, 0)), pIdx) : "?"
+bool hasRec = rec != "?" and str.length(rec) >= 2
+string b  = hasRec ? str.substring(rec, 0, 1) : "-"
+string cv = hasRec ? str.substring(rec, 1, 2) : "-"
+float  g  = hasRec and str.length(rec) > 2 ? str.tonumber(str.substring(rec, 2)) : na
+
+// ───────── direction ─────────
+[smaT, dCl] = request.security(syminfo.tickerid, "D", [ta.sma(close, trLen)[1], close[1]], lookahead = barmerge.lookahead_on)
+int biasDir = b == "U" ? 1 : b == "D" ? -1 : 0
+bool convOk = minConv == "Any" or (minConv == "High only" ? cv == "h" : cv == "h" or cv == "m")
+int bDir = convOk ? biasDir : 0
+int tDir = na(smaT) or na(dCl) ? 0 : dCl > smaT ? 1 : dCl < smaT ? -1 : 0
+int dir = dirMode == "Fundamental bias" ? bDir : dirMode == "Price trend (SMA)" ? tDir : 2
+
+// ───────── swing points (left side strictly beyond, right side not beyond) ─────────
+float atr = ta.atr(14)
+var int[]   pvI = array.new_int()
+var int[]   pvT = array.new_int()
+var float[] pvP = array.new_float()
+if bar_index >= 2 * pivL
+    float hk = high[pivL]
+    float lk = low[pivL]
+    bool isH = true
+    bool isL = true
+    for j = 0 to 2 * pivL
+        if j != pivL
+            if j > pivL
+                isH := isH and high[j] < hk
+                isL := isL and low[j] > lk
+            else
+                isH := isH and high[j] <= hk
+                isL := isL and low[j] >= lk
+    if isH
+        array.push(pvI, bar_index - pivL)
+        array.push(pvT, 1)
+        array.push(pvP, hk)
+    if isL
+        array.push(pvI, bar_index - pivL)
+        array.push(pvT, -1)
+        array.push(pvP, lk)
+    while array.size(pvI) > 30
+        array.shift(pvI)
+        array.shift(pvT)
+        array.shift(pvP)
+
+// ───────── Quasimodo detection on this close ─────────
+int hrB = hour(time, "Europe/Bucharest")
+bool hrsOk = not hrsOn or (hrB >= hrsFrom and hrB < hrsTo)
+bool live = time >= fromT and not na(atr)
+int NY7 = 7 * 3600000
+int tDay = dayofweek(time + NY7, "America/New_York")
+int fri17 = timestamp("America/New_York", year(time + NY7, "America/New_York"), month(time + NY7, "America/New_York"), dayofmonth(time + NY7, "America/New_York"), 17, 0)
+bool lastWkBar = tDay == dayofweek.friday and time_close + timeframe.in_seconds() * 1000 > fri17
+int lifeB = math.max(1, int(lifeH * 3600 / timeframe.in_seconds()))
+
+var string[] used = array.new_string()
+var bool  pLive = false
+var int   pDir = 0
+var int   pBar = 0
+var float pE = na
+var float pSl = na
+var float pTp = na
+var float pQ = na
+bool flat = strategy.position_size == 0
+
+// QM for direction d: returns [found, shoulder price, head price, head bar, neck price, neck bar, key]
+f_qm(int d) =>
+    bool ok = false
+    float sh = na
+    float hd = na
+    int hdI = na
+    float nk = na
+    int nkI = na
+    string key = ""
+    int n = array.size(pvI)
+    // neck = the latest pivot on the far side that this close breaks
+    int nIdx = -1
+    if n > 0
+        for k = n - 1 to 0
+            if array.get(pvT, k) == d and array.get(pvI, k) < bar_index
+                float v = array.get(pvP, k)
+                if d > 0 ? (close > v and close[1] <= v) : (close < v and close[1] >= v)
+                    nIdx := k
+                    break
+    if nIdx >= 0
+        nk := array.get(pvP, nIdx)
+        nkI := array.get(pvI, nIdx)
+        // head = deepest opposite pivot after the neck; shoulder = last opposite pivot before the neck
+        int shI = na
+        for k = 0 to n - 1
+            int ik = array.get(pvI, k)
+            if array.get(pvT, k) == -d and ik < bar_index
+                float v = array.get(pvP, k)
+                if ik > nkI
+                    if na(hd) or (d > 0 ? v < hd : v > hd)
+                        hd := v
+                        hdI := ik
+                else if ik < nkI
+                    sh := v
+                    shI := ik
+        if not na(hd) and not na(sh)
+            key := str.tostring(shI) + "/" + str.tostring(hdI) + "/" + str.tostring(nkI)
+            bool deeper = d > 0 ? hd < sh : hd > sh
+            // first close beyond the neck since the head
+            bool first = true
+            int back = bar_index - hdI
+            if back >= 1 and back <= 900
+                for j = 1 to back
+                    if d > 0 ? close[j] > nk : close[j] < nk
+                        first := false
+                        break
+            ok := deeper and first and array.indexof(used, key) < 0
+    [ok, sh, hd, hdI, nk, nkI, key]
+
+bool sig = false
+int  sgD = 0
+float sgE = na
+float sgSl = na
+int sgHd = na
+float sgSh = na
+float sgNk = na
+int sgNkI = na
+if live and flat and not pLive and dir != 0 and hrsOk
+    for side = 0 to 1
+        int d = dir == 2 ? (side == 0 ? 1 : -1) : dir
+        if side == 1 and dir != 2
+            break
+        [ok, sh, hd, hdI, nk, nkI, key] = f_qm(d)
+        if ok
+            array.push(used, key)
+            if array.size(used) > 300
+                array.shift(used)
+            float e = enMode == "At the shoulder (left low/high)" ? sh : enMode == "At the break close (market)" ? close : (sh + close) / 2
+            float sl = hd - d * slBuf * atr
+            float r = math.abs(e - sl)
+            if r >= minRk * atr and r <= maxRk * atr and (enMode == "At the break close (market)" or (close - e) * d > 0)
+                sig := true
+                sgD := d
+                sgE := e
+                sgSl := sl
+                sgHd := hdI
+                sgSh := sh
+                sgNk := nk
+                sgNkI := nkI
+            break
+
+// ───────── orders ─────────
+if pLive and flat and bar_index - pBar >= lifeB
+    strategy.cancel(pDir > 0 ? "L" : "S")
+    pLive := false
+if not flat
+    pLive := false
+if sig
+    float r = math.abs(sgE - sgSl)
+    pDir := sgD
+    pE := sgE
+    pSl := sgSl
+    pTp := sgE + sgD * tpR * r
+    pQ := math.max(strategy.equity * stRisk / 100 / (r * syminfo.pointvalue), 0)
+    pBar := bar_index
+    string id = sgD > 0 ? "L" : "S"
+    if zonesOn
+        line.new(sgHd, sgSl + sgD * slBuf * atr, bar_index, sgSl + sgD * slBuf * atr, color = color.new(color.gray, 40), style = line.style_dotted)
+        line.new(sgNkI, sgNk, bar_index, sgNk, color = color.new(sgD > 0 ? bullC : bearC, 30), style = line.style_dashed)
+        label.new(bar_index, sgD > 0 ? low : high, "QM", style = sgD > 0 ? label.style_label_up : label.style_label_down, color = color.new(sgD > 0 ? bullC : bearC, 20), textcolor = color.white, size = size.tiny)
+    if enMode == "At the break close (market)"
+        strategy.entry(id, sgD > 0 ? strategy.long : strategy.short, qty = pQ, comment = sgD > 0 ? "QM L" : "QM S")
+    else
+        pLive := true
+if pLive and flat
+    string pid = pDir > 0 ? "L" : "S"
+    strategy.entry(pid, pDir > 0 ? strategy.long : strategy.short, qty = pQ, limit = pE, comment = pDir > 0 ? "QM L" : "QM S")
+if (pLive and flat) or sig
+    string xid = pDir > 0 ? "L" : "S"
+    strategy.exit("X" + xid, xid, stop = pSl, limit = pTp, comment_loss = "SL", comment_profit = "TP")
+
+// zones of the open trade
+var box zSl = na
+var box zTp = na
+var float ent0 = na
+bool opened = strategy.position_size != 0 and strategy.position_size[1] == 0
+if opened
+    ent0 := strategy.position_avg_price
+    if zonesOn
+        zSl := box.new(bar_index, math.max(ent0, pSl), bar_index, math.min(ent0, pSl), border_color = color.new(bearC, 30), bgcolor = color.new(bearC, 80))
+        zTp := box.new(bar_index, math.max(ent0, pTp), bar_index, math.min(ent0, pTp), border_color = color.new(bullC, 30), bgcolor = color.new(bullC, 80))
+if strategy.position_size != 0
+    if zonesOn and not na(zSl)
+        box.set_right(zSl, bar_index)
+        box.set_right(zTp, bar_index)
+    if wkExit and lastWkBar
+        strategy.close_all(comment = "Friday")
+
+plot(strategy.position_size != 0 or pLive ? pSl : na, "Stop", color = color.new(bearC, 20), style = plot.style_linebr)
+plot(strategy.position_size != 0 or pLive ? pTp : na, "Target", color = color.new(bullC, 20), style = plot.style_linebr)
+plot(pLive and flat ? pE : na, "Limit entry", color = color.orange, style = plot.style_linebr)
+bgcolor(dir == 1 ? color.new(bullC, 95) : dir == -1 ? color.new(bearC, 95) : na, title = "Direction")
+
+var table tb = table.new(position.bottom_right, 2, 3, bgcolor = color.new(#1E222D, 10), border_width = 1)
+if barstate.islast
+    table.cell(tb, 0, 0, "BE QM · " + pName, text_color = color.white, text_size = size.small)
+    table.cell(tb, 1, 0, dirMode, text_color = color.white, text_size = size.small)
+    table.cell(tb, 0, 1, "Bias", text_color = color.gray, text_size = size.small)
+    table.cell(tb, 1, 1, f_bname(b) + " " + f_cname(cv) + " " + f_sg(g), text_color = biasDir > 0 ? bullC : biasDir < 0 ? bearC : color.gray, text_size = size.small)
+    table.cell(tb, 0, 2, "Setup", text_color = color.gray, text_size = size.small)
+    table.cell(tb, 1, 2, pLive ? "limit waiting" : strategy.position_size != 0 ? "in trade" : "waiting for a QM", text_color = color.white, text_size = size.small)
