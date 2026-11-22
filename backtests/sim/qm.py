@@ -4,7 +4,7 @@
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from smc import B, cost_of, pip_of
-DEF = dict(cancel1R=True, ctx=None, tpm='R', lifeH=48, L=3, tpR=3, life=48, minR=0.3, maxR=3.0, entry='shoulder', bias=True, hours=None)
+DEF = dict(slb=0.1, cancel1R=True, ctx=None, tpm='R', lifeH=48, L=3, tpR=3, life=48, minR=0.3, maxR=3.0, entry='shoulder', bias=True, hours=None)
 def run(p, b, P, start, end):
     P = {**DEF, **P}; L = P['L']; cost = cost_of(p) * pip_of(p); res = []; pos = None; pend = None
     pivs = []   # (index, +1 high / -1 low, price)
@@ -57,12 +57,12 @@ def run(p, b, P, start, end):
             used.add((L1[0], L2[0], H1[0]))
             e = L1[2] if P['entry'] == 'shoulder' else (L1[2] + L2[2]) / 2 if P['entry'] == 'mid' else (L1[2] + x['c']) / 2 if P['entry'] == 'half' else x['c']
             if P['entry'] == 'break':
-                sl = L2[2] - d * 0.1 * A; r = abs(x['c'] - sl)
+                sl = L2[2] - d * P['slb'] * A; r = abs(x['c'] - sl)
                 if P['minR'] * A <= r <= P['maxR'] * A:
                     ext = max(y['h'] for y in b[L2[0]:i + 1]) if d > 0 else min(y['l'] for y in b[L2[0]:i + 1])
                     pos = dict(d=d, e=x['c'], r=r, sl=sl, tp=x['c'] + d * P['tpR'] * r, t=x['t'], wk=x['wk'])
                 break
-            sl = L2[2] - d * 0.1 * A; r = abs(e - sl)
+            sl = L2[2] - d * P['slb'] * A; r = abs(e - sl)
             if P['minR'] * A <= r <= P['maxR'] * A and (x['c'] - e) * d > 0: pend = dict(d=d, e=e, sl=sl, r=r, i=i, ext=(max(y['h'] for y in b[L2[0]:i + 1]) if d > 0 else min(y['l'] for y in b[L2[0]:i + 1])))
             break
     return res
