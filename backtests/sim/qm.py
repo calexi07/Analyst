@@ -4,10 +4,13 @@
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from smc import B, cost_of, pip_of
-DEF = dict(L=3, tpR=3, life=48, minR=0.3, maxR=3.0, entry='shoulder', bias=True, hours=None)
+DEF = dict(cancel1R=True, ctx=None, tpm='R', lifeH=48, L=3, tpR=3, life=48, minR=0.3, maxR=3.0, entry='shoulder', bias=True, hours=None)
 def run(p, b, P, start, end):
     P = {**DEF, **P}; L = P['L']; cost = cost_of(p) * pip_of(p); res = []; pos = None; pend = None
     pivs = []   # (index, +1 high / -1 low, price)
+    import statistics as _St
+    mins = _St.median([(b[j + 1]['t'] - b[j]['t']).total_seconds() / 60 for j in range(min(200, len(b) - 1))]) if len(b) > 1 else 60
+    life = int(P['lifeH'] * 60 / mins)
     used = set()
     for i in range(2 * L, len(b)):
         x = b[i]; A = x['atr']; k = i - L
@@ -21,31 +24,46 @@ def run(p, b, P, start, end):
             if px is not None: res.append(dict(p=p, d=d, t=pos['t'], tx=x['tc'], wk=pos['wk'], R=d * (px - pos['e']) / pos['r'] - cost / pos['r'])); pos = None
         if pend and not pos:
             d = pend['d']
-            if i - pend['i'] > P['life'] or ((x['h'] >= pend['e'] + pend['r']) if d > 0 else (x['l'] <= pend['e'] - pend['r'])) and not ((x['l'] <= pend['e']) if d > 0 else (x['h'] >= pend['e'])): pend = None
+            if i - pend['i'] > life or P['cancel1R'] and ((x['h'] >= pend['e'] + pend['r']) if d > 0 else (x['l'] <= pend['e'] - pend['r'])) and not ((x['l'] <= pend['e']) if d > 0 else (x['h'] >= pend['e'])): pend = None
             elif (x['l'] <= pend['e']) if d > 0 else (x['h'] >= pend['e']):
                 e = min(x['o'], pend['e']) if d > 0 else max(x['o'], pend['e']); r = abs(e - pend['sl'])
                 if (x['l'] <= pend['sl']) if d > 0 else (x['h'] >= pend['sl']): res.append(dict(p=p, d=d, t=x['t'], tx=x['tc'], wk=x['wk'], R=-1 - cost / r))
-                else: pos = dict(d=d, e=e, r=r, sl=pend['sl'], tp=e + d * P['tpR'] * r, t=x['t'], wk=x['wk'])
+                else:
+                    tp = e + d * P['tpR'] * r
+                    if P['tpm'] == 'swing' and pend['ext'] is not None and d * (pend['ext'] - e) >= r: tp = pend['ext']
+                    pos = dict(d=d, e=e, r=r, sl=pend['sl'], tp=tp, t=x['t'], wk=x['wk'])
                 pend = None
         if pos or pend or A is None or not (start <= x['t'] < end): continue
         bi_ = B.get((p, x['wk']), ('-',))[0]; bd = 1 if bi_ == 'U' else -1 if bi_ == 'D' else 0
         if P['bias'] and bd == 0: continue
+        if P['hours'] and not (P['hours'][0] <= x['hr'] < P['hours'][1]): continue
         for d in ((bd,) if P['bias'] else (1, -1)):
+            if P['ctx'] is not None and P['ctx'][i] != d: continue
             # last three alternating pivots before now: shoulder S (same side as d's stop), head Hd, neck N
             seq = [q for q in pivs if q[0] < i]
-            # for a long: ... low L1, high H1, low L2 (L2 < L1), break of H1
-            lows = [q for q in seq if q[1] == -d]; highs = [q for q in seq if q[1] == d]
-            if len(lows) < 2 or not highs: continue
-            L2 = lows[-1]; H1 = next((q for q in reversed(highs) if q[0] < L2[0]), None)
+            # H1 = a pivot on the far side (high for a long) that this close breaks; L2 = the deepest opposite pivot after H1;
+            # L1 = the last opposite pivot before H1; QM needs L2 beyond L1 (lower low for a long)
+            pc = b[i - 1]['c']
+            H1 = next((q for q in reversed(seq) if q[1] == d and ((x['c'] > q[2] >= pc) if d > 0 else (x['c'] < q[2] <= pc))), None)
             if not H1: continue
-            L1 = next((q for q in reversed(lows[:-1]) if q[0] < H1[0]), None)
-            if not L1 or (L1[0], L2[0], H1[0]) in used: continue
+            after = [q for q in seq if q[1] == -d and q[0] > H1[0]]
+            before = [q for q in seq if q[1] == -d and q[0] < H1[0]]
+            if not after or not before: continue
+            L2 = min(after, key=lambda q: q[2]) if d > 0 else max(after, key=lambda q: q[2]); L1 = before[-1]
+            if (L1[0], L2[0], H1[0]) in used: continue
             if not ((L2[2] < L1[2]) if d > 0 else (L2[2] > L1[2])): continue
-            if not ((x['c'] > H1[2] and b[i - 1]['c'] <= H1[2]) if d > 0 else (x['c'] < H1[2] and b[i - 1]['c'] >= H1[2])): continue
+            # price must not have closed beyond H1 between L2 and now (this is the first break)
+            if any(((b[j]['c'] > H1[2]) if d > 0 else (b[j]['c'] < H1[2])) for j in range(L2[0], i)): continue
             used.add((L1[0], L2[0], H1[0]))
-            e = L1[2] if P['entry'] == 'shoulder' else (L1[2] + L2[2]) / 2
+            e = L1[2] if P['entry'] == 'shoulder' else (L1[2] + L2[2]) / 2 if P['entry'] == 'mid' else (L1[2] + x['c']) / 2 if P['entry'] == 'half' else x['c']
+            if P['entry'] == 'break':
+                sl = L2[2] - d * 0.1 * A; r = abs(x['c'] - sl)
+                if P['minR'] * A <= r <= P['maxR'] * A:
+                    ext = max(y['h'] for y in b[L2[0]:i + 1]) if d > 0 else min(y['l'] for y in b[L2[0]:i + 1])
+                    pos = dict(d=d, e=x['c'], r=r, sl=sl, tp=x['c'] + d * P['tpR'] * r, t=x['t'], wk=x['wk'])
+                break
             sl = L2[2] - d * 0.1 * A; r = abs(e - sl)
-            if P['minR'] * A <= r <= P['maxR'] * A and (x['c'] - e) * d > 0: pend = dict(d=d, e=e, sl=sl, r=r, i=i)
+            if P['minR'] * A <= r <= P['maxR'] * A and (x['c'] - e) * d > 0: pend = dict(d=d, e=e, sl=sl, r=r, i=i, ext=(max(y['h'] for y in b[L2[0]:i + 1]) if d > 0 else min(y['l'] for y in b[L2[0]:i + 1])))
             break
     return res
 if __name__ == '__main__':
