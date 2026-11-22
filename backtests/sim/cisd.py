@@ -108,6 +108,7 @@ def run_dir(p, b0, d, P, start, end):
         bi_ = B.get((p, x['wk']), ('-',))[0]; bd = 1 if bi_ == 'U' else -1 if bi_ == 'D' else 0
         if P['bias'] and bd != d: continue
         if P['hours'] and not (P['hours'][0] <= x['hr'] < P['hours'][1]): continue
+        if P.get('maxdow') is not None and x['dow'] > P['maxdow']: continue
         if P['sqf'] == 'pos' and not _v[i] > 0: continue
         if P['sqf'] == 'rising' and not _v[i] > _v[i - 1]: continue
         if P['sqf'] == 'neg' and not _v[i] < 0: continue

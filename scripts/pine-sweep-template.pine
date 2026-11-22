@@ -1,0 +1,334 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Forex Fundamental Bias Engine — sweep strategy (1H chart): daily liquidity sweep → displacement through a pivot → breaker limit.
+// Generated automatically: {{GENERATED}}. Bias data: {{COVERAGE}}.
+// Do not edit by hand: the data block is rewritten after every phase and daily check.
+// A test bench for your own rules in the Strategy Tester. Not a trade signal.
+//@version=6
+strategy("Bias Engine · sweep strategy (daily sweep → breaker)", shorttitle = "BE Sweep", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = false, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0.005, slippage = 0, max_labels_count = 500, max_boxes_count = 500, max_bars_back = 500)
+
+// ───────── settings ─────────
+string pairIn  = input.string("Auto", "Pair", options = [{{PAIR_OPTIONS}}], tooltip = "Auto reads the chart symbol (e.g. EURUSD, OANDA:XAUUSD). Built for the 1H chart (4H works too: tested on 3 years with the daily sweep).")
+string dirMode = input.string("Fundamental bias", "Direction from", options = ["Fundamental bias", "Price trend (SMA)", "Both directions"], group = "Direction", tooltip = "Fundamental bias: only the week's published bias direction (data from the first week in the script). Price trend: the previous daily close above / below the daily SMA below (for testing on years of history). Both directions: no filter (the backtest lost without a direction filter on W40–W47).")
+string minConv = input.string("Any", "Minimum conviction", options = ["Any", "Medium or high", "High only"], group = "Direction", tooltip = "Bias mode only. Two-sided weeks never trade.")
+int    trLen   = input.int(20, "Trend SMA length (daily closes)", minval = 5, maxval = 400, group = "Direction")
+int    lookD   = input.int(10, "Untaken daily highs/lows to watch (days)", minval = 1, maxval = 30, group = "Setup", tooltip = "A setup starts when price trades below a daily low (long) / above a daily high (short) of the last N completed days that had not been traded through yet; yesterday's low/high is always one of them.")
+int    pivLen  = input.int(3, "Pivot length (chart bars)", minval = 1, maxval = 10, group = "Setup", tooltip = "The breaker is the last confirmed pivot high (long) / low (short) that formed before the swept extreme.")
+float  dispK   = input.float(0.5, "Displacement: candle body ≥ ATR ×", minval = 0, maxval = 3, step = 0.05, group = "Setup", tooltip = "The candle that closes through the breaker must have a body of at least this many ATR(14) of the chart.")
+int    waitB   = input.int(36, "Bars allowed after the last sweep", minval = 5, maxval = 200, group = "Setup")
+int    ageB    = input.int(120, "Max bars for one setup", minval = 10, maxval = 500, group = "Setup")
+int    pendB   = input.int(60, "Limit order valid for (bars)", minval = 1, maxval = 300, group = "Setup", tooltip = "The limit order at the breaker candle's close is cancelled after this many bars, or once price reaches +1R before filling.")
+float  minRk   = input.float(0.25, "Min risk (ATR ×)", minval = 0.05, maxval = 3, step = 0.05, group = "Setup")
+float  maxRk   = input.float(3.0, "Max risk (ATR ×)", minval = 0.5, maxval = 10, step = 0.25, group = "Setup")
+bool   noFri   = input.bool(true, "No new setups on Friday", group = "Filters", tooltip = "Backtest (3 years, 6 pairs, 4H): without Friday setups +18.9R on 64 trades vs +19.8R on 71, worst drawdown −9.1R vs −12.2R. Thursday off as well cut the result to +2R, so Thursday stays on.")
+bool   noThu   = input.bool(false, "No new setups on Thursday", group = "Filters")
+bool   hrsOn   = input.bool(true, "Only signal candles in my hours (Bucharest)", group = "Filters", tooltip = "The displacement candle must open between these hours (Europe/Bucharest). Simulation (14 pairs, 1H, bias, W40–W47): 06–22 gave +14.3R on 13 trades.")
+int    hrsFrom = input.int(6, "From (hour)", minval = 0, maxval = 23, group = "Filters", inline = "hrs")
+int    hrsTo   = input.int(22, "to (hour)", minval = 1, maxval = 24, group = "Filters", inline = "hrs")
+string tpMode  = input.string("Fixed R", "Take profit", options = ["Fixed R", "Next untaken daily high/low"], group = "Exit", tooltip = "Fixed R: the multiple below. Next untaken daily high/low: the nearest daily high (long) / low (short) of the watched days beyond the entry if it is at least 1R away, else the fixed multiple. Simulation: fixed 3R +19.8R on 3 years / +14.3R W40–W47; daily-level target +17.8R / +12.1R (and the best result before W40).")
+float  tpR     = input.float(3.0, "Take profit (R)", minval = 0.5, maxval = 10, step = 0.5, group = "Exit")
+float  beR     = input.float(0, "Move stop to break-even after (R), 0 = off", minval = 0, maxval = 5, step = 0.25, group = "Exit", tooltip = "The original indicator moves to break-even after 1R; in the tests that cost profit (3 years: +18.3R with it vs +19.8R without).")
+bool   wkExit  = input.bool(false, "Close every trade at Friday's close", group = "Exit")
+int    fromT   = input.time(timestamp("2000-01-01"), "Trade only from this date", group = "Risk")
+float  stRisk  = input.float(1.0, "Risk per trade (% of equity)", minval = 0.1, maxval = 5, step = 0.1, group = "Risk")
+color  bullC   = input.color(#22AB94, "Bullish", group = "Colours")
+color  bearC   = input.color(#F23645, "Bearish", group = "Colours")
+bool   zonesOn = input.bool(true, "Show SL / TP zones", group = "Colours")
+
+// ───────── data (generated) ─────────
+var string[] PAIRS = array.from({{PAIRS}})
+var string[] CCY   = array.from({{CCY}})
+var int[]    wT = array.new_int()
+var string[] wN = array.new_string()
+var string[] wD = array.new_string()
+var string[] wS = array.new_string()
+var int[]    cT = array.new_int()
+var string[] cN = array.new_string()
+var string[] cD = array.new_string()
+var string[] cH = array.new_string()
+var string[] cC = array.new_string()
+{{DATA}}
+
+// ───────── helpers ─────────
+f_item(string row, int i) =>
+    string[] parts = str.split(row, ",")
+    i >= 0 and i < array.size(parts) ? array.get(parts, i) : "?"
+f_bname(string b) => b == "U" ? "BULLISH" : b == "D" ? "BEARISH" : b == "N" ? "TWO-SIDED" : "none"
+f_cname(string c) => c == "h" ? "high" : c == "m" ? "medium" : c == "l" ? "low" : "-"
+f_sg(float v) => na(v) ? "0" : v > 0 ? "+" + str.tostring(v) : str.tostring(v)
+f_sname(string s) => s == "C" ? "Confirmed" : s == "S" ? "Confirmed, could get stronger" : s == "F" ? "Confirmed but fragile" : s == "W" ? "Under watch" : s == "P" ? "Under pressure" : s == "X" ? "Invalidated" : s == "T" ? "Still two-sided" : "none"
+f_wa(bool ok) => ok ? "with" : "against"
+var string[] DOW = array.from("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+
+// ───────── pair and week ─────────
+string symA = syminfo.basecurrency + syminfo.currency
+string tk   = str.upper(syminfo.ticker)
+string symB = str.length(tk) >= 6 ? str.substring(tk, 0, 6) : tk
+int pIdx = pairIn != "Auto" ? array.indexof(PAIRS, pairIn) : array.indexof(PAIRS, symA) >= 0 ? array.indexof(PAIRS, symA) : array.indexof(PAIRS, symB)
+string pName = pIdx >= 0 ? array.get(PAIRS, pIdx) : syminfo.ticker
+float pipSz = str.contains(pName, "JPY") ? 0.01 : str.contains(pName, "XAU") ? 0.1 : 0.0001
+f_pips(float d) => math.round(d / pipSz * 10) / 10
+
+int WEEK_MS = 7 * 86400000
+var int wi = -1
+while wi + 1 < array.size(wT) and time >= array.get(wT, wi + 1)
+    wi += 1
+bool inWk = wi >= 0 and time < array.get(wT, math.max(wi, 0)) + WEEK_MS
+string rec = inWk and pIdx >= 0 ? f_item(array.get(wD, math.max(wi, 0)), pIdx) : "?"
+bool hasRec = rec != "?" and str.length(rec) >= 2
+string b  = hasRec ? str.substring(rec, 0, 1) : "-"
+string cv = hasRec ? str.substring(rec, 1, 2) : "-"
+float  g  = hasRec and str.length(rec) > 2 ? str.tonumber(str.substring(rec, 2)) : na
+
+// ───────── direction ─────────
+[smaT, dCl] = request.security(syminfo.tickerid, "D", [ta.sma(close, trLen)[1], close[1]], lookahead = barmerge.lookahead_on)
+int biasDir = b == "U" ? 1 : b == "D" ? -1 : 0
+bool convOk = minConv == "Any" or (minConv == "High only" ? cv == "h" : cv == "h" or cv == "m")
+int bDir = convOk ? biasDir : 0
+int tDir = na(smaT) or na(dCl) ? 0 : dCl > smaT ? 1 : dCl < smaT ? -1 : 0
+int dir = dirMode == "Fundamental bias" ? bDir : dirMode == "Price trend (SMA)" ? tDir : 2   // 2 = both sides allowed
+bool longOk  = dir == 1 or dir == 2
+bool shortOk = dir == -1 or dir == 2
+
+// ───────── daily levels (completed days of the FX session) ─────────
+float atr = ta.atr(14)
+var float[] dLo = array.new_float()
+var float[] dHi = array.new_float()
+var float[] uLo = array.new_float()     // untaken daily lows (sell-side liquidity)
+var float[] uHi = array.new_float()     // untaken daily highs (buy-side liquidity)
+var float curL = na
+var float curH = na
+if timeframe.change("D")
+    if not na(curL)
+        array.push(dLo, curL)
+        array.push(dHi, curH)
+        array.push(uLo, curL)
+        array.push(uHi, curH)
+        while array.size(dLo) > lookD
+            array.shift(dLo)
+            array.shift(dHi)
+        while array.size(uLo) > lookD
+            array.shift(uLo)
+        while array.size(uHi) > lookD
+            array.shift(uHi)
+    curL := low
+    curH := high
+else
+    curL := na(curL) ? low : math.min(curL, low)
+    curH := na(curH) ? high : math.max(curH, high)
+
+// ───────── pivots on the chart ─────────
+float ph = ta.pivothigh(high, pivLen, pivLen)
+float pvCl = close[pivLen]
+float pl = ta.pivotlow(low, pivLen, pivLen)
+var int[]   phB = array.new_int()
+var float[] phP = array.new_float()
+var float[] phC = array.new_float()
+var int[]   plB = array.new_int()
+var float[] plP = array.new_float()
+var float[] plC = array.new_float()
+if not na(ph)
+    array.push(phB, bar_index - pivLen)
+    array.push(phP, ph)
+    array.push(phC, pvCl)
+    if array.size(phB) > 40
+        array.shift(phB)
+        array.shift(phP)
+        array.shift(phC)
+if not na(pl)
+    array.push(plB, bar_index - pivLen)
+    array.push(plP, pl)
+    array.push(plC, pvCl)
+    if array.size(plB) > 40
+        array.shift(plB)
+        array.shift(plP)
+        array.shift(plC)
+// last pivot formed before bar `ext` → [price, close of the pivot candle]
+f_lastPiv(int[] bs, float[] ps, float[] cs, int ext) =>
+    float pp = na
+    float pc = na
+    int n = array.size(bs)
+    if n > 0
+        for k = n - 1 to 0
+            if array.get(bs, k) < ext
+                pp := array.get(ps, k)
+                pc := array.get(cs, k)
+                break
+    [pp, pc]
+
+// ───────── setups: sweep → displacement through the breaker ─────────
+int NY7 = 7 * 3600000
+int tDay = dayofweek(time + NY7, "America/New_York")
+int hrB = hour(time, "Europe/Bucharest")
+bool dayOk = not ((noFri and tDay == dayofweek.friday) or (noThu and tDay == dayofweek.thursday))
+bool hrsOk = not hrsOn or (hrB >= hrsFrom and hrB < hrsTo)
+bool live = time >= fromT and not na(atr)
+int fri17 = timestamp("America/New_York", year(time + NY7, "America/New_York"), month(time + NY7, "America/New_York"), dayofmonth(time + NY7, "America/New_York"), 17, 0)
+bool lastWkBar = tDay == dayofweek.friday and time_close + timeframe.in_seconds() * 1000 > fri17
+
+var bool  cL = false
+var int   cLtrig = 0
+var int   cLmade = 0
+var float cLext = na
+var int   cLbar = 0
+var bool  cS = false
+var int   cStrig = 0
+var int   cSmade = 0
+var float cSext = na
+var int   cSbar = 0
+
+var bool  pLive = false
+var int   pDir = 0
+var int   pBar = 0
+var float pE = na
+var float pSl = na
+var float pR = na
+var float pTp = na
+var float pQ = na
+
+bool flat = strategy.position_size == 0
+bool sigL = false
+bool sigS = false
+float sgE = na
+float sgSl = na
+
+if live
+    // long side: sweep of an untaken daily low
+    bool swL = false
+    if array.size(uLo) > 0
+        for k = array.size(uLo) - 1 to 0
+            if low < array.get(uLo, k)
+                array.remove(uLo, k)
+                swL := true
+    if swL
+        if not cL
+            cL := true
+            cLmade := bar_index
+            cLext := low
+            cLbar := bar_index
+        cLtrig := bar_index
+    if cL and (bar_index - cLtrig > waitB or bar_index - cLmade > ageB)
+        cL := false
+    if cL
+        if low < cLext
+            cLext := low
+            cLbar := bar_index
+        else if flat and not pLive and longOk and dayOk and hrsOk
+            [bp, bc] = f_lastPiv(phB, phP, phC, cLbar)
+            if not na(bp) and close > bp and close - open >= dispK * atr
+                float r = bc - cLext
+                if r > 0 and r >= minRk * atr and r <= maxRk * atr and close > bc
+                    sigL := true
+                    sgE := bc
+                    sgSl := cLext
+                cL := false
+    // short side: sweep of an untaken daily high
+    bool swS = false
+    if array.size(uHi) > 0
+        for k = array.size(uHi) - 1 to 0
+            if high > array.get(uHi, k)
+                array.remove(uHi, k)
+                swS := true
+    if swS
+        if not cS
+            cS := true
+            cSmade := bar_index
+            cSext := high
+            cSbar := bar_index
+        cStrig := bar_index
+    if cS and (bar_index - cStrig > waitB or bar_index - cSmade > ageB)
+        cS := false
+    if cS
+        if high > cSext
+            cSext := high
+            cSbar := bar_index
+        else if flat and not pLive and shortOk and dayOk and hrsOk and not sigL
+            [bp, bc] = f_lastPiv(plB, plP, plC, cSbar)
+            if not na(bp) and close < bp and open - close >= dispK * atr
+                float r = cSext - bc
+                if r > 0 and r >= minRk * atr and r <= maxRk * atr and close < bc
+                    sigS := true
+                    sgE := bc
+                    sgSl := cSext
+                cS := false
+
+// ───────── orders ─────────
+f_tp(int d, float e, float r) =>
+    float t = e + d * tpR * r
+    if tpMode != "Fixed R"
+        float best = na
+        float[] lv = d > 0 ? dHi : dLo
+        if array.size(lv) > 0
+            for k = 0 to array.size(lv) - 1
+                float v = array.get(lv, k)
+                if (v - e) * d >= r
+                    best := na(best) ? v : d > 0 ? math.min(best, v) : math.max(best, v)
+        if not na(best)
+            t := best
+    t
+
+// pending limit: cancel after its life, or once +1R traded before a fill
+if pLive and flat and (bar_index - pBar > pendB or (pDir > 0 ? high >= pE + pR : low <= pE - pR))
+    strategy.cancel(pDir > 0 ? "L" : "S")
+    pLive := false
+if not flat
+    pLive := false
+if (sigL or sigS) and flat
+    pDir := sigL ? 1 : -1
+    pE := sgE
+    pSl := sgSl
+    pR := math.abs(sgE - sgSl)
+    pTp := f_tp(pDir, pE, pR)
+    pQ := math.max(strategy.equity * stRisk / 100 / (pR * syminfo.pointvalue), 0)
+    pBar := bar_index
+    pLive := true
+    label.new(bar_index, pDir > 0 ? low : high, pDir > 0 ? "sweep ↑" : "sweep ↓", style = pDir > 0 ? label.style_label_up : label.style_label_down, color = color.new(pDir > 0 ? bullC : bearC, 20), textcolor = color.white, size = size.tiny)
+if pLive and flat
+    string pid = pDir > 0 ? "L" : "S"
+    strategy.entry(pid, pDir > 0 ? strategy.long : strategy.short, qty = pQ, limit = pE, comment = pDir > 0 ? "Sweep L" : "Sweep S")
+    // stop and target ride with the order, so they are live from the fill candle on
+    strategy.exit("X" + pid, pid, stop = pSl, limit = pTp, comment_loss = "SL", comment_profit = "TP")
+
+// exits
+var float ent0 = na
+var float risk0 = na
+var float slLvl = na
+var float tpLvl = na
+var int   posDir = 0
+var int   eb = na
+var box   zSl = na
+var box   zTp = na
+bool opened = strategy.position_size != 0 and strategy.position_size[1] == 0
+if opened
+    posDir := strategy.position_size > 0 ? 1 : -1
+    ent0 := strategy.position_avg_price
+    risk0 := pR
+    slLvl := pSl
+    tpLvl := pTp
+    eb := bar_index
+    if zonesOn
+        zSl := box.new(eb, math.max(ent0, slLvl), bar_index, math.min(ent0, slLvl), border_color = color.new(bearC, 30), bgcolor = color.new(bearC, 80))
+        zTp := box.new(eb, math.max(ent0, tpLvl), bar_index, math.min(ent0, tpLvl), border_color = color.new(bullC, 30), bgcolor = color.new(bullC, 80))
+if strategy.position_size != 0
+    if beR > 0 and (posDir > 0 ? high - ent0 : ent0 - low) >= beR * risk0
+        slLvl := posDir > 0 ? math.max(slLvl, ent0) : math.min(slLvl, ent0)
+    string id = posDir > 0 ? "L" : "S"
+    strategy.exit("X" + id, id, stop = slLvl, limit = tpLvl, comment_loss = (slLvl - ent0) * posDir >= 0 ? "Break-even" : "SL", comment_profit = "TP")
+    if wkExit and lastWkBar
+        strategy.close(id, comment = "Friday")
+    if zonesOn and not na(zSl)
+        box.set_right(zSl, bar_index)
+        box.set_right(zTp, bar_index)
+
+plot(strategy.position_size != 0 ? slLvl : pLive ? pSl : na, "Stop", color = color.new(bearC, 20), style = plot.style_linebr)
+plot(strategy.position_size != 0 ? tpLvl : pLive ? pTp : na, "Target", color = color.new(bullC, 20), style = plot.style_linebr)
+plot(pLive and flat ? pE : na, "Limit entry", color = color.new(color.orange, 0), style = plot.style_linebr)
+bgcolor(dir == 1 ? color.new(bullC, 95) : dir == -1 ? color.new(bearC, 95) : na, title = "Direction")
+
+var table tb = table.new(position.bottom_right, 2, 3, bgcolor = color.new(#1E222D, 10), border_width = 1)
+if barstate.islast
+    table.cell(tb, 0, 0, "BE Sweep · " + pName, text_color = color.white, text_size = size.small)
+    table.cell(tb, 1, 0, dirMode, text_color = color.white, text_size = size.small)
+    table.cell(tb, 0, 1, "Bias", text_color = color.gray, text_size = size.small)
+    table.cell(tb, 1, 1, f_bname(b) + " " + f_cname(cv) + " " + f_sg(g), text_color = biasDir > 0 ? bullC : biasDir < 0 ? bearC : color.gray, text_size = size.small)
+    table.cell(tb, 0, 2, "Setup", text_color = color.gray, text_size = size.small)
+    table.cell(tb, 1, 2, pLive ? "limit waiting" : cL or cS ? "sweep seen, waiting for displacement" : "none", text_color = color.white, text_size = size.small)
