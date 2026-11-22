@@ -66,6 +66,8 @@ int pIdx = pairIn != "Auto" ? array.indexof(PAIRS, pairIn) : array.indexof(PAIRS
 string pName = pIdx >= 0 ? array.get(PAIRS, pIdx) : syminfo.ticker
 float pipSz = str.contains(pName, "JPY") ? 0.01 : str.contains(pName, "XAU") ? 0.1 : 0.0001
 f_pips(float d) => math.round(d / pipSz * 10) / 10
+string AL_NAME = "MACD"
+// {{ALERT_FUNCS}}
 
 int WEEK_MS = 7 * 86400000
 var int wi = -1
@@ -135,8 +137,10 @@ bool flat = strategy.position_size == 0
 // opposite cross / Friday close first, so a new entry on the same close starts flat
 if not flat and oppEx and (posDir > 0 ? xDn : xUp)
     strategy.close_all(comment = "Opposite cross")
+    f_alert("closenow", posDir, posDir > 0 ? "L" : "S", "opposite MACD cross", strategy.position_avg_price, slLvl, tpLvl, close, risk0 > 0 ? (close - strategy.position_avg_price) * posDir / risk0 : na, na, 1, "")
 if not flat and wkExit and lastWkBar
     strategy.close_all(comment = "Friday")
+    f_alert("closenow", posDir, posDir > 0 ? "L" : "S", "Friday close", strategy.position_avg_price, slLvl, tpLvl, close, risk0 > 0 ? (close - strategy.position_avg_price) * posDir / risk0 : na, na, 1, "")
 if flat and (goL or goS)
     int d = goL ? 1 : -1
     float r = slAtr * atr
@@ -149,6 +153,8 @@ if flat and (goL or goS)
     string id = d > 0 ? "L" : "S"
     strategy.entry(id, d > 0 ? strategy.long : strategy.short, qty = q, comment = d > 0 ? "MACD L" : "MACD S")
     strategy.exit("X" + id, id, stop = slLvl, limit = tpLvl, comment_loss = "SL", comment_profit = "TP")
+    aTyp.put(id, "MARKET")
+    f_alert("open", d, id, "MARKET", close, slLvl, tpLvl, na, na, q, 1, "")
     if zonesOn
         zSl := box.new(bar_index, math.max(ent0, slLvl), bar_index + 1, math.min(ent0, slLvl), border_color = color.new(bearC, 30), bgcolor = color.new(bearC, 80))
         zTp := na(tpLvl) ? na : box.new(bar_index, math.max(ent0, tpLvl), bar_index + 1, math.min(ent0, tpLvl), border_color = color.new(bullC, 30), bgcolor = color.new(bullC, 80))
@@ -171,3 +177,8 @@ if barstate.islast
     table.cell(tb, 1, 1, f_bname(b) + " " + f_cname(cv) + " " + f_sg(g), text_color = biasDir > 0 ? bullC : biasDir < 0 ? bearC : color.gray, text_size = size.small)
     table.cell(tb, 0, 2, "MACD", text_color = color.gray, text_size = size.small)
     table.cell(tb, 1, 2, hist > 0 ? "above signal" : "below signal", text_color = hist > 0 ? bullC : bearC, text_size = size.small)
+
+f_aLv(string id) =>
+    [slLvl, tpLvl]
+string aFillNote = ""
+// {{ALERT_TRACK}}

@@ -67,6 +67,8 @@ int pIdx = pairIn != "Auto" ? array.indexof(PAIRS, pairIn) : array.indexof(PAIRS
 string pName = pIdx >= 0 ? array.get(PAIRS, pIdx) : syminfo.ticker
 float pipSz = str.contains(pName, "JPY") ? 0.01 : str.contains(pName, "XAU") ? 0.1 : 0.0001
 f_pips(float d) => math.round(d / pipSz * 10) / 10
+string AL_NAME = "INTRADAY"
+// {{ALERT_FUNCS}}
 
 int WEEK_MS = 7 * 86400000
 var int wi = -1
@@ -230,12 +232,23 @@ if euWin and (dir == 1 or dir == 2)
     strategy.exit("EU XL", "EU L", stop = sl, limit = euHi + tpR * (euHi - sl), comment_loss = "SL", comment_profit = "TP")
     euSlL := sl
     euTpL := euHi + tpR * (euHi - sl)
+    aTyp.put("EU L", "STOP")
+    if not euWin[1]
+        f_alert("order", 1, "EU L", "STOP", euHi, sl, euTpL, na, na, f_qty(euHi, sl), 1, "Europe ORB · valid until " + f_hm(eE) + (dir == 2 ? " · OCO with the sell stop" : ""))
 if euWin and (dir == -1 or dir == 2)
     float sl = slOther ? euHi : (euHi + euLo) / 2
     strategy.entry("EU S", strategy.short, qty = f_qty(euLo, sl), stop = euLo, comment = "EU short", oca_name = "EU", oca_type = strategy.oca.cancel)
     strategy.exit("EU XS", "EU S", stop = sl, limit = euLo - tpR * (sl - euLo), comment_loss = "SL", comment_profit = "TP")
     euSlS := sl
     euTpS := euLo - tpR * (sl - euLo)
+    aTyp.put("EU S", "STOP")
+    if not euWin[1]
+        f_alert("order", -1, "EU S", "STOP", euLo, sl, euTpS, na, na, f_qty(euLo, sl), 1, "Europe ORB · valid until " + f_hm(eE) + (dir == 2 ? " · OCO with the buy stop" : ""))
+if not euWin and euWin[1] and not euDone
+    if dir[1] == 1 or dir[1] == 2
+        f_alert("cancel", 1, "EU L", "STOP", euHi, euSlL, euTpL, na, na, na, 1, "")
+    if dir[1] == -1 or dir[1] == 2
+        f_alert("cancel", -1, "EU S", "STOP", euLo, euSlS, euTpS, na, na, na, 1, "")
 if not euWin
     strategy.cancel("EU L")
     strategy.cancel("EU S")
@@ -245,12 +258,23 @@ if nyWin and (dir == 1 or dir == 2)
     strategy.exit("NY XL", "NY L", stop = sl, limit = nyHi + tpR * (nyHi - sl), comment_loss = "SL", comment_profit = "TP")
     nySlL := sl
     nyTpL := nyHi + tpR * (nyHi - sl)
+    aTyp.put("NY L", "STOP")
+    if not nyWin[1]
+        f_alert("order", 1, "NY L", "STOP", nyHi, sl, nyTpL, na, na, f_qty(nyHi, sl), 1, "New York ORB · valid until " + f_hm(nE) + (dir == 2 ? " · OCO with the sell stop" : ""))
 if nyWin and (dir == -1 or dir == 2)
     float sl = slOther ? nyHi : (nyHi + nyLo) / 2
     strategy.entry("NY S", strategy.short, qty = f_qty(nyLo, sl), stop = nyLo, comment = "NY short", oca_name = "NY", oca_type = strategy.oca.cancel)
     strategy.exit("NY XS", "NY S", stop = sl, limit = nyLo - tpR * (sl - nyLo), comment_loss = "SL", comment_profit = "TP")
     nySlS := sl
     nyTpS := nyLo - tpR * (sl - nyLo)
+    aTyp.put("NY S", "STOP")
+    if not nyWin[1]
+        f_alert("order", -1, "NY S", "STOP", nyLo, sl, nyTpS, na, na, f_qty(nyLo, sl), 1, "New York ORB · valid until " + f_hm(nE) + (dir == 2 ? " · OCO with the buy stop" : ""))
+if not nyWin and nyWin[1] and not nyDone
+    if dir[1] == 1 or dir[1] == 2
+        f_alert("cancel", 1, "NY L", "STOP", nyHi, nySlL, nyTpL, na, na, na, 1, "")
+    if dir[1] == -1 or dir[1] == 2
+        f_alert("cancel", -1, "NY S", "STOP", nyLo, nySlS, nyTpS, na, na, na, 1, "")
 if not nyWin
     strategy.cancel("NY L")
     strategy.cancel("NY S")
@@ -279,6 +303,8 @@ if pbUse and live and p15 and pbDay != dKey and not pbOpen and (dir == 1 or dir 
             pbDay := dKey
             strategy.entry(upP ? "PB L" : "PB S", upP ? strategy.long : strategy.short, qty = f_qty(pC, sl), comment = upP ? "PB long" : "PB short")
             strategy.exit(upP ? "PB XL" : "PB XS", upP ? "PB L" : "PB S", stop = sl, limit = pbTp, comment_loss = "SL", comment_profit = "TP")
+            aTyp.put(upP ? "PB L" : "PB S", "MARKET")
+            f_alert("open", upP ? 1 : -1, upP ? "PB L" : "PB S", "MARKET", pC, sl, pbTp, na, na, f_qty(pC, sl), 1, "15m EMA20 pullback")
 
 // time stop and end of day
 if strategy.opentrades > 0
@@ -287,6 +313,10 @@ if strategy.opentrades > 0
         int et = strategy.opentrades.entry_time(i)
         if time_close - et >= tMax * 60000 or mm >= dayEnd
             strategy.close(id, comment = mm >= dayEnd ? "Day end" : "Time " + str.tostring(tMax) + "m")
+            float aep = strategy.opentrades.entry_price(i)
+            int ad = strategy.opentrades.size(i) > 0 ? 1 : -1
+            [xsl, xtp] = f_aLv(id)
+            f_alert("closenow", ad, id, mm >= dayEnd ? "end of the trading day" : "time stop " + str.tostring(tMax) + " min", aep, xsl, xtp, close, math.abs(aep - xsl) > 0 ? (close - aep) * ad / math.abs(aep - xsl) : na, na, 1, "")
 
 bgcolor(dir == 1 ? color.new(bullC, 96) : dir == -1 ? color.new(bearC, 96) : na, title = "Direction")
 var table tb = table.new(position.bottom_right, 2, 5, bgcolor = color.new(#1E222D, 10), border_width = 1)
@@ -303,3 +333,10 @@ if barstate.islast
     table.cell(tb, 1, 4, pbUse ? "on (15m)" : "off", text_color = color.white, text_size = size.small)
 if timeframe.in_seconds() > 900 and barstate.islast
     label.new(bar_index, high, "BE Intraday is built for the 5m chart (15m at most).", style = label.style_label_down, color = color.orange, textcolor = color.white)
+
+f_aLv(string id) =>
+    float rs = id == "EU L" ? euSlL : id == "EU S" ? euSlS : id == "NY L" ? nySlL : id == "NY S" ? nySlS : pbSl
+    float rt = id == "EU L" ? euTpL : id == "EU S" ? euTpS : id == "NY L" ? nyTpL : id == "NY S" ? nyTpS : pbTp
+    [rs, rt]
+string aFillNote = dir == 2 ? "Delete the opposite stop order (OCO)." : ""
+// {{ALERT_TRACK}}

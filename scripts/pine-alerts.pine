@@ -1,0 +1,60 @@
+//@@FUNCS
+// ───────── alerts → Daily Observer (webhook) + TradingView app ─────────
+// One TradingView alert per chart: Condition = this strategy → "alert() function calls only", Webhook URL = the strategy-alert function.
+// Every message: line 1 what happened, line 2 the levels, line 3 what to do at your broker, line 4 a #BE tag the Daily Observer reads.
+alOn = input.bool(true, "Send alerts (Daily Observer + TradingView app)", group = "Alerts", tooltip = "Create ONE alert on this chart: Condition = this strategy, 'alert() function calls only', Webhook URL = the Daily Observer strategy-alert link. Alerts fire at the close of a chart bar.")
+var map<string, float> aRisk = map.new<string, float>()
+var map<string, float> aSl = map.new<string, float>()
+var map<string, string> aTyp = map.new<string, string>()   // order type per entry id: MARKET / STOP / LIMIT
+f_aPipSz() => str.contains(pName, "JPY") ? 0.01 : str.contains(pName, "XAU") ? 0.1 : syminfo.type == "forex" ? 0.0001 : 1.0
+f_aLot() => str.contains(pName, "XAU") ? 100.0 : syminfo.type == "forex" ? 100000.0 : 1.0
+f_aP(float x) => na(x) ? "–" : str.tostring(x, format.mintick)
+f_aN(float x) => na(x) ? "" : str.tostring(x)
+f_hm(int m) => str.format("{0,number,00}:{1,number,00} Bucharest", math.floor(m / 60), m % 60)
+f_aR(float r) => na(r) ? "" : (r >= 0 ? "+" : "−") + str.tostring(math.abs(r), "#.##") + "R"
+// ev: order · open · filled · cancel · move · partial · closenow · closed;  what: STOP / LIMIT / MARKET or the exit / move reason;  pu = 1 → push to the phone
+f_alert(string ev, int d, string id, string what, float e, float sl, float tp, float x, float r, float q, int pu, string nt) =>
+    if alOn
+        string S = d > 0 ? "BUY" : "SELL"
+        string L = d > 0 ? "LONG" : "SHORT"
+        float rk = math.abs(e - sl)
+        float lots = na(q) or strategy.equity <= 0 ? na : math.abs(q) * 10000 / strategy.equity / f_aLot()
+        string sz = na(lots) ? "" : " · " + str.tostring(lots, "#.##") + " lots per $10k (1% risk)"
+        string tps = na(tp) ? "no TP" : "TP " + f_aP(tp) + (rk > 0 ? " (" + str.tostring(math.abs(tp - e) / rk, "#.#") + "R)" : "")
+        string lv = "Entry " + f_aP(e) + " · SL " + f_aP(sl) + (rk > 0 ? " (" + str.tostring(math.round(rk / f_aPipSz(), 1)) + " pips)" : "") + " · " + tps
+        string t = ev == "order" ? "📥 " + S + " " + what + " order" : ev == "open" ? "🚀 OPEN " + L + " now" : ev == "filled" ? "✅ " + L + " filled" : ev == "cancel" ? "✖ Cancel the " + S + " " + what : ev == "move" ? "🔒 Move the stop (" + what + ")" : ev == "partial" ? "💰 Half closed " + f_aR(r) : ev == "closenow" ? "⏹ CLOSE " + L + " now" : (what == "TP" ? "🎯 TP hit " : what == "SL" ? "🛑 SL hit " : what == "Trail" ? "🔒 Trailing stop hit " : what == "Break-even" ? "⚖️ Break-even stop hit " : "⏹ Closed (" + what + ") ") + f_aR(r)
+        string ln2 = ev == "move" ? "New SL " + f_aP(sl) + " · entry " + f_aP(e) + (na(r) ? "" : " · locks " + f_aR(r)) : ev == "closed" or ev == "partial" or ev == "closenow" ? "Entry " + f_aP(e) + " · now " + f_aP(x) + (na(r) ? "" : " · " + f_aR(r)) : lv
+        string act = ev == "order" ? "Do: place a " + S + " " + what + " at " + f_aP(e) + ", SL " + f_aP(sl) + (na(tp) ? "" : ", TP " + f_aP(tp)) + sz : ev == "open" ? "Do: " + S + " at market now, SL " + f_aP(sl) + (na(tp) ? "" : ", TP " + f_aP(tp)) + sz : ev == "filled" ? (pu == 1 ? "Your " + what + " order filled: check the SL and TP are on it." : "Entry recorded.") : ev == "cancel" ? "Do: delete the pending " + S + " " + what + " at " + f_aP(e) + " (not triggered in time)." : ev == "move" ? "Do: move the SL to " + f_aP(sl) + "." : ev == "partial" ? "Do: if your broker did not take it, close half now; the SL goes to entry." : ev == "closenow" ? "Do: close the " + L + " at market now (" + what + ")." : "Nothing to do: check it is closed at your broker."
+        string tag = "#BE|st=" + AL_NAME + "|p=" + pName + "|ev=" + ev + "|d=" + str.tostring(d) + "|id=" + id + "|w=" + what + "|e=" + f_aN(e) + "|sl=" + f_aN(sl) + "|tp=" + f_aN(tp) + "|x=" + f_aN(x) + "|r=" + f_aN(r) + "|l10=" + f_aN(lots) + "|pu=" + str.tostring(pu) + "|tf=" + timeframe.period + "|t=" + str.tostring(time)
+        alert("BE " + AL_NAME + " · " + pName + " · " + t + "\n" + ln2 + "\n" + act + (nt == "" ? "" : " " + nt) + "\n" + tag, alert.freq_once_per_bar_close)
+//@@TRACK
+// ───────── alerts: fills, stop moves and exits (all three strategies use the same tracker) ─────────
+if strategy.opentrades > 0
+    for i = 0 to strategy.opentrades - 1
+        string aid = strategy.opentrades.entry_id(i)
+        string ak = aid + "@" + str.tostring(strategy.opentrades.entry_time(i))
+        [lsl, ltp] = f_aLv(aid)
+        float aep = strategy.opentrades.entry_price(i)
+        int ad = strategy.opentrades.size(i) > 0 ? 1 : -1
+        if not aRisk.contains(ak)
+            aRisk.put(ak, math.abs(aep - lsl))
+            aSl.put(ak, lsl)
+            string aty = aTyp.contains(aid) ? aTyp.get(aid) : "STOP"
+            bool mk = aty == "MARKET"
+            f_alert("filled", ad, aid, aty, aep, lsl, ltp, na, na, strategy.opentrades.size(i), mk ? 0 : 1, mk ? "" : aFillNote)
+        else if not na(lsl) and math.abs(lsl - nz(aSl.get(ak), lsl)) > syminfo.mintick / 2
+            aSl.put(ak, lsl)
+            float ark = aRisk.get(ak)
+            f_alert("move", ad, aid, math.abs(lsl - aep) <= 0.05 * ark ? "break-even" : "trail", aep, lsl, ltp, na, ark > 0 ? (lsl - aep) * ad / ark : na, na, 1, "")
+if strategy.closedtrades > nz(strategy.closedtrades[1])
+    for j = nz(strategy.closedtrades[1]) to strategy.closedtrades - 1
+        string cid = strategy.closedtrades.entry_id(j)
+        string ck = cid + "@" + str.tostring(strategy.closedtrades.entry_time(j))
+        [csl, ctp] = f_aLv(cid)
+        float cep = strategy.closedtrades.entry_price(j)
+        float cxp = strategy.closedtrades.exit_price(j)
+        int cd = strategy.closedtrades.size(j) > 0 ? 1 : -1
+        float crk = aRisk.contains(ck) ? aRisk.get(ck) : math.abs(cep - csl)
+        string cm = strategy.closedtrades.exit_comment(j)
+        bool byBroker = cm == "TP" or cm == "SL" or cm == "Trail" or cm == "Break-even" or cm == "+1R half"
+        f_alert(cm == "+1R half" ? "partial" : "closed", cd, cid, cm, cep, csl, ctp, cxp, crk > 0 ? (cxp - cep) * cd / crk : na, strategy.closedtrades.size(j), byBroker ? 1 : 0, "")

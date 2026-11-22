@@ -171,9 +171,11 @@ const strat = tpl
   .replace('// {{STRATEGY_ORDERS}}', ORDERS)
   .replace(/^alertcondition\(.*$/gm, '// (alertcondition is not available in strategies; use alert() events)');
 writeFileSync('pine/bias-engine-strategy.pine', strat);
+const ALERTS = existsSync('scripts/pine-alerts.pine') ? readFileSync('scripts/pine-alerts.pine', 'utf8').split('//@@TRACK\n') : null;
+const withAlerts = src => ALERTS ? src.replace('// {{ALERT_FUNCS}}\n', ALERTS[0].replace('//@@FUNCS\n', '')).replace('// {{ALERT_TRACK}}\n', ALERTS[1]) : src;
 // the swing test bench (Daily chart): same data, its own template
 if(existsSync('scripts/pine-swing-template.pine')){
-  const sw = readFileSync('scripts/pine-swing-template.pine', 'utf8')
+  const sw = withAlerts(readFileSync('scripts/pine-swing-template.pine', 'utf8'))
     .replace('{{GENERATED}}', gen)
     .replace('{{COVERAGE}}', `${wkKey(first.y, first.w)} → ${wkKey(last.y, last.w)} (${wl.length} weeks), ${cl.length} daily checks`)
     .replace('{{PAIRS}}', PAIRS.map(p => `"${p}"`).join(', '))
@@ -204,7 +206,7 @@ if(existsSync('scripts/pine-swing-template.pine')){
 }
 // the intraday ORB strategy (5m chart): same data, its own template
 if(existsSync('scripts/pine-intraday-template.pine')){
-  const it = readFileSync('scripts/pine-intraday-template.pine', 'utf8')
+  const it = withAlerts(readFileSync('scripts/pine-intraday-template.pine', 'utf8'))
     .replace('{{GENERATED}}', gen)
     .replace('{{COVERAGE}}', `${wkKey(first.y, first.w)} → ${wkKey(last.y, last.w)} (${wl.length} weeks), ${cl.length} daily checks`)
     .replace('{{PAIRS}}', PAIRS.map(p => `"${p}"`).join(', '))
@@ -226,7 +228,7 @@ if(existsSync('scripts/pine-sweep-template.pine')){
 }
 // the MACD strategy (1H chart): same data, its own template
 if(existsSync('scripts/pine-macd-template.pine')){
-  const mc = readFileSync('scripts/pine-macd-template.pine', 'utf8')
+  const mc = withAlerts(readFileSync('scripts/pine-macd-template.pine', 'utf8'))
     .replace('{{GENERATED}}', gen)
     .replace('{{COVERAGE}}', `${wkKey(first.y, first.w)} → ${wkKey(last.y, last.w)} (${wl.length} weeks), ${cl.length} daily checks`)
     .replace('{{PAIRS}}', PAIRS.map(p => `"${p}"`).join(', '))
