@@ -8,8 +8,23 @@ from smc import B, H, cost_of, pip_of
 B.clear(); B.update(harness.B1)
 BUC = ZoneInfo('Europe/Bucharest')
 
+def agg15(b5):
+    # 15m candles built from the 5m export (when no 15m export exists), with the same ATR(14) as ltf.load
+    out = []
+    for x in b5:
+        t0 = x['t'].replace(minute=x['t'].minute // 15 * 15, second=0)
+        if out and out[-1]['t'] == t0:
+            y = out[-1]; y['h'] = max(y['h'], x['h']); y['l'] = min(y['l'], x['l']); y['c'] = x['c']
+        else: out.append(dict(t=t0, tc=t0 + D.timedelta(minutes=15), o=x['o'], h=x['h'], l=x['l'], c=x['c'], day=x['day'], dow=x['dow'], wk=x['wk'], hr=x['hr']))
+    A = None
+    for i, b in enumerate(out):
+        tr = b['h'] - b['l'] if i == 0 else max(b['h'], out[i - 1]['c']) - min(b['l'], out[i - 1]['c'])
+        A = tr if A is None else (A * 13 + tr) / 14; b['atr'] = A if i >= 13 else None
+    return out
 def prep(p):
-    b5 = ltf.load(p, '5'); b15 = ltf.load(p, '15')
+    b5 = ltf.load(p, '5')
+    try: b15 = ltf.load(p, '15')
+    except FileNotFoundError: b15 = agg15(b5)
     for x in b5:
         lt = x['t'].astimezone(BUC); x['lt'] = lt; x['m'] = lt.hour * 60 + lt.minute; x['cd'] = lt.date()
     # daily (NY day) closes -> SMA20 known at the start of each day; previous day high/low
