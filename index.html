@@ -6210,7 +6210,7 @@ function btFromLive(t){
     rules_ok:null, bias:c.bias, conviction:c.conviction, base_score:c.base_score, quote_score:c.quote_score, alignment:c.alignment, news:c.news, news_day:c.news.length > 0 });
 }
 /* strategy trades (BE Swing / BE MACD / BE Intraday): imported from TradingView or added by the strategy-alert function */
-const isStratRun = r => /^BE (Swing|MACD|Intraday)\b/.test(r || '');
+const isStratRun = r => /^BE (Swing|MACD|Intraday|Bias Day)\b/.test(r || '');
 const btKind = x => x.run===LIVE_RUN ? 'live' : isStratRun(x.run) ? 'strat' : 'bt';
 /* trades added by the server have no fundamentals stored: take them from that week's analysis, as the form does */
 function btStratCtx(x){
@@ -6218,7 +6218,7 @@ function btStratCtx(x){
   const c = btAutoCtx(x.pair, x.day, x.direction);
   return { ...x, bias:c.bias, conviction:c.conviction, base_score:c.base_score, quote_score:c.quote_score, alignment:c.alignment, news:c.news, news_day:!!(c.news && c.news.length) };
 }
-const BT_STRAT = { swing:'BE Swing', macd:'BE MACD', intraday:'BE Intraday' };
+const BT_STRAT = { swing:'BE Swing', macd:'BE MACD', intraday:'BE Intraday', biasday:'BE Bias Day' };
 function csvParse(text){
   const out = []; let row = [], f = '', q = false;
   for(let i = 0; i < text.length; i++){ const c = text[i];
@@ -6231,9 +6231,9 @@ async function btImportTv(files){
   const have = new Set([...S.bt.rows.values()].map(x => [x.run, x.pair, x.day, x.entry_time, x.direction].join('|')));
   const add = [], notes = [];
   for(const file of files){
-    const nm = file.name.replace(/\.csv$/i, ''), m = nm.match(/BE[_ ]?(Swing|MACD|Intraday)((?:[_ ](?:4H|1H|15m))?)_[A-Z]+_([A-Z0-9]+)_\d{4}-\d{2}-\d{2}/i);
+    const nm = file.name.replace(/\.csv$/i, ''), m = nm.match(/BE[_ ]?(Swing|MACD|Intraday|Bias[_ ]Day)((?:[_ ](?:4H|1H|15m))?)_[A-Z]+_([A-Z0-9]+)_\d{4}-\d{2}-\d{2}/i);
     if(!m){ notes.push(`${file.name}: not a BE strategy export`); continue; }
-    const kind = m[1].toLowerCase(), pair = m[3].toUpperCase(), rows = csvParse((await file.text()).replace(/^\ufeff/, ''));
+    const kind = m[1].toLowerCase().replace(/[_ ]/g, ''), pair = m[3].toUpperCase(), rows = csvParse((await file.text()).replace(/^\ufeff/, ''));
     const H = rows[0].map(h => h.trim()), col = p => H.findIndex(h => h.startsWith(p));
     const [cN, cT, cD, cS, cP, cPnl] = [col('Trade'), col('Type'), col('Date'), col('Signal'), col('Price'), col('Net P')];
     if([cN, cT, cD, cS, cP, cPnl].some(i => i < 0)){ notes.push(`${file.name}: columns not recognised`); continue; }
