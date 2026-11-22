@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — swing strategy on 15m signal candles (15m chart, intraday to 1 day). Defaults: bias-week grid on EURUSD only (other pairs untested).
-// Generated automatically: 2026-11-22 19:00 UTC. Bias data: 2026-W40 → 2026-W48 (9 weeks), 15 daily checks.
+// Generated automatically: 2026-11-22 20:53 UTC. Bias data: 2026-W40 → 2026-W48 (9 weeks), 15 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // A test bench for your own rules in the Strategy Tester. Not a trade signal.
 //@version=6
@@ -390,6 +390,12 @@ if not flat and posDir == 0
     // ent0 / risk0 / q0 are set when the order is placed (if the half already filled on the entry's next candle, the position is smaller here)
     partDone := false
     bestP := na
+// an entry that filled and stopped out inside one bar: the pending order is used up
+if flat and posDir == 0 and strategy.closedtrades > nz(strategy.closedtrades[1])
+    pLive := false
+    lastExitT := time
+    strategy.cancel("L")
+    strategy.cancel("S")
 if flat and posDir != 0
     if not na(zSl)
         box.set_right(zSl, bar_index)

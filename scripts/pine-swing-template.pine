@@ -180,6 +180,12 @@ if not flat and posDir == 0
     // ent0 / risk0 / q0 are set when the order is placed (if the half already filled on the entry's next candle, the position is smaller here)
     partDone := false
     bestP := na
+// an entry that filled and stopped out inside one bar: the pending order is used up
+if flat and posDir == 0 and strategy.closedtrades > nz(strategy.closedtrades[1])
+    pLive := false
+    lastExitT := time
+    strategy.cancel("L")
+    strategy.cancel("S")
 if flat and posDir != 0
     if not na(zSl)
         box.set_right(zSl, bar_index)

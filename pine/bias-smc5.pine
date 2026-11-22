@@ -1,6 +1,6 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — BE SMC 5m: LuxAlgo-style internal CHoCH, then a limit at the internal order block, in the bias (or trend) direction.
-// Generated automatically: 2026-11-22 20:52 UTC. Bias data: 2026-W40 → 2026-W48 (9 weeks), 15 daily checks.
+// Generated automatically: 2026-11-22 20:53 UTC. Bias data: 2026-W40 → 2026-W48 (9 weeks), 15 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // A test bench for your own rules in the Strategy Tester. Not a trade signal.
 //@version=6
@@ -335,6 +335,12 @@ if not flat and na(fillBar)
     pDir := 0
 if flat
     fillBar := na
+// a trade that opened and closed inside one bar also uses up the day (and kills the pending order)
+if strategy.closedtrades > nz(strategy.closedtrades[1])
+    tradedDay := dKey
+    pDir := 0
+    strategy.cancel("SMC L")
+    strategy.cancel("SMC S")
 // pending order expires
 if pDir != 0 and flat and (bar_index - pBar >= obBars or dKey != pDay or mm >= 1260)
     strategy.cancel("SMC L")
@@ -364,6 +370,11 @@ if evChoch and evDir == dir and dir != 0 and inWin and flat and tradedDay != dKe
         pDay := dKey
         if showStr
             box.new(bar_index - math.min(k, 450), obH, bar_index + obBars, obL, border_color = color.new(evDir > 0 ? bullC : bearC, 40), bgcolor = color.new(evDir > 0 ? bullC : bearC, 85))
+// price already beyond the stop: the setup is gone
+if pDir != 0 and flat and (pDir > 0 ? close <= pSl : close >= pSl)
+    strategy.cancel("SMC L")
+    strategy.cancel("SMC S")
+    pDir := 0
 if pDir != 0 and flat
     float q = math.max(strategy.equity * stRisk / 100 / (math.abs(pE - pSl) * syminfo.pointvalue * fxRate), 0)
     string id = pDir > 0 ? "SMC L" : "SMC S"
