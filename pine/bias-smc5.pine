@@ -1,10 +1,10 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // Forex Fundamental Bias Engine — BE SMC 5m: LuxAlgo-style internal CHoCH, then a limit at the internal order block, in the bias (or trend) direction.
-// Generated automatically: 2026-11-22 20:44 UTC. Bias data: 2026-W40 → 2026-W48 (9 weeks), 15 daily checks.
+// Generated automatically: 2026-11-22 20:52 UTC. Bias data: 2026-W40 → 2026-W48 (9 weeks), 15 daily checks.
 // Do not edit by hand: the data block is rewritten after every phase and daily check.
 // A test bench for your own rules in the Strategy Tester. Not a trade signal.
 //@version=6
-strategy("Bias Engine · SMC 5m (CHoCH → order block)", shorttitle = "BE SMC 5m", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = false, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0.005, slippage = 0, max_labels_count = 500, max_boxes_count = 500, max_lines_count = 500)
+strategy("Bias Engine · SMC 5m (CHoCH → order block)", shorttitle = "BE SMC 5m", overlay = true, initial_capital = 10000, pyramiding = 0, process_orders_on_close = false, margin_long = 1, margin_short = 1, commission_type = strategy.commission.percent, commission_value = 0.005, slippage = 10, max_labels_count = 500, max_boxes_count = 500, max_lines_count = 500)
 float fxRate = nz(request.currency_rate(syminfo.currency, strategy.account_currency, ignore_invalid_currency = true), 1)  // quote currency -> account currency, so 1% risk is 1% whatever the pair
 
 // ───────── settings ─────────
@@ -16,8 +16,8 @@ int    legLen  = input.int(5, "Internal structure length", minval = 2, maxval = 
 int    obBars  = input.int(24, "OB limit order valid (bars)", minval = 1, maxval = 200, group = "Entry", tooltip = "After the CHoCH, a limit order waits at the internal order block (bull: OB high, bear: OB low) for this many bars, the same day and before 21:00.")
 int    wFrom   = input.int(9, "CHoCH only from (hour, Bucharest)", minval = 0, maxval = 23, group = "Entry", inline = "w")
 int    wTo     = input.int(18, "to", minval = 1, maxval = 24, group = "Entry", inline = "w")
-float  tpR     = input.float(2.0, "Take profit (R)", minval = 0.5, maxval = 10, step = 0.5, group = "Exit", tooltip = "TP 2R +20R, TP 3R +19R in the bias test.")
-int    tMaxB   = input.int(48, "Max hold (bars)", minval = 1, maxval = 500, group = "Exit", tooltip = "48 bars = 4 hours on 5m. The trade is also closed at 21:45 Bucharest and when the day changes.")
+float  tpR     = input.float(5.0, "Take profit (R)", minval = 0.5, maxval = 10, step = 0.5, group = "Exit", tooltip = "Simulation (EURUSD, GBPUSD, XAUUSD, bias, +1 pip cost, held to 21:45): TP 5R +34R on 47 trades (+0.72R each, both halves and all three pairs positive); TP 3R +15R; TP 2R +13R. Your EURUSD export with TP 5R: +20R on 16 trades.")
+int    tMaxB   = input.int(200, "Max hold (bars)", minval = 1, maxval = 500, group = "Exit", tooltip = "200 bars on 5m = no practical limit: the trade is closed at 21:45 Bucharest (or when the day changes). Simulation: holding to 21:45 +34R vs 4 hours (48 bars) +25R, with TP 5R.")
 int    fromT   = input.time(timestamp("2000-01-01"), "Trade only from this date", group = "Risk")
 float  stRisk  = input.float(0.5, "Risk per trade (% of equity)", minval = 0.05, maxval = 5, step = 0.05, group = "Risk")
 color  bullC   = input.color(#22AB94, "Bullish", group = "Colours")

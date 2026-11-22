@@ -29,24 +29,31 @@ def atr(b, n=14):
     for i, x in enumerate(b):
         tr = x['h'] - x['l'] if i == 0 else max(x['h'], b[i-1]['c']) - min(x['l'], b[i-1]['c'])
         A = tr if A is None else (A * (n - 1) + tr) / n; x['atr'] = A
-def run(p, data, s=5, mode='choch', dirm='bias', tp=2.0, w=(540, 1080), tmax=48, ob_valid=24):
-    b5, prevd, _ = data; cost = cost_of(p) * pip_of(p); out = []
+def run(p, data, s=5, mode='choch', dirm='bias', tp=2.0, w=(540, 1080), tmax=48, ob_valid=24, ema=None, minr=0.5, maxday=1, entry='edge', extra=0.0, conv=None):
+    b5, prevd, _ = data; cost = (cost_of(p) + extra) * pip_of(p); out = []
     if 'atr' not in b5[0]: atr(b5)
+    if ema and ('e%d' % ema) not in b5[0]:
+        v = None
+        for x in b5: v = x['c'] if v is None else v + 2 / (ema + 1) * (x['c'] - v); x['e%d' % ema] = v
+    nday = collections.Counter()
     ev = structure(b5, s); lastday = None
     for i, kind, d, pv in ev:
         x = b5[i]
         if not (w[0] <= x['m'] < w[1]) or x['lt'].weekday() > 4: continue
         if mode.startswith('choch') and kind != 'CHoCH': continue
         if mode.startswith('bos') and kind != 'BOS': continue
-        if lastday == x['cd']: continue    # one trade a day per instrument
+        if nday[x['cd']] >= maxday: continue
         bi = B.get((p, x['wk']), ('-',))[0]; bd = 1 if bi == 'U' else -1 if bi == 'D' else 0
         sm = prevd.get(x['day'], {}).get('sma'); td = 0 if sm is None else (1 if x['c'] > sm else -1)
         want = {'bias': (bd,), 'trend': (td,), 'both': (1, -1), 'bias+trend': (bd,) if bd == td else ()}[dirm]
         if d not in want or d == 0: continue
+        if conv and B.get((p, x['wk']), ('-', '-'))[1] not in conv: continue
+        if ema and (x['c'] - x['e%d' % ema]) * d <= 0: continue
         seg = b5[pv:i+1]
         if mode.endswith('_ob'):    # LuxAlgo internal OB: the bar with the lowest low (bull) / highest high (bear) of the leg
             k = min(range(len(seg)), key=lambda j: seg[j]['l']) if d > 0 else max(range(len(seg)), key=lambda j: seg[j]['h'])
             ob = seg[k]; e = ob['h'] if d > 0 else ob['l']; sl = (ob['l'] if d > 0 else ob['h']) - d * 0.1 * x['atr']
+            if entry == 'mid': e = (ob['h'] + ob['l']) / 2
             fill = None
             for j in range(i + 1, min(len(b5), i + 1 + ob_valid)):
                 y = b5[j]
@@ -57,7 +64,7 @@ def run(p, data, s=5, mode='choch', dirm='bias', tp=2.0, w=(540, 1080), tmax=48,
         else:
             e = x['c']; sl = (min(y['l'] for y in seg) if d > 0 else max(y['h'] for y in seg)) - d * 0.1 * x['atr']; j0 = i + 1
         r = abs(e - sl)
-        if r <= 0 or r > 6 * x['atr'] or r < 0.5 * x['atr']: continue
+        if r <= 0 or r > 6 * x['atr'] or r < minr * x['atr']: continue
         t = e + d * tp * r; res = None
         for j in range(j0, min(len(b5), j0 + tmax)):
             y = b5[j]
@@ -65,7 +72,7 @@ def run(p, data, s=5, mode='choch', dirm='bias', tp=2.0, w=(540, 1080), tmax=48,
             if (y['h'] >= t) if d > 0 else (y['l'] <= t): res = tp; break
             if y['m'] >= 21 * 60 + 45 or y['cd'] != x['cd']: res = d * (y['c'] - e) / r; break
         if res is None: j = min(len(b5) - 1, j0 + tmax); res = d * (b5[j]['c'] - e) / r
-        out.append((x['t'], res - cost / r)); lastday = x['cd']
+        out.append((x['t'], res - cost / r)); nday[x['cd']] += 1
     return out
 if __name__ == '__main__':
     def st(o):
