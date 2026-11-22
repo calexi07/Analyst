@@ -84,6 +84,9 @@ def run_c(p, b4, h1, B, P, start, end):
                   'notfade': not (h_ * dr > 0 and (h_ - h1_) * dr < 0), 'pullback': m_ * dr > 0 and h_ * dr < 0}[P['mcf']]
             if not ok: i += 1; continue
         if P['mingap'] and (bi[2] is None or abs(bi[2]) < P['mingap']): i += 1; continue
+        if P.get('flt') and not P['flt'](p, i, s, dr, bi): i += 1; continue
+        if P.get('maxloss') is not None and sum(1 for x in res if x['wk'] == s['wk'] and x['R'] < 0) >= P['maxloss']: i += 1; continue
+        if P.get('maxwk') and sum(1 for x in res if x['wk'] == s['wk']) >= P['maxwk']: i += 1; continue
         lvl = s['h'] if dr > 0 else s['l']; risk = s['atr4'] * P['slk']
         if P['stf'] or P['slm'] != 'atr':
             u4, d4, t4 = st4.get(s['tc'], (None, None, None))
