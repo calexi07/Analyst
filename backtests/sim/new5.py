@@ -219,9 +219,46 @@ def swc(b, kind, K=2.5):
         R['ctx'][i] = d
     return R
 
-KINDS = {'vrb': ['breakout', 'retest', 'arrow', 'fake'], 'trap': ['all', 'fresh'], 'asr': ['bounce', 'break'],
+
+def fsf(b, kind, L=10):
+    """Fibonacci Swing Flip (MarkitTick): alternating 10/10 pivots form legs; the active leg in the trend's direction sets a
+    break level at brk of the leg; a close beyond it flips the trend (BULL/BEAR) = signal. ctx = trend."""
+    o, h, l, c = _arr(b); N = len(c); R = _out(N); atr = _rma_atr(h, l, c, 14)
+    brk = {'236': 0.236, '382': 0.382, '500': 0.5, '618': 0.618}[kind]
+    pT = 0; pP = aP = np.nan; trend = 0; aDir = 0; aLvl = np.nan
+    for i in range(N):
+        leg = False
+        if i >= 2 * L:
+            k = i - L
+            isH = h[k] == h[k - L:i + 1].max() and h[k] > h[k - L:k].max()
+            isL = l[k] == l[k - L:i + 1].min() and l[k] < l[k - L:k].min()
+            if isH and not isL:
+                if pT == 0: pT, pP = 1, h[k]
+                elif pT == -1: aP, pT, pP, leg = pP, 1, h[k], True
+                elif h[k] > pP: pP = h[k]; leg = not np.isnan(aP)
+            elif isL and not isH:
+                if pT == 0: pT, pP = -1, l[k]
+                elif pT == 1: aP, pT, pP, leg = pP, -1, l[k], True
+                elif l[k] < pP: pP = l[k]; leg = not np.isnan(aP)
+        has = not np.isnan(aP); ld = (1 if pT == 1 else -1) if has else 0
+        lh, ll = (pP, aP) if pT == 1 else (aP, pP)
+        def lvl(d): return lh - brk * (lh - ll) if d == 1 else ll + brk * (lh - ll)
+        if has:
+            if trend == 0: trend = ld; aDir = ld; aLvl = lvl(ld)
+            elif leg and ld == trend: aDir = ld; aLvl = lvl(ld)
+        flip = 0
+        if aDir == 1 and c[i] < aLvl: flip = -1
+        elif aDir == -1 and c[i] > aLvl: flip = 1
+        if flip:
+            trend = flip; aDir = 0; aLvl = np.nan
+            if has and ld == trend: aDir = ld; aLvl = lvl(ld)
+            if not np.isnan(atr[i]): R['sig'][i] = flip; R['slp'][i] = c[i] - flip * 1.5 * atr[i]
+        R['ctx'][i] = trend
+    return R
+
+KINDS = {'fsf': ['382', '236', '618'], 'vrb': ['breakout', 'retest', 'arrow', 'fake'], 'trap': ['all', 'fresh'], 'asr': ['bounce', 'break'],
          'lsrt': ['balanced', 'all'], 'swc': ['new']}
-FN = dict(vrb=vrb, trap=trap, asr=asr, lsrt=lsrt, swc=swc)
+FN = dict(fsf=fsf, vrb=vrb, trap=trap, asr=asr, lsrt=lsrt, swc=swc)
 def get(name, kind, b):
     key = (name, kind, id(b), len(b))
     if key not in _c: _c[key] = FN[name](b, kind)
@@ -230,19 +267,27 @@ def get(name, kind, b):
 DEF = dict(ind='vrb', kind='breakout', sl='atr', slk=1.0, tpR=3, tp='R', trail=0, t2=0, be=None, tmax=0, cx=False, bias=True, hours=None, native=False)
 def run(p, b, P, start, end):
     P = {**DEF, **P}; cost = cost_of(p) * pip_of(p); S = get(P['ind'], P['kind'], b)
-    if P['native']: P.update(sl='ind', tp='mag', be=1, tmax=60)
+    if P['native'] and P['ind'] != 'fsf': P.update(sl='ind', tp='mag', be=1, tmax=60)
+    fn = P['native'] and P['ind'] == 'fsf'
+    if fn: P.update(sl='ind', tpR=3)
     res = []; pos = None
     for i in range(1, len(b)):
         x = b[i]; A = x['atr']
         if pos:
             d = pos['d']; px = None
-            if (x['l'] <= pos['sl']) if d > 0 else (x['h'] >= pos['sl']): px = min(x['o'], pos['sl']) if d > 0 else max(x['o'], pos['sl']); why = 'SL'
+            if fn:
+                for q, f in ((1, 0.33), (2, 0.33)):
+                    if q not in pos['part'] and d * ((x['h'] if d > 0 else x['l']) - (pos['e'] + d * q * pos['r'])) >= 0: pos['part'][q] = f
+            if fn and d * (x['c'] - pos['sl']) < 0: px = x['c']; why = 'SL close'
+            elif not fn and ((x['l'] <= pos['sl']) if d > 0 else (x['h'] >= pos['sl'])): px = min(x['o'], pos['sl']) if d > 0 else max(x['o'], pos['sl']); why = 'SL'
             elif pos['tp'] and ((x['h'] >= pos['tp']) if d > 0 else (x['l'] <= pos['tp'])): px = max(x['o'], pos['tp']) if d > 0 else min(x['o'], pos['tp']); why = 'TP'
             elif P['cx'] and S['ctx'][i] == -d: px = x['c']; why = 'ctx'
             elif P['tmax'] and i - pos['i'] >= P['tmax']: px = x['c']; why = 'time'
             elif S['sig'][i] == -d and pos['bias_ok'] is False: px = x['c']; why = 'flip'
             if px is not None:
-                res.append(dict(p=p, d=d, t=pos['t'], tx=x['tc'], wk=pos['wk'], R=d * (px - pos['e']) / pos['r'] - cost / pos['r'], why=why)); pos = None
+                Rx = d * (px - pos['e']) / pos['r']
+                if fn and pos['part']: Rx = sum(q * f for q, f in pos['part'].items()) + (1 - sum(pos['part'].values())) * Rx
+                res.append(dict(p=p, d=d, t=pos['t'], tx=x['tc'], wk=pos['wk'], R=Rx - cost / pos['r'], why=why)); pos = None
             else:
                 pos['best'] = max(pos['best'], d * ((x['h'] if d > 0 else x['l']) - pos['e']))
                 if P['be'] is not None and pos['best'] >= P['be'] * pos['r'] and d * (pos['sl'] - pos['e']) < 0: pos['sl'] = pos['e']
@@ -263,12 +308,12 @@ def run(p, b, P, start, end):
         if P['tp'] in ('ind', 'mag') and not np.isnan(S['tpx'][i]):
             dR = s * (S['tpx'][i] - e) / r
             if (P['tp'] == 'ind' and dR >= 1) or (P['tp'] == 'mag' and 2.2 <= dR <= 4.5): tp = S['tpx'][i]
-        pos = dict(i=i, d=s, e=e, r=r, sl=e - s * r, tp=tp, t=x['t'], wk=x['wk'], best=0, bias_ok=True)
+        pos = dict(i=i, d=s, e=e, r=r, sl=e - s * r, tp=tp, t=x['t'], wk=x['wk'], best=0, bias_ok=True, part={})
     return res
 
 def ctx_state(name, b):
     """Context for filters/exits: vrb smart trend, swc swing direction; others: last signal direction (held 12 bars)."""
-    if name in ('vrb', 'swc'): return get(name, KINDS[name][0], b)['ctx']
+    if name in ('vrb', 'swc', 'fsf'): return get(name, KINDS[name][0], b)['ctx']
     sig = get(name, KINDS[name][0], b)['sig']; out = np.zeros(len(sig), int); last = 0; age = 99
     for i, s in enumerate(sig):
         if s: last, age = s, 0
@@ -284,6 +329,6 @@ if __name__ == '__main__':
     for name in only:
         for k in KINDS[name]:
             print(f"== {name}: {k}", flush=True)
-            xs = X + ([('native LSRT rules', dict(native=True))] if name == 'lsrt' else []) + \
+            xs = X + ([('native FSF rules (close stop, 33/33/rest)', dict(native=True)), ('exit on trend flip', dict(tpR=0, sl='ind', cx=True))] if name == 'fsf' else []) + ([('native LSRT rules', dict(native=True))] if name == 'lsrt' else []) + \
                  ([('exit on context flip', dict(tpR=0, sl='ind', cx=True))] if name in ('vrb', 'swc') else [])
             for xn, P in xs: print(f"  {xn:<22} {go(run, {'ind': name, 'kind': k, **P})}", flush=True)
