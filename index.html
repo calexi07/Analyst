@@ -6209,11 +6209,69 @@ function btFromLive(t){
     result:t.result, r:t.r_multiple!=null ? Number(t.r_multiple) : t.result==='W' ? 2 : t.result==='L' ? -1 : 0, break_type:null, run:'Live trades',
     rules_ok:null, bias:c.bias, conviction:c.conviction, base_score:c.base_score, quote_score:c.quote_score, alignment:c.alignment, news:c.news, news_day:c.news.length > 0 });
 }
+/* strategy trades (BE Swing / BE MACD / BE Intraday): imported from TradingView or added by the strategy-alert function */
+const isStratRun = r => /^BE (Swing|MACD|Intraday)\b/.test(r || '');
+const btKind = x => x.run===LIVE_RUN ? 'live' : isStratRun(x.run) ? 'strat' : 'bt';
+/* trades added by the server have no fundamentals stored: take them from that week's analysis, as the form does */
+function btStratCtx(x){
+  if(!isStratRun(x.run) || x.ctx_manual || x.bias!=null) return x;
+  const c = btAutoCtx(x.pair, x.day, x.direction);
+  return { ...x, bias:c.bias, conviction:c.conviction, base_score:c.base_score, quote_score:c.quote_score, alignment:c.alignment, news:c.news, news_day:!!(c.news && c.news.length) };
+}
+const BT_STRAT = { swing:'BE Swing', macd:'BE MACD', intraday:'BE Intraday' };
+function csvParse(text){
+  const out = []; let row = [], f = '', q = false;
+  for(let i = 0; i < text.length; i++){ const c = text[i];
+    if(q){ if(c==='"'){ if(text[i + 1]==='"'){ f += '"'; i++; } else q = false; } else f += c; }
+    else if(c==='"') q = true; else if(c===','){ row.push(f); f = ''; } else if(c==='\n' || c==='\r'){ if(c==='\r' && text[i + 1]==='\n') i++; row.push(f); f = ''; if(row.some(v => v!=='')) out.push(row); row = []; } else f += c; }
+  row.push(f); if(row.some(v => v!=='')) out.push(row); return out;
+}
+/* TradingView Strategy Tester → "List of trades" export (CSV), e.g. BE_Swing_FOREXCOM_EURUSD_2026-11-22_75e6f.csv */
+async function btImportTv(files){
+  const have = new Set([...S.bt.rows.values()].map(x => [x.run, x.pair, x.day, x.entry_time, x.direction].join('|')));
+  const add = [], notes = [];
+  for(const file of files){
+    const nm = file.name.replace(/\.csv$/i, ''), m = nm.match(/BE[_ ]?(Swing|MACD|Intraday)((?:[_ ](?:4H|1H|15m))?)_[A-Z]+_([A-Z0-9]+)_\d{4}-\d{2}-\d{2}/i);
+    if(!m){ notes.push(`${file.name}: not a BE strategy export`); continue; }
+    const kind = m[1].toLowerCase(), pair = m[3].toUpperCase(), rows = csvParse((await file.text()).replace(/^\ufeff/, ''));
+    const H = rows[0].map(h => h.trim()), col = p => H.findIndex(h => h.startsWith(p));
+    const [cN, cT, cD, cS, cP, cPnl] = [col('Trade'), col('Type'), col('Date'), col('Signal'), col('Price'), col('Net P')];
+    if([cN, cT, cD, cS, cP, cPnl].some(i => i < 0)){ notes.push(`${file.name}: columns not recognised`); continue; }
+    const tr = new Map(); rows.slice(1).forEach(r => { const n = +r[cN]; if(!tr.has(n)) tr.set(n, {}); tr.get(n)[/^Entry/i.test(r[cT]) ? 'e' : 'x'] = r; });
+    let cum = 0, n0 = 0, open = 0;
+    for(const [, t] of [...tr.entries()].sort((a, b) => a[0] - b[0])){
+      if(!t.e || !t.x){ continue; }
+      if(/^open$/i.test(t.x[cS].trim())){ open++; continue; }
+      const pnl = parseFloat(t.x[cPnl]) || 0, R = pnl / (0.01 * (10000 + cum)); cum += pnl;
+      let tf = m[2] ? m[2].replace(/[_ ]/g, '') : '';
+      if(kind==='swing' && !tf){ const k = (t.e[cS].match(/\| \w{3} (\S+)(?: on \S+)?\s*$/) || [])[1]; tf = ({ '240':'4H', '60':'1H', '15':'15m', 'D':'Daily', '1D':'Daily', '4H':'4H', '1H':'1H', '15m':'15m' })[k] || '4H'; }
+      const run = BT_STRAT[kind] + (kind==='swing' ? ' ' + tf : ''), [day, hm] = t.e[cD].trim().split(' '), tm = (hm || '').slice(0, 5);
+      const dir = /long/i.test(t.e[cT]) ? 'Long' : 'Short', key = [run, pair, day, tm, dir].join('|');
+      n0++; if(have.has(key)) continue; have.add(key);
+      const setup = kind==='intraday' ? ({ EU:'Europe ORB', NY:'New York ORB', PB:'EMA20 pullback' })[t.e[cS].trim().slice(0, 2)] || '' : '';
+      const c = btAutoCtx(pair, day, dir), r = Math.round(R * 100) / 100;
+      add.push({ run, pair, day, entry_time:tm, direction:dir, session:sessionName(tm), break_type:null, result: r >= 0.1 ? 'W' : r <= -0.1 ? 'L' : 'BE', r,
+        entry:parseFloat(t.e[cP]) || null, sl:null, mfe_r:null, chart_url:null, rules_ok:true,
+        notes:`TradingView import · exit ${t.x[cS].trim()} ${t.x[cD].trim()} @ ${t.x[cP]}${setup ? ' · ' + setup : ''}`,
+        bias:c.bias || null, conviction:c.conviction || null, base_score:c.base_score ?? null, quote_score:c.quote_score ?? null, alignment:c.alignment || null,
+        news:c.news || [], news_day:!!(c.news && c.news.length), ctx_manual:false });
+    }
+    notes.push(`${pair} ${BT_STRAT[kind]}: ${n0} closed trades${open ? `, ${open} still open (skipped)` : ''}`);
+  }
+  if(!add.length){ toast(notes.length ? 'Nothing new · ' + notes.join(' · ') : 'Nothing to import'); return; }
+  for(let i = 0; i < add.length; i += 200){
+    const { data, error } = await sb.from('do_backtests').insert(add.slice(i, i + 200)).select();
+    if(error){ toast('Import stopped: ' + error.message); break; }
+    data.forEach(r => S.bt.rows.set(r.id, r));
+  }
+  ls.set('do_bt_src', 'strat'); S.bt.run = 'all'; renderMain();
+  toast(`Imported ${add.length} trade${add.length > 1 ? 's' : ''} · ${notes.join(' · ')}`);
+}
 function btRows(){
   const src = ls.get('do_bt_src', 'bt'), run = S.bt.run || 'all', pair = S.bt.pair || 'all', per = ls.get('do_bt_per', 'all');
   const cut = per==='all' ? '' : iso(new Date(Date.now() - Number(per) * 864e5));
   let rows = [];
-  rows.push(...[...S.bt.rows.values()].filter(x => src==='both' || (src==='live') === (x.run===LIVE_RUN)).map(btDerive).filter(x => run==='all' || (x.run || 'No run')===run));
+  rows.push(...[...S.bt.rows.values()].filter(x => src==='both' || btKind(x)===src).map(btStratCtx).map(btDerive).filter(x => run==='all' || (x.run || 'No run')===run));
   /* old Trades-app rows (do_trades) are no longer shown: only trades logged here by hand count (Nov 2026) */
   return rows.filter(x => (pair==='all' || x.pair===pair) && (!cut || x.day >= cut) && ['W','L','BE'].includes(x.result))
     .sort((a, b) => a.day.localeCompare(b.day) || String(a.entry_time || '').localeCompare(String(b.entry_time || '')));
@@ -6240,6 +6298,9 @@ const BT_DIMS = [
   ['dur', 'Trade duration', x => x.durMin==null ? 'na' : x.durMin < 60 ? 'a' : x.durMin < 240 ? 'b' : x.durMin < 1440 ? 'c' : 'd',
     [['a','Under 1 hour'],['b','1–4 hours'],['c','4–24 hours'],['d','Over a day'],['na','Not logged']]],
   ['rules', 'Rules followed', x => x.rules_ok==null ? 'na' : x.rules_ok ? 'y' : 'n', [['y','Yes'],['n','No'],['na','—']]],
+  ['strat', 'Strategy', x => x.run || 'No run', []],
+  ['pair', 'Pair', x => x.pair, []],
+  ['setup', 'Setup (BE Intraday)', x => (String(x.notes || '').match(/Europe ORB|New York ORB|EMA20 pullback/) || ['other'])[0], [['Europe ORB','Europe ORB'],['New York ORB','New York ORB'],['EMA20 pullback','EMA20 pullback']]],
 ];
 function btGroups(list, dim){
   const [, , fn, order] = dim, g = new Map(order.map(([k]) => [k, []]));
@@ -6287,7 +6348,7 @@ function renderBacktest(){
   const m = document.getElementById('main');
   if(S.bt.missing){ m.innerHTML = `<div class="pairtitle">Trades</div><div class="card" style="margin-top:14px"><p>Run <b>migration-backtest.sql</b> in Supabase → SQL Editor, then reload.</p></div>`; return; }
   const src = ls.get('do_bt_src', 'bt'), per = ls.get('do_bt_per', 'all'), list = btRows(), st = btStats(list);
-  const runs = [...new Set([...S.bt.rows.values()].map(x => x.run || 'No run'))].sort();
+  const runs = [...new Set([...S.bt.rows.values()].filter(x => src==='both' || btKind(x)===src || src==='live').map(x => x.run || 'No run'))].sort();
   const pairs = [...new Set([...S.bt.rows.values()].map(x => x.pair))].filter(Boolean).sort();
   const seg = (opts, val, attr) => `<div class="seg" role="group">${opts.map(([v, l]) => `<button ${attr}="${v}" aria-pressed="${val===v}">${l}</button>`).join('')}</div>`;
   const ins = btInsights(list, st), noCtx = list.filter(x => !x.bias && x.base_score==null).length;
@@ -6295,14 +6356,15 @@ function renderBacktest(){
   m.innerHTML = `
     <div class="flex flex-wrap items-end gap-4 mb-4">
       <div><div class="pairtitle">Trades</div><div class="muted mt-1" style="font-weight:600;max-width:640px">Log your live trades (they feed the Saturday trade review) and your TradingView replay backtests. Each trade is tagged with that week's fundamentals, so you can see in which context your edge is real.</div></div>
-      <div class="flex flex-wrap items-center gap-2 ml-auto"><button class="btn" id="btCsv">⇩ CSV</button><button class="btn btn-primary" id="btAdd">+ Log a trade</button></div>
+      <div class="flex flex-wrap items-center gap-2 ml-auto"><label class="btn" title="TradingView → Strategy Tester → List of trades → Export (one or more files)">⇪ Import TradingView<input type="file" id="btTv" accept=".csv" multiple hidden></label><button class="btn" id="btCsv">⇩ CSV</button><button class="btn btn-primary" id="btAdd">+ Log a trade</button></div>
     </div>
     <div class="bt-bar0">
-      ${seg([['bt','Backtest'],['live','Live trades'],['both','Both']], src, 'data-btsrc')}
+      ${seg([['strat','Strategies'],['bt','Backtest'],['live','Live trades'],['both','All']], src, 'data-btsrc')}
       ${src!=='live' ? `<select class="inp" id="btRun" aria-label="Backtest run"><option value="all">All runs</option>${runs.map(r => `<option ${S.bt.run===r ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select>` : ''}
       <select class="inp" id="btPair" aria-label="Pair"><option value="all">All pairs</option>${pairs.map(p => `<option ${S.bt.pair===p ? 'selected' : ''}>${p}</option>`).join('')}</select>
       ${seg([['all','All'],['365','1Y'],['180','6M'],['90','3M']], per, 'data-btper')}
     </div>
+    ${src==='strat' ? `<div class="wl-pairs" role="group" aria-label="Strategy" style="margin-bottom:12px">${['all', ...runs.filter(isStratRun)].map(r => `<button type="button" data-btrun="${esc(r)}" aria-pressed="${(S.bt.run || 'all')===r}">${r==='all' ? 'All strategies' : esc(r)}${(n => n ? `<b>${n}</b>` : '')([...S.bt.rows.values()].filter(x => isStratRun(x.run) && (r==='all' || x.run===r) && ['W','L','BE'].includes(x.result)).length)}</button>`).join('')}</div>` : ''}
     ${(() => { const op = [...S.bt.rows.values()].filter(x => x.run===LIVE_RUN && x.result==='O').sort((a, b) => (a.day + (a.entry_time||'')).localeCompare(b.day + (b.entry_time||'')));
       return op.length ? `<div class="card" style="margin-bottom:12px"><div style="font-weight:800;margin-bottom:6px">🟢 Open live trades (${op.length}) <span class="muted" style="font-weight:600;font-size:12px">· tap to close one with its result</span></div>${expoHtml(op, 'Exposure by currency, 1R per open trade (your 1% risk). Net 2R on one currency = amber, 3R or more = red.')}<div class="fc-chk">${op.map(x => `<button class="fc-ckb" data-btid="${x.id}"><b>${esc(x.pair)}</b><span class="${x.direction==='Long' ? 'pos' : 'neg'}" style="font-weight:700">${x.direction==='Long' ? '▲ Long' : '▼ Short'}</span><span class="muted" style="font-size:12px">${fmtDayShort(x.day)}${x.entry_time ? ' ' + esc(x.entry_time) : ''}</span></button>`).join('')}</div></div>` : ''; })()}
     ${!list.length ? `<div class="empty"><div class="orb" aria-hidden="true"></div><p>${src==='live' ? 'No live trades in this filter yet. Log each executed trade here; the Saturday trade review reads them.' : 'No backtest trades yet. Open TradingView in replay mode, find your setups (liquidity → fractal change → retest) and log each one here.'}</p><button class="btn btn-primary" id="btAdd2">+ Log the first trade</button></div>` : `
@@ -6319,7 +6381,7 @@ function renderBacktest(){
       : `<p class="hint" style="margin:0 0 14px">Findings appear after about 8 trades with fundamentals.</p>`}
     ${noCtx ? `<p class="bt-warn">${noCtx} trade${noCtx > 1 ? 's have' : ' has'} no fundamentals (no weekly analysis for that week and none set by hand). They count only as "No clear bias" / "No scores".</p>` : ''}
     <p class="hint" style="margin:0 0 8px">Each row: trades · average R per trade (bar) · win rate · total R. Faded rows have fewer than ${BT_MIN} trades.</p>
-    <div class="bt-grid">${btMatrix(list)}${BT_DIMS.map(d => btTable(list, d)).join('')}</div>
+    <div class="bt-grid">${btMatrix(list)}${BT_DIMS.map(d => btTable(d[0]==='setup' ? list.filter(x => /^BE Intraday/.test(x.run || '')) : d[0]==='strat' && !['strat','both'].includes(src) ? [] : list, d)).join('')}</div>
     <section class="card bt-list"><div class="flex items-center gap-2"><h3 style="margin:0">Trades</h3><span class="muted" style="font-size:12.5px">newest first · click to edit</span></div>
       <div class="bt-tw"><table class="bt-t"><thead><tr><th>Date</th><th>Pair</th><th>Dir</th><th>Result</th><th>Bias</th><th>Conv.</th><th>Edge</th><th>News</th><th>Session</th><th>Run</th></tr></thead><tbody>
       ${recent.map(x => `<tr ${x.live ? `data-btlive="${x.src.id}"` : `data-btid="${x.id}"`}><td>${x.day.slice(5)} ${esc(x.entry_time || '')}</td><td><b>${x.pair}</b></td><td class="${x.direction==='Long' ? 'pos' : 'neg'}">${x.direction==='Long' ? '▲' : '▼'}</td>
@@ -6336,6 +6398,8 @@ function renderBacktest(){
   m.querySelectorAll('[data-btid]').forEach(r => r.onclick = () => openBacktest(S.bt.rows.get(r.dataset.btid)));
   m.querySelectorAll('[data-btlive]').forEach(r => r.onclick = () => toast('Live trade — edit it in Trades. Its fundamentals come from that week\'s analysis.'));
   m.querySelector('#btCsv').onclick = () => btCsv(list);
+  m.querySelector('#btTv').onchange = e => { const f = [...e.target.files]; e.target.value = ''; if(f.length) btImportTv(f); };
+  m.querySelectorAll('[data-btrun]').forEach(b => b.onclick = () => { S.bt.run = b.dataset.btrun; renderMain(); });
 }
 function btCsv(list){
   const cols = ['day','entry_time','pair','direction','result','r','run','bias','conviction','withB','base_score','quote_score','edge','alignment','newsDay','sess','dow','break_type','rules_ok','notes'];

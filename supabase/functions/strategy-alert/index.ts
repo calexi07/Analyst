@@ -60,6 +60,33 @@ async function pushAll(payload: Record<string, unknown>) {
   return { sent, removed: gone.length, phones: subs?.length ?? 0 };
 }
 
+
+// a closed trade → one row in Trades (do_backtests), run "BE Swing 4H" / "BE MACD" / "BE Intraday" (same names as the CSV import in the app)
+const RUN: Record<string, string> = { SWING: "BE Swing", MACD: "BE MACD", INTRADAY: "BE Intraday" };
+const runName = (variant: string) => { const [k, ...rest] = variant.split(" "); return (RUN[k.toUpperCase()] ?? "BE " + k) + (rest.length ? " " + rest.join(" ") : ""); };
+const buc = (iso: string) => new Date(iso).toLocaleString("sv-SE", { timeZone: "Europe/Bucharest" });   // "2026-11-23 10:05:00"
+async function logTrade(a: ReturnType<typeof parse>) {
+  const { data: ev } = await db.from("do_strat_events").select("ev, entry, sl, r, bar_time, at")
+    .eq("variant", a.variant).eq("pair", a.pair).eq("trade_id", a.trade_id).in("ev", ["filled", "open", "partial"])
+    .order("id", { ascending: false }).limit(10);
+  const fill = (ev ?? []).find((e: { ev: string }) => e.ev === "filled") ?? (ev ?? []).find((e: { ev: string }) => e.ev === "open");
+  if (!fill) return "no fill event found";
+  const fillT = fill.bar_time ?? fill.at;
+  const part = (ev ?? []).find((e: { ev: string; at: string; r: number | null }) => e.ev === "partial" && e.at >= fill.at && e.r != null);
+  const r = a.r == null ? null : part ? (a.r + part.r) / 2 : a.r;   // half closed earlier: each half counts 50 %
+  const [day, hms] = buc(fillT).split(" ");
+  const rec = {
+    run: runName(a.variant), pair: a.pair, day, entry_time: hms.slice(0, 5), direction: (a.dir ?? 0) > 0 ? "Long" : "Short",
+    result: r == null ? "BE" : r >= 0.1 ? "W" : r <= -0.1 ? "L" : "BE", r: r == null ? null : Math.round(r * 100) / 100,
+    entry: fill.entry, sl: fill.sl, rules_ok: true, news: [], ctx_manual: false,
+    notes: `Auto from TradingView alert · exit ${a.what} ${a.bar_time ? buc(a.bar_time).slice(0, 16) : ""} @ ${a.price ?? ""}${a.trade_id.includes(" ") ? " · " + ({ EU: "Europe ORB", NY: "New York ORB", PB: "EMA20 pullback" } as Record<string, string>)[a.trade_id.split(" ")[0]] : ""}`,
+  };
+  const { data: dup } = await db.from("do_backtests").select("id").eq("run", rec.run).eq("pair", rec.pair).eq("day", rec.day).eq("entry_time", rec.entry_time).eq("direction", rec.direction).limit(1);
+  if (dup?.length) return "already in Trades";
+  const { error } = await db.from("do_backtests").insert(rec);
+  return error ? "Trades insert failed: " + error.message : "added to Trades";
+}
+
 export async function handle(req: Request): Promise<Response> {
   const u = new URL(req.url);
   if (req.method === "OPTIONS") return new Response(null, { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*" } });
@@ -92,10 +119,11 @@ export async function handle(req: Request): Promise<Response> {
     if (/duplicate|unique/i.test(error.message)) return json({ duplicate: true });
     return json({ error: error.message }, 500);
   }
-  if (!a.push) return json({ stored: true, push: "off for this event" });
+  const trade = a.ev === "closed" ? await logTrade(a) : undefined;
+  if (!a.push) return json({ stored: true, push: "off for this event", trade });
   const tv = `https://www.tradingview.com/chart/?symbol=${encodeURIComponent("FOREXCOM:" + a.pair)}`;
   const res = await pushAll({ title: a.title, body: a.body, tag: `be-${a.variant}-${a.pair}-${a.trade_id}`.replace(/\s+/g, ""), url: SITE + "?view=strategies", chart: tv, ts: Date.now() });
-  return json({ stored: true, ...res });
+  return json({ stored: true, trade, ...res });
 }
 
 if (import.meta.main) Deno.serve(handle);
