@@ -22,7 +22,7 @@ def htf_key(x, htf):
 
 DEF = dict(htf='D', piv=3, wait=36, age=120, disp=0.5, minr=0.25, maxr=3.0, tp=(1, 2, 3), pend=60, lookback=10,
            hours=None, bias=False, dirs=(1, -1), cool=0,
-           tpR=3, be=1, belock=0, part=0, pfrac=0.5, trail=0, trail2=0, tr2at=2, tract=1, trref='close', swtrail=False, stm=0, sqf=None, mcf=None, liq=False, liqmin=1, tmax=0)
+           tpR=3, be=1, belock=0, part=0, pfrac=0.5, trail=0, trail2=0, tr2at=2, tract=1, trref='close', swtrail=False, stm=0, sqf=None, mcf=None, tvf=None, liq=False, liqmin=1, tmax=0)
 
 def run_dir(p, b0, d, P, start, end):
     P = {**DEF, **P}; b = mirror(b0, d); cost = cost_of(p) * pip_of(p); n = len(b)
@@ -31,6 +31,9 @@ def run_dir(p, b0, d, P, start, end):
     piv = []                     # confirmed pivot highs: (pivot index, high, close)
     piv_l = []
     L = P['piv']
+    if P['tvf']:
+        import tvp as _tv
+        _TA = d * _tv.tvp(b0)['act']
     if P['mcf']:
         import macd as _mc
         _mm, _ms, _mh = [d * a for a in _mc.macd(b0)]
@@ -105,6 +108,8 @@ def run_dir(p, b0, d, P, start, end):
         if P['sqf'] == 'pos' and not _v[i] > 0: continue
         if P['sqf'] == 'rising' and not _v[i] > _v[i - 1]: continue
         if P['sqf'] == 'neg' and not _v[i] < 0: continue
+        if P['tvf'] == 'trend' and _TA[i] != 1: continue
+        if P['tvf'] == 'counter' and _TA[i] != -1: continue
         if P['mcf'] == 'above' and not _mh[i] > 0: continue
         if P['mcf'] == 'below' and not _mh[i] < 0: continue
         if P['mcf'] == 'trend' and not _mm[i] > 0: continue

@@ -16,12 +16,15 @@ def prep4(p):
         b['atr4'] = a if i >= 13 else None; pc = b['c']
     return bars
 
-DEF = dict(mcf=None, mcx=None, sqf=None, sqx=None, trm='atr', stp=10, stm=3.0, stat=1.0, sttf='4h', slm='atr', stf=False, mingap=0, slk=1.0, entry='C', tp=4, trk=0.75, trk2=0.5, trat=2.0, hours=None, cool=24, dirm='both', maxdow=2, sc=None, fri=True)
+DEF = dict(tvf=None, tvx=None, mcf=None, mcx=None, sqf=None, sqx=None, trm='atr', stp=10, stm=3.0, stat=1.0, sttf='4h', slm='atr', stf=False, mingap=0, slk=1.0, entry='C', tp=4, trk=0.75, trk2=0.5, trat=2.0, hours=None, cool=24, dirm='both', maxdow=2, sc=None, fri=True)
 
 def run_c(p, b4, h1, B, P, start, end):
     P = {**DEF, **P}; cost = cost_of(p) * pip_of(p)
     i1 = {b['t']: k for k, b in enumerate(h1)}
     res, lastx, k4 = [], None, 0
+    if P['tvf'] or P['tvx']:
+        import tvp as _tv
+        _T = _tv.tvp(b4); ix4 = {b4[q]['tc']: q for q in range(len(b4))}
     if P['mcf'] or P['mcx']:
         import macd as _mc
         _m, _sg, _hs = _mc.macd(b4); ix4 = {b4[q]['tc']: q for q in range(len(b4))}
@@ -54,6 +57,11 @@ def run_c(p, b4, h1, B, P, start, end):
             ok = {'pos': v_ * dr > 0, 'rising': (v_ - v1_) * dr > 0, 'both': v_ * dr > 0 and (v_ - v1_) * dr > 0,
                   'nosqz': not _on[i], 'sqzon': bool(_on[i]), 'fired': bool(_on[max(0, i - 6):i].any()) and not _on[i],
                   'notfade': not (v_ * dr > 0 and (v_ - v1_) * dr < 0), 'neg_rising': v_ * dr < 0 and (v_ - v1_) * dr > 0}[P['sqf']]
+            if not ok: i += 1; continue
+        if P['tvf']:
+            a_, pc_ = _T['act'][i], _T['poc'][i]
+            ok = {'trend': a_ == dr, 'notagainst': a_ != -dr, 'poc': pc_ == pc_ and (s['c'] - pc_) * dr > 0,
+                  'trend_poc': a_ == dr and pc_ == pc_ and (s['c'] - pc_) * dr > 0, 'young': a_ == dr and i - _T['start'][i] <= 12}[P['tvf']]
             if not ok: i += 1; continue
         if P['mcf']:
             m_, h_, h1_ = _m[i], _hs[i], _hs[i - 1]
@@ -128,6 +136,12 @@ def run_c(p, b4, h1, B, P, start, end):
                 if P['trm'] == 'st' and P['sttf'] == '1h': ns = sl
                 sl = max(sl, ns) if dr > 0 else min(sl, ns)
                 d2, _ = dir_at(c4)
+                if P['tvx']:
+                    q = ix4[c4['tc']]
+                    if P['tvx'] == 'flip' and _T['act'][q] == -dr: exitp, why, jx = b['c'], 'TVP', jj; break
+                    if P['tvx'] in ('band', 'band_1R') and (P['tvx'] == 'band' or best >= 1):
+                        ln = _T['lo'][q] if dr > 0 else _T['up'][q]
+                        if ln == ln: sl = max(sl, ln) if dr > 0 else min(sl, ln)
                 if P['mcx']:
                     q = ix4[c4['tc']]; h_, h1_, h2_ = _hs[q], _hs[q - 1], _hs[q - 2]
                     xx = {'cross': h_ * dr < 0, 'cross_1R': best >= 1 and h_ * dr < 0, 'cross_2R': best >= 2 and h_ * dr < 0,
