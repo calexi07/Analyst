@@ -1,7 +1,7 @@
 {
  "format": "bias-engine-ta",
  "version": 1,
- "generated_at": "2026-11-22T22:42:29.212Z",
+ "generated_at": "2026-11-23T02:56:16.063Z",
  "fundamentals": "2026-W48 FINAL",
  "source": "Yahoo Finance hourly bars (FX PAIR=X, gold GC=F futures), regrouped into New-York-close daily and 4-hour bars. Levels can differ by a few pips from your broker.",
  "note": "Technical context compared with the fundamental bias. Price never changes a fundamental score. Not a trade signal.",
@@ -15,17 +15,17 @@
  "pairs": {
   "EURUSD": {
    "pair": "EURUSD",
-   "price": 1.09745,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 1.09866,
+   "price_time": "2026-11-23T02:55:48.000Z",
    "bias": "bearish",
    "conviction": "medium",
    "gap": -7,
    "status": "aligned",
    "headline": "Price agrees with the bearish bias: D1 and H4 structure both point down.",
    "detail": [
-    "Nearest H4 supply on the bias side: 1.10619–1.10742 (fresh), 1.4 ATR away.",
+    "Nearest H4 supply on the bias side: 1.10619–1.10742 (fresh), 1.2 ATR away.",
     "Resting liquidity: above 1.10023 (previous day high); below 1.0958 (equal lows (4)).",
-    "Location: discount of the 3-month range (2%).",
+    "Location: discount of the 3-month range (4%).",
     "The price read turns against the bias on a daily close above 1.12537 (last D1 swing)."
    ],
    "d1": {
@@ -48,11 +48,11 @@
      "level": 1.10485,
      "at": "2026-11-13T14:00:00.000Z"
     },
-    "atr": 0.00211
+    "atr": 0.00207
    },
    "h1": {
     "structure": "up",
-    "trend": "range",
+    "trend": "up",
     "last": {
      "type": "CHoCH",
      "dir": "up",
@@ -89,17 +89,17 @@
     "above": {
      "level": 1.10023,
      "name": "previous day high",
-     "atr": 0.45
+     "atr": 0.25
     },
     "below": {
      "level": 1.0958,
      "name": "equal lows (4)",
-     "atr": 0.27
+     "atr": 0.46
     },
     "last_sweep": null
    },
    "location": {
-    "pct": 2,
+    "pct": 4,
     "label": "discount",
     "hi": 1.17151,
     "lo": 1.09577
@@ -108,17 +108,17 @@
   },
   "GBPUSD": {
    "pair": "GBPUSD",
-   "price": 1.30818,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 1.31094,
+   "price_time": "2026-11-23T02:55:48.000Z",
    "bias": "bearish",
    "conviction": "medium",
    "gap": -7,
    "status": "aligned",
    "headline": "Price agrees with the bearish bias: D1 and H4 structure both point down.",
    "detail": [
-    "Nearest H4 supply on the bias side: 1.31354–1.31608 (fresh), 0.8 ATR away.",
+    "Nearest H4 supply on the bias side: 1.31354–1.31608 (fresh), 0.4 ATR away.",
     "Resting liquidity: above 1.3128 (previous day high); below 1.30763 (previous day low).",
-    "Location: discount of the 3-month range (1%).",
+    "Location: discount of the 3-month range (6%).",
     "The price read turns against the bias on a daily close above 1.35026 (last D1 swing)."
    ],
    "d1": {
@@ -141,11 +141,11 @@
      "level": 1.31693,
      "at": "2026-11-18T10:00:00.000Z"
     },
-    "atr": 0.00248
+    "atr": 0.00252
    },
    "h1": {
     "structure": "down",
-    "trend": "up",
+    "trend": "range",
     "last": {
      "type": "BOS",
      "dir": "down",
@@ -175,17 +175,17 @@
     "above": {
      "level": 1.3128,
      "name": "previous day high",
-     "atr": 0.65
+     "atr": 0.26
     },
     "below": {
      "level": 1.30763,
      "name": "previous day low",
-     "atr": 0.08
+     "atr": 0.46
     },
     "last_sweep": null
    },
    "location": {
-    "pct": 1,
+    "pct": 6,
     "label": "discount",
     "hi": 1.36754,
     "lo": 1.30763
@@ -194,18 +194,18 @@
   },
   "USDJPY": {
    "pair": "USDJPY",
-   "price": 158.512,
-   "price_time": "2026-11-20T21:00:00.000Z",
+   "price": 158.914,
+   "price_time": "2026-11-23T02:56:02.000Z",
    "bias": "bullish",
    "conviction": "medium",
    "gap": 8,
    "status": "conflict",
    "headline": "Price disagrees with the bullish bias: D1 and H4 structure point down. It would start to agree on a 4h close above 159.97.",
    "detail": [
-    "Nearest H4 demand on the bias side: 157.866–158.105 (fresh), 0.4 ATR away.",
-    "Latest sweep: buy-side liquidity (equal highs (4) 158.633) taken and rejected on H1.",
-    "Resting liquidity: above 158.633 (equal highs (4)); below 158.408 (previous day low).",
-    "Location: premium of the 3-month range (75%)."
+    "Nearest H4 demand on the bias side: 157.866–158.105 (fresh), 0.9 ATR away.",
+    "Latest sweep: sell-side liquidity (equal lows (2) 158.86) taken and rejected on H1.",
+    "Resting liquidity: above 158.993 (equal highs (4)); below 158.86 (equal lows (2)).",
+    "Location: premium of the 3-month range (80%)."
    ],
    "d1": {
     "structure": "down",
@@ -227,7 +227,7 @@
      "level": 159.117,
      "at": "2026-11-20T06:00:00.000Z"
     },
-    "atr": 0.352
+    "atr": 0.364
    },
    "h1": {
     "structure": "down",
@@ -272,25 +272,25 @@
    },
    "liquidity": {
     "above": {
-     "level": 158.633,
+     "level": 158.993,
      "name": "equal highs (4)",
-     "atr": 0.13
+     "atr": 0.09
     },
     "below": {
-     "level": 158.408,
-     "name": "previous day low",
-     "atr": 0.11
+     "level": 158.86,
+     "name": "equal lows (2)",
+     "atr": 0.06
     },
     "last_sweep": {
-     "side": "BSL",
-     "name": "equal highs (4)",
-     "level": 158.633,
+     "side": "SSL",
+     "name": "equal lows (2)",
+     "level": 158.86,
      "tf": "H1",
-     "at": "2026-11-20T19:00:00.000Z"
+     "at": "2026-11-23T01:00:00.000Z"
     }
    },
    "location": {
-    "pct": 75,
+    "pct": 80,
     "label": "premium",
     "hi": 160.394,
     "lo": 152.881
@@ -299,8 +299,8 @@
   },
   "USDCHF": {
    "pair": "USDCHF",
-   "price": 0.83955,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 0.83981,
+   "price_time": "2026-11-23T02:56:03.000Z",
    "bias": "bullish",
    "conviction": "low",
    "gap": 7,
@@ -308,9 +308,9 @@
    "headline": "D1 agrees with the bullish bias, H4 is pulling back against it. Waiting for H4 to turn back up (a 4h close above 0.8444).",
    "detail": [
     "Nearest H4 demand on the bias side: 0.82412–0.82547 (fresh), 2.5 ATR away.",
-    "Latest sweep: buy-side liquidity (previous week high 0.8397) taken and rejected on H1.",
-    "Resting liquidity: above 0.83957 (equal highs (3)); below 0.83754 (previous day low).",
-    "Location: premium of the 3-month range (89%)."
+    "Latest sweep: buy-side liquidity (equal highs (3) 0.83957) taken and rejected on H1.",
+    "Resting liquidity: above 0.84434 (previous day high); below 0.83754 (previous day low).",
+    "Location: premium of the 3-month range (90%)."
    ],
    "d1": {
     "structure": "up",
@@ -332,13 +332,13 @@
      "level": 0.84137,
      "at": "2026-11-20T06:00:00.000Z"
     },
-    "atr": 0.00217
+    "atr": 0.00214
    },
    "h1": {
     "structure": "down",
     "trend": "range",
     "last": {
-     "type": "CHoCH",
+     "type": "BOS",
      "dir": "down",
      "level": 0.84147,
      "at": "2026-11-20T09:00:00.000Z"
@@ -358,25 +358,25 @@
    },
    "liquidity": {
     "above": {
-     "level": 0.83957,
-     "name": "equal highs (3)",
-     "atr": 0
+     "level": 0.84434,
+     "name": "previous day high",
+     "atr": 0.8
     },
     "below": {
      "level": 0.83754,
      "name": "previous day low",
-     "atr": 0.35
+     "atr": 0.4
     },
     "last_sweep": {
      "side": "BSL",
-     "name": "previous week high",
-     "level": 0.8397,
+     "name": "equal highs (3)",
+     "level": 0.83957,
      "tf": "H1",
-     "at": "2026-11-20T21:00:00.000Z"
+     "at": "2026-11-20T19:00:00.000Z"
     }
    },
    "location": {
-    "pct": 89,
+    "pct": 90,
     "label": "premium",
     "hi": 0.8444,
     "lo": 0.79825
@@ -385,19 +385,18 @@
   },
   "USDCAD": {
    "pair": "USDCAD",
-   "price": 1.4339,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 1.43301,
+   "price_time": "2026-11-23T02:56:03.000Z",
    "bias": "bullish",
    "conviction": "medium",
    "gap": 14,
    "status": "aligned",
    "headline": "Price agrees with the bullish bias: D1 and H4 structure both point up.",
    "detail": [
-    "Price is inside a H4 supply zone 1.43369–1.43573 (tested).",
-    "Nearest H4 demand on the bias side: 1.4283–1.43091 (tested), 0.4 ATR away.",
+    "Nearest H4 demand on the bias side: 1.4283–1.43091 (tested), 0.3 ATR away.",
     "Latest sweep: buy-side liquidity (equal highs (2) 1.43543) taken and rejected on H1.",
     "Resting liquidity: above 1.43543 (equal highs (2)); below 1.4295 (previous day low).",
-    "Location: premium of the 3-month range (97%).",
+    "Location: premium of the 3-month range (96%).",
     "The price read turns against the bias on a daily close below 1.3926 (last D1 swing)."
    ],
    "d1": {
@@ -420,7 +419,7 @@
      "level": 1.43161,
      "at": "2026-11-18T14:00:00.000Z"
     },
-    "atr": 0.00259
+    "atr": 0.00254
    },
    "h1": {
     "structure": "up",
@@ -441,25 +440,26 @@
       "status": "tested"
      }
     ],
-    "supply": [],
-    "inside": {
-     "tf": "H4",
-     "kind": "supply",
-     "lo": 1.43369,
-     "hi": 1.43573,
-     "status": "tested"
-    }
+    "supply": [
+     {
+      "tf": "H4",
+      "lo": 1.43369,
+      "hi": 1.43573,
+      "status": "tested"
+     }
+    ],
+    "inside": null
    },
    "liquidity": {
     "above": {
      "level": 1.43543,
      "name": "equal highs (2)",
-     "atr": 0.23
+     "atr": 0.36
     },
     "below": {
      "level": 1.4295,
      "name": "previous day low",
-     "atr": 0.65
+     "atr": 0.52
     },
     "last_sweep": {
      "side": "BSL",
@@ -470,7 +470,7 @@
     }
    },
    "location": {
-    "pct": 97,
+    "pct": 96,
     "label": "premium",
     "hi": 1.43573,
     "lo": 1.3728
@@ -479,17 +479,17 @@
   },
   "AUDUSD": {
    "pair": "AUDUSD",
-   "price": 0.6619,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 0.66383,
+   "price_time": "2026-11-23T02:55:48.000Z",
    "bias": "bearish",
    "conviction": "medium",
    "gap": -7,
    "status": "aligned",
    "headline": "Price agrees with the bearish bias: D1 and H4 structure both point down.",
    "detail": [
-    "Nearest H4 supply on the bias side: 0.66587–0.6684 (fresh), 0.8 ATR away.",
+    "Nearest H4 supply on the bias side: 0.66587–0.6684 (fresh), 0.4 ATR away.",
     "Resting liquidity: above 0.6684 (previous day high); below 0.66124 (previous day low).",
-    "Location: discount of the 3-month range (1%).",
+    "Location: discount of the 3-month range (4%).",
     "The price read turns against the bias on a daily close above 0.70269 (last D1 swing)."
    ],
    "d1": {
@@ -512,11 +512,11 @@
      "level": 0.67231,
      "at": "2026-11-18T02:00:00.000Z"
     },
-    "atr": 0.00212
+    "atr": 0.00221
    },
    "h1": {
     "structure": "down",
-    "trend": "range",
+    "trend": "down",
     "last": {
      "type": "BOS",
      "dir": "down",
@@ -546,17 +546,17 @@
     "above": {
      "level": 0.6684,
      "name": "previous day high",
-     "atr": 1.26
+     "atr": 0.89
     },
     "below": {
      "level": 0.66124,
      "name": "previous day low",
-     "atr": 0.13
+     "atr": 0.5
     },
     "last_sweep": null
    },
    "location": {
-    "pct": 1,
+    "pct": 4,
     "label": "discount",
     "hi": 0.72406,
     "lo": 0.66124
@@ -565,8 +565,8 @@
   },
   "NZDUSD": {
    "pair": "NZDUSD",
-   "price": 0.54705,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 0.54696,
+   "price_time": "2026-11-23T02:55:48.000Z",
    "bias": "bearish",
    "conviction": "low",
    "gap": -9,
@@ -574,7 +574,6 @@
    "headline": "Price agrees with the bearish bias: D1 and H4 structure both point down.",
    "detail": [
     "Nearest H4 supply on the bias side: 0.55015–0.5513 (fresh), 0.7 ATR away.",
-    "Latest sweep: sell-side liquidity (equal lows (2) 0.54847) taken and rejected on H1.",
     "Resting liquidity: above 0.5513 (previous day high); below 0.54657 (previous day low).",
     "Location: discount of the 3-month range (1%).",
     "The price read turns against the bias on a daily close above 0.56507 (last D1 swing)."
@@ -599,11 +598,11 @@
      "level": 0.54777,
      "at": "2026-11-20T18:00:00.000Z"
     },
-    "atr": 0.00155
+    "atr": 0.00153
    },
    "h1": {
     "structure": "down",
-    "trend": "range",
+    "trend": "down",
     "last": {
      "type": "BOS",
      "dir": "down",
@@ -633,20 +632,14 @@
     "above": {
      "level": 0.5513,
      "name": "previous day high",
-     "atr": 0.96
+     "atr": 0.98
     },
     "below": {
      "level": 0.54657,
      "name": "previous day low",
-     "atr": 0.11
+     "atr": 0.09
     },
-    "last_sweep": {
-     "side": "SSL",
-     "name": "equal lows (2)",
-     "level": 0.54847,
-     "tf": "H1",
-     "at": "2026-11-20T02:00:00.000Z"
-    }
+    "last_sweep": null
    },
    "location": {
     "pct": 1,
@@ -658,8 +651,8 @@
   },
   "EURGBP": {
    "pair": "EURGBP",
-   "price": 0.8381,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 0.83784,
+   "price_time": "2026-11-23T02:56:03.000Z",
    "bias": "two-sided",
    "conviction": "low",
    "gap": 0,
@@ -667,8 +660,8 @@
    "headline": "No fundamental lean this week; price structure is up on D1 and up on H4.",
    "detail": [
     "Latest sweep: buy-side liquidity (equal highs (2) 0.83793) taken and rejected on H1.",
-    "Resting liquidity: above 0.8385 (previous day high); below 0.83606 (equal lows (2)).",
-    "Location: discount of the 3-month range (21%)."
+    "Resting liquidity: above 0.83793 (equal highs (2)); below 0.83606 (equal lows (2)).",
+    "Location: discount of the 3-month range (20%)."
    ],
    "d1": {
     "structure": "up",
@@ -683,18 +676,18 @@
    },
    "h4": {
     "structure": "up",
-    "trend": "up",
+    "trend": "range",
     "last": {
      "type": "CHoCH",
      "dir": "up",
      "level": 0.83455,
      "at": "2026-11-18T14:00:00.000Z"
     },
-    "atr": 0.0011
+    "atr": 0.00106
    },
    "h1": {
     "structure": "down",
-    "trend": "down",
+    "trend": "range",
     "last": {
      "type": "CHoCH",
      "dir": "down",
@@ -735,14 +728,14 @@
    },
    "liquidity": {
     "above": {
-     "level": 0.8385,
-     "name": "previous day high",
-     "atr": 0.15
+     "level": 0.83793,
+     "name": "equal highs (2)",
+     "atr": 0.03
     },
     "below": {
      "level": 0.83606,
      "name": "equal lows (2)",
-     "atr": 0.77
+     "atr": 0.67
     },
     "last_sweep": {
      "side": "BSL",
@@ -753,7 +746,7 @@
     }
    },
    "location": {
-    "pct": 21,
+    "pct": 20,
     "label": "discount",
     "hi": 0.8612,
     "lo": 0.83194
@@ -762,17 +755,16 @@
   },
   "EURJPY": {
    "pair": "EURJPY",
-   "price": 173.904,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 174.552,
+   "price_time": "2026-11-23T02:56:05.000Z",
    "bias": "two-sided",
    "conviction": "low",
    "gap": 1,
    "status": "two-sided",
    "headline": "No fundamental lean this week; price structure is down on D1 and down on H4.",
    "detail": [
-    "Latest sweep: sell-side liquidity (equal lows (4) 175.077) taken and rejected on H1.",
     "Resting liquidity: above 175.344 (previous day high); below 173.732 (previous day low).",
-    "Location: discount of the 3-month range (1%)."
+    "Location: discount of the 3-month range (7%)."
    ],
    "d1": {
     "structure": "down",
@@ -794,7 +786,7 @@
      "level": 174.432,
      "at": "2026-11-20T06:00:00.000Z"
     },
-    "atr": 0.442
+    "atr": 0.46
    },
    "h1": {
     "structure": "down",
@@ -828,23 +820,17 @@
     "above": {
      "level": 175.344,
      "name": "previous day high",
-     "atr": 1.27
+     "atr": 0.7
     },
     "below": {
      "level": 173.732,
      "name": "previous day low",
-     "atr": 0.15
+     "atr": 0.72
     },
-    "last_sweep": {
-     "side": "SSL",
-     "name": "equal lows (4)",
-     "level": 175.077,
-     "tf": "H1",
-     "at": "2026-11-19T23:00:00.000Z"
-    }
+    "last_sweep": null
    },
    "location": {
-    "pct": 1,
+    "pct": 7,
     "label": "discount",
     "hi": 186.02,
     "lo": 173.732
@@ -853,17 +839,17 @@
   },
   "EURCHF": {
    "pair": "EURCHF",
-   "price": 0.92081,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 0.92242,
+   "price_time": "2026-11-23T02:56:05.000Z",
    "bias": "two-sided",
    "conviction": "low",
    "gap": 0,
    "status": "two-sided",
    "headline": "No fundamental lean this week; price structure is down on D1 and down on H4.",
    "detail": [
-    "Latest sweep: sell-side liquidity (equal lows (3) 0.92089) taken and rejected on H1.",
-    "Resting liquidity: above 0.9249 (equal highs (2)); below 0.91929 (previous day low).",
-    "Location: discount of the 3-month range (24%)."
+    "Latest sweep: sell-side liquidity (equal lows (5) 0.92225) taken and rejected on H1.",
+    "Resting liquidity: above 0.9249 (equal highs (2)); below 0.92225 (equal lows (5)).",
+    "Location: discount of the 3-month range (28%)."
    ],
    "d1": {
     "structure": "down",
@@ -885,7 +871,7 @@
      "level": 0.922,
      "at": "2026-11-20T14:00:00.000Z"
     },
-    "atr": 0.00197
+    "atr": 0.00199
    },
    "h1": {
     "structure": "down",
@@ -932,23 +918,23 @@
     "above": {
      "level": 0.9249,
      "name": "equal highs (2)",
-     "atr": 0.88
+     "atr": 0.53
     },
     "below": {
-     "level": 0.91929,
-     "name": "previous day low",
-     "atr": 0.33
+     "level": 0.92225,
+     "name": "equal lows (5)",
+     "atr": 0.04
     },
     "last_sweep": {
      "side": "SSL",
-     "name": "equal lows (3)",
-     "level": 0.92089,
+     "name": "equal lows (5)",
+     "level": 0.92225,
      "tf": "H1",
-     "at": "2026-11-20T21:00:00.000Z"
+     "at": "2026-11-23T01:00:00.000Z"
     }
    },
    "location": {
-    "pct": 24,
+    "pct": 28,
     "label": "discount",
     "hi": 0.9486,
     "lo": 0.91227
@@ -957,8 +943,8 @@
   },
   "EURAUD": {
    "pair": "EURAUD",
-   "price": 1.65697,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 1.65503,
+   "price_time": "2026-11-23T02:56:06.000Z",
    "bias": "two-sided",
    "conviction": "low",
    "gap": 0,
@@ -966,7 +952,7 @@
    "headline": "No fundamental lean this week; price structure is up on D1 and up on H4.",
    "detail": [
     "Resting liquidity: above 1.65906 (previous day high); below 1.64369 (previous day low).",
-    "Location: premium of the 3-month range (97%)."
+    "Location: premium of the 3-month range (95%)."
    ],
    "d1": {
     "structure": "up",
@@ -988,11 +974,11 @@
      "level": 1.63589,
      "at": "2026-11-18T22:00:00.000Z"
     },
-    "atr": 0.00519
+    "atr": 0.00529
    },
    "h1": {
     "structure": "up",
-    "trend": "down",
+    "trend": "range",
     "last": {
      "type": "BOS",
      "dir": "up",
@@ -1022,17 +1008,17 @@
     "above": {
      "level": 1.65906,
      "name": "previous day high",
-     "atr": 0.19
+     "atr": 0.36
     },
     "below": {
      "level": 1.64369,
      "name": "previous day low",
-     "atr": 1.18
+     "atr": 1.01
     },
     "last_sweep": null
    },
    "location": {
-    "pct": 97,
+    "pct": 95,
     "label": "premium",
     "hi": 1.65906,
     "lo": 1.57735
@@ -1041,17 +1027,17 @@
   },
   "EURNZD": {
    "pair": "EURNZD",
-   "price": 2.00489,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 2.00832,
+   "price_time": "2026-11-23T02:56:05.000Z",
    "bias": "two-sided",
    "conviction": "low",
    "gap": 2,
    "status": "two-sided",
    "headline": "No fundamental lean this week; price structure is up on D1 and up on H4.",
    "detail": [
-    "Latest sweep: buy-side liquidity (previous week high 2.00621) taken and rejected on H1.",
-    "Resting liquidity: above 2.00621 (previous week high); below 2.00466 (equal lows (2)).",
-    "Location: premium of the 3-month range (82%)."
+    "Latest sweep: sell-side liquidity (equal lows (2) 2.00466) taken and rejected on H1.",
+    "Resting liquidity: above 2.00939 (equal highs (4)); below 2.00466 (equal lows (2)).",
+    "Location: premium of the 3-month range (87%)."
    ],
    "d1": {
     "structure": "up",
@@ -1073,7 +1059,7 @@
      "level": 2.00301,
      "at": "2026-11-20T18:00:00.000Z"
     },
-    "atr": 0.00478
+    "atr": 0.00462
    },
    "h1": {
     "structure": "up",
@@ -1118,25 +1104,25 @@
    },
    "liquidity": {
     "above": {
-     "level": 2.00621,
-     "name": "previous week high",
-     "atr": 0.11
+     "level": 2.00939,
+     "name": "equal highs (4)",
+     "atr": 0.09
     },
     "below": {
      "level": 2.00466,
      "name": "equal lows (2)",
-     "atr": 0.02
+     "atr": 0.31
     },
     "last_sweep": {
-     "side": "BSL",
-     "name": "previous week high",
-     "level": 2.00621,
+     "side": "SSL",
+     "name": "equal lows (2)",
+     "level": 2.00466,
      "tf": "H1",
-     "at": "2026-11-20T21:00:00.000Z"
+     "at": "2026-11-23T01:00:00.000Z"
     }
    },
    "location": {
-    "pct": 82,
+    "pct": 87,
     "label": "premium",
     "hi": 2.01712,
     "lo": 1.95053
@@ -1145,8 +1131,8 @@
   },
   "EURCAD": {
    "pair": "EURCAD",
-   "price": 1.57251,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 1.5739,
+   "price_time": "2026-11-23T02:56:07.000Z",
    "bias": "bullish",
    "conviction": "medium",
    "gap": 7,
@@ -1154,10 +1140,10 @@
    "headline": "Price disagrees with the bullish bias: D1 and H4 structure point down. It would start to agree on a 4h close above 1.5745.",
    "detail": [
     "Price is inside a D1 demand zone 1.56778–1.57404 (tested).",
-    "Nearest D1 demand on the bias side: 1.56573–1.57238 (tested), 0.0 ATR away.",
-    "Latest sweep: buy-side liquidity (equal highs (2) 1.57199) taken and rejected on H1.",
-    "Resting liquidity: above 1.57442 (previous day high); below 1.57083 (previous week low).",
-    "Location: discount of the 3-month range (28%)."
+    "Nearest D1 demand on the bias side: 1.56573–1.57238 (tested), 0.2 ATR away.",
+    "Latest sweep: buy-side liquidity (previous day high 1.57442) taken and rejected on H1.",
+    "Resting liquidity: above 1.57442 (previous day high); below 1.56928 (equal lows (4)).",
+    "Location: discount of the 3-month range (30%)."
    ],
    "d1": {
     "structure": "down",
@@ -1179,7 +1165,7 @@
      "level": 1.57083,
      "at": "2026-11-17T10:00:00.000Z"
     },
-    "atr": 0.00279
+    "atr": 0.00273
    },
    "h1": {
     "structure": "down",
@@ -1232,23 +1218,23 @@
     "above": {
      "level": 1.57442,
      "name": "previous day high",
-     "atr": 0.27
+     "atr": 0.07
     },
     "below": {
-     "level": 1.57083,
-     "name": "previous week low",
-     "atr": 0.24
+     "level": 1.56928,
+     "name": "equal lows (4)",
+     "atr": 0.65
     },
     "last_sweep": {
      "side": "BSL",
-     "name": "equal highs (2)",
-     "level": 1.57199,
+     "name": "previous day high",
+     "level": 1.57442,
      "tf": "H1",
-     "at": "2026-11-20T18:00:00.000Z"
+     "at": "2026-11-23T01:00:00.000Z"
     }
    },
    "location": {
-    "pct": 28,
+    "pct": 30,
     "label": "discount",
     "hi": 1.6186,
     "lo": 1.55484
@@ -1257,17 +1243,17 @@
   },
   "GBPJPY": {
    "pair": "GBPJPY",
-   "price": 207.49,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 208.327,
+   "price_time": "2026-11-23T02:56:07.000Z",
    "bias": "two-sided",
    "conviction": "low",
    "gap": 1,
    "status": "two-sided",
    "headline": "No fundamental lean this week; price structure is down on D1 and down on H4.",
    "detail": [
-    "Latest sweep: sell-side liquidity (equal lows (3) 207.319) taken and rejected on H1.",
-    "Resting liquidity: above 209.009 (equal highs (4)); below 207.319 (equal lows (3)).",
-    "Location: discount of the 3-month range (6%)."
+    "Latest sweep: sell-side liquidity (equal lows (4) 208.177) taken and rejected on H1.",
+    "Resting liquidity: above 209.009 (equal highs (4)); below 208.177 (equal lows (4)).",
+    "Location: discount of the 3-month range (14%)."
    ],
    "d1": {
     "structure": "down",
@@ -1289,16 +1275,16 @@
      "level": 209.134,
      "at": "2026-11-19T18:00:00.000Z"
     },
-    "atr": 0.569
+    "atr": 0.592
    },
    "h1": {
-    "structure": "down",
+    "structure": "up",
     "trend": "down",
     "last": {
-     "type": "BOS",
-     "dir": "down",
-     "level": 207.922,
-     "at": "2026-11-20T19:00:00.000Z"
+     "type": "CHoCH",
+     "dir": "up",
+     "level": 208.32,
+     "at": "2026-11-23T01:00:00.000Z"
     }
    },
    "zones": {
@@ -1323,23 +1309,23 @@
     "above": {
      "level": 209.009,
      "name": "equal highs (4)",
-     "atr": 1.12
+     "atr": 0.5
     },
     "below": {
-     "level": 207.319,
-     "name": "equal lows (3)",
-     "atr": 0.13
+     "level": 208.177,
+     "name": "equal lows (4)",
+     "atr": 0.11
     },
     "last_sweep": {
      "side": "SSL",
-     "name": "equal lows (3)",
-     "level": 207.319,
+     "name": "equal lows (4)",
+     "level": 208.177,
      "tf": "H1",
-     "at": "2026-11-20T21:00:00.000Z"
+     "at": "2026-11-23T01:00:00.000Z"
     }
    },
    "location": {
-    "pct": 6,
+    "pct": 14,
     "label": "discount",
     "hi": 217.469,
     "lo": 206.872
@@ -1348,17 +1334,17 @@
   },
   "GBPCHF": {
    "pair": "GBPCHF",
-   "price": 1.09875,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 1.10089,
+   "price_time": "2026-11-23T02:56:08.000Z",
    "bias": "two-sided",
    "conviction": "low",
    "gap": 0,
    "status": "two-sided",
    "headline": "No fundamental lean this week; price structure is up on D1 and down on H4.",
    "detail": [
-    "Latest sweep: buy-side liquidity (equal highs (4) 1.09933) taken and rejected on H1.",
-    "Resting liquidity: above 1.09933 (equal highs (4)); below 1.0984 (equal lows (3)).",
-    "Location: discount of the 3-month range (44%)."
+    "Latest sweep: sell-side liquidity (equal lows (3) 1.10071) taken and rejected on H1.",
+    "Resting liquidity: above 1.10229 (equal highs (3)); below 1.10071 (equal lows (3)).",
+    "Location: premium of the 3-month range (53%)."
    ],
    "d1": {
     "structure": "up",
@@ -1380,7 +1366,7 @@
      "level": 1.10625,
      "at": "2026-11-19T14:00:00.000Z"
     },
-    "atr": 0.00272
+    "atr": 0.00273
    },
    "h1": {
     "structure": "down",
@@ -1425,26 +1411,26 @@
    },
    "liquidity": {
     "above": {
-     "level": 1.09933,
-     "name": "equal highs (4)",
-     "atr": 0.1
+     "level": 1.10229,
+     "name": "equal highs (3)",
+     "atr": 0.24
     },
     "below": {
-     "level": 1.0984,
+     "level": 1.10071,
      "name": "equal lows (3)",
-     "atr": 0.06
+     "atr": 0.03
     },
     "last_sweep": {
-     "side": "BSL",
-     "name": "equal highs (4)",
-     "level": 1.09933,
+     "side": "SSL",
+     "name": "equal lows (3)",
+     "level": 1.10071,
      "tf": "H1",
-     "at": "2026-11-20T21:00:00.000Z"
+     "at": "2026-11-23T01:00:00.000Z"
     }
    },
    "location": {
-    "pct": 44,
-    "label": "discount",
+    "pct": 53,
+    "label": "premium",
     "hi": 1.11151,
     "lo": 1.08887
    },
@@ -1452,8 +1438,8 @@
   },
   "GBPAUD": {
    "pair": "GBPAUD",
-   "price": 1.97755,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 1.97525,
+   "price_time": "2026-11-23T02:56:08.000Z",
    "bias": "two-sided",
    "conviction": "low",
    "gap": 0,
@@ -1461,7 +1447,7 @@
    "headline": "No fundamental lean this week; price structure is up on D1 and up on H4.",
    "detail": [
     "Resting liquidity: above 1.97913 (previous day high); below 1.96199 (previous day low).",
-    "Location: premium of the 3-month range (99%)."
+    "Location: premium of the 3-month range (96%)."
    ],
    "d1": {
     "structure": "up",
@@ -1483,7 +1469,7 @@
      "level": 1.97096,
      "at": "2026-11-20T14:00:00.000Z"
     },
-    "atr": 0.00563
+    "atr": 0.00573
    },
    "h1": {
     "structure": "up",
@@ -1517,17 +1503,17 @@
     "above": {
      "level": 1.97913,
      "name": "previous day high",
-     "atr": 0.13
+     "atr": 0.31
     },
     "below": {
      "level": 1.96199,
      "name": "previous day low",
-     "atr": 1.24
+     "atr": 1.06
     },
     "last_sweep": null
    },
    "location": {
-    "pct": 99,
+    "pct": 96,
     "label": "premium",
     "hi": 1.97913,
     "lo": 1.87248
@@ -1536,18 +1522,17 @@
   },
   "GBPNZD": {
    "pair": "GBPNZD",
-   "price": 2.39221,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 2.3971,
+   "price_time": "2026-11-23T02:56:09.000Z",
    "bias": "two-sided",
    "conviction": "low",
    "gap": 2,
    "status": "two-sided",
    "headline": "No fundamental lean this week; price structure is up on D1 and up on H4.",
    "detail": [
-    "Price is inside a H4 supply zone 2.39185–2.39617 (tested).",
     "Latest sweep: buy-side liquidity (equal highs (2) 2.39144) taken and rejected on H1.",
-    "Resting liquidity: above 2.39389 (previous day high); below 2.38018 (equal lows (3)).",
-    "Location: premium of the 3-month range (82%)."
+    "Resting liquidity: above 2.40511 (equal highs (3)); below 2.38018 (equal lows (3)).",
+    "Location: premium of the 3-month range (85%)."
    ],
    "d1": {
     "structure": "up",
@@ -1569,11 +1554,11 @@
      "level": 2.3899,
      "at": "2026-11-20T14:00:00.000Z"
     },
-    "atr": 0.00599
+    "atr": 0.00579
    },
    "h1": {
     "structure": "up",
-    "trend": "range",
+    "trend": "up",
     "last": {
      "type": "CHoCH",
      "dir": "up",
@@ -1610,24 +1595,18 @@
       "status": "fresh"
      }
     ],
-    "inside": {
-     "tf": "H4",
-     "kind": "supply",
-     "lo": 2.39185,
-     "hi": 2.39617,
-     "status": "tested"
-    }
+    "inside": null
    },
    "liquidity": {
     "above": {
-     "level": 2.39389,
-     "name": "previous day high",
-     "atr": 0.12
+     "level": 2.40511,
+     "name": "equal highs (3)",
+     "atr": 0.55
     },
     "below": {
      "level": 2.38018,
      "name": "equal lows (3)",
-     "atr": 0.82
+     "atr": 1.16
     },
     "last_sweep": {
      "side": "BSL",
@@ -1638,7 +1617,7 @@
     }
    },
    "location": {
-    "pct": 82,
+    "pct": 85,
     "label": "premium",
     "hi": 2.4179,
     "lo": 2.27788
@@ -1647,18 +1626,18 @@
   },
   "GBPCAD": {
    "pair": "GBPCAD",
-   "price": 1.87657,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 1.87849,
+   "price_time": "2026-11-23T02:56:09.000Z",
    "bias": "bullish",
    "conviction": "medium",
    "gap": 7,
    "status": "conflict",
    "headline": "Price disagrees with the bullish bias: D1 and H4 structure point down. It would start to agree on a 4h close above 1.88938.",
    "detail": [
-    "Nearest H4 demand on the bias side: 1.86769–1.87115 (tested), 0.7 ATR away.",
+    "Nearest H4 demand on the bias side: 1.86769–1.87115 (tested), 0.9 ATR away.",
     "Latest sweep: sell-side liquidity (equal lows (3) 1.87508) taken and rejected on H1.",
-    "Resting liquidity: above 1.87809 (equal highs (6)); below 1.87508 (equal lows (3)).",
-    "Location: discount of the 3-month range (41%)."
+    "Resting liquidity: above 1.87884 (equal highs (5)); below 1.87508 (equal lows (3)).",
+    "Location: discount of the 3-month range (46%)."
    ],
    "d1": {
     "structure": "down",
@@ -1669,7 +1648,7 @@
      "level": 1.88302,
      "at": "2026-11-18T22:00:00.000Z"
     },
-    "atr": 0.00807
+    "atr": 0.00808
    },
    "h4": {
     "structure": "down",
@@ -1680,16 +1659,16 @@
      "level": 1.88162,
      "at": "2026-11-19T06:00:00.000Z"
     },
-    "atr": 0.00323
+    "atr": 0.00319
    },
    "h1": {
-    "structure": "down",
-    "trend": "down",
+    "structure": "up",
+    "trend": "range",
     "last": {
-     "type": "BOS",
-     "dir": "down",
-     "level": 1.88185,
-     "at": "2026-11-19T09:00:00.000Z"
+     "type": "CHoCH",
+     "dir": "up",
+     "level": 1.87851,
+     "at": "2026-11-23T01:00:00.000Z"
     }
    },
    "zones": {
@@ -1725,14 +1704,14 @@
    },
    "liquidity": {
     "above": {
-     "level": 1.87809,
-     "name": "equal highs (6)",
-     "atr": 0.19
+     "level": 1.87884,
+     "name": "equal highs (5)",
+     "atr": 0.04
     },
     "below": {
      "level": 1.87508,
      "name": "equal lows (3)",
-     "atr": 0.18
+     "atr": 0.42
     },
     "last_sweep": {
      "side": "SSL",
@@ -1743,7 +1722,7 @@
     }
    },
    "location": {
-    "pct": 41,
+    "pct": 46,
     "label": "discount",
     "hi": 1.89964,
     "lo": 1.86055
@@ -1752,8 +1731,8 @@
   },
   "AUDJPY": {
    "pair": "AUDJPY",
-   "price": 104.918,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 105.458,
+   "price_time": "2026-11-23T02:56:10.000Z",
    "bias": "two-sided",
    "conviction": "low",
    "gap": 1,
@@ -1761,7 +1740,7 @@
    "headline": "No fundamental lean this week; price structure is down on D1 and down on H4.",
    "detail": [
     "Resting liquidity: above 106.476 (previous day high); below 104.717 (previous day low).",
-    "Location: discount of the 3-month range (2%)."
+    "Location: discount of the 3-month range (7%)."
    ],
    "d1": {
     "structure": "down",
@@ -1783,7 +1762,7 @@
      "level": 106.215,
      "at": "2026-11-19T22:00:00.000Z"
     },
-    "atr": 0.47
+    "atr": 0.492
    },
    "h1": {
     "structure": "down",
@@ -1817,17 +1796,17 @@
     "above": {
      "level": 106.476,
      "name": "previous day high",
-     "atr": 1.52
+     "atr": 0.99
     },
     "below": {
      "level": 104.717,
      "name": "previous day low",
-     "atr": 0.2
+     "atr": 0.72
     },
     "last_sweep": null
    },
    "location": {
-    "pct": 2,
+    "pct": 7,
     "label": "discount",
     "hi": 114.961,
     "lo": 104.717
@@ -1836,8 +1815,8 @@
   },
   "AUDCHF": {
    "pair": "AUDCHF",
-   "price": 0.5551,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 0.55729,
+   "price_time": "2026-11-23T02:56:10.000Z",
    "bias": "two-sided",
    "conviction": "low",
    "gap": 0,
@@ -1846,7 +1825,7 @@
    "detail": [
     "Latest sweep: sell-side liquidity (equal lows (2) 0.55984) taken and rejected on H1.",
     "Resting liquidity: above 0.56284 (previous day high); below 0.55426 (previous day low).",
-    "Location: discount of the 3-month range (2%)."
+    "Location: discount of the 3-month range (9%)."
    ],
    "d1": {
     "structure": "down",
@@ -1868,7 +1847,7 @@
      "level": 0.5639,
      "at": "2026-11-18T22:00:00.000Z"
     },
-    "atr": 0.00279
+    "atr": 0.00286
    },
    "h1": {
     "structure": "down",
@@ -1902,12 +1881,12 @@
     "above": {
      "level": 0.56284,
      "name": "previous day high",
-     "atr": 1.37
+     "atr": 0.98
     },
     "below": {
      "level": 0.55426,
      "name": "previous day low",
-     "atr": 0.15
+     "atr": 0.54
     },
     "last_sweep": {
      "side": "SSL",
@@ -1918,7 +1897,7 @@
     }
    },
    "location": {
-    "pct": 2,
+    "pct": 9,
     "label": "discount",
     "hi": 0.58823,
     "lo": 0.55426
@@ -1927,18 +1906,17 @@
   },
   "AUDNZD": {
    "pair": "AUDNZD",
-   "price": 1.20941,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 1.21355,
+   "price_time": "2026-11-23T02:56:11.000Z",
    "bias": "two-sided",
    "conviction": "low",
    "gap": 2,
    "status": "two-sided",
    "headline": "No fundamental lean this week; price structure is down on D1 and down on H4.",
    "detail": [
-    "Price is inside a D1 demand zone 1.20251–1.20997 (tested).",
-    "Latest sweep: sell-side liquidity (equal lows (2) 1.2096) taken and rejected on H1.",
-    "Resting liquidity: above 1.21355 (equal highs (2)); below 1.20831 (previous day low).",
-    "Location: discount of the 3-month range (23%)."
+    "Latest sweep: buy-side liquidity (equal highs (2) 1.21355) taken and rejected on H1.",
+    "Resting liquidity: above 1.21524 (previous day high); below 1.2096 (equal lows (2)).",
+    "Location: discount of the 3-month range (30%)."
    ],
    "d1": {
     "structure": "down",
@@ -1960,11 +1938,11 @@
      "level": 1.20953,
      "at": "2026-11-20T22:00:00.000Z"
     },
-    "atr": 0.00313
+    "atr": 0.0032
    },
    "h1": {
     "structure": "down",
-    "trend": "up",
+    "trend": "range",
     "last": {
      "type": "CHoCH",
      "dir": "down",
@@ -1973,7 +1951,20 @@
     }
    },
    "zones": {
-    "demand": [],
+    "demand": [
+     {
+      "tf": "D1",
+      "lo": 1.20794,
+      "hi": 1.21168,
+      "status": "tested"
+     },
+     {
+      "tf": "D1",
+      "lo": 1.20901,
+      "hi": 1.21107,
+      "status": "tested"
+     }
+    ],
     "supply": [
      {
       "tf": "H4",
@@ -1988,35 +1979,29 @@
       "status": "fresh"
      }
     ],
-    "inside": {
-     "tf": "D1",
-     "kind": "demand",
-     "lo": 1.20251,
-     "hi": 1.20997,
-     "status": "tested"
-    }
+    "inside": null
    },
    "liquidity": {
     "above": {
-     "level": 1.21355,
-     "name": "equal highs (2)",
-     "atr": 0.53
+     "level": 1.21524,
+     "name": "previous day high",
+     "atr": 0.22
     },
     "below": {
-     "level": 1.20831,
-     "name": "previous day low",
-     "atr": 0.14
+     "level": 1.2096,
+     "name": "equal lows (2)",
+     "atr": 0.51
     },
     "last_sweep": {
-     "side": "SSL",
-     "name": "equal lows (2)",
-     "level": 1.2096,
+     "side": "BSL",
+     "name": "equal highs (2)",
+     "level": 1.21355,
      "tf": "H1",
-     "at": "2026-11-20T20:00:00.000Z"
+     "at": "2026-11-23T01:00:00.000Z"
     }
    },
    "location": {
-    "pct": 23,
+    "pct": 30,
     "label": "discount",
     "hi": 1.26018,
     "lo": 1.19396
@@ -2025,8 +2010,8 @@
   },
   "AUDCAD": {
    "pair": "AUDCAD",
-   "price": 0.94804,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 0.95095,
+   "price_time": "2026-11-23T02:56:11.000Z",
    "bias": "bullish",
    "conviction": "medium",
    "gap": 7,
@@ -2034,7 +2019,7 @@
    "headline": "Price disagrees with the bullish bias: D1 and H4 structure point down. It would start to agree on a 4h close above 0.95679.",
    "detail": [
     "Resting liquidity: above 0.95679 (previous day high); below 0.94723 (previous day low).",
-    "Location: discount of the 3-month range (1%)."
+    "Location: discount of the 3-month range (7%)."
    ],
    "d1": {
     "structure": "down",
@@ -2056,7 +2041,7 @@
      "level": 0.96038,
      "at": "2026-11-18T22:00:00.000Z"
     },
-    "atr": 0.0034
+    "atr": 0.0035
    },
    "h1": {
     "structure": "down",
@@ -2072,15 +2057,15 @@
     "demand": [],
     "supply": [
      {
-      "tf": "H4",
-      "lo": 0.95322,
-      "hi": 0.95679,
+      "tf": "D1",
+      "lo": 0.96164,
+      "hi": 0.96429,
       "status": "fresh"
      },
      {
       "tf": "D1",
-      "lo": 0.96164,
-      "hi": 0.96429,
+      "lo": 0.96283,
+      "hi": 0.96529,
       "status": "fresh"
      }
     ],
@@ -2090,17 +2075,17 @@
     "above": {
      "level": 0.95679,
      "name": "previous day high",
-     "atr": 1.21
+     "atr": 0.81
     },
     "below": {
      "level": 0.94723,
      "name": "previous day low",
-     "atr": 0.11
+     "atr": 0.51
     },
     "last_sweep": null
    },
    "location": {
-    "pct": 1,
+    "pct": 7,
     "label": "discount",
     "hi": 1.00124,
     "lo": 0.94723
@@ -2109,8 +2094,8 @@
   },
   "NZDJPY": {
    "pair": "NZDJPY",
-   "price": 86.714,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 86.89,
+   "price_time": "2026-11-23T02:56:11.000Z",
    "bias": "two-sided",
    "conviction": "low",
    "gap": -1,
@@ -2119,7 +2104,7 @@
    "detail": [
     "Latest sweep: sell-side liquidity (equal lows (3) 87.293) taken and rejected on H1.",
     "Resting liquidity: above 87.736 (previous day high); below 86.572 (previous day low).",
-    "Location: discount of the 3-month range (2%)."
+    "Location: discount of the 3-month range (4%)."
    ],
    "d1": {
     "structure": "down",
@@ -2141,11 +2126,11 @@
      "level": 87.074,
      "at": "2026-11-20T14:00:00.000Z"
     },
-    "atr": 0.349
+    "atr": 0.353
    },
    "h1": {
     "structure": "down",
-    "trend": "range",
+    "trend": "down",
     "last": {
      "type": "CHoCH",
      "dir": "down",
@@ -2175,12 +2160,12 @@
     "above": {
      "level": 87.736,
      "name": "previous day high",
-     "atr": 1.16
+     "atr": 0.96
     },
     "below": {
      "level": 86.572,
      "name": "previous day low",
-     "atr": 0.16
+     "atr": 0.36
     },
     "last_sweep": {
      "side": "SSL",
@@ -2191,7 +2176,7 @@
     }
    },
    "location": {
-    "pct": 2,
+    "pct": 4,
     "label": "discount",
     "hi": 95.195,
     "lo": 86.572
@@ -2200,15 +2185,15 @@
   },
   "NZDCHF": {
    "pair": "NZDCHF",
-   "price": 0.45917,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 0.45916,
+   "price_time": "2026-11-23T02:56:12.000Z",
    "bias": "two-sided",
    "conviction": "low",
    "gap": -2,
    "status": "two-sided",
    "headline": "No fundamental lean this week; price structure is down on D1 and down on H4.",
    "detail": [
-    "Latest sweep: sell-side liquidity (equal lows (4) 0.45893) taken and rejected on H1.",
+    "Latest sweep: sell-side liquidity (equal lows (4) 0.45992) taken and rejected on H1.",
     "Resting liquidity: above 0.4612 (equal highs (2)); below 0.45893 (equal lows (4)).",
     "Location: discount of the 3-month range (26%)."
    ],
@@ -2232,11 +2217,11 @@
      "level": 0.45995,
      "at": "2026-11-20T18:00:00.000Z"
     },
-    "atr": 0.0018
+    "atr": 0.00178
    },
    "h1": {
     "structure": "down",
-    "trend": "range",
+    "trend": "down",
     "last": {
      "type": "CHoCH",
      "dir": "down",
@@ -2289,9 +2274,9 @@
     "last_sweep": {
      "side": "SSL",
      "name": "equal lows (4)",
-     "level": 0.45893,
+     "level": 0.45992,
      "tf": "H1",
-     "at": "2026-11-20T21:00:00.000Z"
+     "at": "2026-11-23T01:00:00.000Z"
     }
    },
    "location": {
@@ -2304,18 +2289,19 @@
   },
   "NZDCAD": {
    "pair": "NZDCAD",
-   "price": 0.78414,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 0.78343,
+   "price_time": "2026-11-23T02:56:12.000Z",
    "bias": "bullish",
    "conviction": "low",
    "gap": 5,
    "status": "conflict",
    "headline": "Price disagrees with the bullish bias: D1 and H4 structure point down. It would start to agree on a 4h close above 0.7891.",
    "detail": [
-    "Nearest D1 demand on the bias side: 0.77796–0.78374 (tested), 0.1 ATR away.",
-    "Latest sweep: sell-side liquidity (previous week low 0.7843) taken and rejected on H1.",
-    "Resting liquidity: above 0.78753 (equal highs (4)); below 0.78376 (equal lows (5)).",
-    "Location: discount of the 3-month range (12%)."
+    "Price is inside a D1 demand zone 0.77796–0.78374 (tested).",
+    "Nearest H4 demand on the bias side: 0.78337–0.78337 (tested), 0.0 ATR away.",
+    "Latest sweep: sell-side liquidity (equal lows (5) 0.78376) taken and rejected on H1.",
+    "Resting liquidity: above 0.78753 (equal highs (4)); below 0.78328 (previous day low).",
+    "Location: discount of the 3-month range (11%)."
    ],
    "d1": {
     "structure": "down",
@@ -2337,11 +2323,11 @@
      "level": 0.78448,
      "at": "2026-11-20T18:00:00.000Z"
     },
-    "atr": 0.00218
+    "atr": 0.00212
    },
    "h1": {
     "structure": "down",
-    "trend": "up",
+    "trend": "range",
     "last": {
      "type": "CHoCH",
      "dir": "down",
@@ -2352,16 +2338,16 @@
    "zones": {
     "demand": [
      {
-      "tf": "D1",
-      "lo": 0.77796,
-      "hi": 0.78374,
-      "status": "tested"
-     },
-     {
       "tf": "H4",
       "lo": 0.78337,
       "hi": 0.78337,
       "status": "tested"
+     },
+     {
+      "tf": "H4",
+      "lo": 0.78177,
+      "hi": 0.78273,
+      "status": "fresh"
      }
     ],
     "supply": [
@@ -2378,29 +2364,35 @@
       "status": "tested"
      }
     ],
-    "inside": null
+    "inside": {
+     "tf": "D1",
+     "kind": "demand",
+     "lo": 0.77796,
+     "hi": 0.78374,
+     "status": "tested"
+    }
    },
    "liquidity": {
     "above": {
      "level": 0.78753,
      "name": "equal highs (4)",
-     "atr": 0.6
+     "atr": 0.73
     },
     "below": {
-     "level": 0.78376,
-     "name": "equal lows (5)",
-     "atr": 0.07
+     "level": 0.78328,
+     "name": "previous day low",
+     "atr": 0.03
     },
     "last_sweep": {
      "side": "SSL",
-     "name": "previous week low",
-     "level": 0.7843,
+     "name": "equal lows (5)",
+     "level": 0.78376,
      "tf": "H1",
      "at": "2026-11-20T21:00:00.000Z"
     }
    },
    "location": {
-    "pct": 12,
+    "pct": 11,
     "label": "discount",
     "hi": 0.82755,
     "lo": 0.77796
@@ -2409,18 +2401,18 @@
   },
   "CADJPY": {
    "pair": "CADJPY",
-   "price": 110.531,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 110.894,
+   "price_time": "2026-11-23T02:56:13.000Z",
    "bias": "bearish",
    "conviction": "medium",
    "gap": -6,
    "status": "aligned",
    "headline": "Price agrees with the bearish bias: D1 and H4 structure both point down.",
    "detail": [
-    "Nearest H4 supply on the bias side: 111.749–111.974 (fresh), 1.7 ATR away.",
+    "Nearest H4 supply on the bias side: 111.749–111.974 (fresh), 1.2 ATR away.",
     "Latest sweep: sell-side liquidity (equal lows (3) 110.761) taken and rejected on H1.",
-    "Resting liquidity: above 111.306 (equal highs (6)); below 110.521 (equal lows (6)).",
-    "Location: discount of the 3-month range (7%).",
+    "Resting liquidity: above 111.306 (equal highs (6)); below 110.761 (equal lows (3)).",
+    "Location: discount of the 3-month range (14%).",
     "The price read turns against the bias on a daily close above 112.332 (last D1 swing)."
    ],
    "d1": {
@@ -2432,7 +2424,7 @@
      "level": 111.626,
      "at": "2026-11-15T22:00:00.000Z"
     },
-    "atr": 0.7
+    "atr": 0.699
    },
    "h4": {
     "structure": "down",
@@ -2443,7 +2435,7 @@
      "level": 111.025,
      "at": "2026-11-20T06:00:00.000Z"
     },
-    "atr": 0.285
+    "atr": 0.292
    },
    "h1": {
     "structure": "down",
@@ -2463,6 +2455,12 @@
       "lo": 111.749,
       "hi": 111.974,
       "status": "fresh"
+     },
+     {
+      "tf": "D1",
+      "lo": 112.863,
+      "hi": 113.661,
+      "status": "fresh"
      }
     ],
     "inside": null
@@ -2471,23 +2469,23 @@
     "above": {
      "level": 111.306,
      "name": "equal highs (6)",
-     "atr": 1.11
+     "atr": 0.59
     },
     "below": {
-     "level": 110.521,
-     "name": "equal lows (6)",
-     "atr": 0.01
+     "level": 110.761,
+     "name": "equal lows (3)",
+     "atr": 0.19
     },
     "last_sweep": {
      "side": "SSL",
      "name": "equal lows (3)",
      "level": 110.761,
      "tf": "H1",
-     "at": "2026-11-20T18:00:00.000Z"
+     "at": "2026-11-23T00:00:00.000Z"
     }
    },
    "location": {
-    "pct": 7,
+    "pct": 14,
     "label": "discount",
     "hi": 115.582,
     "lo": 110.162
@@ -2496,18 +2494,18 @@
   },
   "CADCHF": {
    "pair": "CADCHF",
-   "price": 0.5856,
-   "price_time": "2026-11-20T23:00:00.000Z",
+   "price": 0.58604,
+   "price_time": "2026-11-23T02:56:12.000Z",
    "bias": "bearish",
    "conviction": "low",
    "gap": -7,
    "status": "aligned",
    "headline": "Price agrees with the bearish bias: D1 and H4 structure both point down.",
    "detail": [
-    "Nearest H4 supply on the bias side: 0.59033–0.59057 (fresh), 1.2 ATR away.",
-    "Latest sweep: sell-side liquidity (equal lows (4) 0.58525) taken and rejected on H4.",
-    "Resting liquidity: above 0.58569 (equal highs (2)); below 0.58525 (equal lows (4)).",
-    "Location: premium of the 3-month range (51%).",
+    "Nearest H4 supply on the bias side: 0.59033–0.59057 (fresh), 1.0 ATR away.",
+    "Latest sweep: buy-side liquidity (equal highs (7) 0.58635) taken and rejected on H1.",
+    "Resting liquidity: above 0.58635 (equal highs (7)); below 0.58568 (equal lows (4)).",
+    "Location: premium of the 3-month range (54%).",
     "The price read turns against the bias on a daily close above 0.58863 (last D1 swing)."
    ],
    "d1": {
@@ -2530,7 +2528,7 @@
      "level": 0.58691,
      "at": "2026-11-20T10:00:00.000Z"
     },
-    "atr": 0.00192
+    "atr": 0.0019
    },
    "h1": {
     "structure": "down",
@@ -2575,25 +2573,25 @@
    },
    "liquidity": {
     "above": {
-     "level": 0.58569,
-     "name": "equal highs (2)",
-     "atr": 0.02
+     "level": 0.58635,
+     "name": "equal highs (7)",
+     "atr": 0.08
     },
     "below": {
-     "level": 0.58525,
+     "level": 0.58568,
      "name": "equal lows (4)",
      "atr": 0.09
     },
     "last_sweep": {
-     "side": "SSL",
-     "name": "equal lows (4)",
-     "level": 0.58525,
-     "tf": "H4",
-     "at": "2026-11-20T22:00:00.000Z"
+     "side": "BSL",
+     "name": "equal highs (7)",
+     "level": 0.58635,
+     "tf": "H1",
+     "at": "2026-11-23T01:00:00.000Z"
     }
    },
    "location": {
-    "pct": 51,
+    "pct": 54,
     "label": "premium",
     "hi": 0.593,
     "lo": 0.578
@@ -2602,18 +2600,17 @@
   },
   "CHFJPY": {
    "pair": "CHFJPY",
-   "price": 188.758,
-   "price_time": "2026-11-20T22:00:00.000Z",
+   "price": 189.212,
+   "price_time": "2026-11-23T02:56:14.000Z",
    "bias": "two-sided",
    "conviction": "low",
    "gap": 1,
    "status": "two-sided",
    "headline": "No fundamental lean this week; price structure is down on D1 and down on H4.",
    "detail": [
-    "Price is inside a H4 demand zone 188.328–189.147 (tested).",
     "Latest sweep: sell-side liquidity (equal lows (2) 189.059) taken and rejected on H1.",
-    "Resting liquidity: above 189.42 (equal highs (2)); below 188.525 (previous day low).",
-    "Location: discount of the 3-month range (10%)."
+    "Resting liquidity: above 189.42 (equal highs (2)); below 189.059 (equal lows (2)).",
+    "Location: discount of the 3-month range (14%)."
    ],
    "d1": {
     "structure": "down",
@@ -2635,11 +2632,11 @@
      "level": 191.46,
      "at": "2026-11-12T14:00:00.000Z"
     },
-    "atr": 0.471
+    "atr": 0.475
    },
    "h1": {
     "structure": "down",
-    "trend": "range",
+    "trend": "up",
     "last": {
      "type": "BOS",
      "dir": "down",
@@ -2650,9 +2647,15 @@
    "zones": {
     "demand": [
      {
-      "tf": "D1",
-      "lo": 187.581,
-      "hi": 188.526,
+      "tf": "H4",
+      "lo": 188.328,
+      "hi": 189.147,
+      "status": "tested"
+     },
+     {
+      "tf": "H4",
+      "lo": 188.328,
+      "hi": 189.05,
       "status": "tested"
      }
     ],
@@ -2670,35 +2673,29 @@
       "status": "fresh"
      }
     ],
-    "inside": {
-     "tf": "H4",
-     "kind": "demand",
-     "lo": 188.328,
-     "hi": 189.147,
-     "status": "tested"
-    }
+    "inside": null
    },
    "liquidity": {
     "above": {
      "level": 189.42,
      "name": "equal highs (2)",
-     "atr": 0.56
+     "atr": 0.18
     },
     "below": {
-     "level": 188.525,
-     "name": "previous day low",
-     "atr": 0.2
+     "level": 189.059,
+     "name": "equal lows (2)",
+     "atr": 0.13
     },
     "last_sweep": {
      "side": "SSL",
      "name": "equal lows (2)",
      "level": 189.059,
      "tf": "H1",
-     "at": "2026-11-20T18:00:00.000Z"
+     "at": "2026-11-23T01:00:00.000Z"
     }
    },
    "location": {
-    "pct": 10,
+    "pct": 14,
     "label": "discount",
     "hi": 199.002,
     "lo": 187.581
@@ -2707,8 +2704,8 @@
   },
   "XAUUSD": {
    "pair": "XAUUSD",
-   "price": 3515.4,
-   "price_time": "2026-11-20T21:59:57.000Z",
+   "price": 3582.1,
+   "price_time": "2026-11-23T02:46:12.000Z",
    "bias": "two-sided",
    "conviction": "low",
    "gap": 1,
@@ -2716,7 +2713,7 @@
    "headline": "No fundamental lean this week; price structure is down on D1 and down on H4.",
    "detail": [
     "Resting liquidity: above 3638.1 (previous day high); below 3502.9 (previous day low).",
-    "Location: discount of the 3-month range (1%)."
+    "Location: discount of the 3-month range (6%)."
    ],
    "d1": {
     "structure": "down",
@@ -2738,16 +2735,16 @@
      "level": 3835.2,
      "at": "2026-11-17T22:00:00.000Z"
     },
-    "atr": 43.94
+    "atr": 48.95
    },
    "h1": {
-    "structure": "down",
+    "structure": "up",
     "trend": "down",
     "last": {
-     "type": "BOS",
-     "dir": "down",
-     "level": 3694.5,
-     "at": "2026-11-19T15:00:00.000Z"
+     "type": "CHoCH",
+     "dir": "up",
+     "level": 3587,
+     "at": "2026-11-23T01:00:00.000Z"
     }
    },
    "zones": {
@@ -2755,8 +2752,14 @@
     "supply": [
      {
       "tf": "H4",
-      "lo": 3715.1,
+      "lo": 3715.4,
       "hi": 3738.7,
+      "status": "fresh"
+     },
+     {
+      "tf": "D1",
+      "lo": 3851.9,
+      "hi": 3894,
       "status": "fresh"
      }
     ],
@@ -2766,17 +2769,17 @@
     "above": {
      "level": 3638.1,
      "name": "previous day high",
-     "atr": 1.27
+     "atr": 0.58
     },
     "below": {
      "level": 3502.9,
      "name": "previous day low",
-     "atr": 0.13
+     "atr": 0.82
     },
     "last_sweep": null
    },
    "location": {
-    "pct": 1,
+    "pct": 6,
     "label": "discount",
     "hi": 4755,
     "lo": 3502.9
