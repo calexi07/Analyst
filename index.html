@@ -138,6 +138,29 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .st-kp em{ font-style:normal; font-weight:800; font-size:17px; display:block; } .st-kp small{ font-size:10.5px; color:var(--muted); }
   .st-kp .up, .st-ev .up, .st-lv .up{ color:var(--pos); } .st-kp .dn, .st-ev .dn, .st-lv .dn{ color:var(--neg); }
   .st-last, .st-sm{ font-size:12px; white-space:pre-wrap; } .st-last{ color:var(--muted); }
+  .aa-top{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:10px; } .aa-top .card{ margin:0; }
+  .aa-state .up,.aa-ev .up,.aa-sc .up,.aa-fund .up{ color:var(--pos); } .aa-state .dn,.aa-ev .dn,.aa-sc .dn,.aa-fund .dn{ color:var(--neg); }
+  .aa-sh{ display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; align-items:baseline; margin-bottom:8px; }
+  .aa-tb{ width:100%; border-collapse:collapse; font-size:13px; } .aa-tb th,.aa-tb td{ padding:5px 6px; text-align:left; border-bottom:1px solid var(--line); white-space:nowrap; }
+  .aa-lvs{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; } .aa-lv{ display:flex; flex-direction:column; padding:4px 8px; border-radius:10px; background:var(--surface-2); font-size:12px; } .aa-lv small{ color:var(--muted); font-size:10.5px; }
+  .aa-clip{ margin-top:6px; white-space:pre-wrap; }
+  .aa-btns{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:14px 0 6px; }
+  .aa-btn{ display:flex; flex-direction:column; gap:2px; align-items:flex-start; text-align:left; padding:12px; border-radius:16px; border:1px solid var(--line); background:var(--surface); color:inherit; cursor:pointer; }
+  .aa-btn i{ font-style:normal; font-size:20px; } .aa-btn small{ color:var(--muted); font-size:11.5px; } .aa-btn:disabled{ opacity:.55; cursor:wait; }
+  .aa-btn.plan{ border-top:4px solid #7AA2FF; } .aa-btn.confirm{ border-top:4px solid #22AB94; } .aa-btn.close{ border-top:4px solid #B69CFF; }
+  @media (max-width:640px){ .aa-btns{ grid-template-columns:1fr; } .aa-btn{ flex-direction:row; align-items:center; gap:10px; } .aa-btn small{ display:none; } }
+  .aa-note summary{ cursor:pointer; } .aa-note summary i{ font-style:normal; } .aa-nh{ margin:8px 0; display:flex; flex-direction:column; gap:6px; }
+  .sc-grp{ margin:10px 0 4px; font-weight:800; font-size:13px; } .sc-row{ display:grid; grid-template-columns:74px 1fr; gap:6px; padding:6px 0; border-top:1px solid var(--line, rgba(128,128,128,.18)); font-size:13px; }
+  .sc-row b{ font-size:13px; } .sc-why{ line-height:1.4; } .sc-tag{ display:inline-block; padding:1px 7px; border-radius:9px; font-size:11px; font-weight:700; margin-left:6px; color:#fff; }
+  .sc-watch{ background:#22AB94; } .sc-late{ background:#FF9800; } .sc-done{ background:#787B86; } .sc-unclear{ background:#9598A1; }
+  .sc-cont{ margin-top:3px; color:#00BCD4; font-size:12.5px; }
+  .sc-bar{ height:5px; border-radius:3px; background:var(--surface-2); margin-top:4px; overflow:hidden; } .sc-bar i{ display:block; height:100%; background:#00BCD4; }
+  .aa-md{ font-size:13.5px; line-height:1.5; } .aa-mh{ font-weight:800; margin-top:8px; } .aa-li{ padding-left:4px; } .aa-sp{ height:6px; }
+  .aa-scs{ display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:8px; } .aa-sc{ padding:10px; border-radius:12px; border:1px solid var(--line); display:flex; flex-direction:column; gap:4px; }
+  .aa-les{ padding:8px 10px; border-radius:12px; background:var(--surface-2); font-size:13px; }
+  .aa-kp{ display:flex; gap:18px; flex-wrap:wrap; margin-bottom:8px; } .aa-kp em{ font-style:normal; font-weight:800; font-size:18px; display:block; } .aa-kp small{ color:var(--muted); font-size:11.5px; }
+  .aa-evs{ display:flex; flex-direction:column; gap:0; padding:6px 10px; } .aa-ev{ display:flex; gap:8px; align-items:baseline; flex-wrap:wrap; padding:6px 0; border-bottom:1px solid var(--line); border-left:3px solid var(--t); padding-left:8px; }
+  .aa-ev:last-child{ border-bottom:0; } .aa-tf{ font-size:11px; font-weight:800; padding:1px 6px; border-radius:6px; background:var(--surface-2); } .aa-t{ margin-left:auto; }
   .st-h{ font-size:15px; font-weight:800; margin:16px 0 8px; } .st-fh{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
   .st-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:10px; }
   .st-live{ display:flex; flex-direction:column; gap:6px; padding:12px; border-radius:14px; border:1px solid var(--line); background:var(--surface); }
@@ -2662,12 +2685,13 @@ const ICONS = {
   bank:'<path d="M3 10l9-6 9 6"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8"/><path d="M3 21h18"/>',
   radar:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6-6"/><circle cx="12" cy="12" r="1.2"/>',
   bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+  brain:'<path d="M9 4a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 6 1V5a2 2 0 0 0-3-1z"/><path d="M15 4a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-6 1"/><path d="M12 9h2M12 14h-2"/>',
   spark:'<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
 };
 const ico = (k, s = 18) => `<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]||''}</svg>`;
 const NAV = [
   [null, [['today','Today','home']]],
-  ['Fundamental Analyse', [['journal','Calendar','calendar'],['history','Check','trend'],['watch','Watchlist','target'],['backtest','Trades','flask'],['strategies','Strategies','bolt'],['analyst','Analyst','radar']]],
+  ['Fundamental Analyse', [['journal','Calendar','calendar'],['history','Check','trend'],['watch','Watchlist','target'],['backtest','Trades','flask'],['strategies','Strategies','bolt'],['autoanalyst','Auto-Analyst','brain'],['scanner','Scanner','radar'],['analyst','Analyst','radar']]],
   ['Money', [['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target']]],
   ['Tools', [['health','Health','radar'],['prompts','Prompts','spark']]],
 ];
@@ -2833,7 +2857,7 @@ function render(){
 function openMore(){
   const d = document.getElementById('moreDlg'), light = document.documentElement.dataset.theme === 'light';
   d.innerHTML = `<div class="dlg-head"><h2>More</h2></div><div class="dlg-body more-g">
-    ${[['watch','Watchlist','target'],['analyst','Analyst','radar'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['health','Health','radar'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
+    ${[['watch','Watchlist','target'],['autoanalyst','Auto-Analyst','brain'],['scanner','Scanner','radar'],['analyst','Analyst','radar'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['health','Health','radar'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
     <button class="more-i" data-ma="share">${ico('share', 22)}<span>Share</span></button>
     <button class="more-i" data-ma="data">${ico('swap', 22)}<span>Import / export</span></button>
     <button class="more-i" data-ma="theme">${ico(light ? 'moon' : 'sun', 22)}<span>${light ? 'Dark' : 'Light'} theme</span></button></div>`;
@@ -2926,6 +2950,8 @@ function renderMain(){
   else if(S.view === 'backtest') renderBacktest();
   else if(S.view === 'analyst') renderAnalyst();
   else if(S.view === 'strategies') renderStrategies();
+  else if(S.view === 'autoanalyst') renderAutoAnalyst();
+  else if(S.view === 'scanner') renderScanner();
   else if(S.view === 'watch') renderWatch();
   else if(S.view === 'devents') renderDevents();
   else if(S.view === 'health') renderHealth();
@@ -5543,6 +5569,223 @@ function stPoll(){
     if(S.view !== 'strategies' || document.hidden) return;
     if(await stLoad() && S.view === 'strategies' && !document.querySelector('#main input:focus')) renderStrategies();
   }, 30000);
+}
+/* ===== Auto-Analyst — TradingView market events (D / 4H / 1H) + fundamentals + an AI analyst + virtual trades =====
+   TradingView "BE Auto-Analyst" alert (1H chart) → aa-event function → aa_events; the 3 buttons call aa-analyst (Claude) → aa_notes;
+   a VALID confirmation opens a virtual trade in aa_paper, moved bar by bar by aa-event. Nothing here places a real order. */
+S.aa = S.aa || { pair:null, ev:[], bar:null, notes:[], paper:[], loaded:false, err:null, busy:false, timer:null, sig:'', run:null };
+const AA_EV = {
+  frac_bos:['Fractal BOS','info'], frac_choch:['Fractal CHoCH','amber'], swing_bos:['Swing BOS','info'], swing_choch:['Swing CHoCH','amber'],
+  zone_new:['Zone created','muted'], zone_touch:['Zone touched','pos'], zone_break:['Zone broken','neg'], liq:['Liquidity taken','amber'],
+};
+const AA_MODES = [['plan','🧭','Analyse the market','Morning plan: what to watch today'], ['confirm','✅','Confirm','Is the setup valid now? A valid one opens a virtual trade'], ['close','🌙','Close the day','Review, mistakes, lessons']];
+const aaDir = d => d > 0 ? '<span class="up">▲</span>' : d < 0 ? '<span class="dn">▼</span>' : '<span class="muted">–</span>';
+const aaKey = () => ls.get('do_aa_key', '') || ls.get('do_st_key', '');
+const aaDay = () => new Date().toLocaleDateString('sv-SE', { timeZone:'Europe/Bucharest' });
+function aaPairs(){ const seen = [...new Set(S.aa.paper.map(r => r.pair).concat(ls.get('do_aa_pairs', '').split(',').filter(Boolean)))]; return [...new Set(['EURUSD', ...seen, ...WL_PAIRS])]; }
+async function aaLoad(){
+  if(S.aa.busy) return false; S.aa.busy = true; const p = S.aa.pair;
+  try{
+    const since = new Date(Date.now() - 4 * 864e5).toISOString();
+    const [e, b, n, t] = await Promise.all([
+      sb.from('aa_events').select('id,bar_time,tf,ev,dir,price,level,zlo,zhi,info').eq('pair', p).neq('ev', 'bar').gte('bar_time', since).order('bar_time', { ascending:false }).limit(400),
+      sb.from('aa_events').select('bar_time,price,info').eq('pair', p).eq('ev', 'bar').order('bar_time', { ascending:false }).limit(1),
+      sb.from('aa_notes').select('id,created_at,day,kind,model,text,data').eq('pair', p).order('id', { ascending:false }).limit(30),
+      sb.from('aa_paper').select('*').order('id', { ascending:false }).limit(400)]);
+    const err = [e, b, n, t].find(x => x.error)?.error; if(err) throw err;
+    const sig = [p, e.data.length, e.data[0]?.id, b.data[0]?.bar_time, n.data[0]?.id, t.data.map(r => r.id + r.status).join('')].join('|');
+    const changed = sig !== S.aa.sig;
+    Object.assign(S.aa, { ev:e.data, bar:b.data[0] || null, notes:n.data, paper:t.data, sig, err:null, loaded:true }); return changed;
+  }catch(e){ S.aa.err = /relation|does not exist|schema cache/i.test(e.message || '') ? 'missing' : (e.message || String(e)); S.aa.loaded = true; return true; }
+  finally{ S.aa.busy = false; }
+}
+/* fundamentals for the pair: this week's Bias Engine entry and the latest daily check that covers the pair */
+function aaFund(p){
+  const r = curWeekRec(p), d = r ? det(r) : {};
+  const weekly = r ? { bias:r.bias, conviction:r.conviction, fundamentals:(r.fundamentals || '').slice(0, 2500), details:JSON.stringify(d).length < 6000 ? d : null } : null;
+  const keys = Object.keys(S.settings).filter(k => k.startsWith('fcheck:')).sort().reverse();
+  let check = null;
+  for(const k of keys){ const x = (S.settings[k]?.pairs || []).find(v => normPair(v.pair) === p); if(x){ check = { key:k, ...x }; break; } }
+  return { weekly, check };
+}
+function aaMd(t){
+  return esc(t || '').split('\n').map(l => {
+    l = l.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+    if(/^#{1,4} /.test(l)) return `<div class="aa-mh">${l.replace(/^#+ /, '')}</div>`;
+    if(/^\s*[-•*] /.test(l)) return `<div class="aa-li">• ${l.replace(/^\s*[-•*] /, '')}</div>`;
+    return l.trim() ? `<div>${l}</div>` : '<div class="aa-sp"></div>';
+  }).join('');
+}
+function aaStats(rows){
+  const c = rows.filter(r => r.r != null), w = c.filter(r => r.r > 0).length, R = c.reduce((s, r) => s + r.r, 0);
+  return { n:c.length, w, R, avg:c.length ? R / c.length : 0 };
+}
+function renderAutoAnalyst(){
+  const m = document.getElementById('main'); if(!m) return;
+  if(!S.aa.pair) S.aa.pair = ls.get('do_aa_pair', 'EURUSD');
+  const p = S.aa.pair;
+  if(!S.aa.loaded){ m.innerHTML = '<div class="card fc-empty"><p>Loading the Auto-Analyst…</p></div>'; aaLoad().then(() => S.view==='autoanalyst' && renderAutoAnalyst()); aaPoll(); return; }
+  aaPoll();
+  const st = S.aa.bar?.info?.st || null, px = S.aa.bar?.price, today = aaDay();
+  const tfRow = k => { const x = st?.[k] || {}; const pd = x.pd;
+    return `<tr><th>${k}</th><td>${aaDir(x.f)}</td><td>${aaDir(x.s)}</td><td>${stPx(p, x.lo)} – ${stPx(p, x.hi)}</td>
+      <td>${pd==null ? '–' : `<span class="${pd > 50 ? 'dn' : 'up'}">${pd}% ${pd > 50 ? 'premium' : 'discount'}</span>`}</td></tr>`; };
+  const lv = (n, v, cls = '') => `<span class="aa-lv ${cls}"><small>${n}</small><b>${stPx(p, v)}</b></span>`;
+  const state = st ? `<div class="card aa-state">
+      <div class="aa-sh"><b>Market state</b><span class="muted st-sm">last 1H bar ${esc(stWhen(S.aa.bar.bar_time))} · close <b>${stPx(p, px)}</b></span></div>
+      <div class="tblwrap"><table class="aa-tb"><thead><tr><th></th><th>Fractal</th><th>Swing</th><th>Swing range</th><th>Price in range</th></tr></thead>
+        <tbody>${['D', '4H', '1H'].map(tfRow).join('')}</tbody></table></div>
+      <div class="aa-lvs">${lv('PDH', st.pdh, 'dn')}${lv('PDL', st.pdl, 'up')}${lv('PWH', st.pwh, 'dn')}${lv('PWL', st.pwl, 'up')}
+        ${lv('Asia H', st.asia?.[0])}${lv('Asia L', st.asia?.[1])}${lv('London H', st.london?.[0])}${lv('London L', st.london?.[1])}${lv('NY H', st.ny?.[0])}${lv('NY L', st.ny?.[1])}</div></div>`
+    : `<div class="card fc-empty"><p>No market data for ${esc(p)} yet. Add the <b>BE Auto-Analyst</b> alert on the ${esc(p)} 1H chart (see “Connect TradingView” below).</p></div>`;
+  const F = aaFund(p), wb = F.weekly;
+  const fund = `<div class="card aa-fund"><div class="aa-sh"><b>Fundamentals</b><span class="muted st-sm">Bias Engine, this week</span></div>
+      ${wb ? `<div><span class="wl-tag" style="background:${/bull|long/i.test(wb.bias) ? '#22AB94' : /bear|short/i.test(wb.bias) ? '#F23645' : 'var(--surface-2)'};color:#fff">${esc(BIAS_LBL?.[wb.bias] || wb.bias || 'no bias')}</span>${wb.conviction ? ` <span class="muted st-sm">conviction ${esc(wb.conviction)}</span>` : ''}</div>
+        ${wb.fundamentals ? `<div class="st-sm aa-clip">${esc(wb.fundamentals.slice(0, 420))}${wb.fundamentals.length > 420 ? '…' : ''}</div>` : ''}` : '<div class="muted st-sm">No weekly bias for this pair this week.</div>'}
+      ${F.check ? `<div class="st-sm muted">Latest daily check: ${esc(F.check.key.replace('fcheck:', '').replace(':', ' · '))}${F.check.bias ? ' · ' + esc(F.check.bias) : ''}</div>` : ''}</div>`;
+  const run = S.aa.run;
+  const btns = `<div class="aa-btns">${AA_MODES.map(([k, ic, lbl, sub]) => `<button type="button" class="aa-btn ${k}" data-aarun="${k}" ${run ? 'disabled' : ''}>
+      <i>${run===k ? '⏳' : ic}</i><b>${run===k ? 'Thinking… (up to a minute)' : lbl}</b><small>${sub}</small></button>`).join('')}</div>`;
+  const noteCard = n => { const d = n.data || {}, kind = AA_MODES.find(x => x[0]===n.kind) || [n.kind, '•', n.kind];
+    let head = '';
+    if(n.kind==='plan') head = `${d.bias ? `<span class="wl-tag" style="background:var(--surface-2)">bias ${esc(d.bias)}${d.confidence ? ' · ' + esc(d.confidence) : ''}</span>` : ''}${d.summary ? ` <b>${esc(d.summary)}</b>` : ''}
+      ${(d.scenarios || []).length ? `<div class="aa-scs">${d.scenarios.map(s => `<div class="aa-sc"><div><b>${esc(s.id || '')} · ${esc(s.name || '')}</b> ${aaDir(s.dir)} <span class="muted st-sm">${esc(s.tf_entry || '')}${s.valid_until ? ' · until ' + esc(s.valid_until) : ''}</span></div>
+        <div class="st-lv"><span>Zone <b>${stPx(p, s.zone?.[0])}–${stPx(p, s.zone?.[1])}</b></span><span>Entry <b>${stPx(p, s.entry)}</b></span><span class="dn">SL <b>${stPx(p, s.sl)}</b></span><span class="up">TP <b>${stPx(p, s.tp)}</b></span>${s.entry && s.sl && s.tp ? `<span>${fmt(Math.abs(s.tp - s.entry) / Math.abs(s.entry - s.sl), 1)}R</span>` : ''}</div>
+        <div class="st-sm">Trigger: ${esc(s.trigger || '')}</div><div class="st-sm muted">Invalid if: ${esc(s.invalid_if || '')}</div></div>`).join('')}</div>` : ''}`;
+    else if(n.kind==='confirm') head = `<span class="wl-tag" style="background:${d.verdict==='VALID' ? '#22AB94' : d.verdict==='INVALID' ? '#F23645' : 'var(--amber)'};color:#fff">${esc(d.verdict || '?')}</span>${d.scenario ? ` <b>scenario ${esc(d.scenario)}</b>` : ''}`;
+    else if(n.kind==='close') head = `${d.plan_score!=null ? `<span class="wl-tag" style="background:var(--surface-2)">plan ${esc(d.plan_score)}/10</span>` : ''}${(d.lessons || []).length ? `<div class="aa-les"><b>Lessons</b>${d.lessons.map(x => `<div class="aa-li">• ${esc(x)}</div>`).join('')}</div>` : ''}`;
+    return `<details class="card aa-note ${n.kind}" ${n.id===S.aa.notes[0]?.id ? 'open' : ''}><summary><i>${kind[1]}</i> <b>${esc(kind[2])}</b> <span class="muted st-sm">${esc(stWhen(n.created_at))}</span></summary>
+      <div class="aa-nh">${head}</div><div class="aa-md">${aaMd(n.text)}</div></details>`; };
+  const notes = S.aa.notes, todayN = notes.filter(n => n.day === today), older = notes.filter(n => n.day !== today);
+  const pp = S.aa.paper, mineP = pp.filter(r => r.pair === p), live = mineP.filter(r => ['pending', 'open'].includes(r.status)), done = pp.filter(r => r.r != null);
+  const sA = aaStats(done), sP = aaStats(done.filter(r => r.pair === p));
+  const pCard = r => `<article class="st-live ${r.status==='pending' ? 'pend' : ''}"><div class="st-lh"><b>${esc(r.pair)}</b>${r.dir > 0 ? '<span class="wl-tag" style="background:#22AB94;color:#fff">▲ Long</span>' : '<span class="wl-tag" style="background:#F23645;color:#fff">▼ Short</span>'}
+      <span class="wl-tag" style="background:var(--surface-2)">${esc(r.status)}${r.order_type ? ' · ' + esc(r.order_type) : ''}</span>${r.r!=null ? `<em class="${r.r >= 0 ? 'up' : 'dn'}">${stR(r.r)}</em>` : ''}</div>
+      <div class="st-lv"><span>Entry <b>${stPx(r.pair, r.entry)}</b></span><span class="dn">SL <b>${stPx(r.pair, r.sl)}</b></span><span class="up">TP <b>${stPx(r.pair, r.tp)}</b></span>${r.exit_price!=null ? `<span>Exit <b>${stPx(r.pair, r.exit_price)}</b></span>` : ''}</div>
+      <div class="muted st-sm">${esc(r.setup || '')} · ${esc(stWhen(r.created_at))}${r.status==='pending' && r.expires_at ? ' · expires ' + esc(stWhen(r.expires_at)) : ''}</div>
+      ${['pending', 'open'].includes(r.status) ? `<div><button type="button" class="btn" data-aacancel="${r.id}">Cancel</button></div>` : ''}</article>`;
+  const tf = ls.get('do_aa_tf', 'all'), evs = S.aa.ev.filter(e => tf==='all' || e.tf===tf || (tf==='D' && e.tf==='W'));
+  const evRow = e => { const [lbl, tone] = AA_EV[e.ev] || [e.ev, 'muted'];
+    const lvl = e.level!=null ? stPx(p, e.level) : '', zn = e.zlo!=null ? `${stPx(p, e.zlo)}–${stPx(p, e.zhi)}` : '';
+    return `<div class="aa-ev" style="--t:var(--${tone})"><span class="aa-tf">${esc(e.tf)}</span>${aaDir(e.dir)}<b>${esc(lbl)}</b>
+      <span class="st-sm">${e.info?.x ? esc(e.info.x) + ' ' : ''}${lvl ? '@ ' + lvl : ''}${zn ? ' · zone ' + zn : ''}</span><span class="muted st-sm aa-t">${esc(stWhen(e.bar_time))}</span></div>`; };
+  const hook = `${SUPABASE_URL}/functions/v1/aa-event?key=${aaKey() || 'YOUR_AA_KEY'}`;
+  m.innerHTML = `<header class="hp-top"><div><div class="pairtitle">Auto-Analyst</div><div class="muted" style="font-weight:600;font-size:12px">Market structure D · 4H · 1H from TradingView + fundamentals + an AI analyst · virtual trades only</div></div>
+      <div style="display:flex;gap:8px;align-items:center"><select class="inp" id="aaPair" style="width:auto">${aaPairs().map(x => `<option ${x===p ? 'selected' : ''}>${x}</option>`).join('')}</select><button type="button" class="btn" id="aaRef">↻</button></div></header>
+    ${S.aa.err==='missing' ? `<div class="card" style="border-color:var(--amber)"><b>One-time setup:</b> run <code>supabase/migration-auto-analyst.sql</code> in Supabase → SQL Editor (see “Connect” below).</div>` : S.aa.err ? `<div class="card" style="border-color:var(--neg)">Could not load: ${esc(S.aa.err)}</div>` : ''}
+    <div class="aa-top">${state}${fund}</div>
+    ${btns}<div id="aaOut" class="st-sm"></div>
+    <h3 class="st-h">Today</h3>
+    ${todayN.length ? todayN.map(noteCard).join('') : '<div class="card fc-empty"><p>No analysis today yet. Start with “Analyse the market”.</p></div>'}
+    <h3 class="st-h">Virtual trades · ${esc(p)}</h3>
+    <div class="aa-kp"><div><em>${live.length}</em><small>live</small></div><div><em class="${sP.R > 0 ? 'up' : sP.R < 0 ? 'dn' : ''}">${sP.n ? stR(sP.R) : '–'}</em><small>${sP.n ? `${sP.n} trades · ${Math.round(100 * sP.w / sP.n)}% win` : 'no closed trades'}</small></div>
+      <div><em class="${sA.R > 0 ? 'up' : sA.R < 0 ? 'dn' : ''}">${sA.n ? stR(sA.R) : '–'}</em><small>${sA.n ? `all pairs · ${sA.n} trades · ${fmt(sA.avg, 2)}R avg` : 'all pairs'}</small></div></div>
+    ${mineP.length ? `<div class="st-grid">${mineP.slice(0, 12).map(pCard).join('')}</div>` : '<div class="card fc-empty"><p>No virtual trade yet. A “Confirm” with verdict VALID opens one.</p></div>'}
+    <p class="muted st-sm">Virtual fills are conservative: a pending order fills when a 1H bar touches it; if stop and target are both inside one bar, the stop counts. ${sA.n < 30 ? `Fewer than 30 closed trades — too few to judge the analyst.` : ''}</p>
+    <div class="st-fh"><h3 class="st-h">Market events · last 4 days</h3><div class="seg" role="group">${['all', 'D', '4H', '1H'].map(x => `<button type="button" data-aatf="${x}" aria-pressed="${tf===x}">${x==='all' ? 'All' : x}</button>`).join('')}</div></div>
+    ${evs.length ? `<div class="card aa-evs">${evs.slice(0, 150).map(evRow).join('')}</div>` : '<div class="card fc-empty"><p>No events yet.</p></div>'}
+    ${older.length ? `<h3 class="st-h">Earlier notes</h3>${older.slice(0, 15).map(noteCard).join('')}` : ''}
+    <details class="card st-setup" ${S.aa.bar ? '' : 'open'}><summary><b>Connect</b> <span class="muted">· Supabase + TradingView, once</span></summary>
+      <ol>
+        <li>Supabase → SQL Editor: run <code>supabase/migration-auto-analyst.sql</code>.</li>
+        <li>Edge Functions → create <b>aa-event</b> (paste <code>supabase/functions/aa-event/index.ts</code>) and <b>aa-analyst</b> (paste <code>supabase/functions/aa-analyst/index.ts</code>); turn <b>Verify JWT off</b> on both; deploy.</li>
+        <li>Edge Functions → Secrets: <b>AA_KEY</b> = a long random word (or reuse STRAT_KEY), <b>ANTHROPIC_API_KEY</b> = your key from console.anthropic.com; optional <b>AA_MODEL</b>.
+          Key here: <input class="inp" id="aaKey" placeholder="your AA_KEY" value="${esc(ls.get('do_aa_key', ''))}" style="max-width:220px"> <button type="button" class="btn" id="aaCheck">Check setup</button><div id="aaChk" class="st-sm muted"></div></li>
+        <li>TradingView: add <code>pine/auto-analyst.pine</code> (“BE Auto-Analyst”) to a <b>1H chart</b> of each pair → Alerts → Create alert → Condition: BE Auto-Analyst → <b>Any alert() function call</b> → open-ended → Webhook URL:<pre class="su-code">${esc(hook)}</pre></li>
+        <li>One alert per pair. It sends one message per 1H bar close; Daily and 4H events arrive at the close of their bars.</li>
+      </ol>
+      <p class="muted st-sm">Each button press is one Claude API call (paid by your Anthropic key, roughly a few cents). The analyst sees only the events, levels and fundamentals stored here.</p></details>`;
+  m.querySelector('#aaPair').onchange = e => { S.aa.pair = e.target.value; ls.set('do_aa_pair', S.aa.pair); S.aa.loaded = false; S.aa.sig = ''; renderAutoAnalyst(); };
+  m.querySelector('#aaRef').onclick = async () => { await aaLoad(); renderAutoAnalyst(); toast('Up to date'); };
+  m.querySelectorAll('[data-aatf]').forEach(b => b.onclick = () => { ls.set('do_aa_tf', b.dataset.aatf); renderAutoAnalyst(); });
+  m.querySelector('#aaKey').onchange = e => { ls.set('do_aa_key', e.target.value.trim()); renderAutoAnalyst(); };
+  m.querySelector('#aaCheck').onclick = async () => { const o = m.querySelector('#aaChk'); if(!aaKey()) return toast('Type your AA_KEY first'); o.textContent = '…';
+    const q = async f => { try{ const r = await fetch(`${SUPABASE_URL}/functions/v1/${f}?key=${encodeURIComponent(aaKey())}&check=1`); return f + ': ' + JSON.stringify(await r.json()).replace(/[{}"]/g, '').replace(/,/g, ' · '); }
+      catch(e){ return f + ': not reachable (deployed? Verify JWT off?)'; } };
+    o.textContent = (await q('aa-event')) + '  |  ' + (await q('aa-analyst')); };
+  m.querySelectorAll('[data-aacancel]').forEach(b => b.onclick = async () => { b.disabled = true;
+    const { error } = await sb.from('aa_paper').update({ status:'cancelled', closed_at:new Date().toISOString() }).eq('id', +b.dataset.aacancel);
+    if(error){ b.disabled = false; return toast(error.message); } await aaLoad(); renderAutoAnalyst(); });
+  m.querySelectorAll('[data-aarun]').forEach(b => b.onclick = async () => {
+    if(!aaKey()) return toast('Type your AA_KEY in “Connect” first');
+    S.aa.run = b.dataset.aarun; renderAutoAnalyst();
+    let msg = '';
+    try{
+      const r = await fetch(`${SUPABASE_URL}/functions/v1/aa-analyst?key=${encodeURIComponent(aaKey())}`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ pair:p, mode:S.aa.run, fund:aaFund(p) }) });
+      const j = await r.json(); if(!r.ok || j.error) msg = 'Analyst: ' + (j.error || r.status);
+      else if(j.paper && !j.paper.error) msg = `Virtual trade ${j.paper.status === 'open' ? 'opened' : 'placed'} (${j.paper.dir > 0 ? 'long' : 'short'} ${stPx(p, j.paper.entry)}).`;
+    }catch(e){ msg = 'Analyst not reachable: ' + (e.message || e); }
+    S.aa.run = null; await aaLoad(); renderAutoAnalyst(); if(msg){ const o = document.getElementById('aaOut'); if(o) o.textContent = msg; toast(msg.slice(0, 90)); } });
+}
+function aaPoll(){
+  if(S.aa.timer) return;
+  S.aa.timer = setInterval(async () => {
+    if(S.view !== 'autoanalyst' || document.hidden || S.aa.run) return;
+    if(await aaLoad() && S.view === 'autoanalyst' && !document.querySelector('#main input:focus, #main details[open] .aa-md:hover')) renderAutoAnalyst();
+  }, 60000);
+}
+/* ===== Scanner — BE Tunnel SMC v20 sends one message per pair at 07/10/13/15/19 (Bucharest) → scan-event → scan_rows + scan_runs (Claude summary).
+   Classes are rule-based in the function (watch / late / done / unclear); late / done also show the continuation odds and the pullback zone; thresholds untested. Nothing here is a trade signal. */
+S.sc = S.sc || { slots:[], rows:[], run:null, slot:null, loaded:false, err:null, busy:false, timer:null, sig:'' };
+const SC_CLS = [['watch','De urmărit'], ['late','Târziu'], ['done','Done'], ['unclear','Neclar']];
+async function scLoad(){
+  if(S.sc.busy) return false; S.sc.busy = true;
+  try{
+    const r = await sb.from('scan_runs').select('slot,hour_local,status,n,summary,model,error,done_at').eq('test', false).order('slot', { ascending:false }).limit(40);
+    if(r.error) throw r.error;
+    S.sc.slots = r.data;
+    const slot = S.sc.slot && r.data.some(x => x.slot === S.sc.slot) ? S.sc.slot : r.data[0]?.slot || null;
+    let rows = [];
+    if(slot){ const q = await sb.from('scan_rows').select('pair,cls,rank_score,why,data,slot').eq('slot', slot).eq('test', false); if(q.error) throw q.error; rows = q.data; }
+    const run = r.data.find(x => x.slot === slot) || null;
+    const sig = [slot, rows.length, run?.status, run?.done_at].join('|'), changed = sig !== S.sc.sig;
+    Object.assign(S.sc, { slot, rows, run, sig, err:null, loaded:true }); return changed;
+  }catch(e){ S.sc.err = /relation|does not exist|schema cache/i.test(e.message || '') ? 'missing' : (e.message || String(e)); S.sc.loaded = true; return true; }
+  finally{ S.sc.busy = false; }
+}
+const scWhen = iso => new Date(iso).toLocaleString('ro-RO', { timeZone:'Europe/Bucharest', weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+function renderScanner(){
+  const m = document.getElementById('main'); if(!m) return;
+  if(!S.sc.loaded){ m.innerHTML = '<div class="card fc-empty"><p>Loading the scanner…</p></div>'; scLoad().then(() => S.view==='scanner' && renderScanner()); scPoll(); return; }
+  scPoll();
+  const hook = `${SUPABASE_URL}/functions/v1/scan-event?key=${aaKey() || '<AA_KEY>'}`;
+  const run = S.sc.run, rows = S.sc.rows;
+  const row = r => { const d = r.data || {}, k = d._cls || {}, dn = k.done_pct;
+    return `<div class="sc-row"><div><b>${esc(r.pair)}</b><div>${aaDir(d.dir)} <span class="muted st-sm">${d.pct ?? '–'}%</span></div></div>
+      <div class="sc-why">${esc((r.why || '').split(' · continuation: ')[0])}${(r.why || '').includes(' · continuation: ') ? `<div class="sc-cont">↪ ${esc(r.why.split(' · continuation: ')[1])}</div>` : ''}${dn != null ? `<div class="sc-bar"><i style="width:${Math.min(100, Math.max(0, dn))}%"></i></div>` : ''}</div></div>`; };
+  const groups = SC_CLS.map(([c, lbl]) => { const g = rows.filter(r => r.cls === c).sort((a, b) => (b.rank_score ?? 0) - (a.rank_score ?? 0));
+    return g.length ? `<div class="sc-grp">${lbl}<span class="sc-tag sc-${c}">${g.length}</span></div>${g.map(row).join('')}` : ''; }).join('');
+  const sum = !run ? '' : run.status === 'done' ? `<div class="aa-md">${aaMd(run.summary)}</div><div class="muted st-sm">${esc(run.model || '')} · ${run.n} pairs · rules untested · not a trade signal</div>`
+    : run.status === 'error' ? `<div class="neg st-sm">Summary failed: ${esc(run.error || '')}</div>` : '<div class="muted st-sm">Waiting for all pairs, the summary follows in about a minute…</div>';
+  m.innerHTML = `<div class="aa-sh"><h2 style="margin:0">Scanner</h2>
+      <span>${S.sc.slots.length ? `<select class="inp" id="scSlot">${S.sc.slots.map(x => `<option value="${esc(x.slot)}" ${x.slot === S.sc.slot ? 'selected' : ''}>${esc(scWhen(x.slot))}${x.n ? ' · ' + x.n : ''}</option>`).join('')}</select>` : ''}
+      <button type="button" class="btn" id="scRef">Refresh</button></span></div>
+    ${S.sc.err === 'missing' ? '<div class="card fc-empty"><p>The scanner tables are missing: run <code>supabase/migration-scanner.sql</code> (see Connect below).</p></div>' : S.sc.err ? `<div class="card neg">${esc(S.sc.err)}</div>` : ''}
+    ${S.sc.slot ? `<div class="card"><div class="aa-sh"><b>Summary · ${esc(scWhen(S.sc.slot))}</b>${run && aaKey() ? '<button type="button" class="btn" id="scRedo">Rewrite</button>' : ''}</div>${sum}</div>
+      <div class="card">${groups || '<p class="muted">No pairs in this scan.</p>'}</div>` : (S.sc.err ? '' : '<div class="card fc-empty"><p>No scan yet. The first one arrives at the next scan hour once the alerts are set (see Connect).</p></div>')}
+    <details class="card st-setup" ${S.sc.slots.length ? '' : 'open'}><summary><b>Connect</b> <span class="muted">· once</span></summary><ol>
+      <li>Supabase → SQL Editor: run <code>supabase/migration-scanner.sql</code>.</li>
+      <li>Edge Functions → create <b>scan-event</b> (paste <code>supabase/functions/scan-event/index.ts</code>), <b>Verify JWT off</b>, deploy. It uses the same secrets as the Auto-Analyst (AA_KEY, ANTHROPIC_API_KEY); optional SCAN_WAIT_S, SCAN_LANG.
+        <button type="button" class="btn" id="scCheck">Check setup</button><div id="scChk" class="st-sm muted"></div></li>
+      <li>TradingView: BE Tunnel MTF + SMC <b>v20</b> on each pair (5m is fine) → Create alert → Condition: the indicator → <b>Any alert() function call</b> → open-ended → only Webhook, no push → URL:<pre class="su-code">${esc(hook)}</pre></li>
+      <li>One alert per pair. Hours are in the indicator settings (Scanner group, default 7,10,13,15,19). Test once with “Test: send on every closed candle”, then turn it off and recreate the alert.</li>
+    </ol><p class="muted st-sm">Each scan is one Claude call for all pairs. Liquidity / zone / tunnel alerts that reach the same URL are ignored.</p></details>`;
+  m.querySelector('#scRef').onclick = async () => { await scLoad(); renderScanner(); toast('Up to date'); };
+  const sel = m.querySelector('#scSlot'); if(sel) sel.onchange = async e => { S.sc.slot = e.target.value; S.sc.sig = ''; await scLoad(); renderScanner(); };
+  const rd = m.querySelector('#scRedo'); if(rd) rd.onclick = async () => { rd.disabled = true; rd.textContent = '⏳';
+    try{ const r = await fetch(`${SUPABASE_URL}/functions/v1/scan-event?key=${encodeURIComponent(aaKey())}&redo=${encodeURIComponent(S.sc.slot)}`); const j = await r.json(); if(!r.ok || j.error) toast('Scanner: ' + (j.error || r.status)); }
+    catch(e){ toast('Scanner not reachable'); }
+    S.sc.sig = ''; await scLoad(); renderScanner(); };
+  m.querySelector('#scCheck').onclick = async () => { const o = m.querySelector('#scChk'); if(!aaKey()) return toast('Type your AA_KEY in Auto-Analyst → Connect first'); o.textContent = '…';
+    try{ const r = await fetch(`${SUPABASE_URL}/functions/v1/scan-event?key=${encodeURIComponent(aaKey())}&check=1`); o.textContent = JSON.stringify(await r.json()).replace(/[{}"]/g, '').replace(/,/g, ' · '); }
+    catch(e){ o.textContent = 'scan-event not reachable (deployed? Verify JWT off?)'; } };
+}
+function scPoll(){
+  if(S.sc.timer) return;
+  S.sc.timer = setInterval(async () => {
+    if(S.view !== 'scanner' || document.hidden) return;
+    if(await scLoad() && S.view === 'scanner' && !document.querySelector('#main select:focus')) renderScanner();
+  }, 60000);
 }
 function renderWatch(){
   const m = document.getElementById('main'), all = wlAll(), flt = ls.get('do_wl_f', 'active'), pf = ls.get('do_wl_p', 'All');

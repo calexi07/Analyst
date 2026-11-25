@@ -1,0 +1,379 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// BE Auto-Analyst · market events feed for Daily Observer (page Auto-Analyst)
+// Put it on a 1H chart of each pair and create ONE alert: condition "BE Auto-Analyst" → "Any alert() function call",
+// webhook URL = https://<project>.supabase.co/functions/v1/aa-event?key=<AA_KEY>. Message: leave as is (the script writes it).
+// Every closed 1H candle sends one JSON message: the candle (price feed for the virtual trades) and everything that happened on
+// D / 4H / 1H at that close: fractal structure breaks (BOS / CHoCH), swing structure breaks (close beyond a swing, like LuxAlgo),
+// liquidity taken (fractal highs / lows, PDH / PDL, PWH / PWL, Asia / London / New York highs / lows), supply / demand zones
+// created / touched / broken, and a state snapshot (trend per timeframe, swing range, premium / discount).
+//@version=6
+indicator("BE Auto-Analyst", shorttitle = "BE AA", overlay = true, max_bars_back = 2000, max_labels_count = 200)
+
+int  swD   = input.int(10, "Swing length · Daily", minval = 2, maxval = 50, group = "Swing structure (pivots left/right, break on close)")
+int  sw4   = input.int(20, "Swing length · 4H", minval = 2, maxval = 100, group = "Swing structure (pivots left/right, break on close)")
+int  sw1   = input.int(20, "Swing length · 1H", minval = 2, maxval = 100, group = "Swing structure (pivots left/right, break on close)")
+int  zAge  = input.int(60, "Zones stay active for (bars of their timeframe)", minval = 5, maxval = 300, group = "Supply / demand zones")
+bool show  = input.bool(true, "Show the state table", group = "Display")
+bool marks = input.bool(true, "Mark events on the chart (1H only)", group = "Display")
+string TZ  = "Europe/Bucharest"
+
+// ───────── everything that is computed on one timeframe (called through request.security) ─────────
+// returns, for the bar of that timeframe:
+//  fEv  : fractal break  +1/-1 BOS (continuation), +2/-2 CHoCH (reversal), 0 none ; fLvl = broken level ; fTr = fractal trend
+//  zLo/zHi : the new zone (origin candle of the move: refined zone) ; zfLo/zfHi : the full zone (origin extreme → broken level)
+//  ztD/ztLo/ztHi : a zone touched for the first time (dir of the zone) ; zbD/zbLo/zbHi : a zone broken (close beyond its far edge)
+//  sEv  : swing break +1/-1 BOS, +2/-2 CHoCH ; sLvl ; sTr ; sHi / sLo = current swing range (premium / discount)
+//  lqH / lqL : fractal high / low liquidity taken this bar (the highest / lowest level taken), na if none
+f_aa(int swN, int maxAge) =>
+    // fractal structure (same logic as BE Fractal Structure Break)
+    var int   tr = -1
+    var float fh = na
+    var int   fhi = na
+    var float fl = na
+    var int   fli = na
+    var float refH = na
+    var int   refHi = na
+    var float refL = na
+    var int   refLi = na
+    var float brkH = na
+    var float brkL = na
+    int   fEv = 0
+    float fLvl = na
+    int   src = na
+    if bar_index > 3
+        if high[1] > high[2] and high[1] > high and (na(brkH) or high[1] > brkH)
+            fh := high[1]
+            fhi := bar_index - 1
+        if low[1] < low[2] and low[1] < low and (na(brkL) or low[1] < brkL)
+            fl := low[1]
+            fli := bar_index - 1
+        if tr <= 0 and not na(refH) and high > refH
+            fEv := 2
+            fLvl := refH
+            src := refHi
+            tr := 1
+            brkH := refH
+            brkL := na
+            refL := math.min(low, low[1], low[2])
+            refLi := low == refL ? bar_index : low[1] == refL ? bar_index - 1 : bar_index - 2
+            refH := na
+            fh := na
+        else if tr >= 0 and not na(refL) and low < refL
+            fEv := -2
+            fLvl := refL
+            src := refLi
+            tr := -1
+            brkL := refL
+            brkH := na
+            refH := math.max(high, high[1], high[2])
+            refHi := high == refH ? bar_index : high[1] == refH ? bar_index - 1 : bar_index - 2
+            refL := na
+            fl := na
+        else
+            if tr > 0 and not na(fh) and high > fh
+                fEv := 1
+                fLvl := fh
+                src := fhi
+                float m = low
+                int mi = bar_index
+                int nb = bar_index - fhi - 1
+                if nb >= 1
+                    for k = 1 to nb
+                        if low[k] < m
+                            m := low[k]
+                            mi := bar_index - k
+                refL := m
+                refLi := mi
+                fh := na
+            if tr < 0 and not na(fl) and low < fl
+                fEv := -1
+                fLvl := fl
+                src := fli
+                float m = high
+                int mi = bar_index
+                int nb = bar_index - fli - 1
+                if nb >= 1
+                    for k = 1 to nb
+                        if high[k] > m
+                            m := high[k]
+                            mi := bar_index - k
+                refH := m
+                refHi := mi
+                fl := na
+    // the zone created by the break: origin = extreme of the move between the broken level's bar and this bar
+    float zLo = na
+    float zHi = na
+    float zfLo = na
+    float zfHi = na
+    var float[] zlo = array.new_float()
+    var float[] zhi = array.new_float()
+    var int[]   zd  = array.new_int()
+    var int[]   zb  = array.new_int()
+    var bool[]  zt  = array.new_bool()
+    if fEv != 0 and not na(src)
+        int d = fEv > 0 ? 1 : -1
+        int back = math.max(1, bar_index - src - 1)
+        int ob = 1
+        float ox = d > 0 ? low[1] : high[1]
+        for k = 1 to math.min(back, 400)
+            if (d > 0 and low[k] < ox) or (d < 0 and high[k] > ox)
+                ox := d > 0 ? low[k] : high[k]
+                ob := k
+        zLo := low[ob]
+        zHi := high[ob]
+        zfLo := d > 0 ? low[ob] : fLvl
+        zfHi := d > 0 ? fLvl : high[ob]
+        array.push(zlo, zLo)
+        array.push(zhi, zHi)
+        array.push(zd, d)
+        array.push(zb, bar_index)
+        array.push(zt, false)
+        if array.size(zd) > 30
+            array.shift(zlo)
+            array.shift(zhi)
+            array.shift(zd)
+            array.shift(zb)
+            array.shift(zt)
+    // zones touched (first time) / broken (close beyond the far edge) / expired
+    int   ztD = 0
+    float ztLo = na
+    float ztHi = na
+    int   zbD = 0
+    float zbLo = na
+    float zbHi = na
+    int n = array.size(zd)
+    if n > 0
+        for k = n - 1 to 0
+            if k < array.size(zd)
+                int   d  = array.get(zd, k)
+                float lo = array.get(zlo, k)
+                float hi = array.get(zhi, k)
+                int   b0 = array.get(zb, k)
+                bool  rm = false
+                if bar_index > b0
+                    if (d > 0 and close < lo) or (d < 0 and close > hi)
+                        zbD := d
+                        zbLo := lo
+                        zbHi := hi
+                        rm := true
+                    else if not array.get(zt, k) and ((d > 0 and low <= hi) or (d < 0 and high >= lo))
+                        array.set(zt, k, true)
+                        ztD := d
+                        ztLo := lo
+                        ztHi := hi
+                    if bar_index - b0 > maxAge
+                        rm := true
+                if rm
+                    array.remove(zlo, k)
+                    array.remove(zhi, k)
+                    array.remove(zd, k)
+                    array.remove(zb, k)
+                    array.remove(zt, k)
+    // swing structure (pivots swN left/right; the trend flips on a CLOSE beyond the last swing high / low)
+    float ph = ta.pivothigh(high, swN, swN)
+    float pl = ta.pivotlow(low, swN, swN)
+    var float sh = na
+    var float sl = na
+    var bool  shX = false
+    var bool  slX = false
+    var float rHi = na
+    var float rLo = na
+    var int   sTr = 0
+    int   sEv = 0
+    float sLvl = na
+    if not na(ph)
+        sh := ph
+        shX := false
+        rHi := ph
+    if not na(pl)
+        sl := pl
+        slX := false
+        rLo := pl
+    if not na(sh) and not shX and close > sh
+        sEv := sTr <= 0 ? 2 : 1
+        sLvl := sh
+        sTr := 1
+        shX := true
+    if not na(sl) and not slX and close < sl
+        sEv := sTr >= 0 ? -2 : -1
+        sLvl := sl
+        sTr := -1
+        slX := true
+    // fractal liquidity (unswept 3-candle highs / lows) taken by a wick
+    var float[] lh = array.new_float()
+    var float[] ll = array.new_float()
+    float lqH = na
+    float lqL = na
+    if bar_index > 3
+        int nh = array.size(lh)
+        if nh > 0
+            for k = nh - 1 to 0
+                float v = array.get(lh, k)
+                if high > v
+                    lqH := na(lqH) ? v : math.max(lqH, v)
+                    array.remove(lh, k)
+        int nl = array.size(ll)
+        if nl > 0
+            for k = nl - 1 to 0
+                float v = array.get(ll, k)
+                if low < v
+                    lqL := na(lqL) ? v : math.min(lqL, v)
+                    array.remove(ll, k)
+        if high[1] > high[2] and high[1] > high
+            array.push(lh, high[1])
+        if low[1] < low[2] and low[1] < low
+            array.push(ll, low[1])
+        if array.size(lh) > 40
+            array.shift(lh)
+        if array.size(ll) > 40
+            array.shift(ll)
+    [fEv, fLvl, tr, zLo, zHi, zfLo, zfHi, ztD, ztLo, ztHi, zbD, zbLo, zbHi, sEv, sLvl, sTr, rHi, rLo, lqH, lqL]
+
+[dFE, dFL, dFT, dZL, dZH, dZFL, dZFH, dTD, dTL, dTH, dBD, dBL, dBH, dSE, dSL, dST, dRH, dRL, dLH, dLL] = request.security(syminfo.tickerid, "D", f_aa(swD, zAge), lookahead = barmerge.lookahead_off)
+[hFE, hFL, hFT, hZL, hZH, hZFL, hZFH, hTD, hTL, hTH, hBD, hBL, hBH, hSE, hSL, hST, hRH, hRL, hLH, hLL] = request.security(syminfo.tickerid, "240", f_aa(sw4, zAge), lookahead = barmerge.lookahead_off)
+[oFE, oFL, oFT, oZL, oZH, oZFL, oZFH, oTD, oTL, oTH, oBD, oBL, oBH, oSE, oSL, oST, oRH, oRL, oLH, oLL] = request.security(syminfo.tickerid, "60", f_aa(sw1, zAge), lookahead = barmerge.lookahead_off)
+
+// a higher-timeframe bar is reported on the 1H candle that closes it
+bool closeD = time_close == time_close("D")
+bool close4 = time_close == time_close("240")
+
+// ───────── time-based liquidity on the 1H chart: PDH / PDL, PWH / PWL, Asia / London / New York highs and lows ─────────
+[pdh, pdl] = request.security(syminfo.tickerid, "D", [high[1], low[1]], lookahead = barmerge.lookahead_on)
+[pwh, pwl] = request.security(syminfo.tickerid, "W", [high[1], low[1]], lookahead = barmerge.lookahead_on)
+bool newD = timeframe.change("D")
+bool newW = timeframe.change("W")
+var bool tPDH = false
+var bool tPDL = false
+var bool tPWH = false
+var bool tPWL = false
+if newD
+    tPDH := false
+    tPDL := false
+if newW
+    tPWH := false
+    tPWL := false
+int tm = hour(time, TZ) * 60 + minute(time, TZ)
+f_sess(bool inS) =>
+    var float sH = na
+    var float sL = na
+    var bool  done = false
+    var bool  tH = false
+    var bool  tL = false
+    if inS and not inS[1]
+        sH := high
+        sL := low
+        done := false
+        tH := false
+        tL := false
+    else if inS
+        sH := math.max(sH, high)
+        sL := math.min(sL, low)
+    if not inS and inS[1]
+        done := true
+    bool hitH = false
+    bool hitL = false
+    if done and not inS[0]
+        if not tH and high > sH
+            tH := true
+            hitH := true
+        if not tL and low < sL
+            tL := true
+            hitL := true
+    [sH, sL, hitH, hitL]
+[aH, aL, aHH, aHL] = f_sess(tm >= 120 and tm < 540)
+[lH, lL, lHH, lHL] = f_sess(tm >= 540 and tm < 900)
+[nH, nL, nHH, nHL] = f_sess(tm >= 930 and tm < 1140)
+
+// ───────── message ─────────
+f_n(float x) => na(x) ? "null" : str.tostring(x, format.mintick)
+f_e(string tf, string ev, int d, float lvl, float lo, float hi, string x) =>
+    "[\"" + tf + "\",\"" + ev + "\"," + str.tostring(d) + "," + f_n(lvl) + "," + f_n(lo) + "," + f_n(hi) + ",\"" + x + "\"]"
+f_tf(string tf, int fe, float fl_, int zd_, float zl, float zh, float zfl, float zfh, int td, float tl, float th, int bd, float bl, float bh, int se, float sl_, float lh_, float ll_) =>
+    string[] out = array.new_string()
+    if fe != 0
+        array.push(out, f_e(tf, math.abs(fe) == 2 ? "frac_choch" : "frac_bos", fe > 0 ? 1 : -1, fl_, na, na, ""))
+        array.push(out, f_e(tf, "zone_new", fe > 0 ? 1 : -1, fl_, zl, zh, "full " + f_n(zfl) + "-" + f_n(zfh)))
+    if td != 0
+        array.push(out, f_e(tf, "zone_touch", td, na, tl, th, td > 0 ? "demand" : "supply"))
+    if bd != 0
+        array.push(out, f_e(tf, "zone_break", bd, na, bl, bh, bd > 0 ? "demand broken" : "supply broken"))
+    if se != 0
+        array.push(out, f_e(tf, math.abs(se) == 2 ? "swing_choch" : "swing_bos", se > 0 ? 1 : -1, sl_, na, na, ""))
+    if not na(lh_)
+        array.push(out, f_e(tf, "liq", 1, lh_, na, na, "fractal high"))
+    if not na(ll_)
+        array.push(out, f_e(tf, "liq", -1, ll_, na, na, "fractal low"))
+    array.join(out, ",")
+f_pd(float hi, float lo) => na(hi) or na(lo) or hi <= lo ? "null" : str.tostring(math.round((close - lo) / (hi - lo) * 100))
+string[] ev = array.new_string()
+if closeD
+    string s = f_tf("D", dFE, dFL, 0, dZL, dZH, dZFL, dZFH, dTD, dTL, dTH, dBD, dBL, dBH, dSE, dSL, dLH, dLL)
+    if s != ""
+        array.push(ev, s)
+if close4
+    string s = f_tf("4H", hFE, hFL, 0, hZL, hZH, hZFL, hZFH, hTD, hTL, hTH, hBD, hBL, hBH, hSE, hSL, hLH, hLL)
+    if s != ""
+        array.push(ev, s)
+string s1 = f_tf("1H", oFE, oFL, 0, oZL, oZH, oZFL, oZFH, oTD, oTL, oTH, oBD, oBL, oBH, oSE, oSL, oLH, oLL)
+if s1 != ""
+    array.push(ev, s1)
+if not tPDH and high > pdh
+    tPDH := true
+    array.push(ev, f_e("D", "liq", 1, pdh, na, na, "PDH"))
+if not tPDL and low < pdl
+    tPDL := true
+    array.push(ev, f_e("D", "liq", -1, pdl, na, na, "PDL"))
+if not tPWH and high > pwh
+    tPWH := true
+    array.push(ev, f_e("W", "liq", 1, pwh, na, na, "PWH"))
+if not tPWL and low < pwl
+    tPWL := true
+    array.push(ev, f_e("W", "liq", -1, pwl, na, na, "PWL"))
+if aHH
+    array.push(ev, f_e("1H", "liq", 1, aH, na, na, "Asia high"))
+if aHL
+    array.push(ev, f_e("1H", "liq", -1, aL, na, na, "Asia low"))
+if lHH
+    array.push(ev, f_e("1H", "liq", 1, lH, na, na, "London high"))
+if lHL
+    array.push(ev, f_e("1H", "liq", -1, lL, na, na, "London low"))
+if nHH
+    array.push(ev, f_e("1H", "liq", 1, nH, na, na, "New York high"))
+if nHL
+    array.push(ev, f_e("1H", "liq", -1, nL, na, na, "New York low"))
+
+string pair = str.replace_all(syminfo.ticker, "/", "")
+string st = "{\"D\":{\"f\":" + str.tostring(dFT) + ",\"s\":" + str.tostring(dST) + ",\"hi\":" + f_n(dRH) + ",\"lo\":" + f_n(dRL) + ",\"pd\":" + f_pd(dRH, dRL) + "}," +
+     "\"4H\":{\"f\":" + str.tostring(hFT) + ",\"s\":" + str.tostring(hST) + ",\"hi\":" + f_n(hRH) + ",\"lo\":" + f_n(hRL) + ",\"pd\":" + f_pd(hRH, hRL) + "}," +
+     "\"1H\":{\"f\":" + str.tostring(oFT) + ",\"s\":" + str.tostring(oST) + ",\"hi\":" + f_n(oRH) + ",\"lo\":" + f_n(oRL) + ",\"pd\":" + f_pd(oRH, oRL) + "}," +
+     "\"pdh\":" + f_n(pdh) + ",\"pdl\":" + f_n(pdl) + ",\"pwh\":" + f_n(pwh) + ",\"pwl\":" + f_n(pwl) +
+     ",\"asia\":[" + f_n(aH) + "," + f_n(aL) + "],\"london\":[" + f_n(lH) + "," + f_n(lL) + "],\"ny\":[" + f_n(nH) + "," + f_n(nL) + "]}"
+string msg = "{\"aa\":1,\"p\":\"" + pair + "\",\"t\":" + str.tostring(time) + ",\"o\":" + f_n(open) + ",\"h\":" + f_n(high) + ",\"l\":" + f_n(low) + ",\"c\":" + f_n(close) +
+     ",\"ev\":[" + array.join(ev, ",") + "],\"st\":" + st + "}"
+if barstate.isconfirmed and timeframe.period == "60"
+    alert(msg, alert.freq_once_per_bar_close)
+
+// ───────── on the chart ─────────
+if marks and timeframe.period == "60" and barstate.isconfirmed
+    if math.abs(oFE) == 2
+        label.new(bar_index, oFE > 0 ? low : high, "CHoCH", style = oFE > 0 ? label.style_label_up : label.style_label_down, color = color(na), textcolor = oFE > 0 ? #22AB94 : #F23645, size = size.tiny)
+    if math.abs(oSE) == 2
+        label.new(bar_index, oSE > 0 ? low : high, "swing CHoCH", style = oSE > 0 ? label.style_label_up : label.style_label_down, color = color(na), textcolor = oSE > 0 ? #22AB94 : #F23645, size = size.tiny)
+f_t(int d) => d > 0 ? "▲ bull" : d < 0 ? "▼ bear" : "–"
+f_c(int d) => d > 0 ? #22AB94 : d < 0 ? #F23645 : color.gray
+var table tb = table.new(position.top_right, 4, 5, bgcolor = color.new(#1E222D, 10), border_width = 1)
+if show and barstate.islast
+    table.cell(tb, 0, 0, "BE Auto-Analyst", text_color = color.white, text_size = size.small)
+    table.cell(tb, 1, 0, "Fractal", text_color = color.gray, text_size = size.small)
+    table.cell(tb, 2, 0, "Swing", text_color = color.gray, text_size = size.small)
+    table.cell(tb, 3, 0, "Range %", text_color = color.gray, text_size = size.small)
+    string[] tfs = array.from("D", "4H", "1H")
+    for k = 0 to 2
+        int ft = k == 0 ? dFT : k == 1 ? hFT : oFT
+        int stt = k == 0 ? dST : k == 1 ? hST : oST
+        string pdv = k == 0 ? f_pd(dRH, dRL) : k == 1 ? f_pd(hRH, hRL) : f_pd(oRH, oRL)
+        table.cell(tb, 0, k + 1, array.get(tfs, k), text_color = color.white, text_size = size.small)
+        table.cell(tb, 1, k + 1, f_t(ft), text_color = f_c(ft), text_size = size.small)
+        table.cell(tb, 2, k + 1, f_t(stt), text_color = f_c(stt), text_size = size.small)
+        table.cell(tb, 3, k + 1, pdv == "null" ? "–" : pdv + "%", text_color = color.white, text_size = size.small)
+    table.cell(tb, 0, 4, timeframe.period == "60" ? "1H chart: alerts on" : "Put me on a 1H chart", text_color = timeframe.period == "60" ? color.gray : #FFB74D, text_size = size.tiny)
