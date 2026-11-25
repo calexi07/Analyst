@@ -5874,9 +5874,10 @@ function scOpen(pair){
     const secs = Math.round((Date.now() - t0) / 1000);
     if(!error && data?.ai && !String(data.ai_model || '').startsWith('pending')){ Object.assign(r, data); S.sc.sig = ''; return show(data.ai, `${data.ai_model || ''} · nouă`); }
     if(!error && String(data?.ai_model || '').startsWith('error')) return box.innerHTML = `<div class="neg st-sm">Analiza a eșuat: ${esc(data.ai_model.slice(7))} · <a href="#" data-scre>încearcă din nou</a></div>`, box.querySelector('[data-scre]').onclick = e => { e.preventDefault(); ask(true); };
-    if(secs > 170) return box.innerHTML = '<div class="neg st-sm">Analiza nu a terminat (s-a blocat pe server). <a href="#" data-scre>Pornește din nou</a></div>', box.querySelector('[data-scre]').onclick = e => { e.preventDefault(); ask(false); };
-    box.innerHTML = `<div class="sc-wait">⏳ Claude analizează perechea… ${secs}s (de obicei 20–60s; poți închide, se salvează)</div>`;
-    setTimeout(() => poll(t0, n + 1), 4000);
+    if(secs > 170) return box.innerHTML = `${!error && data?.ai ? `<div class="aa-md">${aaMd(data.ai)}</div>` : ''}<div class="neg st-sm">Analiza nu a terminat (serverul a oprit-o). <a href="#" data-scre>Pornește din nou</a></div>`, box.querySelector('[data-scre]').onclick = e => { e.preventDefault(); ask(false); };
+    const part = !error && data?.ai ? `<div class="aa-md">${aaMd(data.ai)}</div>` : '';
+    box.innerHTML = `${part}<div class="sc-wait">⏳ ${part ? 'Claude scrie' : 'Claude analizează perechea'}… ${secs}s (poți închide, se salvează)</div>`;
+    setTimeout(() => poll(t0, n + 1), 3000);
   };
   const ask = async force => {
     if(S.sc.noAi) return box.innerHTML = '<div class="muted st-sm">Rulează în Supabase partea „v2” din <code>migration-scanner.sql</code> (3 rânduri) ca să se poată salva analiza.</div>';

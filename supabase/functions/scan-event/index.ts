@@ -12,7 +12,7 @@
 // Check the setup:              …/scan-event?key=<AA_KEY>&check=1
 // Write the summary again:      …/scan-event?key=<AA_KEY>&redo=<slot ISO time>
 // One-pair analysis (card tap):  …/scan-event?key=<AA_KEY>&pair=EURUSD&slot=<slot ISO time>[&force=1]  (stored in scan_rows.ai; a second tap reads it back for free)
-// Secrets: AA_KEY (or STRAT_KEY), ANTHROPIC_API_KEY; optional AA_MODEL, SCAN_WAIT_S, SCAN_LANG (default Romanian).
+// Secrets: AA_KEY (or STRAT_KEY), ANTHROPIC_API_KEY; optional AA_MODEL, SCAN_PAIR_MODEL (card analysis; default AA_MODEL), SCAN_WAIT_S, SCAN_LANG (default Romanian).
 // Other alert() messages of the same indicator (liquidity, zone, tunnel alerts) reach this URL too when they share the alert: they are ignored.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
@@ -207,7 +207,7 @@ export function pairContext(d: Scan) {
   const tun = (t?: [number, number | null]) => !t || t[1] == null ? null : { price_vs_tunnel: t[0] > 0 ? "above" : t[0] < 0 ? "below" : "inside", pips: t[1], edge: t[0] === 0 ? null : px(t[1], t[0] > 0 ? -1 : 1) };
   const lv = d.lv ?? {};
   return {
-    pair: d.p, scan_close_time: new Date(d.t).toISOString(), price: c, pip_size: pip, unit: "p = pips as the indicator shows them (forex: 0.0001 or 0.01 for JPY; gold/indices: one point = minimum tick)",
+    pair: d.p, scan_close_time: d.t ? new Date(d.t).toISOString() : null, price: c, pip_size: pip, unit: "p = pips as the indicator shows them (forex: 0.0001 or 0.01 for JPY; gold/indices: one point = minimum tick)",
     day_bias: dir > 0 ? "bullish" : dir < 0 ? "bearish" : "neutral", vote_pct: d.pct, votes: (d.v ?? []).map(([n, v, w]) => `${n}${v > 0 ? "▲" : v < 0 ? "▼" : "–"}${w > 1 ? "×" + w : ""}`).join(" "), vote_set: d.set,
     fundamental: { vote: d.fund, conviction: d.conv, gap: d.gap },
     day_open: d.do, day_high: d.dh, day_low: d.dl, atr_daily_pips: d.atrd, atr_1h_pips: d.atr1h,
@@ -222,17 +222,42 @@ export function pairContext(d: Scan) {
   };
 }
 
-async function askPair(ctx: unknown) {
+// streamed: the text is saved every few seconds, so the page shows it while Claude writes and nothing is lost if the function is stopped
+async function askPair(ctx: unknown, save: (text: string) => Promise<void>, tag: string) {
   const key = env("ANTHROPIC_API_KEY");
   if (!key) throw new Error("ANTHROPIC_API_KEY secret is missing");
+  const model = env("SCAN_PAIR_MODEL") || MODEL;
+  const t0 = Date.now();
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model: MODEL, max_tokens: 1600, system: PAIR_SYSTEM, messages: [{ role: "user", content: `${PAIR_FORMAT}\n\nDATE (JSON):\n${JSON.stringify(ctx)}` }] }),
+    body: JSON.stringify({ model, max_tokens: 1600, stream: true, system: PAIR_SYSTEM, messages: [{ role: "user", content: `${PAIR_FORMAT}\n\nDATE (JSON):\n${JSON.stringify(ctx)}` }] }),
   });
-  const j = await res.json();
-  if (!res.ok) throw new Error(j?.error?.message || `Anthropic API ${res.status}`);
-  return (j.content ?? []).filter((c: { type: string }) => c.type === "text").map((c: { text: string }) => c.text).join("\n").trim();
+  console.log(`${tag}: API status ${res.status} after ${((Date.now() - t0) / 1000).toFixed(1)}s (model ${model})`);
+  if (!res.ok || !res.body) { const j = await res.json().catch(() => ({})); throw new Error(j?.error?.message || `Anthropic API ${res.status}`); }
+  const reader = res.body.getReader(), dec = new TextDecoder();
+  let buf = "", text = "", first = 0, lastSave = 0, stop = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    let i;
+    while ((i = buf.indexOf("\n")) >= 0) {
+      const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+      if (!line.startsWith("data:")) continue;
+      let ev: { type?: string; delta?: { type?: string; text?: string; stop_reason?: string }; error?: { message?: string } };
+      try { ev = JSON.parse(line.slice(5)); } catch { continue; }
+      if (ev.type === "error") throw new Error(ev.error?.message || "stream error");
+      if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta") {
+        if (!first) { first = Date.now(); console.log(`${tag}: first text after ${((first - t0) / 1000).toFixed(1)}s`); }
+        text += ev.delta.text ?? "";
+      }
+      if (ev.type === "message_delta" && ev.delta?.stop_reason) stop = ev.delta.stop_reason;
+    }
+    if (text && Date.now() - lastSave > 3000) { lastSave = Date.now(); await save(text); }
+  }
+  console.log(`${tag}: done after ${((Date.now() - t0) / 1000).toFixed(1)}s, ${text.length} chars, stop ${stop || "?"}`);
+  return { text: text.trim(), model };
 }
 
 // runs in the background: the page polls scan_rows.ai (free) instead of holding the request open while Claude writes
@@ -240,7 +265,7 @@ export async function analysePair(pair: string, slot: string, force: boolean) {
   const { data: row, error } = await db.from("scan_rows").select("id,data,ai,ai_model,ai_at").eq("pair", pair).eq("slot", slot).eq("test", false).maybeSingle();
   if (error) throw new Error(error.message);
   if (!row) return { error: "no scan row for this pair and time" };
-  if (row.ai && !force) return { ai: row.ai, ai_model: row.ai_model, ai_at: row.ai_at, cached: true };
+  if (row.ai && !force && !String(row.ai_model || "").startsWith("pending")) return { ai: row.ai, ai_model: row.ai_model, ai_at: row.ai_at, cached: true };
   const age = row.ai_at ? Math.round((Date.now() - Date.parse(row.ai_at)) / 1000) : 0;
   const busy = String(row.ai_model || "").startsWith("pending") && age < 160;   // older than the function's time limit = stuck, start again
   if (busy) return { pending: true, since: row.ai_at, age_s: age };
@@ -248,9 +273,12 @@ export async function analysePair(pair: string, slot: string, force: boolean) {
   await db.from("scan_rows").update({ ai_model: "pending", ai_at: at, ...(force ? { ai: null } : {}) }).eq("id", row.id);
   const job = (async () => {
     try {
-      const text = await askPair(pairContext(row.data as Scan));
-      await db.from("scan_rows").update({ ai: text, ai_model: MODEL, ai_at: new Date().toISOString() }).eq("id", row.id);
+      const save = async (t: string) => { await db.from("scan_rows").update({ ai: t }).eq("id", row.id); };
+      const { text, model } = await askPair(pairContext(row.data as Scan), save, `${pair} ${slot}`);
+      if (!text) throw new Error("empty answer");
+      await db.from("scan_rows").update({ ai: text, ai_model: model, ai_at: new Date().toISOString() }).eq("id", row.id);
     } catch (e) {
+      console.error(`${pair} ${slot}: ${(e as Error).message}`);
       await db.from("scan_rows").update({ ai_model: "error: " + (e as Error).message.slice(0, 180), ai_at: new Date().toISOString() }).eq("id", row.id);
     }
   })();
