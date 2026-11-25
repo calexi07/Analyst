@@ -165,6 +165,7 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .sc-prog{ display:flex; justify-content:space-between; font-size:12px; color:var(--muted); } .sc-prog b{ color:var(--ink); }
   .sc-meter{ position:relative; height:7px; border-radius:4px; background:var(--surface-2); overflow:hidden; } .sc-meter i{ position:absolute; left:0; top:0; bottom:0; border-radius:4px; background:linear-gradient(90deg,#00BCD4,#7AA2FF); }
   .sc-meter u{ position:absolute; top:-2px; bottom:-2px; width:2px; background:var(--ink); opacity:.5; }
+  .sc-setup{ font-size:13px; line-height:1.45; padding:7px 9px; border-radius:10px; background:color-mix(in srgb,var(--scc) 14%,transparent); } .sc-setup b{ font-weight:800; }
   .sc-line{ font-size:12.5px; line-height:1.35; color:var(--muted); } .sc-line b{ color:var(--ink); font-weight:700; } .sc-line.cont{ color:#00BCD4; }
   .sc-foot{ display:flex; gap:6px; flex-wrap:wrap; } .sc-pill{ font-size:11px; padding:2px 7px; border-radius:7px; background:var(--surface-2); color:var(--muted); } .sc-pill.ai{ color:#B69CFF; }
   .sc-sheet{ position:fixed; inset:0; z-index:90; background:rgba(5,6,20,.55); display:flex; align-items:flex-end; justify-content:center; }
@@ -5772,24 +5773,22 @@ function renderScanner(){
   const hook = `${SUPABASE_URL}/functions/v1/scan-event?key=${aaKey() || '<AA_KEY>'}`;
   const run = S.sc.run, rows = S.sc.rows;
   const scOk = S.sc.slots.length > 0 && !!aaKey() && !S.sc.err;   // scans arrive and this device has the key
-  const SCC = { watch:'#22AB94', late:'#FF9800', done:'#787B86', unclear:'#9598A1' }, SCL = Object.fromEntries(SC_CLS);
-  const flt = S.sc.flt || 'all', cnt = c => rows.filter(r => r.cls === c).length;
-  const order = ['watch', 'late', 'done', 'unclear'];
-  const shown = rows.filter(r => flt === 'all' || r.cls === flt).sort((a, b) => order.indexOf(a.cls) - order.indexOf(b.cls) || (b.rank_score ?? 0) - (a.rank_score ?? 0));
-  const card = r => { const d = r.data || {}, k = d._cls || {}, dn = k.done_pct, c = k.cont, up = d.dir > 0, dir = d.dir ? (up ? 'up' : 'dn') : '';
-    const leg = c?.legs?.[0], z = (d.z || []).filter(x => x[4] != null).sort((a, b) => a[4] - b[4])[0];
-    const line1 = r.cls === 'watch' && k.room != null ? `<b>${k.room}p</b> până la AVG · pullback ${Math.max(d.adone ?? 0, 0)}p din ${d.pb ?? '–'}p tipic`
-      : leg ? `↪ ${leg.to === '75% line' ? 'linia 75%' : 'ziua de 90%'} <b>+${leg.more}p</b>${leg.chance != null ? ` · a continuat în ${leg.chance}% din zile` : ''}`
-      : c?.beyond95 ? '↪ peste 95% din zilele trecute' : r.cls === 'unclear' ? scWhyRo(r) : '';
-    const line2 = z ? `${esc(z[0])} ${z[4] === 0 ? '<b>preț în zonă</b>' : `la <b>${z[4]}p</b>`}${c?.retraced != null && r.cls !== 'watch' ? ` · retras ${c.retraced}p` : ''}` : (c?.retraced != null ? `retras ${c.retraced}p de la extremă` : '');
-    return `<button type="button" class="sc-card" data-scp="${esc(r.pair)}" style="--scc:${SCC[r.cls] || '#787B86'}">
-      <div class="sc-top"><span class="sc-pair">${esc(r.pair)}</span><span class="sc-badge">${esc(SCL[r.cls] || r.cls)}</span></div>
+  // interest (v21): reacted / watch / none; rows from older indicator versions fall back to the day class
+  const IK = r => r.data?._int?.kind || (r.data?.as ? 'none' : 'old');
+  const SCC = { reacted:'#22AB94', watch:'#7AA2FF', none:'#787B86', old:'#9598A1' }, SCL = { reacted:'A reacționat', watch:'De urmărit', none:'Fără interes', old:'Indicator vechi' };
+  const flt = S.sc.flt && SCL[S.sc.flt] ? S.sc.flt : 'all', cnt = c => rows.filter(r => IK(r) === c).length;
+  const order = ['reacted', 'watch', 'none', 'old'];
+  const shown = rows.filter(r => flt === 'all' || IK(r) === flt).sort((a, b) => order.indexOf(IK(a)) - order.indexOf(IK(b)) || (b.data?._int?.setup?.r ?? 0) - (a.data?._int?.setup?.r ?? 0));
+  const card = r => { const d = r.data || {}, k = d._cls || {}, it = d._int || {}, su = it.setup, dn = k.done_pct, up = d.dir > 0, dir = d.dir ? (up ? 'up' : 'dn') : '', kind = IK(r);
+    const setupTxt = su ? `<div class="sc-setup"><b>${up ? 'Long' : 'Short'}</b> ${kind === 'reacted' ? 'după' : 'din'} ${esc(su.label)}<br>→ ${esc(su.tpName)} ${esc(su.tp)} · <b>~${su.r}R</b>${su.dist ? ` · la ${su.dist}p` : ''}</div>` : `<div class="sc-line">${esc(it.why || (kind === 'old' ? 'mesaj de la v20, fără sesiuni/sweep-uri' : ''))}</div>`;
+    return `<button type="button" class="sc-card" data-scp="${esc(r.pair)}" style="--scc:${SCC[kind]}">
+      <div class="sc-top"><span class="sc-pair">${esc(r.pair)}</span><span class="sc-badge">${esc(SCL[kind])}</span></div>
       <div class="sc-dir ${dir}">${d.dir ? (up ? '▲ BULLISH' : '▼ BEARISH') : '◆ NEUTRAL'}<small>${d.pct ?? '–'}% · Fund ${d.fund > 0 ? '▲' : d.fund < 0 ? '▼' : '–'}</small></div>
-      ${dn != null ? `<div class="sc-prog"><span>done <b>${dn}%</b></span><span>AVG ${d.avg ?? '–'}p${d.avg75 != null ? ` · 75% ${d.avg75}p` : ''}</span></div>
+      ${setupTxt}
+      ${dn != null ? `<div class="sc-prog"><span>ziua: done <b>${dn}%</b></span><span>AVG ${d.avg ?? '–'}p</span></div>
         <div class="sc-meter"><i style="width:${Math.min(100, Math.max(0, dn) / (d.avg75 && d.avg ? d.avg75 / d.avg * 100 : 100) * 100)}%"></i>${d.avg75 && d.avg ? `<u style="left:${Math.min(100, 100 / (d.avg75 / d.avg))}%"></u>` : ''}</div>` : ''}
-      ${line1 ? `<div class="sc-line ${leg && r.cls !== 'watch' ? 'cont' : ''}">${line1}</div>` : ''}${line2 ? `<div class="sc-line">${line2}</div>` : ''}
-      <div class="sc-foot"><span class="sc-pill">1H tunel ${d.t1?.[1] != null ? (d.t1[1] === 0 ? 'în tunel' : d.t1[1] + 'p') : '–'}</span>${r.ai && !String(r.ai_model || '').startsWith('pending') ? '<span class="sc-pill ai">✦ analiză</span>' : ''}</div></button>`; };
-  const chips = `<div class="sc-chips">${[['all', 'Toate', rows.length], ...SC_CLS.map(([c, l]) => [c, l, cnt(c)])].map(([c, l, n]) => `<button type="button" class="sc-chip ${flt === c ? 'on' : ''}" data-scf="${c}">${l}<i>${n}</i></button>`).join('')}</div>`;
+      <div class="sc-foot">${(it.alts || []).length ? `<span class="sc-pill">+${it.alts.length} variant${it.alts.length > 1 ? 'e' : 'ă'}</span>` : ''}${r.ai && !String(r.ai_model || '').startsWith('pending') ? '<span class="sc-pill ai">✦ analiză</span>' : ''}</div></button>`; };
+  const chips = `<div class="sc-chips">${[['all', 'Toate', rows.length], ...['reacted', 'watch', 'none'].map(c => [c, SCL[c], cnt(c)]), ...(cnt('old') ? [['old', SCL.old, cnt('old')]] : [])].map(([c, l, n]) => `<button type="button" class="sc-chip ${flt === c ? 'on' : ''}" data-scf="${c}">${l}<i>${n}</i></button>`).join('')}</div>`;
   const groups = rows.length ? `${chips}<div class="sc-grid">${shown.map(card).join('') || '<p class="muted">Nimic în această categorie.</p>'}</div>` : '';
   const sum = !run ? '' : run.status === 'done' ? `<div class="aa-md">${aaMd(run.summary)}</div><div class="muted st-sm">${esc(run.model || '')} · ${run.n} pairs · rules untested · not a trade signal</div>`
     : run.status === 'error' ? `<div class="neg st-sm">Summary failed: ${esc(run.error || '')}</div>` : '<div class="muted st-sm">Waiting for all pairs, the summary follows in about a minute…</div>';
@@ -5857,10 +5856,12 @@ function scOpen(pair){
   const el = document.createElement('div'); el.className = 'sc-sheet';
   el.innerHTML = `<div class="sc-panel" role="dialog" aria-label="${esc(pair)}">
     <div class="sc-ph"><div><b style="font-size:18px">${esc(pair)}</b> <span class="sc-dir ${dirS > 0 ? 'up' : dirS < 0 ? 'dn' : ''}">${dirS > 0 ? '▲ BULLISH' : dirS < 0 ? '▼ BEARISH' : '◆ NEUTRAL'} ${d.pct ?? '–'}%</span>
-      <div class="muted st-sm">${esc(scWhen(r.slot))} · ${esc((SC_CLS.find(x => x[0] === r.cls) || [r.cls, r.cls])[1])}</div></div><button type="button" class="btn" data-scx>✕</button></div>
+      <div class="muted st-sm">${esc(scWhen(r.slot))} · ${esc(({ reacted:'A reacționat', watch:'De urmărit', none:'Fără interes' })[d._int?.kind] || (SC_CLS.find(x => x[0] === r.cls) || [r.cls, r.cls])[1])}</div></div><button type="button" class="btn" data-scx>✕</button></div>
     <div class="st-sm">${votes}</div>
     <div class="sc-kv">${kv}</div>
-    ${c ? `<div class="sc-line cont" style="margin-bottom:10px">${esc(scContRo(c, dirS))}</div>` : r.cls === 'unclear' ? `<div class="sc-line" style="margin-bottom:10px">${scWhyRo(r)}</div>` : ''}
+    ${(() => { const it = d._int; if(!it) return ''; const one = (x, i) => `<div class="sc-setup" style="--scc:${x.kind === 'reacted' ? '#22AB94' : '#7AA2FF'};margin-bottom:6px">${i ? 'Variantă: ' : ''}<b>${dirS > 0 ? 'Long' : 'Short'}</b> ${x.kind === 'reacted' ? 'după' : 'din'} ${esc(x.label)}${x.at ? ` <span class="muted">(${esc(new Date(x.at).toLocaleTimeString('ro-RO', { timeZone:'Europe/Bucharest', hour:'2-digit', minute:'2-digit' }))})</span>` : ''}<br>Intrare <b>${esc(x.entry)}</b> · SL <b>${esc(x.sl)}</b> · ${esc(x.tpName)} <b>${esc(x.tp)}</b> · <b>~${x.r}R</b>${x.dist ? ` · la ${x.dist}p` : ''}</div>`;
+      return it.setup ? [it.setup, ...(it.alts || [])].map(one).join('') + '<div class="muted st-sm" style="margin-bottom:10px">Setup calculat din reguli netestate (lichiditate / zonă în raza pullback-ului, țintă ≥ 2R). Intrarea o confirmi tu pe 5m.</div>' : `<div class="sc-line" style="margin-bottom:10px">Fără interes: ${esc(it.why)}</div>`; })()}
+    ${c ? `<div class="sc-line cont" style="margin-bottom:10px">${esc(scContRo(c, dirS))}</div>` : ''}
     <div class="sc-ai" id="scAi"></div></div>`;
   document.body.appendChild(el);
   el.onclick = e => { if(e.target === el || e.target.closest('[data-scx]')) el.remove(); };

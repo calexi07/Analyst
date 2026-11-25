@@ -33,6 +33,7 @@ export type Scan = {
   avg: number | null; avg75?: number | null; pb?: number | null; wdone: number | null; adone: number | null; n?: number; q?: number[];
   t1?: [number, number | null]; t4?: [number, number | null]; z?: [string, number, number, number, number | null][];
   lv?: Record<string, number | null>;
+  as?: (number | null)[]; ln?: (number | null)[]; pl?: Record<string, number | null>; sw?: [number, number | null, number | null, number | null][];
 };
 
 export function parse(text: string): Scan | null {
@@ -96,6 +97,109 @@ export function contText(c: ReturnType<typeof continuation>, dir: number) {
   return "continuation: " + parts.join(" · ");
 }
 
+
+// ---------- interest: is there still a trade worth watching (v21 messages) ----------
+// Entry places = liquidity against the bias (session high/low, PDH/PDL, PWH/PWL, 1H BSL/SSL) and bias-side zones / the 1H tunnel.
+// "reacted": a closed 1H sweep of liquidity against the bias in the last REACT_H hours, price back on the bias side.
+// "watch": an untaken level or a zone within reach of the usual pullback, with a target ≥ MIN_R away.
+// "none": no bias, or no place / no target worth 2R. Targets = levels and lines on the bias side (AVG, 75%, 90% day, BSL/SSL, sessions, PD/PW).
+// Thresholds are untested starting values; every scan is stored so they can be checked later.
+export const INTEREST = { minPct: 60, minR: 2, reactH: 4, slBufAtr1h: 0.15, reachAtr1h: 1.5 };
+
+type Lvl = { name: string; price: number };
+export function interest(d: Scan) {
+  const dir = d.dir, pip = d.pip || 0, c = d.c, a1 = (d.atr1h || 0) * pip;
+  const none = (why: string) => ({ kind: "none" as const, why, setup: null, alts: [] as unknown[] });
+  if (!dir) return none("fără bias (vot egal)");
+  if (d.pct == null || d.pct < INTEREST.minPct) return none(`vot slab (${d.pct ?? "?"}%)`);
+  if (!pip || c == null || !d.as) return none("date lipsă (indicator mai vechi de v21)");
+  if (d.avg && d.adone != null && d.adone >= d.avg) return none(`ziua a mers ${d.adone}p contra biasului`);
+  const P = (x: number | null | undefined) => (x == null ? null : +x);
+  const as = d.as ?? [], ln = d.ln ?? [], pl = d.pl ?? {};
+  // liquidity against the bias (bullish → lows below, bearish → highs above); untaken ones are entry places, taken ones may be the reaction
+  const against: (Lvl & { taken: boolean })[] = [];
+  const addA = (name: string, price: number | null, takenNow: boolean) => { if (price != null) against.push({ name, price, taken: takenNow }); };
+  if (dir > 0) {
+    addA("minim Asia", P(as[1]), as[3] != null && (as[3] as number) < (as[1] as number));
+    addA("minim Londra", P(ln[1]), ln[3] != null && (ln[3] as number) < (ln[1] as number));
+    addA("PDL", P(pl.pdl), d.dl != null && pl.pdl != null && d.dl < pl.pdl);
+    addA("PWL", P(pl.pwl), pl.wl != null && pl.pwl != null && pl.wl < pl.pwl);
+    addA("1H SSL", P(pl.ssl), false);
+  } else {
+    addA("maxim Asia", P(as[0]), as[2] != null && (as[2] as number) > (as[0] as number));
+    addA("maxim Londra", P(ln[0]), ln[2] != null && (ln[2] as number) > (ln[0] as number));
+    addA("PDH", P(pl.pdh), d.dh != null && pl.pdh != null && d.dh > pl.pdh);
+    addA("PWH", P(pl.pwh), pl.wh != null && pl.pwh != null && pl.wh > pl.pwh);
+    addA("1H BSL", P(pl.bsl), false);
+  }
+  if (d.do != null && (d.do - c) * dir < 0) addA("Daily open", +d.do, false);   // price is beyond the day open with the bias: the open is a pullback place
+  // targets on the bias side, beyond the entry
+  const tg: Lvl[] = [];
+  const addT = (name: string, price: number | null | undefined, untaken = true) => { if (price != null && untaken) tg.push({ name, price: +price }); };
+  const line = (pips: number | null | undefined) => (pips == null || d.do == null ? null : d.do + dir * pips * pip);
+  addT("AVG", line(d.avg)); addT("linia 75%", line(d.avg75));
+  if (d.q?.length === 10 && d.atrd) addT("ziua de 90%", line(d.q[8] * d.atrd));
+  if (dir > 0) {
+    addT("1H BSL", pl.bsl); addT("maxim Asia", as[0], !(as[2] != null && (as[2] as number) > (as[0] as number)));
+    addT("maxim Londra", ln[0], !(ln[2] != null && (ln[2] as number) > (ln[0] as number)));
+    addT("PDH", pl.pdh, !(d.dh != null && pl.pdh != null && d.dh > pl.pdh)); addT("PWH", pl.pwh, !(pl.wh != null && pl.pwh != null && pl.wh > pl.pwh));
+  } else {
+    addT("1H SSL", pl.ssl); addT("minim Asia", as[1], !(as[3] != null && (as[3] as number) < (as[1] as number)));
+    addT("minim Londra", ln[1], !(ln[3] != null && (ln[3] as number) < (ln[1] as number)));
+    addT("PDL", pl.pdl, !(d.dl != null && pl.pdl != null && d.dl < pl.pdl)); addT("PWL", pl.pwl, !(pl.wl != null && pl.wl != null && pl.wl < (pl.pwl ?? -Infinity)));
+  }
+  const cap = d.q?.length === 10 && d.atrd ? line(d.q[9] * d.atrd) : null;   // beyond the 95% day = not a same-day target
+  const pickTarget = (entry: number, sl: number) => {
+    const risk = Math.abs(entry - sl); if (!risk) return null;
+    const c2 = tg.filter((t) => (t.price - entry) * dir > 0 && (cap == null || (cap - t.price) * dir >= 0)).sort((a, b) => (a.price - b.price) * dir);
+    for (const t of c2) { const r = Math.abs(t.price - entry) / risk; if (r >= INTEREST.minR) return { ...t, r: Math.round(r * 10) / 10 }; }
+    return null;
+  };
+  const dec = pip >= 0.01 && c > 500 ? 2 : Math.max(0, Math.round(-Math.log10(pip))) + 1;   // forex: pip + 1 digit; gold / indices: points
+  const pp = (x: number) => x.toFixed(dec), pips = (x: number) => Math.round(Math.abs(x) / pip * 10) / 10;
+  const buf = Math.max(INTEREST.slBufAtr1h * a1, pip);
+  const setups: { kind: "reacted" | "watch"; label: string; entry: string; sl: string; tp: string; tpName: string; r: number; dist: number; at?: number }[] = [];
+  // 1) reaction: closed 1H sweep against the bias, recent, price back on the bias side
+  const sw = (d.sw ?? []).find((x) => x[0] === -dir && x[1] != null && x[2] != null);
+  if (sw && d.t - (sw[2] as number) <= INTEREST.reactH * 3600000 && sw[2] as number <= d.t) {
+    const lvl = sw[1] as number, ext = (sw[3] ?? lvl) as number;
+    if ((c - lvl) * dir > 0) {
+      const named = against.find((a) => Math.abs(a.price - lvl) <= 3 * pip);
+      const nm = `sweep ${named ? named.name : dir > 0 ? "sellside" : "buyside"} ${pp(lvl)}`;
+      const sl = ext - dir * buf, tp = pickTarget(c, sl);
+      if (tp) setups.push({ kind: "reacted", label: nm, entry: pp(c), sl: pp(sl), tp: pp(tp.price), tpName: tp.name, r: tp.r, dist: 0, at: sw[2] as number });
+      else {   // from the current price the stop is too wide: a retest of the swept level, stop beyond the sweep's extreme
+        const tp2 = pickTarget(lvl, sl);
+        if (tp2) setups.push({ kind: "reacted", label: `${nm}, retest`, entry: pp(lvl), sl: pp(sl), tp: pp(tp2.price), tpName: tp2.name, r: tp2.r, dist: pips(c - lvl), at: sw[2] as number });
+      }
+    }
+  }
+  // 2) places price can still come back to: untaken liquidity against the bias, bias-side zones, the 1H tunnel
+  const reach = Math.max((d.pb ?? 0) * pip, INTEREST.reachAtr1h * a1);
+  for (const a of against) {
+    if (a.taken || (a.price - c) * dir >= 0) continue;            // must be on the pullback side, not yet taken
+    const dist = Math.abs(c - a.price); if (dist > reach) continue;
+    const entry = a.price, sl = a.price - dir * (buf + 0.5 * a1), tp = pickTarget(entry, sl);
+    if (tp) setups.push({ kind: "watch", label: a.name === "Daily open" ? `pullback la Daily open ${pp(a.price)}` : `sweep ${a.name} ${pp(a.price)}`, entry: pp(entry), sl: pp(sl), tp: pp(tp.price), tpName: tp.name, r: tp.r, dist: pips(dist) });
+  }
+  for (const z of d.z ?? []) {
+    const [tag, , bot, top, zd] = z; if (zd == null) continue;
+    const dist = (zd as number) * pip; if (dist > reach) continue;
+    const near = dir > 0 ? top : bot, far = dir > 0 ? bot : top;
+    const entry = zd === 0 ? c : near, sl = far - dir * buf, tp = pickTarget(entry, sl);
+    if (tp) setups.push({ kind: zd === 0 ? "reacted" : "watch", label: `${zd === 0 ? "preț în " : ""}${tag} ${pp(bot)}–${pp(top)}`, entry: pp(entry), sl: pp(sl), tp: pp(tp.price), tpName: tp.name, r: tp.r, dist: zd as number });
+  }
+  if (d.t1 && d.t1[0] === dir && d.t1[1] != null && (d.t1[1] as number) * pip <= reach) {
+    const edge = c - dir * (d.t1[1] as number) * pip, sl = edge - dir * (buf + 0.5 * a1), tp = pickTarget(edge, sl);
+    if (tp) setups.push({ kind: "watch", label: `tunel 1H ${pp(edge)}`, entry: pp(edge), sl: pp(sl), tp: pp(tp.price), tpName: tp.name, r: tp.r, dist: d.t1[1] as number });
+  }
+  if (!setups.length) return none(against.some((a) => !a.taken) || (d.z ?? []).length ? "nicio lichiditate/zonă în raza pullback-ului cu țintă de 2R" : "fără lichiditate sau zonă de intrare");
+  setups.sort((a, b) => (a.kind === b.kind ? a.dist - b.dist || b.r - a.r : a.kind === "reacted" ? -1 : 1));
+  const s0 = setups[0], side = dir > 0 ? "Long" : "Short";
+  const text = `${side} ${s0.kind === "reacted" ? "după " : "din "}${s0.label} → ${s0.tpName} ${s0.tp} · ~${s0.r}R${s0.kind === "watch" ? ` · la ${s0.dist}p` : ""}`;
+  return { kind: s0.kind, why: text, setup: s0, alts: setups.slice(1, 3) };
+}
+
 // rule-based class; every number in `why` comes from the message
 export function classify(d: Scan) {
   const flags: string[] = [];
@@ -129,7 +233,7 @@ export function rowFrom(d: Scan, raw: string) {
   return {
     uid: `${d.p}|${d.t}${d.test ? "|test" : ""}`, slot: new Date(d.t).toISOString(), hour_local: d.h ?? bucHour(d.t), pair: d.p, test: !!d.test,
     cls: k.cls, rank_score: k.score, why: k.why + (k.flags.length ? " · near: " + k.flags.join(", ") : ""),
-    data: { ...d, _raw_len: raw.length, _cls: k },
+    data: { ...d, _raw_len: raw.length, _cls: k, _int: interest(d) },
   };
 }
 
@@ -141,19 +245,20 @@ export const thinkingFor = (model: string) => (/sonnet-5-5/.test(model) ? { type
 const SYSTEM = `You are a senior FX analyst writing a short scan note for a discretionary intraday trader (5m execution, trades 07:00–20:00 Bucharest, prop-firm risk limits).
 You receive a table built by code from his TradingView indicator: day bias vote, how much of the pair's average day move (bias side) is already done, the usual pullback, nearby zones and tunnels.
 Rules: use only the numbers in the data, never invent prices or levels; do not change a pair's class; no entries, stops, targets or buy/sell instructions — say what is worth watching and why.
-The classes and thresholds are untested starting rules; say "untested" once at the end.`;
+The classes and thresholds (interest: liquidity / zone in reach of the usual pullback, target ≥ 2R) are untested starting rules; say "untested" once at the end.`;
 
 export function promptFor(rows: { pair: string; cls: string; why: string; data: Scan }[], when: string, lang: string) {
-  const order = ["watch", "late", "done", "unclear"];
-  const t = rows.slice().sort((a, b) => order.indexOf(a.cls) - order.indexOf(b.cls)).map((r) => ({
-    pair: r.pair, cls: r.cls, why: r.why, fund: r.data.fund, conv: r.data.conv, votes: r.data.v, avg: r.data.avg, avg75: r.data.avg75, pb: r.data.pb,
+  const order = ["reacted", "watch", "none"];
+  const ik = (r: { data: Scan }) => ((r.data as Scan & { _int?: { kind: string } })._int?.kind ?? "none");
+  const t = rows.slice().sort((a, b) => order.indexOf(ik(a)) - order.indexOf(ik(b))).map((r) => ({
+    pair: r.pair, interest: (r.data as Scan & { _int?: unknown })._int ?? null, day_class: r.cls, why: r.why, fund: r.data.fund, conv: r.data.conv, votes: r.data.v, avg: r.data.avg, avg75: r.data.avg75, pb: r.data.pb,
     wdone: r.data.wdone, adone: r.data.adone, continuation: (r.data as Scan & { _cls?: { cont?: unknown } })._cls?.cont ?? null, zones: r.data.z, t1: r.data.t1, t4: r.data.t4, levels: r.data.lv,
   }));
   return `Scan at ${when} Bucharest, ${rows.length} pairs. Write in ${lang}, mobile-friendly, short:
-1. "De urmărit" (watch): one line per pair — direction, % done and room left in pips, the nearest zone/tunnel if listed, what would make it interesting.
-2. "Târziu" (late) and "Done": one line per pair about the continuation — how much more the day could go (to the 75% line / 90% day) and on what share of past days that got this far it did, how far price has already pulled back, and the pullback zone or tunnel it could come back to before another leg. If the continuation numbers are missing or the pair is beyond 95% of past days, say so in a few words.
-3. "Neclar": just the pair names in one line.
-Headers: De urmărit, Târziu, Done, Neclar; no intro. The continuation share is conditional history (days with the same technical bias), not a probability for today.
+1. "A reacționat" (interest.kind = reacted): one line per pair — what was swept or reacted, the setup (entry / SL / target / R as given), and what would invalidate it.
+2. "De urmărit" (interest.kind = watch): one line per pair — the place to wait for (level or zone, how far), the target and R as given, and the day context (% done of the average move).
+3. "Fără interes": the pair names with the reason in a few words each, on one or two lines.
+Headers: A reacționat, De urmărit, Fără interes; no intro. The continuation share is conditional history (days with the same technical bias), not a probability for today.
 
 DATA (JSON):
 ${JSON.stringify(t)}`;
@@ -202,7 +307,7 @@ const PAIR_FORMAT = `Format (fără alte titluri):
 **Ce văd** — 4–6 puncte: prețul și DO, minimul/maximul zilei, biasul și voturile (cine e ▲, cine e ▼, Fund), Avg cu prețul liniei AVG și done %, linia de 75% și pullback-ul tipic, tunelurile (deasupra/sub, la câți pipși), zonele cu prețuri, nivelurile OPEN (PDH/PDL/PWH/PWL/BSL/SSL) cu prețuri.
 **Pentru** (partea biasului) — 2–3 puncte.
 **Prudență** — 2–4 puncte, cu distanțe în pipși.
-**Ce aș face (opțiuni, decizia e a ta)** — 2–3 variante numerotate: unde ar avea sens intrarea (pullback la DO / zonă / tunel), SL logic (peste/sub zonă, sweep, DO) și TP realist față de AVG și niveluri, cu R aproximativ; plus ce faci dacă prețul nu revine. Dacă biasul e slab sau neclar, spune că varianta cea mai bună e să aștepți.`;
+**Ce aș face (opțiuni, decizia e a ta)** — pornește de la „interest” (setup-ul calculat: intrare / SL / țintă / R) și alternative; 2–3 variante numerotate: unde ar avea sens intrarea (pullback la DO / zonă / tunel), SL logic (peste/sub zonă, sweep, DO) și TP realist față de AVG și niveluri, cu R aproximativ; plus ce faci dacă prețul nu revine. Dacă biasul e slab sau neclar, spune că varianta cea mai bună e să aștepți.`;
 
 // prices from the distances the indicator sends, so the analysis can name levels
 export function pairContext(d: Scan) {
@@ -224,6 +329,10 @@ export function pairContext(d: Scan) {
     zones_bias_side: (d.z ?? []).map(([tag, side, bot, top, dist]) => ({ tag, side: side > 0 ? "bullish" : "bearish", bot, top, pips_away: dist })),
     open_levels: { "1H BSL": px(lv.bsl, 1), "1H SSL": px(lv.ssl, -1), PDH: px(lv.pdh, 1), PDL: px(lv.pdl, -1), PWH: px(lv.pwh, 1), PWL: px(lv.pwl, -1) },
     open_levels_pips: lv,
+    sessions: d.as ? { asia: { high: d.as[0], low: d.as[1], high_after: d.as[2], low_after: d.as[3] }, london: { high: d.ln?.[0], low: d.ln?.[1], high_after: d.ln?.[2], low_after: d.ln?.[3] } } : null,
+    level_prices: d.pl ?? null,
+    last_1h_sweeps: (d.sw ?? []).filter((x) => x[1] != null).map(([sd, lvl, t, ext]) => ({ side: sd > 0 ? "buyside (high taken)" : "sellside (low taken)", level: lvl, candle_close: t ? new Date(t as number).toISOString() : null, extreme: ext })),
+    interest: interest(d),
   };
 }
 
