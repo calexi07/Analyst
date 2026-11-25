@@ -133,6 +133,10 @@ export function rowFrom(d: Scan, raw: string) {
   };
 }
 
+// Sonnet 5.5 thinks by default (adaptive, high effort) and thinking counts toward max_tokens: a short note could end with no text.
+// "between_tools" is the lowest thinking setting on Sonnet 5.5 (no up-front thinking); other models keep their default.
+export const thinkingFor = (model: string) => (/sonnet-5-5/.test(model) ? { type: "between_tools" } : undefined);
+
 // ---------- summary (Claude) ----------
 const SYSTEM = `You are a senior FX analyst writing a short scan note for a discretionary intraday trader (5m execution, trades 07:00–20:00 Bucharest, prop-firm risk limits).
 You receive a table built by code from his TradingView indicator: day bias vote, how much of the pair's average day move (bias side) is already done, the usual pullback, nearby zones and tunnels.
@@ -161,7 +165,7 @@ async function askClaude(user: string) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model: MODEL, max_tokens: 1500, system: SYSTEM, messages: [{ role: "user", content: user }] }),
+    body: JSON.stringify({ model: MODEL, max_tokens: 4000, thinking: thinkingFor(MODEL), system: SYSTEM, messages: [{ role: "user", content: user }] }),
   });
   const j = await res.json();
   if (!res.ok) throw new Error(j?.error?.message || `Anthropic API ${res.status}`);
@@ -175,6 +179,7 @@ export async function summarize(slot: string) {
   try {
     const when = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Bucharest", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(slot));
     const text = await askClaude(promptFor(rows as never, when, env("SCAN_LANG") || "Romanian"));
+    if (!text) throw new Error("empty answer (the model used the tokens before writing)");
     await db.from("scan_runs").update({ status: "done", n: rows.length, summary: text, model: MODEL, error: null, done_at: new Date().toISOString() }).eq("slot", slot);
   } catch (e) {
     await db.from("scan_runs").update({ status: "error", n: rows.length, error: (e as Error).message }).eq("slot", slot);
@@ -231,7 +236,7 @@ async function askPair(ctx: unknown, save: (text: string) => Promise<void>, tag:
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model, max_tokens: 1600, stream: true, system: PAIR_SYSTEM, messages: [{ role: "user", content: `${PAIR_FORMAT}\n\nDATE (JSON):\n${JSON.stringify(ctx)}` }] }),
+    body: JSON.stringify({ model, max_tokens: 4000, stream: true, thinking: thinkingFor(model), system: PAIR_SYSTEM, messages: [{ role: "user", content: `${PAIR_FORMAT}\n\nDATE (JSON):\n${JSON.stringify(ctx)}` }] }),
   });
   console.log(`${tag}: API status ${res.status} after ${((Date.now() - t0) / 1000).toFixed(1)}s (model ${model})`);
   if (!res.ok || !res.body) { const j = await res.json().catch(() => ({})); throw new Error(j?.error?.message || `Anthropic API ${res.status}`); }
@@ -275,7 +280,7 @@ export async function analysePair(pair: string, slot: string, force: boolean) {
     try {
       const save = async (t: string) => { await db.from("scan_rows").update({ ai: t }).eq("id", row.id); };
       const { text, model } = await askPair(pairContext(row.data as Scan), save, `${pair} ${slot}`);
-      if (!text) throw new Error("empty answer");
+      if (!text) throw new Error("empty answer (the model used the tokens before writing)");
       await db.from("scan_rows").update({ ai: text, ai_model: model, ai_at: new Date().toISOString() }).eq("id", row.id);
     } catch (e) {
       console.error(`${pair} ${slot}: ${(e as Error).message}`);
