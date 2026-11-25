@@ -5874,8 +5874,8 @@ function scOpen(pair){
     const secs = Math.round((Date.now() - t0) / 1000);
     if(!error && data?.ai && !String(data.ai_model || '').startsWith('pending')){ Object.assign(r, data); S.sc.sig = ''; return show(data.ai, `${data.ai_model || ''} · nouă`); }
     if(!error && String(data?.ai_model || '').startsWith('error')) return box.innerHTML = `<div class="neg st-sm">Analiza a eșuat: ${esc(data.ai_model.slice(7))} · <a href="#" data-scre>încearcă din nou</a></div>`, box.querySelector('[data-scre]').onclick = e => { e.preventDefault(); ask(true); };
-    if(secs > 240) return box.innerHTML = '<div class="neg st-sm">Nu a venit răspuns în 4 minute. Închide și deschide din nou cardul mai târziu (dacă a terminat între timp, apare salvată).</div>';
-    box.innerHTML = `<div class="sc-wait">⏳ Claude analizează perechea… ${secs}s (poți închide; se salvează)</div>`;
+    if(secs > 170) return box.innerHTML = '<div class="neg st-sm">Analiza nu a terminat (s-a blocat pe server). <a href="#" data-scre>Pornește din nou</a></div>', box.querySelector('[data-scre]').onclick = e => { e.preventDefault(); ask(false); };
+    box.innerHTML = `<div class="sc-wait">⏳ Claude analizează perechea… ${secs}s (de obicei 20–60s; poți închide, se salvează)</div>`;
     setTimeout(() => poll(t0, n + 1), 4000);
   };
   const ask = async force => {
@@ -5885,7 +5885,7 @@ function scOpen(pair){
     try{ const q = await fetch(`${SUPABASE_URL}/functions/v1/scan-event?key=${encodeURIComponent(aaKey())}&pair=${encodeURIComponent(pair)}&slot=${encodeURIComponent(r.slot)}${force ? '&force=1' : ''}`);
       const j = await q.json(); if(!q.ok || j.error) throw new Error(j.error || q.status);
       if(j.ai && !j.pending){ Object.assign(r, { ai:j.ai, ai_model:j.ai_model, ai_at:j.ai_at }); S.sc.sig = ''; return show(j.ai, `${j.ai_model || ''} · ${j.cached ? 'salvată' : 'nouă'}`); }
-      poll(j.since ? Math.min(Date.now(), Date.parse(j.since)) : Date.now()); }
+      poll(Date.now() - (j.age_s || 0) * 1000); }
     catch(e){ box.innerHTML = `<div class="neg st-sm">Analiza nu a pornit: ${esc(e.message || String(e))}</div>`; }
   };
   if(r.ai && !String(r.ai_model || '').startsWith('pending')) show(r.ai, `${r.ai_model || ''} · salvată`); else ask(false);

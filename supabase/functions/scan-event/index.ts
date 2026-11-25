@@ -241,8 +241,9 @@ export async function analysePair(pair: string, slot: string, force: boolean) {
   if (error) throw new Error(error.message);
   if (!row) return { error: "no scan row for this pair and time" };
   if (row.ai && !force) return { ai: row.ai, ai_model: row.ai_model, ai_at: row.ai_at, cached: true };
-  const busy = String(row.ai_model || "").startsWith("pending") && row.ai_at && Date.now() - Date.parse(row.ai_at) < 4 * 60000;
-  if (busy) return { pending: true, since: row.ai_at };
+  const age = row.ai_at ? Math.round((Date.now() - Date.parse(row.ai_at)) / 1000) : 0;
+  const busy = String(row.ai_model || "").startsWith("pending") && age < 160;   // older than the function's time limit = stuck, start again
+  if (busy) return { pending: true, since: row.ai_at, age_s: age };
   const at = new Date().toISOString();
   await db.from("scan_rows").update({ ai_model: "pending", ai_at: at, ...(force ? { ai: null } : {}) }).eq("id", row.id);
   const job = (async () => {
@@ -255,7 +256,7 @@ export async function analysePair(pair: string, slot: string, force: boolean) {
   })();
   const rt = (globalThis as unknown as { EdgeRuntime?: { waitUntil: (p: Promise<unknown>) => void } }).EdgeRuntime;
   if (rt?.waitUntil) rt.waitUntil(job); else await job;
-  return { pending: true, since: at };
+  return { pending: true, since: at, age_s: 0 };
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
