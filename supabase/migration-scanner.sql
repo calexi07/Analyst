@@ -38,3 +38,8 @@ drop policy if exists scan_rows_read on scan_rows;
 create policy scan_rows_read on scan_rows for select to anon, authenticated using (true);
 drop policy if exists scan_runs_read on scan_runs;
 create policy scan_runs_read on scan_runs for select to anon, authenticated using (true);
+
+-- v2 (per-pair AI analysis on the Scanner cards): run this part once if the tables already exist
+alter table scan_rows add column if not exists ai text;
+alter table scan_rows add column if not exists ai_model text;
+alter table scan_rows add column if not exists ai_at timestamptz;

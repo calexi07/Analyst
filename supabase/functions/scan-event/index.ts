@@ -11,6 +11,7 @@
 // Webhook URL in TradingView:  https://<project>.supabase.co/functions/v1/scan-event?key=<AA_KEY>
 // Check the setup:              …/scan-event?key=<AA_KEY>&check=1
 // Write the summary again:      …/scan-event?key=<AA_KEY>&redo=<slot ISO time>
+// One-pair analysis (card tap):  …/scan-event?key=<AA_KEY>&pair=EURUSD&slot=<slot ISO time>[&force=1]  (stored in scan_rows.ai; a second tap reads it back for free)
 // Secrets: AA_KEY (or STRAT_KEY), ANTHROPIC_API_KEY; optional AA_MODEL, SCAN_WAIT_S, SCAN_LANG (default Romanian).
 // Other alert() messages of the same indicator (liquidity, zone, tunnel alerts) reach this URL too when they share the alert: they are ignored.
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
@@ -138,13 +139,13 @@ You receive a table built by code from his TradingView indicator: day bias vote,
 Rules: use only the numbers in the data, never invent prices or levels; do not change a pair's class; no entries, stops, targets or buy/sell instructions — say what is worth watching and why.
 The classes and thresholds are untested starting rules; say "untested" once at the end.`;
 
-export function promptFor(rows: { pair: string; cls: string; why: string; data: Scan }[], hour: number, lang: string) {
+export function promptFor(rows: { pair: string; cls: string; why: string; data: Scan }[], when: string, lang: string) {
   const order = ["watch", "late", "done", "unclear"];
   const t = rows.slice().sort((a, b) => order.indexOf(a.cls) - order.indexOf(b.cls)).map((r) => ({
     pair: r.pair, cls: r.cls, why: r.why, fund: r.data.fund, conv: r.data.conv, votes: r.data.v, avg: r.data.avg, avg75: r.data.avg75, pb: r.data.pb,
     wdone: r.data.wdone, adone: r.data.adone, continuation: (r.data as Scan & { _cls?: { cont?: unknown } })._cls?.cont ?? null, zones: r.data.z, t1: r.data.t1, t4: r.data.t4, levels: r.data.lv,
   }));
-  return `Scan at ${String(hour).padStart(2, "0")}:00 Bucharest, ${rows.length} pairs. Write in ${lang}, mobile-friendly, short:
+  return `Scan at ${when} Bucharest, ${rows.length} pairs. Write in ${lang}, mobile-friendly, short:
 1. "De urmărit" (watch): one line per pair — direction, % done and room left in pips, the nearest zone/tunnel if listed, what would make it interesting.
 2. "Târziu" (late) and "Done": one line per pair about the continuation — how much more the day could go (to the 75% line / 90% day) and on what share of past days that got this far it did, how far price has already pulled back, and the pullback zone or tunnel it could come back to before another leg. If the continuation numbers are missing or the pair is beyond 95% of past days, say so in a few words.
 3. "Neclar": just the pair names in one line.
@@ -172,11 +173,77 @@ export async function summarize(slot: string) {
   if (error) throw new Error(error.message);
   if (!rows?.length) { await db.from("scan_runs").update({ status: "error", error: "no rows" }).eq("slot", slot); return; }
   try {
-    const text = await askClaude(promptFor(rows as never, rows[0].hour_local, env("SCAN_LANG") || "Romanian"));
+    const when = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Bucharest", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(slot));
+    const text = await askClaude(promptFor(rows as never, when, env("SCAN_LANG") || "Romanian"));
     await db.from("scan_runs").update({ status: "done", n: rows.length, summary: text, model: MODEL, error: null, done_at: new Date().toISOString() }).eq("slot", slot);
   } catch (e) {
     await db.from("scan_runs").update({ status: "error", n: rows.length, error: (e as Error).message }).eq("slot", slot);
   }
+}
+
+
+// ---------- one-pair analysis (tap on a Scanner card) ----------
+const PAIR_SYSTEM = `Ești analistul de trade-uri al unui trader intraday (execuție pe 5m, tranzacționează 07:00–20:00 București, conturi prop cu limite de risc).
+Primești datele indicatorului BE Tunnel SMC pentru o pereche, la ora unei scanări. Răspunzi în română, scurt, pentru telefon (max ~1 ecran și jumătate).
+Reguli: folosești doar prețurile și cifrele din date, nu inventezi niveluri; dacă ceva lipsește, spui. Nu promiți rezultate și nu spui „sigur”.
+Distanțele sunt predictibile, direcția nu. Fundamentalul (Fund) e singurul vot independent; T1H, T4H, Slope, SMA20 și DO măsoară toate trendul, deci un procent mare poate fi un singur argument numărat de mai multe ori.
+„done” peste ~80% = ziua tipică e consumată; linia de 75% e atinsă ~1 zi din 4; „continuation” = cât de des au continuat zilele trecute care ajunseseră la fel de departe (istoric condiționat, votul tehnic de la 09:00, nu probabilitate pentru azi).
+Zonele OB/FVG, sweep-urile și voturile tehnice folosite mecanic nu au avut edge în teste; folosește-le ca locuri de intrare și obstacole, nu ca argumente de direcție.
+Datele sunt de la ora scanării; prețul s-a putut mișca de atunci — spune asta o dată, scurt.`;
+
+const PAIR_FORMAT = `Format (fără alte titluri):
+**Pe scurt:** 2–3 fraze cu verdictul (de ex. „bias bearish, dar ziua e consumată 90%… are mai mult sens să aștepți pullback-ul spre X”).
+**Unitate:** o frază (ex. pentru aur 1p = $0.01, deci $1 = 100p), doar dacă nu e o pereche forex obișnuită.
+**Ce văd** — 4–6 puncte: prețul și DO, minimul/maximul zilei, biasul și voturile (cine e ▲, cine e ▼, Fund), Avg cu prețul liniei AVG și done %, linia de 75% și pullback-ul tipic, tunelurile (deasupra/sub, la câți pipși), zonele cu prețuri, nivelurile OPEN (PDH/PDL/PWH/PWL/BSL/SSL) cu prețuri.
+**Pentru** (partea biasului) — 2–3 puncte.
+**Prudență** — 2–4 puncte, cu distanțe în pipși.
+**Ce aș face (opțiuni, decizia e a ta)** — 2–3 variante numerotate: unde ar avea sens intrarea (pullback la DO / zonă / tunel), SL logic (peste/sub zonă, sweep, DO) și TP realist față de AVG și niveluri, cu R aproximativ; plus ce faci dacă prețul nu revine. Dacă biasul e slab sau neclar, spune că varianta cea mai bună e să aștepți.`;
+
+// prices from the distances the indicator sends, so the analysis can name levels
+export function pairContext(d: Scan) {
+  const pip = d.pip || 0, c = d.c, dir = d.dir;
+  const px = (x: number | null | undefined, sign: number) => (x == null || !pip || c == null ? null : +(c + sign * x * pip).toFixed(6));
+  const lvl = (dist: number | null | undefined, from: number | undefined, sign: number) => (dist == null || from == null || !pip ? null : +(from + sign * dist * pip).toFixed(6));
+  const tun = (t?: [number, number | null]) => !t || t[1] == null ? null : { price_vs_tunnel: t[0] > 0 ? "above" : t[0] < 0 ? "below" : "inside", pips: t[1], edge: t[0] === 0 ? null : px(t[1], t[0] > 0 ? -1 : 1) };
+  const lv = d.lv ?? {};
+  return {
+    pair: d.p, scan_close_time: new Date(d.t).toISOString(), price: c, pip_size: pip, unit: "p = pips as the indicator shows them (forex: 0.0001 or 0.01 for JPY; gold/indices: one point = minimum tick)",
+    day_bias: dir > 0 ? "bullish" : dir < 0 ? "bearish" : "neutral", vote_pct: d.pct, votes: (d.v ?? []).map(([n, v, w]) => `${n}${v > 0 ? "▲" : v < 0 ? "▼" : "–"}${w > 1 ? "×" + w : ""}`).join(" "), vote_set: d.set,
+    fundamental: { vote: d.fund, conviction: d.conv, gap: d.gap },
+    day_open: d.do, day_high: d.dh, day_low: d.dl, atr_daily_pips: d.atrd, atr_1h_pips: d.atr1h,
+    avg_move: d.avg == null ? null : { pips: d.avg, line: lvl(d.avg, d.do, dir || 0), done_pips: d.wdone, done_pct: d.avg ? Math.round(100 * Math.max(d.wdone ?? 0, 0) / d.avg) : null, sample_days: d.n },
+    avg_75: d.avg75 == null ? null : { pips: d.avg75, line: lvl(d.avg75, d.do, dir || 0) },
+    usual_pullback: d.pb == null ? null : { pips: d.pb, line: lvl(d.pb, d.do, -(dir || 0)), against_so_far_pips: d.adone },
+    continuation: continuation(d),
+    tunnel_1h: tun(d.t1), tunnel_4h: tun(d.t4),
+    zones_bias_side: (d.z ?? []).map(([tag, side, bot, top, dist]) => ({ tag, side: side > 0 ? "bullish" : "bearish", bot, top, pips_away: dist })),
+    open_levels: { "1H BSL": px(lv.bsl, 1), "1H SSL": px(lv.ssl, -1), PDH: px(lv.pdh, 1), PDL: px(lv.pdl, -1), PWH: px(lv.pwh, 1), PWL: px(lv.pwl, -1) },
+    open_levels_pips: lv,
+  };
+}
+
+async function askPair(ctx: unknown) {
+  const key = env("ANTHROPIC_API_KEY");
+  if (!key) throw new Error("ANTHROPIC_API_KEY secret is missing");
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({ model: MODEL, max_tokens: 2000, system: PAIR_SYSTEM, messages: [{ role: "user", content: `${PAIR_FORMAT}\n\nDATE (JSON):\n${JSON.stringify(ctx)}` }] }),
+  });
+  const j = await res.json();
+  if (!res.ok) throw new Error(j?.error?.message || `Anthropic API ${res.status}`);
+  return (j.content ?? []).filter((c: { type: string }) => c.type === "text").map((c: { text: string }) => c.text).join("\n").trim();
+}
+
+export async function analysePair(pair: string, slot: string, force: boolean) {
+  const { data: row, error } = await db.from("scan_rows").select("id,data,ai,ai_model,ai_at").eq("pair", pair).eq("slot", slot).eq("test", false).maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!row) return { error: "no scan row for this pair and time" };
+  if (row.ai && !force) return { ai: row.ai, ai_model: row.ai_model, ai_at: row.ai_at, cached: true };
+  const text = await askPair(pairContext(row.data as Scan));
+  const at = new Date().toISOString();
+  await db.from("scan_rows").update({ ai: text, ai_model: MODEL, ai_at: at }).eq("id", row.id);
+  return { ai: text, ai_model: MODEL, ai_at: at, cached: false };
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -208,6 +275,11 @@ export async function handle(req: Request): Promise<Response> {
       return [n, error ? "ERROR: " + error.message : `ok (${count} rows)`];
     }));
     return json({ key_secret: keyName, anthropic_key: env("ANTHROPIC_API_KEY") ? "set" : "MISSING", model: MODEL, ...Object.fromEntries(t) });
+  }
+  const ap = u.searchParams.get("pair");
+  if (ap && u.searchParams.get("slot")) {
+    try { return json(await analysePair(ap.toUpperCase(), new Date(u.searchParams.get("slot") as string).toISOString(), !!u.searchParams.get("force"))); }
+    catch (e) { return json({ error: (e as Error).message }, 500); }
   }
   const redo = u.searchParams.get("redo");
   if (redo) {

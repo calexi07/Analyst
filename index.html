@@ -154,6 +154,25 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .sc-row b{ font-size:13px; } .sc-why{ line-height:1.4; } .sc-tag{ display:inline-block; padding:1px 7px; border-radius:9px; font-size:11px; font-weight:700; margin-left:6px; color:#fff; }
   .sc-watch{ background:#22AB94; } .sc-late{ background:#FF9800; } .sc-done{ background:#787B86; } .sc-unclear{ background:#9598A1; }
   .sc-cont{ margin-top:3px; color:#00BCD4; font-size:12.5px; }
+  .sc-chips{ display:flex; gap:6px; flex-wrap:wrap; margin:4px 0 10px; } .sc-chip{ border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:5px 11px; font-size:12.5px; font-weight:700; cursor:pointer; }
+  .sc-chip.on{ background:var(--ink); color:var(--bg); border-color:var(--ink); } .sc-chip i{ font-style:normal; opacity:.65; margin-left:4px; }
+  .sc-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px; }
+  .sc-card{ position:relative; text-align:left; border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:16px; padding:12px 12px 10px; cursor:pointer; display:flex; flex-direction:column; gap:7px; font:inherit; overflow:hidden; }
+  .sc-card:hover{ border-color:color-mix(in srgb,var(--ink) 35%,var(--line)); } .sc-card::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--scc,#787B86); }
+  .sc-top{ display:flex; justify-content:space-between; align-items:center; gap:6px; } .sc-pair{ font-size:17px; font-weight:800; letter-spacing:.3px; }
+  .sc-badge{ font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; padding:3px 8px; border-radius:999px; color:#fff; background:var(--scc,#787B86); }
+  .sc-dir{ font-size:13px; font-weight:800; } .sc-dir.up{ color:#22AB94; } .sc-dir.dn{ color:#F23645; } .sc-dir small{ color:var(--muted); font-weight:600; margin-left:4px; }
+  .sc-prog{ display:flex; justify-content:space-between; font-size:12px; color:var(--muted); } .sc-prog b{ color:var(--ink); }
+  .sc-meter{ position:relative; height:7px; border-radius:4px; background:var(--surface-2); overflow:hidden; } .sc-meter i{ position:absolute; left:0; top:0; bottom:0; border-radius:4px; background:linear-gradient(90deg,#00BCD4,#7AA2FF); }
+  .sc-meter u{ position:absolute; top:-2px; bottom:-2px; width:2px; background:var(--ink); opacity:.5; }
+  .sc-line{ font-size:12.5px; line-height:1.35; color:var(--muted); } .sc-line b{ color:var(--ink); font-weight:700; } .sc-line.cont{ color:#00BCD4; }
+  .sc-foot{ display:flex; gap:6px; flex-wrap:wrap; } .sc-pill{ font-size:11px; padding:2px 7px; border-radius:7px; background:var(--surface-2); color:var(--muted); } .sc-pill.ai{ color:#B69CFF; }
+  .sc-sheet{ position:fixed; inset:0; z-index:90; background:rgba(5,6,20,.55); display:flex; align-items:flex-end; justify-content:center; }
+  .sc-panel{ width:min(720px,100%); max-height:92vh; overflow:auto; background:var(--bg-2,var(--surface)); border:1px solid var(--line); border-radius:20px 20px 0 0; padding:14px 16px 28px; }
+  @media (min-width:800px){ .sc-sheet{ align-items:center; } .sc-panel{ border-radius:20px; } }
+  .sc-ph{ display:flex; justify-content:space-between; align-items:center; gap:8px; position:sticky; top:-14px; background:inherit; padding:6px 0 8px; z-index:1; }
+  .sc-kv{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:6px; margin:8px 0 12px; } .sc-kv div{ background:var(--surface-2); border-radius:10px; padding:6px 9px; font-size:12px; color:var(--muted); } .sc-kv b{ display:block; color:var(--ink); font-size:13.5px; }
+  .sc-ai{ border-top:1px solid var(--line); padding-top:10px; } .sc-wait{ display:flex; gap:8px; align-items:center; color:var(--muted); font-size:13px; padding:14px 0; }
   .sc-bar{ height:5px; border-radius:3px; background:var(--surface-2); margin-top:4px; overflow:hidden; } .sc-bar i{ display:block; height:100%; background:#00BCD4; }
   .aa-md{ font-size:13.5px; line-height:1.5; } .aa-mh{ font-weight:800; margin-top:8px; } .aa-li{ padding-left:4px; } .aa-sp{ height:6px; }
   .aa-scs{ display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:8px; } .aa-sc{ padding:10px; border-radius:12px; border:1px solid var(--line); display:flex; flex-direction:column; gap:4px; }
@@ -5736,9 +5755,11 @@ async function scLoad(){
     S.sc.slots = r.data;
     const slot = S.sc.slot && r.data.some(x => x.slot === S.sc.slot) ? S.sc.slot : r.data[0]?.slot || null;
     let rows = [];
-    if(slot){ const q = await sb.from('scan_rows').select('pair,cls,rank_score,why,data,slot').eq('slot', slot).eq('test', false); if(q.error) throw q.error; rows = q.data; }
+    if(slot){ let q = await sb.from('scan_rows').select('pair,cls,rank_score,why,data,slot,ai,ai_model,ai_at').eq('slot', slot).eq('test', false);
+      if(q.error && /ai/.test(q.error.message || '')){ S.sc.noAi = true; q = await sb.from('scan_rows').select('pair,cls,rank_score,why,data,slot').eq('slot', slot).eq('test', false); }
+      if(q.error) throw q.error; rows = q.data; }
     const run = r.data.find(x => x.slot === slot) || null;
-    const sig = [slot, rows.length, run?.status, run?.done_at].join('|'), changed = sig !== S.sc.sig;
+    const sig = [slot, rows.length, run?.status, run?.done_at, rows.filter(r => r.ai).length].join('|'), changed = sig !== S.sc.sig;
     Object.assign(S.sc, { slot, rows, run, sig, err:null, loaded:true }); return changed;
   }catch(e){ S.sc.err = /relation|does not exist|schema cache/i.test(e.message || '') ? 'missing' : (e.message || String(e)); S.sc.loaded = true; return true; }
   finally{ S.sc.busy = false; }
@@ -5751,19 +5772,34 @@ function renderScanner(){
   const hook = `${SUPABASE_URL}/functions/v1/scan-event?key=${aaKey() || '<AA_KEY>'}`;
   const run = S.sc.run, rows = S.sc.rows;
   const scOk = S.sc.slots.length > 0 && !!aaKey() && !S.sc.err;   // scans arrive and this device has the key
-  const row = r => { const d = r.data || {}, k = d._cls || {}, dn = k.done_pct;
-    return `<div class="sc-row"><div><b>${esc(r.pair)}</b><div>${aaDir(d.dir)} <span class="muted st-sm">${d.pct ?? '–'}%</span></div></div>
-      <div class="sc-why">${esc((r.why || '').split(' · continuation: ')[0])}${(r.why || '').includes(' · continuation: ') ? `<div class="sc-cont">↪ ${esc(r.why.split(' · continuation: ')[1])}</div>` : ''}${dn != null ? `<div class="sc-bar"><i style="width:${Math.min(100, Math.max(0, dn))}%"></i></div>` : ''}</div></div>`; };
-  const groups = SC_CLS.map(([c, lbl]) => { const g = rows.filter(r => r.cls === c).sort((a, b) => (b.rank_score ?? 0) - (a.rank_score ?? 0));
-    return g.length ? `<div class="sc-grp">${lbl}<span class="sc-tag sc-${c}">${g.length}</span></div>${g.map(row).join('')}` : ''; }).join('');
+  const SCC = { watch:'#22AB94', late:'#FF9800', done:'#787B86', unclear:'#9598A1' }, SCL = Object.fromEntries(SC_CLS);
+  const flt = S.sc.flt || 'all', cnt = c => rows.filter(r => r.cls === c).length;
+  const order = ['watch', 'late', 'done', 'unclear'];
+  const shown = rows.filter(r => flt === 'all' || r.cls === flt).sort((a, b) => order.indexOf(a.cls) - order.indexOf(b.cls) || (b.rank_score ?? 0) - (a.rank_score ?? 0));
+  const card = r => { const d = r.data || {}, k = d._cls || {}, dn = k.done_pct, c = k.cont, up = d.dir > 0, dir = d.dir ? (up ? 'up' : 'dn') : '';
+    const leg = c?.legs?.[0], z = (d.z || []).filter(x => x[4] != null).sort((a, b) => a[4] - b[4])[0];
+    const line1 = r.cls === 'watch' && k.room != null ? `<b>${k.room}p</b> până la AVG · pullback ${Math.max(d.adone ?? 0, 0)}p din ${d.pb ?? '–'}p tipic`
+      : leg ? `↪ ${leg.to === '75% line' ? 'linia 75%' : 'ziua de 90%'} <b>+${leg.more}p</b>${leg.chance != null ? ` · a continuat în ${leg.chance}% din zile` : ''}`
+      : c?.beyond95 ? '↪ peste 95% din zilele trecute' : r.cls === 'unclear' ? scWhyRo(r) : '';
+    const line2 = z ? `${esc(z[0])} ${z[4] === 0 ? '<b>preț în zonă</b>' : `la <b>${z[4]}p</b>`}${c?.retraced != null && r.cls !== 'watch' ? ` · retras ${c.retraced}p` : ''}` : (c?.retraced != null ? `retras ${c.retraced}p de la extremă` : '');
+    return `<button type="button" class="sc-card" data-scp="${esc(r.pair)}" style="--scc:${SCC[r.cls] || '#787B86'}">
+      <div class="sc-top"><span class="sc-pair">${esc(r.pair)}</span><span class="sc-badge">${esc(SCL[r.cls] || r.cls)}</span></div>
+      <div class="sc-dir ${dir}">${d.dir ? (up ? '▲ BULLISH' : '▼ BEARISH') : '◆ NEUTRAL'}<small>${d.pct ?? '–'}% · Fund ${d.fund > 0 ? '▲' : d.fund < 0 ? '▼' : '–'}</small></div>
+      ${dn != null ? `<div class="sc-prog"><span>done <b>${dn}%</b></span><span>AVG ${d.avg ?? '–'}p${d.avg75 != null ? ` · 75% ${d.avg75}p` : ''}</span></div>
+        <div class="sc-meter"><i style="width:${Math.min(100, Math.max(0, dn) / (d.avg75 && d.avg ? d.avg75 / d.avg * 100 : 100) * 100)}%"></i>${d.avg75 && d.avg ? `<u style="left:${Math.min(100, 100 / (d.avg75 / d.avg))}%"></u>` : ''}</div>` : ''}
+      ${line1 ? `<div class="sc-line ${leg && r.cls !== 'watch' ? 'cont' : ''}">${line1}</div>` : ''}${line2 ? `<div class="sc-line">${line2}</div>` : ''}
+      <div class="sc-foot"><span class="sc-pill">1H tunel ${d.t1?.[1] != null ? (d.t1[1] === 0 ? 'în tunel' : d.t1[1] + 'p') : '–'}</span>${r.ai ? '<span class="sc-pill ai">✦ analiză</span>' : ''}</div></button>`; };
+  const chips = `<div class="sc-chips">${[['all', 'Toate', rows.length], ...SC_CLS.map(([c, l]) => [c, l, cnt(c)])].map(([c, l, n]) => `<button type="button" class="sc-chip ${flt === c ? 'on' : ''}" data-scf="${c}">${l}<i>${n}</i></button>`).join('')}</div>`;
+  const groups = rows.length ? `${chips}<div class="sc-grid">${shown.map(card).join('') || '<p class="muted">Nimic în această categorie.</p>'}</div>` : '';
   const sum = !run ? '' : run.status === 'done' ? `<div class="aa-md">${aaMd(run.summary)}</div><div class="muted st-sm">${esc(run.model || '')} · ${run.n} pairs · rules untested · not a trade signal</div>`
     : run.status === 'error' ? `<div class="neg st-sm">Summary failed: ${esc(run.error || '')}</div>` : '<div class="muted st-sm">Waiting for all pairs, the summary follows in about a minute…</div>';
   m.innerHTML = `<div class="aa-sh"><h2 style="margin:0">Scanner</h2>
       <span>${S.sc.slots.length ? `<select class="inp" id="scSlot">${S.sc.slots.map(x => `<option value="${esc(x.slot)}" ${x.slot === S.sc.slot ? 'selected' : ''}>${esc(scWhen(x.slot))}${x.n ? ' · ' + x.n : ''}</option>`).join('')}</select>` : ''}
       <button type="button" class="btn" id="scRef">Refresh</button></span></div>
     ${S.sc.err === 'missing' ? '<div class="card fc-empty"><p>The scanner tables are missing: run <code>supabase/migration-scanner.sql</code> (see Connect below).</p></div>' : S.sc.err ? `<div class="card neg">${esc(S.sc.err)}</div>` : ''}
-    ${S.sc.slot ? `<div class="card"><div class="aa-sh"><b>Summary · ${esc(scWhen(S.sc.slot))}</b>${run && aaKey() ? '<button type="button" class="btn" id="scRedo">Rewrite</button>' : ''}</div>${sum}</div>
-      <div class="card">${groups || '<p class="muted">No pairs in this scan.</p>'}</div>` : (S.sc.err ? '' : '<div class="card fc-empty"><p>No scan yet. The first one arrives at the next scan hour once the alerts are set (see Connect).</p></div>')}
+    ${S.sc.slot ? `<details class="card" ${S.sc.sumOpen ? 'open' : ''} id="scSum"><summary class="aa-sh" style="cursor:pointer;margin:0"><b>Rezumat AI · ${esc(scWhen(S.sc.slot))}</b>${run && aaKey() ? '<button type="button" class="btn" id="scRedo">Rewrite</button>' : ''}</summary><div style="margin-top:8px">${sum}</div></details>
+      ${groups || '<div class="card"><p class="muted">No pairs in this scan.</p></div>'}
+      <p class="muted st-sm" style="margin-top:10px">Apasă pe un card pentru analiza perechii. Date de la ora scanării · clasele sunt reguli netestate · nu e semnal de trade.</p>` : (S.sc.err ? '' : '<div class="card fc-empty"><p>No scan yet. The first one arrives at the next scan hour once the alerts are set (see Connect).</p></div>')}
     ${scOk && !S.sc.showSetup ? '<div class="muted st-sm" style="text-align:center;margin:8px 0">Connected · <a href="#" id="scSetup">setup</a></div>' : ''}
     <details class="card st-setup" ${scOk && !S.sc.showSetup ? 'style="display:none"' : ''} ${scOk ? 'open' : S.sc.slots.length ? '' : 'open'}><summary><b>Connect</b> <span class="muted">· once</span></summary><ol>
       <li>Supabase → SQL Editor: run <code>supabase/migration-scanner.sql</code>.</li>
@@ -5774,15 +5810,74 @@ function renderScanner(){
     </ol><p class="muted st-sm">Each scan is one Claude call for all pairs. Liquidity / zone / tunnel alerts that reach the same URL are ignored.</p></details>`;
   m.querySelector('#scRef').onclick = async () => { await scLoad(); renderScanner(); toast('Up to date'); };
   const sel = m.querySelector('#scSlot'); if(sel) sel.onchange = async e => { S.sc.slot = e.target.value; S.sc.sig = ''; await scLoad(); renderScanner(); };
-  const rd = m.querySelector('#scRedo'); if(rd) rd.onclick = async () => { rd.disabled = true; rd.textContent = '⏳';
+  const rd = m.querySelector('#scRedo'); if(rd) rd.onclick = async ev => { ev.preventDefault(); ev.stopPropagation(); rd.disabled = true; rd.textContent = '⏳';
     try{ const r = await fetch(`${SUPABASE_URL}/functions/v1/scan-event?key=${encodeURIComponent(aaKey())}&redo=${encodeURIComponent(S.sc.slot)}`); const j = await r.json(); if(!r.ok || j.error) toast('Scanner: ' + (j.error || r.status)); }
     catch(e){ toast('Scanner not reachable'); }
     S.sc.sig = ''; await scLoad(); renderScanner(); };
+  m.querySelectorAll('[data-scf]').forEach(b => b.onclick = () => { S.sc.flt = b.dataset.scf; renderScanner(); });
+  const sd = m.querySelector('#scSum'); if(sd) sd.ontoggle = () => { S.sc.sumOpen = sd.open; };
+  m.querySelectorAll('[data-scp]').forEach(b => b.onclick = () => scOpen(b.dataset.scp));
   const su = m.querySelector('#scSetup'); if(su) su.onclick = e => { e.preventDefault(); S.sc.showSetup = true; renderScanner(); };
   m.querySelector('#scKey').onchange = e => { ls.set('do_aa_key', e.target.value.trim()); renderScanner(); };
   m.querySelector('#scCheck').onclick = async () => { const o = m.querySelector('#scChk'); if(!aaKey()) return toast('Type your AA_KEY in the box first'); o.textContent = '…';
     try{ const r = await fetch(`${SUPABASE_URL}/functions/v1/scan-event?key=${encodeURIComponent(aaKey())}&check=1`); o.textContent = JSON.stringify(await r.json()).replace(/[{}"]/g, '').replace(/,/g, ' · '); }
     catch(e){ o.textContent = 'scan-event not reachable (deployed? Verify JWT off?)'; } };
+}
+/* Romanian wording for the rule results (the function writes them in English) */
+function scWhyRo(r){ const d = r.data || {}, k = d._cls || {};
+  if(r.cls !== 'unclear') return '';
+  if(!d.dir) return 'fără bias: vot egal';
+  if(d.pct != null && d.pct < 60) return `vot slab: ${d.pct}%`;
+  if(!d.avg) return 'fără mișcare medie (istoric lipsă)';
+  if(d.adone != null && d.adone >= d.avg) return `ziua a mers ${d.adone}p contra biasului (peste AVG-ul cu el)`;
+  return esc((r.why || '').split(' · ')[0]); }
+function scContRo(c, dir){ if(!c) return '';
+  const p = [];
+  if(c.beyond95) p.push('deja peste 95% din zilele trecute');
+  for(const l of c.legs || []) p.push(`${l.to === '75% line' ? 'linia 75%' : 'ziua de 90%'} +${l.more}p${l.chance != null ? ` (a continuat în ${l.chance}% din zilele ajunse aici)` : ''}`);
+  if(!(c.legs || []).length && !c.beyond95) p.push('a trecut de ziua de 90%');
+  if(c.retraced != null) p.push(`retras ${c.retraced}p de la ${dir < 0 ? 'minimul' : 'maximul'} zilei`);
+  if(c.zone) p.push(`zonă de pullback ${c.zone.tag} ${c.zone.dist === 0 ? '(preț în zonă)' : `la ${c.zone.dist}p`}`);
+  if(c.tunnel) p.push(`${c.tunnel.tag.replace('tunnel', 'tunel')} ${c.tunnel.dist === 0 ? '(preț în tunel)' : `la ${c.tunnel.dist}p`}`);
+  return '↪ ' + p.join(' · '); }
+/* one pair: key numbers from the scan + Claude's analysis (stored per pair and scan; a second tap reads it back) */
+function scDec(d){ return Math.max(...[d.c, d.do, d.dh, d.dl].filter(v => v != null).map(v => (String(v).split('.')[1] || '').length), 2); }
+function scOpen(pair){
+  const r = S.sc.rows.find(x => x.pair === pair); if(!r) return;
+  document.querySelector('.sc-sheet')?.remove();
+  const d = r.data || {}, k = d._cls || {}, c = k.cont, dec = scDec(d), P = v => v == null ? '–' : Number(v).toFixed(dec), pip = d.pip || 0;
+  const dirS = d.dir || 0, lineAt = (pips, s) => pips == null || d.do == null || !pip ? null : d.do + s * pips * pip;
+  const kv = [
+    ['Preț la scanare', P(d.c)], ['Daily open', P(d.do)], ['Max / min zi', `${P(d.dh)} / ${P(d.dl)}`],
+    [`AVG ${dirS > 0 ? 'High' : 'Low'} · ${d.avg ?? '–'}p`, P(lineAt(d.avg, dirS))], [`AVG 75% · ${d.avg75 ?? '–'}p`, P(lineAt(d.avg75, dirS))], [`Pullback tipic · ${d.pb ?? '–'}p`, P(lineAt(d.pb, -dirS))],
+    ['Done', k.done_pct != null ? k.done_pct + '%' : '–'], ['Tunel 1H / 4H', `${d.t1?.[1] ?? '–'}p / ${d.t4?.[1] ?? '–'}p`], ['ATR 1H / zi', `${d.atr1h ?? '–'}p / ${d.atrd ?? '–'}p`],
+    ...(d.z || []).map(z => [`${z[0]} · ${z[4] ?? '–'}p`, `${P(z[2])} – ${P(z[3])}`]),
+  ].map(([a, b]) => `<div>${esc(a)}<b>${esc(String(b))}</b></div>`).join('');
+  const votes = (d.v || []).map(([n, v, w]) => `${esc(n)}${v > 0 ? '<span class="up">▲</span>' : v < 0 ? '<span class="dn">▼</span>' : '–'}${w > 1 ? '×' + w : ''}`).join(' · ');
+  const el = document.createElement('div'); el.className = 'sc-sheet';
+  el.innerHTML = `<div class="sc-panel" role="dialog" aria-label="${esc(pair)}">
+    <div class="sc-ph"><div><b style="font-size:18px">${esc(pair)}</b> <span class="sc-dir ${dirS > 0 ? 'up' : dirS < 0 ? 'dn' : ''}">${dirS > 0 ? '▲ BULLISH' : dirS < 0 ? '▼ BEARISH' : '◆ NEUTRAL'} ${d.pct ?? '–'}%</span>
+      <div class="muted st-sm">${esc(scWhen(r.slot))} · ${esc((SC_CLS.find(x => x[0] === r.cls) || [r.cls, r.cls])[1])}</div></div><button type="button" class="btn" data-scx>✕</button></div>
+    <div class="st-sm">${votes}</div>
+    <div class="sc-kv">${kv}</div>
+    ${c ? `<div class="sc-line cont" style="margin-bottom:10px">${esc(scContRo(c, dirS))}</div>` : r.cls === 'unclear' ? `<div class="sc-line" style="margin-bottom:10px">${scWhyRo(r)}</div>` : ''}
+    <div class="sc-ai" id="scAi"></div></div>`;
+  document.body.appendChild(el);
+  el.onclick = e => { if(e.target === el || e.target.closest('[data-scx]')) el.remove(); };
+  const box = el.querySelector('#scAi');
+  const show = (txt, meta) => { box.innerHTML = `<div class="aa-md">${aaMd(txt)}</div><div class="muted st-sm" style="margin-top:8px">${esc(meta)} · <a href="#" data-scre>regenerează</a></div>`;
+    box.querySelector('[data-scre]').onclick = e => { e.preventDefault(); ask(true); }; };
+  const ask = async force => {
+    if(S.sc.noAi) return box.innerHTML = '<div class="muted st-sm">Rulează în Supabase partea „v2” din <code>migration-scanner.sql</code> (3 rânduri) ca să se poată salva analiza.</div>';
+    if(!aaKey()) return box.innerHTML = '<div class="muted st-sm">Scrie cheia AA_KEY în Scanner → setup ca să ceri analiza pe acest dispozitiv.</div>';
+    box.innerHTML = '<div class="sc-wait">⏳ Claude analizează perechea… (până la ~30 s)</div>';
+    try{ const q = await fetch(`${SUPABASE_URL}/functions/v1/scan-event?key=${encodeURIComponent(aaKey())}&pair=${encodeURIComponent(pair)}&slot=${encodeURIComponent(r.slot)}${force ? '&force=1' : ''}`);
+      const j = await q.json(); if(!q.ok || j.error) throw new Error(j.error || q.status);
+      Object.assign(r, { ai:j.ai, ai_model:j.ai_model, ai_at:j.ai_at }); S.sc.sig = '';
+      show(j.ai, `${j.ai_model || ''} · ${j.cached ? 'salvată' : 'nouă'}`); }
+    catch(e){ box.innerHTML = `<div class="neg st-sm">Analiza a eșuat: ${esc(e.message || String(e))}</div>`; }
+  };
+  if(r.ai) show(r.ai, `${r.ai_model || ''} · salvată`); else ask(false);
 }
 function scPoll(){
   if(S.sc.timer) return;
