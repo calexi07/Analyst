@@ -2691,7 +2691,7 @@ const ICONS = {
 const ico = (k, s = 18) => `<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]||''}</svg>`;
 const NAV = [
   [null, [['today','Today','home']]],
-  ['Fundamental Analyse', [['journal','Calendar','calendar'],['history','Check','trend'],['watch','Watchlist','target'],['backtest','Trades','flask'],['strategies','Strategies','bolt'],['autoanalyst','Auto-Analyst','brain'],['scanner','Scanner','radar'],['analyst','Analyst','radar']]],
+  ['Fundamental Analyse', [['journal','Calendar','calendar'],['history','Check','trend'],['watch','Watchlist','target'],['backtest','Trades','flask'],['strategies','Strategies','bolt'],['scanner','Scanner','radar'],['analyst','Analyst','radar']]],
   ['Money', [['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target']]],
   ['Tools', [['health','Health','radar'],['prompts','Prompts','spark']]],
 ];
@@ -2857,7 +2857,7 @@ function render(){
 function openMore(){
   const d = document.getElementById('moreDlg'), light = document.documentElement.dataset.theme === 'light';
   d.innerHTML = `<div class="dlg-head"><h2>More</h2></div><div class="dlg-body more-g">
-    ${[['watch','Watchlist','target'],['autoanalyst','Auto-Analyst','brain'],['scanner','Scanner','radar'],['analyst','Analyst','radar'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['health','Health','radar'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
+    ${[['watch','Watchlist','target'],['scanner','Scanner','radar'],['analyst','Analyst','radar'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['health','Health','radar'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
     <button class="more-i" data-ma="share">${ico('share', 22)}<span>Share</span></button>
     <button class="more-i" data-ma="data">${ico('swap', 22)}<span>Import / export</span></button>
     <button class="more-i" data-ma="theme">${ico(light ? 'moon' : 'sun', 22)}<span>${light ? 'Dark' : 'Light'} theme</span></button></div>`;
@@ -5765,8 +5765,8 @@ function renderScanner(){
       <div class="card">${groups || '<p class="muted">No pairs in this scan.</p>'}</div>` : (S.sc.err ? '' : '<div class="card fc-empty"><p>No scan yet. The first one arrives at the next scan hour once the alerts are set (see Connect).</p></div>')}
     <details class="card st-setup" ${S.sc.slots.length ? '' : 'open'}><summary><b>Connect</b> <span class="muted">· once</span></summary><ol>
       <li>Supabase → SQL Editor: run <code>supabase/migration-scanner.sql</code>.</li>
-      <li>Edge Functions → create <b>scan-event</b> (paste <code>supabase/functions/scan-event/index.ts</code>), <b>Verify JWT off</b>, deploy. It uses the same secrets as the Auto-Analyst (AA_KEY, ANTHROPIC_API_KEY); optional SCAN_WAIT_S, SCAN_LANG.
-        <button type="button" class="btn" id="scCheck">Check setup</button><div id="scChk" class="st-sm muted"></div></li>
+      <li>Edge Functions → create <b>scan-event</b> (paste <code>supabase/functions/scan-event/index.ts</code>), <b>Verify JWT off</b>, deploy. Secrets: AA_KEY and ANTHROPIC_API_KEY; optional SCAN_WAIT_S, SCAN_LANG.
+        Key here: <input class="inp" id="scKey" placeholder="your AA_KEY" value="${esc(ls.get('do_aa_key', ''))}" style="max-width:220px"> <button type="button" class="btn" id="scCheck">Check setup</button><div id="scChk" class="st-sm muted"></div></li>
       <li>TradingView: BE Tunnel MTF + SMC <b>v20</b> on each pair (5m is fine) → Create alert → Condition: the indicator → <b>Any alert() function call</b> → open-ended → only Webhook, no push → URL:<pre class="su-code">${esc(hook)}</pre></li>
       <li>One alert per pair. Hours are in the indicator settings (Scanner group, default 7,10,13,15,19). Test once with “Test: send on every closed candle”, then turn it off and recreate the alert.</li>
     </ol><p class="muted st-sm">Each scan is one Claude call for all pairs. Liquidity / zone / tunnel alerts that reach the same URL are ignored.</p></details>`;
@@ -5776,7 +5776,8 @@ function renderScanner(){
     try{ const r = await fetch(`${SUPABASE_URL}/functions/v1/scan-event?key=${encodeURIComponent(aaKey())}&redo=${encodeURIComponent(S.sc.slot)}`); const j = await r.json(); if(!r.ok || j.error) toast('Scanner: ' + (j.error || r.status)); }
     catch(e){ toast('Scanner not reachable'); }
     S.sc.sig = ''; await scLoad(); renderScanner(); };
-  m.querySelector('#scCheck').onclick = async () => { const o = m.querySelector('#scChk'); if(!aaKey()) return toast('Type your AA_KEY in Auto-Analyst → Connect first'); o.textContent = '…';
+  m.querySelector('#scKey').onchange = e => { ls.set('do_aa_key', e.target.value.trim()); renderScanner(); };
+  m.querySelector('#scCheck').onclick = async () => { const o = m.querySelector('#scChk'); if(!aaKey()) return toast('Type your AA_KEY in the box first'); o.textContent = '…';
     try{ const r = await fetch(`${SUPABASE_URL}/functions/v1/scan-event?key=${encodeURIComponent(aaKey())}&check=1`); o.textContent = JSON.stringify(await r.json()).replace(/[{}"]/g, '').replace(/,/g, ' · '); }
     catch(e){ o.textContent = 'scan-event not reachable (deployed? Verify JWT off?)'; } };
 }
