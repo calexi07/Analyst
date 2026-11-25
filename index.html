@@ -5750,6 +5750,7 @@ function renderScanner(){
   scPoll();
   const hook = `${SUPABASE_URL}/functions/v1/scan-event?key=${aaKey() || '<AA_KEY>'}`;
   const run = S.sc.run, rows = S.sc.rows;
+  const scOk = S.sc.slots.length > 0 && !!aaKey() && !S.sc.err;   // scans arrive and this device has the key
   const row = r => { const d = r.data || {}, k = d._cls || {}, dn = k.done_pct;
     return `<div class="sc-row"><div><b>${esc(r.pair)}</b><div>${aaDir(d.dir)} <span class="muted st-sm">${d.pct ?? '–'}%</span></div></div>
       <div class="sc-why">${esc((r.why || '').split(' · continuation: ')[0])}${(r.why || '').includes(' · continuation: ') ? `<div class="sc-cont">↪ ${esc(r.why.split(' · continuation: ')[1])}</div>` : ''}${dn != null ? `<div class="sc-bar"><i style="width:${Math.min(100, Math.max(0, dn))}%"></i></div>` : ''}</div></div>`; };
@@ -5763,7 +5764,8 @@ function renderScanner(){
     ${S.sc.err === 'missing' ? '<div class="card fc-empty"><p>The scanner tables are missing: run <code>supabase/migration-scanner.sql</code> (see Connect below).</p></div>' : S.sc.err ? `<div class="card neg">${esc(S.sc.err)}</div>` : ''}
     ${S.sc.slot ? `<div class="card"><div class="aa-sh"><b>Summary · ${esc(scWhen(S.sc.slot))}</b>${run && aaKey() ? '<button type="button" class="btn" id="scRedo">Rewrite</button>' : ''}</div>${sum}</div>
       <div class="card">${groups || '<p class="muted">No pairs in this scan.</p>'}</div>` : (S.sc.err ? '' : '<div class="card fc-empty"><p>No scan yet. The first one arrives at the next scan hour once the alerts are set (see Connect).</p></div>')}
-    <details class="card st-setup" ${S.sc.slots.length ? '' : 'open'}><summary><b>Connect</b> <span class="muted">· once</span></summary><ol>
+    ${scOk && !S.sc.showSetup ? '<div class="muted st-sm" style="text-align:center;margin:8px 0">Connected · <a href="#" id="scSetup">setup</a></div>' : ''}
+    <details class="card st-setup" ${scOk && !S.sc.showSetup ? 'style="display:none"' : ''} ${scOk ? 'open' : S.sc.slots.length ? '' : 'open'}><summary><b>Connect</b> <span class="muted">· once</span></summary><ol>
       <li>Supabase → SQL Editor: run <code>supabase/migration-scanner.sql</code>.</li>
       <li>Edge Functions → create <b>scan-event</b> (paste <code>supabase/functions/scan-event/index.ts</code>), <b>Verify JWT off</b>, deploy. Secrets: AA_KEY and ANTHROPIC_API_KEY; optional SCAN_WAIT_S, SCAN_LANG.
         Key here: <input class="inp" id="scKey" placeholder="your AA_KEY" value="${esc(ls.get('do_aa_key', ''))}" style="max-width:220px"> <button type="button" class="btn" id="scCheck">Check setup</button><div id="scChk" class="st-sm muted"></div></li>
@@ -5776,6 +5778,7 @@ function renderScanner(){
     try{ const r = await fetch(`${SUPABASE_URL}/functions/v1/scan-event?key=${encodeURIComponent(aaKey())}&redo=${encodeURIComponent(S.sc.slot)}`); const j = await r.json(); if(!r.ok || j.error) toast('Scanner: ' + (j.error || r.status)); }
     catch(e){ toast('Scanner not reachable'); }
     S.sc.sig = ''; await scLoad(); renderScanner(); };
+  const su = m.querySelector('#scSetup'); if(su) su.onclick = e => { e.preventDefault(); S.sc.showSetup = true; renderScanner(); };
   m.querySelector('#scKey').onchange = e => { ls.set('do_aa_key', e.target.value.trim()); renderScanner(); };
   m.querySelector('#scCheck').onclick = async () => { const o = m.querySelector('#scChk'); if(!aaKey()) return toast('Type your AA_KEY in the box first'); o.textContent = '…';
     try{ const r = await fetch(`${SUPABASE_URL}/functions/v1/scan-event?key=${encodeURIComponent(aaKey())}&check=1`); o.textContent = JSON.stringify(await r.json()).replace(/[{}"]/g, '').replace(/,/g, ' · '); }
