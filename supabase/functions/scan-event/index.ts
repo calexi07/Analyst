@@ -228,22 +228,34 @@ async function askPair(ctx: unknown) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model: MODEL, max_tokens: 2000, system: PAIR_SYSTEM, messages: [{ role: "user", content: `${PAIR_FORMAT}\n\nDATE (JSON):\n${JSON.stringify(ctx)}` }] }),
+    body: JSON.stringify({ model: MODEL, max_tokens: 1600, system: PAIR_SYSTEM, messages: [{ role: "user", content: `${PAIR_FORMAT}\n\nDATE (JSON):\n${JSON.stringify(ctx)}` }] }),
   });
   const j = await res.json();
   if (!res.ok) throw new Error(j?.error?.message || `Anthropic API ${res.status}`);
   return (j.content ?? []).filter((c: { type: string }) => c.type === "text").map((c: { text: string }) => c.text).join("\n").trim();
 }
 
+// runs in the background: the page polls scan_rows.ai (free) instead of holding the request open while Claude writes
 export async function analysePair(pair: string, slot: string, force: boolean) {
   const { data: row, error } = await db.from("scan_rows").select("id,data,ai,ai_model,ai_at").eq("pair", pair).eq("slot", slot).eq("test", false).maybeSingle();
   if (error) throw new Error(error.message);
   if (!row) return { error: "no scan row for this pair and time" };
   if (row.ai && !force) return { ai: row.ai, ai_model: row.ai_model, ai_at: row.ai_at, cached: true };
-  const text = await askPair(pairContext(row.data as Scan));
+  const busy = String(row.ai_model || "").startsWith("pending") && row.ai_at && Date.now() - Date.parse(row.ai_at) < 4 * 60000;
+  if (busy) return { pending: true, since: row.ai_at };
   const at = new Date().toISOString();
-  await db.from("scan_rows").update({ ai: text, ai_model: MODEL, ai_at: at }).eq("id", row.id);
-  return { ai: text, ai_model: MODEL, ai_at: at, cached: false };
+  await db.from("scan_rows").update({ ai_model: "pending", ai_at: at, ...(force ? { ai: null } : {}) }).eq("id", row.id);
+  const job = (async () => {
+    try {
+      const text = await askPair(pairContext(row.data as Scan));
+      await db.from("scan_rows").update({ ai: text, ai_model: MODEL, ai_at: new Date().toISOString() }).eq("id", row.id);
+    } catch (e) {
+      await db.from("scan_rows").update({ ai_model: "error: " + (e as Error).message.slice(0, 180), ai_at: new Date().toISOString() }).eq("id", row.id);
+    }
+  })();
+  const rt = (globalThis as unknown as { EdgeRuntime?: { waitUntil: (p: Promise<unknown>) => void } }).EdgeRuntime;
+  if (rt?.waitUntil) rt.waitUntil(job); else await job;
+  return { pending: true, since: at };
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

@@ -5788,7 +5788,7 @@ function renderScanner(){
       ${dn != null ? `<div class="sc-prog"><span>done <b>${dn}%</b></span><span>AVG ${d.avg ?? '–'}p${d.avg75 != null ? ` · 75% ${d.avg75}p` : ''}</span></div>
         <div class="sc-meter"><i style="width:${Math.min(100, Math.max(0, dn) / (d.avg75 && d.avg ? d.avg75 / d.avg * 100 : 100) * 100)}%"></i>${d.avg75 && d.avg ? `<u style="left:${Math.min(100, 100 / (d.avg75 / d.avg))}%"></u>` : ''}</div>` : ''}
       ${line1 ? `<div class="sc-line ${leg && r.cls !== 'watch' ? 'cont' : ''}">${line1}</div>` : ''}${line2 ? `<div class="sc-line">${line2}</div>` : ''}
-      <div class="sc-foot"><span class="sc-pill">1H tunel ${d.t1?.[1] != null ? (d.t1[1] === 0 ? 'în tunel' : d.t1[1] + 'p') : '–'}</span>${r.ai ? '<span class="sc-pill ai">✦ analiză</span>' : ''}</div></button>`; };
+      <div class="sc-foot"><span class="sc-pill">1H tunel ${d.t1?.[1] != null ? (d.t1[1] === 0 ? 'în tunel' : d.t1[1] + 'p') : '–'}</span>${r.ai && !String(r.ai_model || '').startsWith('pending') ? '<span class="sc-pill ai">✦ analiză</span>' : ''}</div></button>`; };
   const chips = `<div class="sc-chips">${[['all', 'Toate', rows.length], ...SC_CLS.map(([c, l]) => [c, l, cnt(c)])].map(([c, l, n]) => `<button type="button" class="sc-chip ${flt === c ? 'on' : ''}" data-scf="${c}">${l}<i>${n}</i></button>`).join('')}</div>`;
   const groups = rows.length ? `${chips}<div class="sc-grid">${shown.map(card).join('') || '<p class="muted">Nimic în această categorie.</p>'}</div>` : '';
   const sum = !run ? '' : run.status === 'done' ? `<div class="aa-md">${aaMd(run.summary)}</div><div class="muted st-sm">${esc(run.model || '')} · ${run.n} pairs · rules untested · not a trade signal</div>`
@@ -5867,17 +5867,28 @@ function scOpen(pair){
   const box = el.querySelector('#scAi');
   const show = (txt, meta) => { box.innerHTML = `<div class="aa-md">${aaMd(txt)}</div><div class="muted st-sm" style="margin-top:8px">${esc(meta)} · <a href="#" data-scre>regenerează</a></div>`;
     box.querySelector('[data-scre]').onclick = e => { e.preventDefault(); ask(true); }; };
+  // start (or join) the background analysis, then poll the stored row (free) until the text is there
+  const poll = async (t0, n = 0) => {
+    if(!document.body.contains(el)) return;
+    const { data, error } = await sb.from('scan_rows').select('ai,ai_model,ai_at').eq('pair', pair).eq('slot', r.slot).eq('test', false).maybeSingle();
+    const secs = Math.round((Date.now() - t0) / 1000);
+    if(!error && data?.ai && !String(data.ai_model || '').startsWith('pending')){ Object.assign(r, data); S.sc.sig = ''; return show(data.ai, `${data.ai_model || ''} · nouă`); }
+    if(!error && String(data?.ai_model || '').startsWith('error')) return box.innerHTML = `<div class="neg st-sm">Analiza a eșuat: ${esc(data.ai_model.slice(7))} · <a href="#" data-scre>încearcă din nou</a></div>`, box.querySelector('[data-scre]').onclick = e => { e.preventDefault(); ask(true); };
+    if(secs > 240) return box.innerHTML = '<div class="neg st-sm">Nu a venit răspuns în 4 minute. Închide și deschide din nou cardul mai târziu (dacă a terminat între timp, apare salvată).</div>';
+    box.innerHTML = `<div class="sc-wait">⏳ Claude analizează perechea… ${secs}s (poți închide; se salvează)</div>`;
+    setTimeout(() => poll(t0, n + 1), 4000);
+  };
   const ask = async force => {
     if(S.sc.noAi) return box.innerHTML = '<div class="muted st-sm">Rulează în Supabase partea „v2” din <code>migration-scanner.sql</code> (3 rânduri) ca să se poată salva analiza.</div>';
     if(!aaKey()) return box.innerHTML = '<div class="muted st-sm">Scrie cheia AA_KEY în Scanner → setup ca să ceri analiza pe acest dispozitiv.</div>';
-    box.innerHTML = '<div class="sc-wait">⏳ Claude analizează perechea… (până la ~30 s)</div>';
+    box.innerHTML = '<div class="sc-wait">⏳ Pornesc analiza…</div>';
     try{ const q = await fetch(`${SUPABASE_URL}/functions/v1/scan-event?key=${encodeURIComponent(aaKey())}&pair=${encodeURIComponent(pair)}&slot=${encodeURIComponent(r.slot)}${force ? '&force=1' : ''}`);
       const j = await q.json(); if(!q.ok || j.error) throw new Error(j.error || q.status);
-      Object.assign(r, { ai:j.ai, ai_model:j.ai_model, ai_at:j.ai_at }); S.sc.sig = '';
-      show(j.ai, `${j.ai_model || ''} · ${j.cached ? 'salvată' : 'nouă'}`); }
-    catch(e){ box.innerHTML = `<div class="neg st-sm">Analiza a eșuat: ${esc(e.message || String(e))}</div>`; }
+      if(j.ai && !j.pending){ Object.assign(r, { ai:j.ai, ai_model:j.ai_model, ai_at:j.ai_at }); S.sc.sig = ''; return show(j.ai, `${j.ai_model || ''} · ${j.cached ? 'salvată' : 'nouă'}`); }
+      poll(j.since ? Math.min(Date.now(), Date.parse(j.since)) : Date.now()); }
+    catch(e){ box.innerHTML = `<div class="neg st-sm">Analiza nu a pornit: ${esc(e.message || String(e))}</div>`; }
   };
-  if(r.ai) show(r.ai, `${r.ai_model || ''} · salvată`); else ask(false);
+  if(r.ai && !String(r.ai_model || '').startsWith('pending')) show(r.ai, `${r.ai_model || ''} · salvată`); else ask(false);
 }
 function scPoll(){
   if(S.sc.timer) return;
