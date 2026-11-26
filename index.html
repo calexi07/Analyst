@@ -154,6 +154,11 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .sc-row b{ font-size:13px; } .sc-why{ line-height:1.4; } .sc-tag{ display:inline-block; padding:1px 7px; border-radius:9px; font-size:11px; font-weight:700; margin-left:6px; color:#fff; }
   .sc-watch{ background:#22AB94; } .sc-late{ background:#FF9800; } .sc-done{ background:#787B86; } .sc-unclear{ background:#9598A1; }
   .sc-cont{ margin-top:3px; color:#00BCD4; font-size:12.5px; }
+  .ft-form{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; } .ft-form label{ display:flex; flex-direction:column; gap:4px; font-size:12px; color:var(--muted); } .ft-form .wide{ grid-column:1/-1; }
+  .ft-tags{ display:flex; flex-wrap:wrap; gap:6px; } .ft-tag{ border:1px solid var(--line); border-radius:999px; padding:5px 10px; font-size:12.5px; cursor:pointer; background:var(--surface); color:var(--ink); } .ft-tag.on{ background:var(--ink); color:var(--bg); border-color:var(--ink); }
+  .ft-kpi{ display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; } .ft-kpi div{ background:var(--surface-2); border-radius:12px; padding:9px 11px; font-size:12px; color:var(--muted); } .ft-kpi b{ display:block; font-size:18px; color:var(--ink); }
+  .ft-row{ display:grid; grid-template-columns:1fr auto; gap:4px 10px; padding:9px 0; border-top:1px solid var(--line); font-size:13px; cursor:pointer; } .ft-row:first-child{ border-top:0; }
+  .ft-tb{ width:100%; border-collapse:collapse; font-size:12.5px; } .ft-tb th, .ft-tb td{ padding:5px 6px; text-align:right; border-top:1px solid var(--line); } .ft-tb th:first-child, .ft-tb td:first-child{ text-align:left; }
   .sc-chips{ display:flex; gap:6px; flex-wrap:wrap; margin:4px 0 10px; } .sc-chip{ border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:5px 11px; font-size:12.5px; font-weight:700; cursor:pointer; }
   .sc-chip.on{ background:var(--ink); color:var(--bg); border-color:var(--ink); } .sc-chip i{ font-style:normal; opacity:.65; margin-left:4px; }
   .sc-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px; }
@@ -2711,7 +2716,7 @@ const ICONS = {
 const ico = (k, s = 18) => `<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]||''}</svg>`;
 const NAV = [
   [null, [['today','Today','home']]],
-  ['Fundamental Analyse', [['journal','Calendar','calendar'],['history','Check','trend'],['watch','Watchlist','target'],['backtest','Trades','flask'],['strategies','Strategies','bolt'],['scanner','Scanner','radar'],['analyst','Analyst','radar']]],
+  ['Fundamental Analyse', [['journal','Calendar','calendar'],['history','Check','trend'],['watch','Watchlist','target'],['backtest','Trades','flask'],['strategies','Strategies','bolt'],['scanner','Scanner','radar'],['forward','Forward test','flask'],['analyst','Analyst','radar']]],
   ['Money', [['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target']]],
   ['Tools', [['health','Health','radar'],['prompts','Prompts','spark']]],
 ];
@@ -2877,7 +2882,7 @@ function render(){
 function openMore(){
   const d = document.getElementById('moreDlg'), light = document.documentElement.dataset.theme === 'light';
   d.innerHTML = `<div class="dlg-head"><h2>More</h2></div><div class="dlg-body more-g">
-    ${[['watch','Watchlist','target'],['scanner','Scanner','radar'],['analyst','Analyst','radar'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['health','Health','radar'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
+    ${[['watch','Watchlist','target'],['scanner','Scanner','radar'],['forward','Forward test','flask'],['analyst','Analyst','radar'],['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target'],['health','Health','radar'],['prompts','Prompts','spark']].map(([v,l,i]) => `<button class="more-i" data-mv="${v}">${ico(i, 22)}<span>${l}</span></button>`).join('')}
     <button class="more-i" data-ma="share">${ico('share', 22)}<span>Share</span></button>
     <button class="more-i" data-ma="data">${ico('swap', 22)}<span>Import / export</span></button>
     <button class="more-i" data-ma="theme">${ico(light ? 'moon' : 'sun', 22)}<span>${light ? 'Dark' : 'Light'} theme</span></button></div>`;
@@ -2972,6 +2977,7 @@ function renderMain(){
   else if(S.view === 'strategies') renderStrategies();
   else if(S.view === 'autoanalyst') renderAutoAnalyst();
   else if(S.view === 'scanner') renderScanner();
+  else if(S.view === 'forward') renderForward();
   else if(S.view === 'watch') renderWatch();
   else if(S.view === 'devents') renderDevents();
   else if(S.view === 'health') renderHealth();
@@ -5898,6 +5904,135 @@ function scPoll(){
     if(S.view !== 'scanner' || document.hidden) return;
     if(await scLoad() && S.view === 'scanner' && !document.querySelector('#main select:focus')) renderScanner();
   }, 60000);
+}
+/* ===== Forward test — the 5 pullback-reclaim strategies, logged by hand (setups taken AND not taken) + daily notes.
+   Stored in do_settings: one key per setup ("ft:<id>") and per day ("ftday:<date>"), so nothing to migrate. Results in R, computed here. */
+const FT_STRATS = [[1, 'Pullback line'], [2, 'Daily open'], [3, '1H sweep'], [4, 'Tunel 1H'], [5, 'Zonă OB/FVG']];
+const FT_INSTR = () => [...allPairs().filter(p => p !== 'GER40' && p !== 'NAS100'), 'GER40', 'NAS100'];
+const FT_STATUS = [['open', 'Deschis / în așteptare'], ['tp', 'TP 2R atins'], ['sl', 'SL atins'], ['be', 'Break-even'], ['manual', 'Închis manual']];
+S.ft = S.ft || { edit:null, flt:'all', period:'all' };
+const ftAll = () => Object.entries(S.settings || {}).filter(([k, v]) => k.startsWith('ft:') && v && !v.deleted).map(([k, v]) => ({ key:k, ...v })).sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+const ftNowBuc = () => { const d = new Date(), f = o => d.toLocaleString('sv-SE', { timeZone:'Europe/Bucharest', ...o }); return { date:f({ year:'numeric', month:'2-digit', day:'2-digit' }), time:f({ hour:'2-digit', minute:'2-digit', hour12:false }) }; };
+const ftSession = t => { const h = +String(t || '').slice(0, 2), m = +String(t || '').slice(3, 5), x = h * 60 + m; return x < 540 ? 'Asia' : x < 780 ? 'Londra' : x < 930 ? 'Prânz' : 'New York'; };
+const ftGroup = p => p === 'XAUUSD' ? 'Aur' : (p === 'GER40' || p === 'NAS100') ? 'Indici' : 'Forex';
+function ftR(e){
+  const en = +e.entry, sl = +e.sl, d = e.dir === 'short' ? -1 : 1, risk = (en - sl) * d;
+  if(!(risk > 0)) return null;
+  if(e.status === 'tp') return 2;
+  if(e.status === 'sl') return -1;
+  if(e.status === 'be') return 0;
+  if(e.status === 'manual' && e.exit !== '' && e.exit != null && isFinite(+e.exit)) return Math.round((+e.exit - en) * d / risk * 100) / 100;
+  return null;
+}
+const ftAlign = e => !e.fund || e.fund === 'neutral' ? 'neutru' : (e.fund === 'bullish') === (e.dir === 'long') ? 'cu fund.' : 'contra fund.';
+function ftStats(list){
+  const rs = list.map(ftR).filter(r => r != null), n = rs.length;
+  if(!n) return { n:0 };
+  const sum = rs.reduce((a, b) => a + b, 0), avg = sum / n, sd = Math.sqrt(rs.reduce((a, r) => a + (r - avg) ** 2, 0) / Math.max(n - 1, 1));
+  let eq = 0, peak = 0, dd = 0, streak = 0, worst = 0;
+  list.slice().reverse().map(ftR).filter(r => r != null).forEach(r => { eq += r; peak = Math.max(peak, eq); dd = Math.min(dd, eq - peak); streak = r < 0 ? streak + 1 : 0; worst = Math.max(worst, streak); });
+  return { n, sum, avg, win:100 * rs.filter(r => r > 0).length / n, t:sd > 0 ? avg / (sd / Math.sqrt(n)) : null, dd, worst };
+}
+async function ftSave(e){
+  const key = e.key || 'ft:' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); const v = { ...e }; delete v.key;
+  v.updated = new Date().toISOString(); await saveSettingKey(key, v); return key;
+}
+async function ftDelete(key){
+  delete S.settings[key];
+  try{ const { error } = await sb.from('do_settings').delete().eq('key', key); if(error) throw error; }
+  catch(err){ await saveSettingKey(key, { deleted:true }); }
+}
+function ftBlank(){ const n = ftNowBuc(); return { date:n.date, time:n.time, pair:S.pair && FT_INSTR().includes(S.pair) ? S.pair : 'EURUSD', dir:'long', strats:[], fund:'', conv:'', vote:'', news:false, level:'', entry:'', sl:'', liq:'', taken:true, reason:'', link:'', status:'open', exit:'', mfe:'', mae:'', notes:'' }; }
+function ftFundFill(e){
+  const r = curWeekRec(e.pair); if(!r) return e;
+  const b = /bull|long/i.test(r.bias) ? 'bullish' : /bear|short/i.test(r.bias) ? 'bearish' : 'neutral';
+  return { ...e, fund:e.fund || b, conv:e.conv || ({ high:'high', medium:'medium', low:'low' })[r.conviction] || '' };
+}
+function renderForward(){
+  const m = document.getElementById('main'); if(!m) return;
+  const all = ftAll(), today = ftNowBuc().date;
+  const inPeriod = e => S.ft.period === 'all' ? true : S.ft.period === 'week' ? (Date.now() - Date.parse(e.date)) < 7 * 864e5 : (Date.now() - Date.parse(e.date)) < 31 * 864e5;
+  const list = all.filter(inPeriod).filter(e => S.ft.flt === 'all' || (S.ft.flt === 'taken' ? e.taken : !e.taken));
+  const st = ftStats(list), f2 = x => x == null || !isFinite(x) ? '–' : (Math.round(x * 100) / 100).toString();
+  const kpi = `<div class="ft-kpi">
+    <div>Setup-uri închise<b>${st.n || 0}</b></div><div>R mediu<b>${f2(st.avg)}</b></div><div>R total<b>${f2(st.sum)}</b></div>
+    <div>Câștig %<b>${st.n ? Math.round(st.win) + '%' : '–'}</b></div><div>t-stat<b>${f2(st.t)}</b></div><div>Drawdown max<b>${st.n ? f2(st.dd) + 'R' : '–'}</b></div>
+    <div>Serie pierderi max<b>${st.n ? st.worst : '–'}</b></div><div>Deschise<b>${list.filter(e => e.status === 'open').length}</b></div></div>
+    <p class="muted st-sm" style="margin:6px 0 0">${st.n < 150 ? `Orientativ: ${st.n || 0} din ~150 setup-uri necesare pentru o concluzie. ` : ''}2R = pragul de rentabilitate la ~34% câștig.</p>`;
+  const tbl = (title, keyFn, keys) => { const rows = keys.map(k => { const g = list.filter(e => [].concat(keyFn(e)).includes(k)), s = ftStats(g);
+      return `<tr><td>${esc(k)}</td><td>${g.length}</td><td>${s.n || 0}</td><td>${f2(s.avg)}</td><td>${s.n ? Math.round(s.win) + '%' : '–'}</td><td>${f2(s.sum)}</td></tr>`; }).join('');
+    return `<div class="card"><b>${title}</b><div class="tblwrap"><table class="ft-tb"><thead><tr><th></th><th>Nr</th><th>Închise</th><th>R med</th><th>Win</th><th>R tot</th></tr></thead><tbody>${rows}</tbody></table></div></div>`; };
+  const day = (S.settings || {})['ftday:' + today]?.text || '';
+  const rows = list.slice(0, 200).map(e => { const r = ftR(e);
+    return `<div class="ft-row" data-ftk="${esc(e.key)}"><div><b>${esc(e.pair)}</b> ${e.dir === 'long' ? '<span class="up">▲ long</span>' : '<span class="dn">▼ short</span>'} · ${(e.strats || []).map(x => 'S' + x).join(', ') || '—'}
+      <div class="muted st-sm">${esc(e.date)} ${esc(e.time)} · ${ftSession(e.time)} · ${esc(ftAlign(e))}${e.taken ? '' : ' · neluat'}${e.reason ? ' · ' + esc(e.reason.slice(0, 60)) : ''}</div></div>
+      <div style="text-align:right"><b class="${r > 0 ? 'up' : r < 0 ? 'dn' : ''}">${r == null ? (e.status === 'open' ? 'deschis' : '–') : (r > 0 ? '+' : '') + r + 'R'}</b></div></div>`; }).join('');
+  m.innerHTML = `<div class="aa-sh"><h2 style="margin:0">Forward test</h2><span>
+      <select class="inp" id="ftPer"><option value="all" ${S.ft.period === 'all' ? 'selected' : ''}>Tot</option><option value="month" ${S.ft.period === 'month' ? 'selected' : ''}>31 zile</option><option value="week" ${S.ft.period === 'week' ? 'selected' : ''}>7 zile</option></select>
+      <select class="inp" id="ftFlt"><option value="all" ${S.ft.flt === 'all' ? 'selected' : ''}>Toate setup-urile</option><option value="taken" ${S.ft.flt === 'taken' ? 'selected' : ''}>Doar luate</option><option value="not" ${S.ft.flt === 'not' ? 'selected' : ''}>Doar neluate</option></select>
+      <button type="button" class="btn" id="ftNew">+ Setup nou</button></span></div>
+    <div id="ftForm"></div>
+    <div class="card">${kpi}</div>
+    <div class="card"><b>Observații ${esc(today)}</b><textarea class="inp" id="ftDay" rows="3" placeholder="Ce ai observat azi: context, știri, ce a mers, ce nu" style="width:100%;margin-top:6px">${esc(day)}</textarea></div>
+    ${tbl('Pe strategie', e => (e.strats || []).map(x => (FT_STRATS.find(s => s[0] === +x) || [x, 'S' + x])[1]), FT_STRATS.map(s => s[1]))}
+    ${tbl('Față de biasul fundamental', ftAlign, ['cu fund.', 'contra fund.', 'neutru'])}
+    ${tbl('Pe sesiune', e => ftSession(e.time), ['Asia', 'Londra', 'Prânz', 'New York'])}
+    ${tbl('Pe instrument', e => ftGroup(e.pair), ['Forex', 'Aur', 'Indici'])}
+    ${tbl('Luate vs neluate', e => e.taken ? 'luate' : 'neluate', ['luate', 'neluate'])}
+    <div class="card"><b>Jurnal</b>${rows || '<p class="muted">Niciun setup încă. Apasă „+ Setup nou”.</p>'}</div>
+    <div class="card st-sm muted">Reguli v1: biasul zilei fixat la 09:00 · confirmare = închidere 15m înapoi peste nivel (+0,1 ATR zilnic la S1/S2) · SL la extrema de dincolo de nivel · TP 2R · intrări 09–20 · max 1 trade pe pereche pe zi pentru fiecare strategie. Notează și setup-urile pe care nu le iei, cu rezultatul lor ipotetic. <a href="#" id="ftCsv">Export CSV</a></div>`;
+  m.querySelector('#ftPer').onchange = e => { S.ft.period = e.target.value; renderForward(); };
+  m.querySelector('#ftFlt').onchange = e => { S.ft.flt = e.target.value; renderForward(); };
+  m.querySelector('#ftNew').onclick = () => { S.ft.edit = ftFundFill(ftBlank()); ftForm(); };
+  m.querySelectorAll('[data-ftk]').forEach(r => r.onclick = () => { const e = ftAll().find(x => x.key === r.dataset.ftk); if(e){ S.ft.edit = { ...e }; ftForm(); window.scrollTo({ top:0, behavior:'smooth' }); } });
+  let dt; m.querySelector('#ftDay').oninput = e => { clearTimeout(dt); const v = e.target.value; dt = setTimeout(() => saveSettingKey('ftday:' + today, { text:v, updated:new Date().toISOString() }), 800); };
+  m.querySelector('#ftCsv').onclick = ev => { ev.preventDefault();
+    const cols = ['date', 'time', 'pair', 'dir', 'strats', 'fund', 'conv', 'vote', 'news', 'level', 'entry', 'sl', 'liq', 'taken', 'reason', 'status', 'exit', 'mfe', 'mae', 'notes', 'link'];
+    const q = v => '"' + String(Array.isArray(v) ? v.join(' ') : v ?? '').replace(/"/g, '""') + '"';
+    const csv = [cols.concat(['session', 'alignment', 'R']).join(','), ...ftAll().map(e => cols.map(c => q(e[c])).concat([q(ftSession(e.time)), q(ftAlign(e)), q(ftR(e))]).join(','))].join('\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' })); a.download = `forward-test-${today}.csv`; a.click(); };
+  if(S.ft.edit) ftForm();
+}
+function ftForm(){
+  const box = document.getElementById('ftForm'); if(!box) return; const e = S.ft.edit; if(!e){ box.innerHTML = ''; return; }
+  const opt = (arr, v) => arr.map(([k, l]) => `<option value="${esc(k)}" ${String(v) === String(k) ? 'selected' : ''}>${esc(l)}</option>`).join('');
+  const d = e.dir === 'short' ? -1 : 1, risk = (+e.entry - +e.sl) * d, tp = risk > 0 ? +e.entry + d * 2 * risk : null;
+  const dec = String(e.entry || '').split('.')[1]?.length || 5;
+  box.innerHTML = `<div class="card"><div class="aa-sh"><b>${e.key ? 'Editează setup' : 'Setup nou'}</b><span>${e.key ? '<button type="button" class="btn" id="ftDel">Șterge</button> ' : ''}<button type="button" class="btn" id="ftX">Închide</button></span></div>
+    <div class="ft-form">
+      <label>Data<input class="inp" type="date" data-f="date" value="${esc(e.date)}"></label>
+      <label>Ora (București)<input class="inp" type="time" data-f="time" value="${esc(e.time)}"></label>
+      <label>Instrument<select class="inp" data-f="pair">${opt(FT_INSTR().map(p => [p, p]), e.pair)}</select></label>
+      <label>Direcție<select class="inp" data-f="dir">${opt([['long', 'Long'], ['short', 'Short']], e.dir)}</select></label>
+      <label class="wide">Strategii (poți bifa mai multe)<div class="ft-tags">${FT_STRATS.map(([k, l]) => `<button type="button" class="ft-tag ${(e.strats || []).includes(k) ? 'on' : ''}" data-st="${k}">S${k} · ${esc(l)}</button>`).join('')}</div></label>
+      <label>Bias fundamental<select class="inp" data-f="fund">${opt([['', '—'], ['bullish', 'Bullish'], ['bearish', 'Bearish'], ['neutral', 'Neutru / two-sided']], e.fund)}</select></label>
+      <label>Convingere<select class="inp" data-f="conv">${opt([['', '—'], ['high', 'High'], ['medium', 'Medium'], ['low', 'Low']], e.conv)}</select></label>
+      <label>Vot zi (din overview, ex. ▼89)<input class="inp" data-f="vote" value="${esc(e.vote)}" placeholder="▼89"></label>
+      <label>Știri ±1h<select class="inp" data-f="news">${opt([['false', 'Nu'], ['true', 'Da']], e.news)}</select></label>
+      <label>Nivel (linie / DO / zonă)<input class="inp" inputmode="decimal" data-f="level" value="${esc(e.level)}"></label>
+      <label>Intrare<input class="inp" inputmode="decimal" data-f="entry" value="${esc(e.entry)}"></label>
+      <label>SL<input class="inp" inputmode="decimal" data-f="sl" value="${esc(e.sl)}"></label>
+      <label>TP 2R (calculat)<input class="inp" value="${tp == null ? '' : tp.toFixed(dec)}" disabled></label>
+      <label>Următoarea lichiditate<input class="inp" inputmode="decimal" data-f="liq" value="${esc(e.liq)}"></label>
+      <label>L-ai luat?<select class="inp" data-f="taken">${opt([['true', 'Da'], ['false', 'Nu (notez ipotetic)']], e.taken)}</select></label>
+      <label class="wide">Motiv (de ce l-ai luat / nu)<input class="inp" data-f="reason" value="${esc(e.reason)}"></label>
+      <label>Rezultat<select class="inp" data-f="status">${opt(FT_STATUS, e.status)}</select></label>
+      <label>Preț ieșire (manual)<input class="inp" inputmode="decimal" data-f="exit" value="${esc(e.exit)}"></label>
+      <label>Max pe plus (R)<input class="inp" inputmode="decimal" data-f="mfe" value="${esc(e.mfe)}" placeholder="ex. 2.6"></label>
+      <label>Max pe minus (R)<input class="inp" inputmode="decimal" data-f="mae" value="${esc(e.mae)}" placeholder="ex. -0.4"></label>
+      <label class="wide">Link TradingView / screenshot<input class="inp" data-f="link" value="${esc(e.link)}"></label>
+      <label class="wide">Note<textarea class="inp" data-f="notes" rows="2">${esc(e.notes)}</textarea></label>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:10px"><button type="button" class="btn" id="ftSave">Salvează</button><span class="muted st-sm" id="ftMsg">${risk > 0 ? `Risc ${Math.abs(+e.entry - +e.sl).toFixed(dec)} · ${ftR(e) != null ? 'rezultat ' + ftR(e) + 'R' : 'deschis'}` : 'Completează intrarea și SL-ul (SL pe partea corectă).'}</span></div></div>`;
+  const read = () => { box.querySelectorAll('[data-f]').forEach(i => { const f = i.dataset.f; e[f] = f === 'taken' || f === 'news' ? i.value === 'true' : i.value; }); };
+  box.querySelectorAll('[data-f]').forEach(i => i.onchange = () => { const prev = e.pair; read(); if(i.dataset.f === 'pair' && e.pair !== prev && !e.key){ e.fund = ''; e.conv = ''; Object.assign(e, ftFundFill(e)); } ftForm(); });
+  box.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { read(); const k = +b.dataset.st; e.strats = (e.strats || []).includes(k) ? e.strats.filter(x => x !== k) : [...(e.strats || []), k].sort(); ftForm(); });
+  box.querySelector('#ftX').onclick = () => { S.ft.edit = null; ftForm(); };
+  const del = box.querySelector('#ftDel'); if(del) del.onclick = async () => { if(!confirm('Ștergi acest setup?')) return; await ftDelete(e.key); S.ft.edit = null; renderForward(); toast('Șters'); };
+  box.querySelector('#ftSave').onclick = async () => { read();
+    if(!(e.strats || []).length) return toast('Alege cel puțin o strategie');
+    if(!((+e.entry - +e.sl) * (e.dir === 'short' ? -1 : 1) > 0)) return toast('Intrarea și SL-ul nu sunt pe partea corectă');
+    e.key = await ftSave(e); S.ft.edit = null; renderForward(); toast('Salvat'); };
 }
 function renderWatch(){
   const m = document.getElementById('main'), all = wlAll(), flt = ls.get('do_wl_f', 'active'), pf = ls.get('do_wl_p', 'All');
