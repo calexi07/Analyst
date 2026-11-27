@@ -37,9 +37,9 @@ Pentru fiecare pereche cu date: aplici `ANALYST.md` (piloni, clasă, conviction,
 1. `reports/mtf/YYYY-MM-DD-HHMM.md` (ora rulării, București), în ordinea:
    - un rând cu ora datelor (cel mai vechi și cel mai nou „ultimul rând”), săptămâna fundamentală și check-ul folosit;
    - **Schimbări de la ultima rulare**: setup-uri confirmate, deschise, invalidate, TP/SL lovite, plus planurile din Watchlist validate sau invalidate;
+   - **Pe scurt** (prima parte, ANALYST.md 5.2a): toate perechile cu setup activ sau schimbat, în cuvinte simple, fără prețuri de structură; perechile SKIP grupate într-un singur rând („SKIP: EURGBP, CHFJPY, … — nimic calitativ”);
    - **Tabelul sumar**, toate cele 29 de perechi (formatul din ANALYST.md 5.1);
-   - **Detaliu complet** doar pentru setup-urile A+ și A noi sau schimbate, cu planul de execuție;
-   - restul perechilor: câte un rând.
+   - **Tehnic**: detaliu complet doar pentru setup-urile A+, A și B noi sau schimbate, cu planul de execuție; restul perechilor câte un rând.
 2. `reports/mtf/latest.md`: copie a raportului.
 3. `reports/mtf/state.json`: actualizat. Fiecare setup are: `id` (PERECHE-YYYYMMDD-HHMM-n), `pair`, `tf` (4H / 1H), `dir`, `type` (pro-trend / counter-trend), `class`, `zone` [low, high], `invalidation`, `plan_limit` {entry, sl, tp[]}, `plan_confirm` {trigger_level, trigger_tf, formula, entry, sl, tp[]} (entry și sl null până la confirmare), `valid_until`, `status`, `history` [{time, status, why}], `created_at`, `checked_at`. Setup-urile închise rămân în fișier 7 zile, apoi le scoți.
 4. Commit și push: `git add reports/mtf && git commit -m "MTF analysis <data ora>" && git pull --rebase && git push`.
@@ -48,7 +48,7 @@ Pentru fiecare pereche cu date: aplici `ANALYST.md` (piloni, clasă, conviction,
 Un singur mesaj scurt (SendUserMessage), pentru telefon:
 - primul rând: ora și „X schimbări · Y setup-uri A+/A noi”;
 - schimbările importante (maxim 5 rânduri);
-- setup-urile A+/A noi: pereche, direcție, clasă, entry / SL / TP1 (varianta 1) și declanșatorul variantei 2;
+- setup-urile A+/A noi, în stilul „Pe scurt”: o propoziție cu povestea plus rândul „Entry · SL · TP”;
 - link: https://github.com/calexi07/Analyst/blob/main/reports/mtf/latest.md
 Dacă nu s-a schimbat nimic și nu există setup A+/A nou, mesajul are un singur rând.
 
