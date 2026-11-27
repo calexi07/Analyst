@@ -1,0 +1,35 @@
+name: Structure feed export (MTF analysis)
+
+# Started by the scheduled analysis itself (gh workflow run) right before it reads the files;
+# the schedule below is only a fallback (GitHub often starts schedules late).
+on:
+  schedule:
+    - cron: '20 6,12,16 * * 1-5'   # 08:20 · 14:20 · 18:20 Bucharest (winter time)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fsb-export
+  cancel-in-progress: false
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Build CSVs from Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: node scripts/fsb-export.mjs
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add data/fsb/
+          git diff --cached --quiet && echo "No change" || (git commit -m "Structure feed export" && git pull --rebase && git push)
