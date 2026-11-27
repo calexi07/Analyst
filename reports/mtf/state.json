@@ -1,6 +1,6 @@
 {
  "note": "Setups proposed by the scheduled MTF analysis. Updated by each run; never rewrite an older report.",
- "updated_at": "2026-11-27T11:10:00+02:00",
+ "updated_at": "2026-11-27T14:06:00+02:00",
  "setups": [
   {
    "id": "EURUSD-20261127-0945-1",
@@ -36,7 +36,7 @@
     ]
    },
    "valid_until": "2026-11-27T22:00:00+02:00",
-   "status": "waiting",
+   "status": "invalidated",
    "history": [
     {
      "time": "2026-11-27T08:00:00+02:00",
@@ -62,12 +62,19 @@
      "time": "2026-11-27T10:00:00+02:00",
      "status": "waiting",
      "why": "10:00 candle high 1.09779 < proximal 1.09933, low 1.0961 > TP1 1.09573; SL buffer updated to 0.1 x ATR14 1H 0.00086286 -> SL 1.100671; decision accepted in Watchlist"
+    },
+    {
+     "time": "2026-11-27T11:00:00+02:00",
+     "status": "invalidated",
+     "why": "11:00 candle low 1.095585 reached TP1 1.09573 without entry (highs 11:00-13:00 max 1.096745 < proximal 1.09933); cancelled per plan rule 'TP1 hit without entry'"
     }
    ],
    "created_at": "2026-11-27T09:45:00+02:00",
-   "checked_at": "2026-11-27T10:00:00+02:00",
+   "checked_at": "2026-11-27T13:00:00+02:00",
    "decision": "accepted",
-   "summary": "Daily și 4H bearish, fundamental bearish; pullback-ul de pe 1H poate reveni în supply-ul proaspăt de pe 1H. La atingerea zonei, ruperea în jos a structurii fractale 1H → intrare la jumătatea mișcării, SL deasupra zonei. Limit: Entry ~1.09933 · SL 1.10067 · TP 1.09573 / 1.09486 / 1.08812 (2.7R / 3.3R / 8.4R)"
+   "summary": "Daily și 4H bearish, fundamental bearish; pullback-ul de pe 1H poate reveni în supply-ul proaspăt de pe 1H. La atingerea zonei, ruperea în jos a structurii fractale 1H → intrare la jumătatea mișcării, SL deasupra zonei. Limit: Entry ~1.09933 · SL 1.10067 · TP 1.09573 / 1.09486 / 1.08812 (2.7R / 3.3R / 8.4R)",
+   "closed_at": "2026-11-27T11:00:00+02:00",
+   "close_reason": "tp1_without_entry"
   }
  ]
 }
