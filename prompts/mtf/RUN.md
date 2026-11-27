@@ -52,6 +52,7 @@ Un singur mesaj scurt (SendUserMessage), pentru telefon:
 - setup-urile A+/A noi, în stilul „Pe scurt”: o propoziție cu povestea plus rândul „Entry · SL · TP”;
 - link: https://github.com/calexi07/Analyst/blob/main/reports/mtf/latest.md
 Dacă nu s-a schimbat nimic și nu există setup A+/A nou, mesajul are un singur rând.
+Răspunsul final al sesiunii (textul de după ultimul tool) e tot în română și are cel mult 3 rânduri. Nu repeta mesajul și nu descrie pașii tehnici (git, hook-uri, fișiere de lucru).
 
 ## Reguli
 - Nu inventezi date. Ce lipsește apare ca „indisponibil”.
