@@ -1,6 +1,6 @@
 {
  "note": "Setups proposed by the scheduled MTF analysis. Updated by each run; never rewrite an older report.",
- "updated_at": "2026-11-27T10:21:00+02:00",
+ "updated_at": "2026-11-27T10:52:00+02:00",
  "setups": [
   {
    "id": "EURUSD-20261127-0945-1",
@@ -24,9 +24,9 @@
     ]
    },
    "plan_confirm": {
-    "trigger_level": 1.093405,
+    "trigger_level": null,
     "trigger_tf": "1H",
-    "formula": "trigger = 1H close below the 1H fractal CHoCH as reported by the indicator after the zone touch (currently 1.093405; 1.097045 used at 09:45 was not the indicator CHoCH and was pierced at 09:00 without a structure change); entry = 50% of the leg from the high reached in the zone to the low of the break candle; SL = high reached + 0.0000765 (0.1 x ATR14 1H = 0.00076536)",
+    "formula": "Trigger = 1H close BELOW the 1H protected low (internal or fractal CHoCH) in force when price reaches the zone 1.09933–1.100585; set at the zone touch. Entry = 50% of the leg from the high reached in the zone to the low of the break candle; SL = that high + 0.1 x ATR14 1H. TPs must lie below the trigger (ANALYST.md 5.4 order check).",
     "entry": null,
     "sl": null,
     "tp": [
@@ -52,6 +52,11 @@
      "time": "2026-11-27T09:00:00+02:00",
      "status": "waiting",
      "why": "10:13 run: no new candle; re-labelled [1H] under ANALYST v1.2, passes quality threshold (fresh 1H zone, premium, confirm R:R 1.67 at TP1)"
+    },
+    {
+     "time": "2026-11-27T10:00:00+02:00",
+     "status": "waiting",
+     "why": "Manual correction (ANALYST v1.3 order check): confirmation trigger 1.093405 was the current 1H CHoCH, below TP1/TP2, so variant 2 could never be taken; trigger now set at the zone touch."
     }
    ],
    "created_at": "2026-11-27T09:45:00+02:00",
