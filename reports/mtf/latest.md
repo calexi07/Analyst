@@ -1,15 +1,23 @@
-# Analiza MTF — vineri 27 nov 2026, 10:13 București (sesiunea de dimineață, înainte de Londra)
+# Analiza MTF — vineri 27 nov 2026, 10:21 București (sesiunea de dimineață, înainte de Londra)
 
-**Date:** cel mai vechi și cel mai nou „ultimul rând” = EURUSD 27 nov 09:00 (lumânarea 09:00–10:00, închisă; 1h13 la rulare, sub pragul de 2h). Celelalte 28 de perechi: fără CSV. Exportul `fsb-export` pornit la 10:13 (run 45964039180) s-a terminat cu succes; `meta.json` (08:13:49 UTC): EURUSD 301 rânduri (300 seed + 1 live), nicio lumânare nouă față de rularea de 10:02. · **Fundamental:** `imports/2026-W48-final.json` · **Check:** `imports/check-2026-11-27-morning.json` (cel mai nou din `index.json`).
+**Date:** cel mai vechi și cel mai nou „ultimul rând” = EURUSD 27 nov 09:00 (lumânarea 09:00–10:00, închisă; ~20 min la rulare, sub pragul de 2h). Celelalte 28 de perechi: fără CSV. Exportul `fsb-export` pornit la 10:21 (run 45965001888) s-a terminat cu succes; `meta.json` (08:21:24 UTC): EURUSD 301 rânduri (300 seed + 1 live), nicio lumânare nouă față de rularea de 10:13. · **Fundamental:** `imports/2026-W48-final.json` · **Check:** `imports/check-2026-11-27-morning.json`.
 
 Presupuneri notate (rulare nesupravegheată):
-- `ANALYST.md` a fost actualizat la v1.2 după rularea de 10:02 (setup-uri [4H] și [1H], prag de calitate, SKIP). Rularea aceasta reaplică aceleași date cu regulile v1.2; nu există date noi.
-- Setup-ul existent primește eticheta `[1H]` (zonă 1H, declanșator pe închidere 1H, ținte 4H/1H) și câmpul `tf` în `state.json`.
-- Setup-ul 2 (long counter-trend C din demand 1H) nu mai apare: v1.2 nu raportează clasa C și permite counter-trend doar din zone HTF (D/4H) proaspete.
+- `ANALYST.md` e acum v1.3 (raport în două părți: „Pe scurt” + „Tehnic”). Rularea aceasta reaplică aceleași date în noul format; analiza și setup-ul nu se schimbă.
+- Lumânarea 10:00–11:00 nu e încă închisă, deci nu e în export.
 
 ## Schimbări de la ultima rulare
-- Nicio lumânare nouă (ultimul rând tot 09:00). EURUSD-20261127-0945-1 rămâne **waiting**; etichetat `[1H]`, trece pragul de calitate v1.2.
-- Long-ul counter-trend C din demand 1H retras (sub pragul v1.2). Watchlist: gol.
+Nicio schimbare: nicio lumânare nouă. EURUSD-20261127-0945-1 rămâne **waiting**. Watchlist: gol.
+
+## Pe scurt
+**EURUSD** — Daily și 4H sunt bearish, iar fundamentalul e tot bearish (dolarul mult mai puternic decât euro). Pe 1H prețul face un pullback în sus și s-a apropiat de o zonă de supply proaspătă de pe 1H, aflată în partea scumpă a range-ului.
+- [1H] Sell (A): prețul urcă în supply-ul de pe 1H, structura fractală de pe 1H se rupe în jos → intri la jumătatea mișcării de rupere (sau, mai agresiv, cu limit la marginea zonei). SL deasupra vârfului zonei. Ținte: minimele de pe 4H, apoi demand-ul de pe 1H, apoi minimul mare de dedesubt.
+  Limit: Entry ~1.09933 · SL 1.10066 · TP 1.09573 / 1.09486 / 1.08812 (2.7R / 3.4R / 8.4R)
+  Confirmare (exemplu): Entry ~1.09845 · SL 1.10008 · TP 1.09573 / 1.09486 / 1.08812 (1.7R / 2.2R / 6.4R)
+- Ce anulează ideea: o închidere 1H deasupra zonei, sau atingerea primei ținte fără să fi intrat. Valabil până azi 22:00. Atenție: posibila revizuire S&P a Franței și ziua scurtă pe Wall Street.
+- [4H] SKIP: zonele de pe Daily și 4H au fost testate de prea multe ori.
+
+**Restul perechilor:** nu au date (fără CSV) — fără setup-uri.
 
 ## Tabel sumar
 | Pereche | D / 4H / 1H swing | Fundamental | Conviction | Cel mai bun setup | Clasă |
@@ -44,7 +52,8 @@ Presupuneri notate (rulare nesupravegheată):
 | CHFJPY | date lipsă | two-sided (low) · check: ⚪ STILL TWO-SIDED | — | NO TRADE (date lipsă) | — |
 | XAUUSD | date lipsă | two-sided (low) · check: ⚪ STILL TWO-SIDED | — | NO TRADE (date lipsă) | — |
 
-## EURUSD — Bias: bearish · Conviction: High (neschimbat)
+## Tehnic
+### EURUSD — Bias: bearish · Conviction: High (neschimbat)
 Swing D și 4H bearish, fundamental bearish medium (EUR 0 vs USD +7, check ✅ CONFIRMED · could get even stronger).
 
 **Structura acum** (rândul 27 nov 09:00, close 1.09764; ATR(14) 1H = 0.00076536; ATR(14) 4H = 0.0019493):
@@ -57,7 +66,7 @@ Swing D și 4H bearish, fundamental bearish medium (EUR 0 vs USD +7, check ✅ C
 
 **Ce urmăresc:** 1.100585 (4H internal/fractal CHoCH + distal supply 1H), 1.101015 (D fractal / 1H swing CHoCH), 1.09573 (4H internal BOS), 1.093405 (1H fractal CHoCH). Părerea se schimbă la o închidere 1H peste 1.101015 (1H swing întors).
 
-### [1H] Setup 1 — pro-trend · SHORT · A — EURUSD-20261127-0945-1 (neschimbat, re-etichetat)
+#### [1H] Setup 1 — pro-trend · SHORT · A — EURUSD-20261127-0945-1 (neschimbat)
 - Piloni: swing D ↓, swing 4H ↓, zonă 1H proaspătă în premium (1H swing pos > 73.8%), fundamental bearish → 4/5; lipsește structura de intrare (1H internal/fractal încă ↑).
 - Prag v1.2: clasă A ✓ · zonă proaspătă ✓ · premium pe 1H swing ✓ · R:R confirmare 1.67R la TP1 (≥1.5) ✓ · fără CRITICAL ✓.
 - Valid dacă: prețul atinge 1.09933–1.100585, apoi închidere 1H sub CHoCH-ul fractal 1H raportat de indicator. Invalidare: închidere 1H peste 1.100585; anulat dacă TP1 1.09573 e atins fără intrare.
@@ -68,13 +77,13 @@ Swing D și 4H bearish, fundamental bearish medium (EUR 0 vs USD +7, check ✅ C
   - Exemplu: maxim 1.10000, minim lumânare de break 1.09690 → entry 1.09845, SL 1.100077 (16.3 pips). TP1 1.67R · TP2 2.21R · TP3 6.35R.
 - Valabil până vineri 27 nov, 22:00. Riscuri: SL sub lichiditatea 1.101015; 4H swing în discount; zone HTF testate repetat; S&P Franța → gap în weekend; lichiditate redusă SUA.
 
-### [4H] — SKIP
+#### [4H] — SKIP
 Zonele D (testată 4x) și 4H (testată 5x) nu mai sunt proaspete/testate o singură dată; 4H swing BOS gol, pos indisponibil. Nimic calitativ pe 4H.
 
-### Long counter-trend — nu se propune
+#### Long counter-trend — nu se propune
 Demand-ul disponibil e doar 1H (nu HTF), iar setup-ul ar fi C și contra fundamentalului.
 
-## Restul perechilor
+### Restul perechilor
 GBPUSD, USDJPY, USDCHF, USDCAD, AUDUSD, NZDUSD, EURGBP, EURJPY, EURCHF, EURAUD, EURNZD, EURCAD, GBPJPY, GBPCHF, GBPAUD, GBPNZD, GBPCAD, AUDJPY, AUDCHF, AUDNZD, AUDCAD, NZDJPY, NZDCHF, NZDCAD, CADJPY, CADCHF, CHFJPY, XAUUSD: **date lipsă** (fără CSV în `data/fsb/`), deci fără setup-uri. Biasul fundamental e în tabel doar ca referință.
 
 _Analiză condiționată, nu semnal de tranzacționare. Mărimea poziției nu e dată._
