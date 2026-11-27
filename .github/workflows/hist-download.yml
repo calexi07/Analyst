@@ -14,7 +14,7 @@ on:
 jobs:
   download:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       max-parallel: 5
@@ -22,11 +22,11 @@ jobs:
         pair: [eurusd, gbpusd, audusd, usdjpy, euraud, eurjpy, gbpjpy, eurgbp, audnzd, cadjpy]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-python@v5
         with:
-          node-version: '20'
-      - run: npm install --no-save dukascopy-node@1
-      - run: node scripts/hist-download.mjs ${{ matrix.pair }} ${{ inputs.from_year }} ${{ inputs.timeframes }}
+          python-version: '3.12'
+      - run: pip install pandas
+      - run: python scripts/hist-dukas.py ${{ matrix.pair }} ${{ inputs.from_year }}
       - uses: actions/upload-artifact@v4
         with:
           name: hist-${{ matrix.pair }}
