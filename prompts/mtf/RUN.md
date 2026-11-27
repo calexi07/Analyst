@@ -28,7 +28,8 @@ Pentru planurile din Watchlist spui doar: încă valid / validat / invalidat, cu
 
 ## 3. Setup-uri noi
 Pentru fiecare pereche cu date: aplici `ANALYST.md` (piloni, clasă, conviction, plan de execuție cu ambele variante).
-- Maxim 3 setup-uri active pe pereche. Nu dublezi un setup care există deja în aceeași zonă și direcție: îl actualizezi.
+- Setup-uri `[4H]` și `[1H]`, cu pragul de calitate și regula SKIP din ANALYST.md 4b. Maxim 2 active pe pereche. Nu dublezi un setup care există deja în aceeași zonă și direcție: îl actualizezi.
+- Declanșatoarele 4H le verifici pe lumânări 4H construite din CSV-ul de 1H (intervale 00–04, 04–08, 08–12, 12–16, 16–20, 20–24, ora București). Digest-ul are deja `atr14_4h`.
 - Setup-urile C și NO TRADE nu intră în `state.json`; apar doar în tabel.
 - `valid_until`: cel mult vineri 22:00, sau mai devreme dacă planul o cere.
 
@@ -40,7 +41,7 @@ Pentru fiecare pereche cu date: aplici `ANALYST.md` (piloni, clasă, conviction,
    - **Detaliu complet** doar pentru setup-urile A+ și A noi sau schimbate, cu planul de execuție;
    - restul perechilor: câte un rând.
 2. `reports/mtf/latest.md`: copie a raportului.
-3. `reports/mtf/state.json`: actualizat. Fiecare setup are: `id` (PERECHE-YYYYMMDD-HHMM-n), `pair`, `dir`, `type` (pro-trend / counter-trend), `class`, `zone` [low, high], `invalidation`, `plan_limit` {entry, sl, tp[]}, `plan_confirm` {trigger_level, trigger_tf, formula, entry, sl, tp[]} (entry și sl null până la confirmare), `valid_until`, `status`, `history` [{time, status, why}], `created_at`, `checked_at`. Setup-urile închise rămân în fișier 7 zile, apoi le scoți.
+3. `reports/mtf/state.json`: actualizat. Fiecare setup are: `id` (PERECHE-YYYYMMDD-HHMM-n), `pair`, `tf` (4H / 1H), `dir`, `type` (pro-trend / counter-trend), `class`, `zone` [low, high], `invalidation`, `plan_limit` {entry, sl, tp[]}, `plan_confirm` {trigger_level, trigger_tf, formula, entry, sl, tp[]} (entry și sl null până la confirmare), `valid_until`, `status`, `history` [{time, status, why}], `created_at`, `checked_at`. Setup-urile închise rămân în fișier 7 zile, apoi le scoți.
 4. Commit și push: `git add reports/mtf && git commit -m "MTF analysis <data ora>" && git pull --rebase && git push`.
 
 ## 5. Mesajul către mine

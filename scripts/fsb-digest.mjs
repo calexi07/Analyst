@@ -13,7 +13,12 @@ export function digest(text) {
   const n = bars.length, last = bars[n - 1];
   // ATR(14) on 1H (simple average of true range)
   let atr = null; if (n > 15) { let s = 0; for (let i = n - 14; i < n; i++) { const b = bars[i], pc = bars[i - 1].c; s += Math.max(b.h - b.l, Math.abs(b.h - pc), Math.abs(b.l - pc)); } atr = s / 14; }
-  const out = { last_time: last.time, close: last.c, atr14_1h: atr && +atr.toPrecision(5), rows: n, structures: {}, zones: {}, changes_48h: [] };
+  // 4H candles from the 1H rows: bins 00/04/08/12/16/20 Bucharest local time (the time string carries the local hour)
+  const b4 = []; for (const b of bars) { const hr = +b.time.slice(11, 13), key = b.time.slice(0, 10) + '|' + Math.floor(hr / 4);
+    const cur = b4.at(-1); if (cur && cur.key === key) { cur.h = Math.max(cur.h, b.h); cur.l = Math.min(cur.l, b.l); cur.c = b.c; }
+    else b4.push({ key, o: b.o, h: b.h, l: b.l, c: b.c }); }
+  let atr4 = null; if (b4.length > 15) { let s = 0; for (let i = b4.length - 14; i < b4.length; i++) { const b = b4[i], pc = b4[i - 1].c; s += Math.max(b.h - b.l, Math.abs(b.h - pc), Math.abs(b.l - pc)); } atr4 = s / 14; }
+  const out = { last_time: last.time, close: last.c, atr14_1h: atr && +atr.toPrecision(5), atr14_4h: atr4 && +atr4.toPrecision(5), rows: n, structures: {}, zones: {}, changes_48h: [] };
   for (const tf of TFS) for (const st of STR) {
     const k = `${tf} ${st}`, r = last.r;
     out.structures[k] = { trend: num(r[ix(`${k} trend`)]), choch: num(r[ix(`${k} CHoCH`)]), bos: num(r[ix(`${k} BOS`)]), pos: num(r[ix(`${k} pos %`)]) };
