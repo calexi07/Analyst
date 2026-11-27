@@ -3436,7 +3436,7 @@ function tdParse(t){
 }
 function tdJoin(o){ return TD_SEC.filter(([k]) => (o[k] || '').trim()).map(([k,,lab]) => `${lab}: ${o[k].trim()}`).join('\n'); }
 /* plans = watchlist setups for this pair and trading day */
-function dayPlans(p, ds){ return wlAll().filter(x => x.pair===p && wlDay(x)===ds); }
+function dayPlans(p, ds){ return wlAll().filter(x => x.pair===p && wlDay(x)===ds && x.status!=='rejected'); }
 function planCard(x, edit){
   const L = x.dir==='Long', st = WL_ST[x.status] || WL_ST.active, img = tvImg(x.img || '');
   return `<article class="plan-c ${L ? 'long' : 'short'}">
@@ -3451,12 +3451,14 @@ function planCard(x, edit){
 function plansHtml(p, ds, edit){
   const a = dayPlans(p, ds);
   return `<div class="${edit ? 'sec' : 'vsec'}"><div class="trs-h"><h4>Plan <small>${a.length ? a.length + ' · also on the Watchlist' : 'none yet · goes to the Watchlist'}</small></h4>
-    <button type="button" class="btn" data-pladd>+ Add plan</button></div>${a.map(x => planCard(x, edit)).join('')}</div>`;
+    <button type="button" class="btn" data-pladd>+ Add plan</button></div>${a.map(x => planCard(x, edit)).join('')}${mtfProposals(p).map(mtfCard).join('')}</div>`;
 }
 function bindPlans(panel, p, ds){
   const re = () => { const d = document.getElementById('wlDlg'); d.addEventListener('close', () => renderPanel(), { once:true }); };
   panel.querySelectorAll('[data-pladd]').forEach(b => b.onclick = () => { openWatch(null, p, ds); re(); });
   panel.querySelectorAll('[data-pledit]').forEach(b => b.onclick = () => { openWatch(b.dataset.pledit); re(); });
+  bindMtfCards(panel, () => renderPanel());
+  if(mtfStale()) mtfLoad().then(() => { if(document.getElementById('panel') && S.pair===p) renderPanel(); });
 }
 /* trades in the day panel = the Trades page (do_backtests, live) */
 function dayTradesHtml(p, ds){
@@ -5450,7 +5452,7 @@ const AN_TABS = [['rev','🧾 Weekly review'],['mon','📅 Monthly'],['thr','�
 const WL_PAIRS = [...PAIRS, 'XAUUSD'];
 const wlAll = () => Object.entries(S.settings || {}).filter(([k, v]) => k.startsWith('wl:') && v && v.pair).map(([k, v]) => ({ key:k, ...v }))
   .sort((a, b) => (b.status==='active') - (a.status==='active') || (a.status==='active' ? wlDay(a).localeCompare(wlDay(b)) : (b.created || '').localeCompare(a.created || '')));
-const WL_ST = { active:['Watching','#2962FF'], taken:['Trade taken','#22AB94'], invalid:['Invalidated','#F23645'] };
+const WL_ST = { active:['Watching','#2962FF'], taken:['Trade taken','#22AB94'], invalid:['Invalidated','#F23645'], rejected:['Respins','#787B86'] };
 /* the trading day a setup is for: set in the form; older setups fall back to the day they were written
    (written from 18:00 on → the next trading day, as after the evening check) */
 const wlNextTD = d => deNextDay(d);
@@ -6079,19 +6081,73 @@ function ftForm(){
     if(!((+e.entry - +e.sl) * (e.dir === 'short' ? -1 : 1) > 0)) return toast('Intrarea și SL-ul nu sunt pe partea corectă');
     e.key = await ftSave(e); S.ft.edit = null; renderForward(); toast('Salvat'); };
 }
+/* ===== MTF proposals: setups written by the scheduled analysis (reports/mtf/state.json on GitHub).
+   Not yet decided = "Propus"; Accept saves it as a Watchlist plan (wl:mtf:<id>), Reject saves it as rejected so it does not come back. ===== */
+const MTF_URL = 'https://raw.githubusercontent.com/calexi07/Analyst/main/reports/mtf/state.json';
+const MTF = { at:0, setups:[], busy:null };
+function mtfLoad(){
+  if(MTF.busy) return MTF.busy;
+  MTF.busy = fetch(MTF_URL + '?t=' + Math.floor(Date.now() / 60e3), { cache:'no-store' }).then(r => r.ok ? r.json() : { setups:[] })
+    .then(j => { MTF.setups = Array.isArray(j.setups) ? j.setups : []; })
+    .catch(() => {}).finally(() => { MTF.at = Date.now(); MTF.busy = null; });
+  return MTF.busy;
+}
+const mtfStale = () => !MTF.busy && Date.now() - MTF.at > 5 * 60e3;
+const MTF_OPEN = ['waiting','armed','confirmed'];
+const mtfKey = x => `wl:mtf:${x.id}`;
+const mtfById = id => MTF.setups.find(s => s.id === id);
+function mtfProposals(pair){ return MTF.setups.filter(x => MTF_OPEN.includes(x.status) && !S.settings?.[mtfKey(x)] && (!pair || pair==='All' || x.pair===pair)); }
+const mtfPx = v => v==null || v==='' ? '—' : String(+(+v).toPrecision(6));
+function mtfPlanTxt(x){
+  const L = x.plan_limit || {}, C = x.plan_confirm || {};
+  return [L.entry!=null ? `Limit: entry ${mtfPx(L.entry)} · SL ${mtfPx(L.sl)} · TP ${(L.tp || []).map(mtfPx).join(' / ')}` : '',
+    C.trigger_level!=null ? `Confirmare: ${C.trigger_tf || ''} închide dincolo de ${mtfPx(C.trigger_level)}${C.entry!=null ? ` → entry ${mtfPx(C.entry)} · SL ${mtfPx(C.sl)}` : ' → entry la 50% din piciorul de break'}` : ''].filter(Boolean).join('\n');
+}
+function mtfToWl(x){
+  return { pair:x.pair, dir:/^s/i.test(x.dir || '') ? 'Short' : 'Long', trend:/counter/i.test(x.type || '') ? 'counter' : 'pro', img:'',
+    text:[x.summary, `🤖 MTF ${x.class || ''} · [${x.tf || ''}]`, mtfPlanTxt(x)].filter(Boolean).join('\n'),
+    valid:x.plan_confirm?.trigger_level!=null ? `${x.plan_confirm.trigger_tf || ''} close beyond ${mtfPx(x.plan_confirm.trigger_level)} after the zone touch` : '',
+    invalid:x.invalidation || '', for_day:String(x.created_at || '').slice(0, 10) || iso(new Date()), status:'active',
+    source:'mtf', mtf_id:x.id, mtf_class:x.class || null, mtf_tf:x.tf || null, created:new Date().toISOString() };
+}
+async function mtfAccept(x){ await saveSettingKey(mtfKey(x), mtfToWl(x)); toast('Plan acceptat · e în Watchlist'); }
+async function mtfReject(x){ await saveSettingKey(mtfKey(x), { ...mtfToWl(x), status:'rejected', closed:new Date().toISOString() }); toast('Propunere respinsă'); }
+function mtfCard(x){
+  const L = /^l/i.test(x.dir || '');
+  return `<article class="wl-card mtf-prop" data-mtf="${esc(x.id)}">
+    <div class="wl-h"><span class="p">${esc(x.pair)}</span><span class="wl-tag" style="background:${L ? '#22AB94' : '#F23645'};color:#fff">${L ? '▲ Long' : '▼ Short'}</span>
+      <span class="wl-tag" style="background:var(--surface-2);color:var(--ink)">${/counter/i.test(x.type || '') ? '↩ Counter-trend' : '↗ Pro-trend'}</span>
+      <span class="wl-tag" style="background:color-mix(in srgb,#9C27B0 16%,transparent);color:#9C27B0">🤖 Propus · ${esc(x.class || '')} · ${esc(x.tf || '')}</span></div>
+    ${x.summary ? `<div style="font-size:13.5px;white-space:pre-wrap">${esc(x.summary)}</div>` : ''}
+    <div class="wl-box" style="white-space:pre-wrap;font-size:12.5px">${esc(mtfPlanTxt(x))}</div>
+    ${x.invalidation ? `<div class="wl-box wl-i"><b>✖ Invalidation</b>\n${esc(x.invalidation)}</div>` : ''}
+    <div class="wl-foot"><span class="sp">MTF: ${esc(x.status || '')}${x.valid_until ? ' · valabil până ' + esc(String(x.valid_until).slice(0, 16).replace('T', ' ')) : ''}</span>
+      <button type="button" class="btn btn-primary" data-mtfok>✓ Acceptă</button><button type="button" class="btn" data-mtfed>✎ Editează</button><button type="button" class="btn" data-mtfno>✕ Respinge</button></div>
+  </article>`;
+}
+function bindMtfCards(root, after){
+  root.querySelectorAll('[data-mtf]').forEach(c => { const x = mtfById(c.dataset.mtf); if(!x) return;
+    c.querySelector('[data-mtfok]').onclick = async () => { await mtfAccept(x); after(); };
+    c.querySelector('[data-mtfno]').onclick = async () => { await mtfReject(x); after(); };
+    c.querySelector('[data-mtfed]').onclick = () => { openWatch(null, null, null, { key:mtfKey(x), data:mtfToWl(x) });
+      document.getElementById('wlDlg').addEventListener('close', after, { once:true }); }; });
+}
 function renderWatch(){
+  if(mtfStale()) mtfLoad().then(() => { if(S.view==='watch') renderWatch(); });
   const m = document.getElementById('main'), all = wlAll(), flt = ls.get('do_wl_f', 'active'), pf = ls.get('do_wl_p', 'All');
-  const cnt = p => all.filter(x => x.status==='active' && (p==='All' || x.pair===p)).length;
-  const list = all.filter(x => (flt==='all' || x.status===flt) && (pf==='All' || x.pair===pf));
+  const cnt = p => all.filter(x => x.status==='active' && (p==='All' || x.pair===p)).length + mtfProposals(p).length;
+  const list = flt==='proposed' ? [] : all.filter(x => (flt==='all' || x.status===flt) && (pf==='All' || x.pair===pf));
+  const props = mtfProposals(pf);
   const card = x => {
     const st = WL_ST[x.status] || WL_ST.active, b = wlBias(x.pair), img = tvImg(x.img || ''), L = x.dir==='Long';
     const fit = !b || !b.bias || ['two-sided','neutral'].includes(b.bias) ? 'none' : ((b.bias==='bullish') === L ? 'with' : 'against');
     const bTag = b && b.bias ? `<span class="wl-tag" style="background:${fit==='with' ? 'color-mix(in srgb,#22AB94 18%,transparent);color:#0b7a68' : fit==='against' ? 'color-mix(in srgb,#FF9800 22%,transparent);color:#b25e00' : 'var(--surface-2);color:var(--muted)'}">${fit==='with' ? '✓ with' : fit==='against' ? '⚠ against' : '◆ no clear'} weekly bias · ${esc(BIAS_LBL[b.bias] || b.bias)}${b.conv ? ' ' + esc(b.conv) : ''}</span>` : '<span class="wl-tag" style="background:var(--surface-2);color:var(--muted)">no weekly analysis</span>';
-    const tr = x.trade_id!=null ? S.bt.rows.get(x.trade_id) : null;
+    const tr = x.trade_id!=null ? S.bt.rows.get(x.trade_id) : null, ms = x.mtf_id ? mtfById(x.mtf_id) : null;
+    const mtfTag = x.mtf_id ? `<span class="wl-tag" style="background:color-mix(in srgb,#9C27B0 14%,transparent);color:#9C27B0" title="Starea setup-ului în analiza MTF">🤖 MTF ${esc(x.mtf_class || '')}${x.mtf_tf ? ' · ' + esc(x.mtf_tf) : ''} · ${esc(ms ? ms.status : 'închis')}</span>` : '';
     return `<article class="wl-card ${x.status==='active' ? '' : 'off'}" data-wl="${esc(x.key)}">
       <div class="wl-h"><span class="p">${esc(x.pair)}</span><span class="wl-tag" style="background:${L ? '#22AB94' : '#F23645'};color:#fff">${L ? '▲ Long' : '▼ Short'}</span>${x.trend ? `<span class="wl-tag" style="background:var(--surface-2);color:var(--ink)">${x.trend==='pro' ? '↗ Pro-trend' : '↩ Counter-trend'}</span>` : ''}
         <span class="wl-tag" style="background:color-mix(in srgb,${st[1]} 16%,transparent);color:${st[1]}">${st[0]}</span></div>
-      <div class="wl-days">${wlDayTag(x)}${x.ext?.length ? `<span class="wl-tag" style="background:var(--surface-2);color:var(--muted)" title="${esc(x.ext.map(e => fmtDayShort(e.from) + ' → ' + fmtDayShort(e.to)).join(' · '))}">↻ extended ${x.ext.length}×</span>` : ''}</div>
+      <div class="wl-days">${wlDayTag(x)}${mtfTag}${x.ext?.length ? `<span class="wl-tag" style="background:var(--surface-2);color:var(--muted)" title="${esc(x.ext.map(e => fmtDayShort(e.from) + ' → ' + fmtDayShort(e.to)).join(' · '))}">↻ extended ${x.ext.length}×</span>` : ''}</div>
       <div>${bTag}${x.status==='active' ? (st2 => st2 ? ` <span class="wl-tag" data-sessw title="${esc(st2.sub)}" style="cursor:pointer;background:var(--surface-2)">${SESS_IC[st2.k]} ${esc(st2.lbl)}</span>` : '')(sessState(x.pair)) : ''}</div>
       ${img ? `<img class="wl-img" src="${esc(img)}" alt="TradingView chart for ${esc(x.pair)}" loading="lazy" data-wlimg="${esc(x.img)}">` : x.img ? `<a href="${esc(x.img)}" target="_blank" rel="noopener" class="muted" style="font-size:12.5px">Open the chart ↗</a>` : ''}
       ${x.text ? `<div style="font-size:13.5px;white-space:pre-wrap">${esc(x.text)}</div>` : ''}
@@ -6107,9 +6163,13 @@ function renderWatch(){
     </article>`; };
   m.innerHTML = `<header class="hp-top"><div><div class="pairtitle">Watchlist</div><div class="muted" style="font-weight:600;font-size:12px">Setups you are watching · take the trade or invalidate it from the card</div></div>
       <button type="button" class="btn btn-primary" id="wlAdd">+ Add setup${pf!=='All' ? ' · ' + esc(pf) : ''}</button></header>
-    <div class="fc-bar"><div class="seg" role="group">${[['active','Watching'],['taken','Taken'],['invalid','Invalidated'],['all','All']].map(([v, l]) => `<button type="button" data-wlf="${v}" aria-pressed="${flt===v}">${l}${v==='active' ? ' (' + cnt('All') + ')' : ''}</button>`).join('')}</div></div>
+    <div class="fc-bar"><div class="seg" role="group">${[['proposed','🤖 Propuse'],['active','Watching'],['taken','Taken'],['invalid','Invalidated'],['rejected','Respinse'],['all','All']].map(([v, l]) => `<button type="button" data-wlf="${v}" aria-pressed="${flt===v}">${l}${v==='proposed' ? ' (' + mtfProposals('All').length + ')' : v==='active' ? ' (' + all.filter(x => x.status==='active').length + ')' : ''}</button>`).join('')}</div></div>
     <div class="wl-pairs" role="group" aria-label="Pair">${['All', ...WL_PAIRS].map(p => `<button type="button" data-wlp="${p}" aria-pressed="${pf===p}">${p}${cnt(p) ? `<b>${cnt(p)}</b>` : ''}</button>`).join('')}</div>
-    ${list.length ? `<div class="wl-grid">${list.map(card).join('')}</div>` : `<div class="card fc-empty"><p>${flt==='active' ? `No setups on the watchlist${pf!=='All' ? ' for ' + esc(pf) : ''}. Pick a pair and press “+ Add setup”.` : 'Nothing here yet.'}</p></div>`}`;
+    ${flt==='proposed' ? (props.length ? `<div class="wl-grid">${props.map(mtfCard).join('')}</div>` : `<div class="card fc-empty"><p>${MTF.at ? 'Nicio propunere nouă de la analiza MTF' + (pf!=='All' ? ' pentru ' + esc(pf) : '') + '.' : 'Se încarcă propunerile MTF…'}</p></div>`)
+      : (flt==='active' && props.length ? `<div class="card" style="padding:10px 14px;font-size:13px">🤖 ${props.length} ${props.length===1 ? 'propunere nouă' : 'propuneri noi'} de la analiza MTF — <a href="#" data-wlgoprop>vezi Propuse</a></div>` : '')
+        + (list.length ? `<div class="wl-grid">${list.map(card).join('')}</div>` : `<div class="card fc-empty"><p>${flt==='active' ? `No setups on the watchlist${pf!=='All' ? ' for ' + esc(pf) : ''}. Pick a pair and press “+ Add setup”.` : 'Nothing here yet.'}</p></div>`)}`;
+  bindMtfCards(m, () => { if(S.view==='watch') renderWatch(); });
+  m.querySelector('[data-wlgoprop]')?.addEventListener('click', ev => { ev.preventDefault(); ls.set('do_wl_f', 'proposed'); renderWatch(); });
   m.querySelectorAll('[data-wlf]').forEach(b => b.onclick = () => { ls.set('do_wl_f', b.dataset.wlf); renderWatch(); });
   m.querySelectorAll('[data-wlp]').forEach(b => b.onclick = () => { ls.set('do_wl_p', b.dataset.wlp); renderWatch(); });
   m.querySelector('#wlAdd').onclick = () => openWatch(null, pf==='All' ? null : pf);
@@ -6130,8 +6190,8 @@ function renderWatch(){
       onSaved: async t => { await saveSettingKey(k, { ...S.settings[k], status:'taken', trade_id:t.id, closed:new Date().toISOString() }); toast('Trade saved · setup moved to Taken'); if(S.view==='watch') renderWatch(); } }));
   });
 }
-function openWatch(key, pair, day){
-  const dlg = document.getElementById('wlDlg'), x = key ? S.settings[key] : { pair:pair || ls.get('do_wl_lastpair', 'EURUSD'), dir:'Long', img:'', text:'', valid:'', invalid:'', status:'active', ...(day ? { for_day:day } : {}) };
+function openWatch(key, pair, day, preset){
+  const dlg = document.getElementById('wlDlg'), x = preset ? preset.data : key ? S.settings[key] : { pair:pair || ls.get('do_wl_lastpair', 'EURUSD'), dir:'Long', img:'', text:'', valid:'', invalid:'', status:'active', ...(day ? { for_day:day } : {}) };
   let dir = x.dir || 'Long', trend = x.trend || '';
   dlg.innerHTML = `<form method="dialog" id="wlForm"><div class="dlg-head"><h2>${key ? 'Edit setup' : 'Add setup'}</h2></div>
     <div class="bt-form" style="padding:0 20px 14px">
@@ -6162,7 +6222,7 @@ function openWatch(key, pair, day){
     if(img && !/^https?:\/\//i.test(img)) return toast('The chart link must start with https://');
     const v = { ...x, pair:dlg.querySelector('#wlPair').value, dir, trend:trend || null, img, text:dlg.querySelector('#wlText').value.trim(), valid:dlg.querySelector('#wlValid').value.trim(), invalid:dlg.querySelector('#wlInv').value.trim(), for_day:dlg.querySelector('#wlDay').value || wlDefDay(),
       status:x.status || 'active', created:x.created || new Date().toISOString() };
-    const k = key || `wl:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    const k = key || preset?.key || `wl:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
     await saveSettingKey(k, v); ls.set('do_wl_lastpair', v.pair); dlg.close(); toast('Setup saved'); if(S.view==='watch') renderWatch(); };
   if(!dlg.open) dlg.showModal();
 }

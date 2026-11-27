@@ -14,7 +14,8 @@ Raportul e în română. Fișierele de stare sunt JSON.
 4. Fundamentalul e local, în `imports/`: din `imports/index.json` iei cel mai nou `kind:"fundamentals"` (`YYYY-Www-final.json`, altfel `phase1`) și cel mai nou `kind:"check"`.
 5. Setup-urile existente:
    - `reports/mtf/state.json`: setup-urile propuse de rulările anterioare.
-   - `data/fsb/watchlist.json`: planurile mele active din Daily Observer (pair, dir, trend, text = motivație, for_day). Le verifici și pe ele, dar nu le modifici; le marchezi „din Watchlist”.
+   - `data/fsb/watchlist.json`: planurile mele active din Daily Observer (`setups`: pair, dir, trend, text = motivație, for_day). Le verifici și pe ele, dar nu le modifici; le marchezi „din Watchlist”.
+   - Setup-urile tale apar în Daily Observer → Watchlist ca „🤖 Propuse”. Decizia mea e în `watchlist.json` → `all`, cheia `wl:mtf:<id>`: lipsă = nedecis, `status` active = acceptat (poate fi editat de mine; atunci planul meu are prioritate la mesaj, dar tu urmărești în continuare planul tău original), `rejected` = respins. Pe cele respinse le urmărești mai departe în `state.json` (pentru statistică), dar nu le mai pomenești în mesaj. În `state.json` notezi la fiecare setup `decision`: undecided / accepted / rejected.
 
 O pereche fără CSV sau cu ultimul rând mai vechi de 3 ore (în timpul pieței) apare în tabel cu „date lipsă” și nu primește setup-uri noi.
 
@@ -41,7 +42,7 @@ Pentru fiecare pereche cu date: aplici `ANALYST.md` (piloni, clasă, conviction,
    - **Tabelul sumar**, toate cele 29 de perechi (formatul din ANALYST.md 5.1);
    - **Tehnic**: detaliu complet doar pentru setup-urile A+, A și B noi sau schimbate, cu planul de execuție; restul perechilor câte un rând.
 2. `reports/mtf/latest.md`: copie a raportului.
-3. `reports/mtf/state.json`: actualizat. Fiecare setup are: `id` (PERECHE-YYYYMMDD-HHMM-n), `pair`, `tf` (4H / 1H), `dir`, `type` (pro-trend / counter-trend), `class`, `zone` [low, high], `invalidation`, `plan_limit` {entry, sl, tp[]}, `plan_confirm` {trigger_level, trigger_tf, formula, entry, sl, tp[]} (entry și sl null până la confirmare), `valid_until`, `status`, `history` [{time, status, why}], `created_at`, `checked_at`. Când un setup se închide (invalidated, expired, sl_hit, tp hit), adaugi în același timp o linie JSON cu setup-ul complet în `reports/mtf/closed.jsonl` (append-only; nu rescrii și nu ștergi liniile vechi). În `state.json` setup-urile închise rămân 7 zile, apoi le scoți.
+3. `reports/mtf/state.json`: actualizat. Fiecare setup are: `id` (PERECHE-YYYYMMDD-HHMM-n), `pair`, `tf` (4H / 1H), `dir`, `summary` (partea „Pe scurt” a setup-ului: 2–3 propoziții simple plus rândul Entry · SL · TP; apare pe cardul din Daily Observer), `type` (pro-trend / counter-trend), `class`, `zone` [low, high], `invalidation`, `plan_limit` {entry, sl, tp[]}, `plan_confirm` {trigger_level, trigger_tf, formula, entry, sl, tp[]} (entry și sl null până la confirmare), `valid_until`, `status`, `history` [{time, status, why}], `created_at`, `checked_at`. Când un setup se închide (invalidated, expired, sl_hit, tp hit), adaugi în același timp o linie JSON cu setup-ul complet în `reports/mtf/closed.jsonl` (append-only; nu rescrii și nu ștergi liniile vechi). În `state.json` setup-urile închise rămân 7 zile, apoi le scoți.
 4. Commit și push: `git add reports/mtf && git commit -m "MTF analysis <data ora>" && git pull --rebase && git push`.
 
 ## 5. Mesajul către mine

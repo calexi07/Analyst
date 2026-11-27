@@ -14,7 +14,7 @@ Rulezi singur, fără întrebări. Raportul e în română, scurt, ușor de citi
 Pentru săptămâna încheiată și cumulat de la început:
 - Câte setup-uri pe fiecare stare: expirate fără atingere, invalidate, intrate, SL, TP1, TP2, TP3.
 - Rezultatul virtual în R, la varianta folosită de setup (limit sau confirmare). Dacă o lumânare atinge și SL și TP, se socotește SL.
-- Defalcat pe: clasă (A+/A/B), timeframe (4H/1H), pro-trend vs counter-trend, pro- vs contra-fundamental, pereche.
+- Defalcat pe: clasă (A+/A/B), timeframe (4H/1H), pro-trend vs counter-trend, pro- vs contra-fundamental, pereche, și decizia mea (acceptat / respins / nedecis). Dacă cele respinse de mine ies mai bine sau mai rău decât cele acceptate, spui asta cu cifre.
 - MFE și MAE în R pentru setup-urile intrate: cât a mers în favoarea ta și cât împotrivă, înainte de ieșire.
 - **Ce a lipsit:** mișcările mari (peste 2 × ATR 4H) de pe perechile SKIP sau fără setup. Spui doar dacă regulile le-ar fi putut prinde și ce a blocat (zonă testată, R:R, contra fundamentalului etc.). E descriptiv, nu un semnal.
 - Lângă fiecare cifră pui eșantionul (n). Sub 20 de setup-uri într-o categorie scrii „eșantion mic — orientativ”.
