@@ -1,0 +1,49 @@
+name: Historical data HistData (backtests)
+# Manual only. Free HistData.com 1-minute bars -> 15m/1H CSVs, published to the separate branch hist-data (main is not touched).
+on:
+  workflow_dispatch:
+    inputs:
+      from_year:
+        description: First year
+        default: '2012'
+permissions:
+  contents: write
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        pair: [eurusd, gbpusd, audusd, usdjpy, euraud, eurjpy, gbpjpy, eurgbp, audnzd, cadjpy]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pandas
+      - run: python scripts/hist-histdata.py ${{ matrix.pair }} ${{ inputs.from_year }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hd-${{ matrix.pair }}
+          path: hist/
+          retention-days: 7
+  publish:
+    needs: download
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: hd-*
+          merge-multiple: true
+          path: hist
+      - name: Commit to hist-data
+        run: |
+          ls -la hist; cat hist/*_report.txt | grep -v " ok$" | head -60
+          cd hist
+          git init -q -b hist-data
+          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -qm "HistData 15m/1H candles for backtests (run ${{ github.run_id }})"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" hist-data
