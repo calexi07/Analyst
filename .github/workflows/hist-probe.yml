@@ -1,0 +1,20 @@
+name: Historical data source probe (backtests)
+# Manual only. Checks which public historical FX sources answer from a GitHub runner. Downloads nothing permanent.
+on:
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe sources
+        run: |
+          set +e
+          for u in \
+            "https://datafeed.dukascopy.com/datafeed/EURUSD/2015/00/05/BID_candles_min_1.bi5" \
+            "https://datafeed.dukascopy.com/datafeed/EURUSD/2015/00/05/10h_ticks.bi5" \
+            "https://jetta.dukascopy.com/v1/candles/minute/EUR-USD/BID/2015/1/5" \
+            "https://www.histdata.com/download-free-forex-historical-data/?/ascii/1-minute-bar-quotes/eurusd/2015" \
+            "https://query1.finance.yahoo.com/v8/finance/chart/EURUSD=X?interval=1h&range=1mo" \
+            "https://stooq.com/q/d/l/?s=eurusd&i=d" ; do
+            code=$(curl -s -o /tmp/out -w '%{http_code}' -A 'Mozilla/5.0' "$u"); echo "$code $(stat -c%s /tmp/out) $u"
+          done
