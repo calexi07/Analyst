@@ -1,4 +1,4 @@
-# Analiza MTF programată — procedura unei rulări (09:00 · 14:30 · 19:00 București, luni–vineri)
+# Analiza MTF programată — procedura unei rulări (08:35 · 14:05 · 20:10 București, luni–vineri; seara după check-ul fundamental de 19:55)
 
 Rulezi singur, nimeni nu te urmărește. Nu pui întrebări: iei interpretarea cea mai rezonabilă și o notezi în raport.
 Regulile de analiză sunt în `prompts/mtf/ANALYST.md` (le citești întâi și le aplici întocmai). Aici e doar procedura.
