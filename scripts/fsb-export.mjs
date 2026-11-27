@@ -60,8 +60,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   // active Watchlist setups (the plans you keep in Daily Observer)
   let st = [];
   try { st = await get(`do_settings?select=key,value&key=like.wl:*&limit=2000`); } catch (e) { meta.errors = [...(meta.errors || []), `watchlist: ${String(e.message).slice(0, 160)}`]; }
-  const wl = st.map(r => ({ key: r.key, ...r.value })).filter(x => x && x.pair && (x.status || 'active') === 'active');
-  writeFileSync('data/fsb/watchlist.json', JSON.stringify({ generated_at: meta.generated_at, setups: wl }, null, 1) + '\n');
+  const allWl = st.map(r => ({ key: r.key, ...r.value })).filter(x => x && x.pair);
+  const wl = allWl.filter(x => (x.status || 'active') === 'active');
+  const since = new Date(Date.now() - 90 * 864e5).toISOString();
+  // setups = active plans (what the MTF runs check); all = every plan of the last 90 days, any status (for the trade review)
+  writeFileSync('data/fsb/watchlist.json', JSON.stringify({ generated_at: meta.generated_at, setups: wl,
+    all: allWl.filter(x => (x.created || x.for_day || '') >= since.slice(0, 10)) }, null, 1) + '\n');
   meta.watchlist_active = wl.length;
   writeFileSync('data/fsb/meta.json', JSON.stringify(meta, null, 1) + '\n');
   console.log(JSON.stringify(meta));
