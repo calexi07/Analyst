@@ -39,7 +39,12 @@ Pentru fiecare pereche cu date: aplici `ANALYST.md` (piloni, clasă, conviction,
 1. `reports/mtf/YYYY-MM-DD-HHMM.md` (ora rulării, București), în ordinea:
    - un rând cu ora datelor (cel mai vechi și cel mai nou „ultimul rând”), săptămâna fundamentală și check-ul folosit;
    - **Schimbări de la ultima rulare**: setup-uri confirmate, deschise, invalidate, TP/SL lovite, plus planurile din Watchlist validate sau invalidate;
-   - **Pe scurt** (prima parte, ANALYST.md 5.2a): toate perechile cu setup activ sau schimbat, în cuvinte simple, fără prețuri de structură; perechile SKIP grupate într-un singur rând („SKIP: EURGBP, CHFJPY, … — nimic calitativ”);
+   - **Overview** (chiar la început, înainte de orice detaliu), trei liste scurte, calculate în cod unde e posibil, câte un rând pe pereche:
+     - 🎯 **Setup-uri bune acum**: setup-urile A+/A active (waiting/armed/confirmed), cu direcția, [4H]/[1H] și ce mai lipsește („așteaptă atingerea zonei” / „în zonă, așteaptă confirmarea” / „confirmat, limit la X”).
+     - 📍 **Aproape**: perechile la care prețul e la cel mult 1 × ATR(14) 4H de zona unui setup activ (oricare clasă) sau de un nivel CHoCH/BOS de pe 4H sau D. Spui distanța în pips și ce ar însemna atingerea.
+     - 👀 **De interes**: setup-urile B, schimbările de structură din ultimele ore (CHoCH pe 4H sau D, din digest `changes_48h`) și planurile mele din Watchlist validate sau invalidate.
+     Dacă o listă e goală, scrii „—”. Restul perechilor nu apar în overview.
+   - **Pe scurt** (după overview, ANALYST.md 5.2a), pereche cu pereche: toate perechile cu setup activ sau schimbat, în cuvinte simple, fără prețuri de structură; perechile SKIP grupate într-un singur rând („SKIP: EURGBP, CHFJPY, … — nimic calitativ”);
    - **Tabelul sumar**, toate cele 29 de perechi (formatul din ANALYST.md 5.1);
    - **Tehnic**: detaliu complet doar pentru setup-urile A+, A și B noi sau schimbate, cu planul de execuție; restul perechilor câte un rând.
 2. `reports/mtf/latest.md`: copie a raportului.
@@ -49,6 +54,7 @@ Pentru fiecare pereche cu date: aplici `ANALYST.md` (piloni, clasă, conviction,
 ## 5. Mesajul către mine
 Un singur mesaj scurt (SendUserMessage), pentru telefon:
 - primul rând: ora și „X schimbări · Y setup-uri A+/A noi”;
+- overview-ul pe scurt: 🎯 setup-uri bune, 📍 aproape, 👀 de interes, maxim 3 rânduri fiecare;
 - schimbările importante (maxim 5 rânduri);
 - setup-urile A+/A noi, în stilul „Pe scurt”: o propoziție cu povestea plus rândul „Entry · SL · TP”;
 - link: https://github.com/calexi07/Analyst/blob/main/reports/mtf/latest.md
