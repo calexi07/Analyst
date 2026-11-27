@@ -1,6 +1,6 @@
 {
  "note": "Setups proposed by the scheduled MTF analysis. Updated by each run; never rewrite an older report.",
- "updated_at": "2026-11-27T09:45:00+02:00",
+ "updated_at": "2026-11-27T10:02:00+02:00",
  "setups": [
   {
    "id": "EURUSD-20261127-0945-1",
@@ -8,15 +8,48 @@
    "dir": "short",
    "type": "pro-trend",
    "class": "A",
-   "zone": [1.09933, 1.100585],
+   "zone": [
+    1.09933,
+    1.100585
+   ],
    "invalidation": "1H close above 1.100585 (zone distal); cancelled if TP1 1.09573 is hit without entry",
-   "plan_limit": {"entry": 1.09933, "sl": 1.100655, "tp": [1.09573, 1.09486, 1.088115]},
-   "plan_confirm": {"trigger_level": 1.097045, "trigger_tf": "1H", "formula": "trigger = 1H close below the 1H fractal CHoCH as updated after the zone touch (1.097045 is today's example); entry = 50% of the leg from the high reached in the zone to the low of the break candle; SL = high reached + 0.00007 (0.1 x ATR14 1H)", "entry": null, "sl": null, "tp": [1.09573, 1.09486, 1.088115]},
+   "plan_limit": {
+    "entry": 1.09933,
+    "sl": 1.100662,
+    "tp": [
+     1.09573,
+     1.09486,
+     1.088115
+    ]
+   },
+   "plan_confirm": {
+    "trigger_level": 1.093405,
+    "trigger_tf": "1H",
+    "formula": "trigger = 1H close below the 1H fractal CHoCH as reported by the indicator after the zone touch (currently 1.093405; 1.097045 used at 09:45 was not the indicator CHoCH and was pierced at 09:00 without a structure change); entry = 50% of the leg from the high reached in the zone to the low of the break candle; SL = high reached + 0.0000765 (0.1 x ATR14 1H = 0.00076536)",
+    "entry": null,
+    "sl": null,
+    "tp": [
+     1.09573,
+     1.09486,
+     1.088115
+    ]
+   },
    "valid_until": "2026-11-27T22:00:00+02:00",
    "status": "waiting",
-   "history": [{"time": "2026-11-27T08:00:00+02:00", "status": "waiting", "why": "Created; price 1.097685 below proximal 1.09933 (high since zone creation 1.0993)"}],
+   "history": [
+    {
+     "time": "2026-11-27T08:00:00+02:00",
+     "status": "waiting",
+     "why": "Created; price 1.097685 below proximal 1.09933 (high since zone creation 1.0993)"
+    },
+    {
+     "time": "2026-11-27T09:00:00+02:00",
+     "status": "waiting",
+     "why": "09:00 candle high 1.098235 < proximal 1.09933, low 1.096955 > TP1; SL buffer updated to ATR 0.00076536, confirm trigger corrected to indicator 1H fractal CHoCH 1.093405"
+    }
+   ],
    "created_at": "2026-11-27T09:45:00+02:00",
-   "checked_at": "2026-11-27T08:00:00+02:00"
+   "checked_at": "2026-11-27T09:00:00+02:00"
   }
  ]
 }
