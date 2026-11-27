@@ -26,7 +26,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install pandas
-      - run: python scripts/hist-dukas.py ${{ matrix.pair }} ${{ inputs.from_year }}
+      - run: python scripts/hist-dukas.py ${{ matrix.pair }} ${{ inputs.from_year }} h1
       - uses: actions/upload-artifact@v4
         with:
           name: hist-${{ matrix.pair }}
