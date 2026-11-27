@@ -2243,6 +2243,30 @@ if('serviceWorker' in navigator)window.addEventListener('load',function(){naviga
   .psc[aria-current="true"] .cdot{ border-color:currentColor; }
   .psw-b{ width:28px; height:28px; flex:0 0 auto; border-radius:9px; border:1px solid var(--line); background:var(--surface-2); color:var(--ink); font-size:15px; }
   .psw-b:hover{ border-color:var(--accent); }
+  .td-lbl{ display:grid; gap:3px; margin-bottom:8px; } .td-lbl .lbl{ font-size:11.5px; }
+  .td-row{ margin-top:8px; } .td-row .kick{ display:block; margin-bottom:2px; } .td-row .tfv-t{ margin:0; }
+  .plan-c{ border:1px solid var(--line); border-left:3px solid var(--pos); border-radius:12px; padding:10px 12px; margin-top:8px; display:grid; gap:8px; background:var(--surface); }
+  .plan-c.short{ border-left-color:var(--neg); }
+  .plan-h{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .plan-t{ margin:0; font-size:13.5px; white-space:pre-wrap; } .plan-t .kick{ display:block; margin-bottom:2px; }
+  .psw-b{ width:40px; height:40px; font-size:18px; border-radius:12px; }
+  .psw-cur{ flex:1; min-width:0; height:40px; display:flex; align-items:center; gap:8px; padding:0 12px; border-radius:12px; cursor:pointer;
+            border:1px solid color-mix(in srgb,var(--pc) 45%,var(--line)); background:color-mix(in srgb,var(--pc) 12%,var(--surface-2)); color:var(--ink);
+            font-family:'Bricolage Grotesque',sans-serif; font-size:17px; }
+  .psw-cur b{ font-weight:800; color:var(--pc); } .psw-cur em{ font-style:normal; font-weight:800; opacity:.6; margin-left:-6px; }
+  .psw-cur .psw-n{ margin-left:auto; font-family:inherit; font-size:11.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .psw-cur .psw-car{ font-size:12px; color:var(--muted); }
+  .psw-cur:hover{ border-color:var(--pc); }
+  /* pair picker: large tap targets, full width on phones */
+  .pp-dlg .pc{ padding:9px 10px 9px 12px; font-size:15px; min-height:42px; }
+  .pp-dlg .pc .cdot{ margin-right:2px; }
+  @media (max-width:720px){
+    dialog.pp-dlg{ width:100vw !important; max-width:100vw !important; height:100dvh; max-height:100dvh; margin:0; border-radius:0; }
+    .pp-dlg #ppBody{ max-height:calc(100dvh - 140px) !important; }
+    .pp-dlg .pp-grid{ grid-template-columns:1fr; }
+    .pp-dlg .tc{ display:grid !important; grid-template-columns:repeat(3,1fr); gap:6px; }
+    .pp-dlg .pc{ justify-content:center; }
+  }
   @media (max-width:900px){ .panel-side{ width:100vw; border-left:none; } }
   /* status chips */
   .stc{ display:inline-flex; align-items:center; gap:7px; }
@@ -2716,12 +2740,12 @@ const ICONS = {
 const ico = (k, s = 18) => `<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]||''}</svg>`;
 const NAV = [
   [null, [['today','Today','home']]],
-  ['Fundamental Analyse', [['journal','Calendar','calendar'],['history','Check','trend'],['watch','Watchlist','target'],['backtest','Trades','flask'],['strategies','Strategies','bolt'],['scanner','Scanner','radar'],['forward','Forward test','flask'],['analyst','Analyst','radar']]],
+  ['Fundamental Analyse', [['journal','Calendar','calendar'],['history','Check','trend'],['watch','Watchlist','target'],['backtest','Trades','flask'],['analyst','Analyst','radar']]],
   ['Money', [['accounts','Accounts','wallet'],['portfolio','Portfolio','pie'],['bank','Bank','bank'],['goals','Goals','target']]],
   ['Tools', [['health','Health','radar'],['prompts','Prompts','spark']]],
 ];
 const navActive = v => S.view===v || (v==='history' && ['overview','analysis'].includes(S.view));
-const GONE_VIEWS = ['trades','analysis','setups','devents'];   /* setups (Auto-trader) and devents (Daily events) hidden for now (19 Nov 2026); the ?app=setups PWA still opens the Auto-trader */
+const GONE_VIEWS = ['trades','analysis','setups','devents','strategies','scanner','forward'];   /* strategies, scanner, forward test removed 27 Nov 2026 */   /* setups (Auto-trader) and devents (Daily events) hidden for now (19 Nov 2026); the ?app=setups PWA still opens the Auto-trader */
 /* was: */ //   /* Trades was removed from the app (Nov 2026); Backtest replaces trades. Setups came back as the Auto-trader (18 Nov 2026) */
 /* ===== notifications in the Setups app (Web Push) — the server sends every alert here instead of Telegram ===== */
 const VAPID_PUBLIC = 'BAOgsdSJNvxen175cWjqvGRMSR9Hk-iBm7cyNcxtDF0ZgxW445gRNcaVvXKfQDqQfUD6kqK_k7MGaEUmJa2yWuw';
@@ -3348,23 +3372,23 @@ function tradeTicket(e){
 function dayView(panel, ctx){
   const { p, ds, e, b, q } = ctx;
   const bn = S.news.get(nk(b,ds))?.events, qn = S.news.get(nk(q,ds))?.events;
-  const held = holdingMap(p)[ds], empty = !e.id && !bn && !qn && !held && !dayTrades(p, ds).length && !btDay(p, ds).length;
+  const held = holdingMap(p)[ds], empty = !e.id && !bn && !qn && !held && !dayTrades(p, ds).length && !btDay(p, ds).length && !dayPlans(p, ds).length;
   const tfs = [['Daily','daily_obs','tv_daily'],['4H','h4_obs','tv_4h'],['1H','h1_obs','tv_1h']].filter(([,o,t]) => e[o] || e[t]);
   const trs = dayTrades(p, ds);
   panel.innerHTML = `<div class="ps">
     ${panelHead(dayTitle(ctx), `${p} · ${ctx.dt.getFullYear()}`)}
-    ${empty ? `${wkBanner(ctx)}${fcDayHtml(p, ds)}${btDayHtml(p, ds)}<div class="empty"><div class="orb" aria-hidden="true"></div><p>No observations for this day yet.</p><button class="btn btn-primary" id="startEdit">Start observing</button></div>` : `
+    ${empty ? `${wkBanner(ctx)}${fcDayHtml(p, ds)}${btDayHtml(p, ds)}${plansHtml(p, ds, false)}<div class="empty"><div class="orb" aria-hidden="true"></div><p>No observations for this day yet.</p><button class="btn btn-primary" id="startEdit">Start observing</button></div>` : `
     <div class="vw">
      <aside class="vw-side">
       ${wkBanner(ctx)}
       <div class="hero">
         <div class="hero-row">
-          <div>${e.trade_status ? stBadge(e.trade_status, true) : '<span class="muted">no status</span>'}</div>
+          <div></div>
           ${e.daily_change!=null ? `<div style="text-align:right"><span class="kick">Daily close</span><span class="bigval ${sgn(e.daily_change)}">${pct(e.daily_change)}</span>${e.daily_pips!=null ? `<span class="cd-pips">${e.daily_pips>0 ? '+' : ''}${fmt(e.daily_pips, 1)} pips</span>` : ''}</div>` : ''}
         </div>
         ${tagPills(e.tags)}
-        ${e.action ? `<div class="next"><span class="kick">Plan</span>${esc(e.action)}</div>` : ''}
       </div>
+      ${plansHtml(p, ds, false)}
       ${held ? `<button class="holdcard ${held.t.direction.toLowerCase()}" id="goEntry"><span class="kick">${held.exit ? 'Trade closed today' : 'Open trade'}</span>
         <b>${held.t.direction==='Long' ? '▲' : '▼'} ${held.t.direction}${held.t.setup_tf ? ' · '+esc(held.t.setup_tf)+' setup' : ''}</b>
         <span class="muted">entered ${fmtDayShort(held.t.day)}${held.exit && held.t.result ? ` · <span class="${held.t.result==='W' ? 'pos' : held.t.result==='L' ? 'neg' : ''}">${held.t.result}</span>` : ''} — view entry ›</span></button>` : ''}
@@ -3379,10 +3403,10 @@ function dayView(panel, ctx){
       <div class="vw-mh"><h4>Top-down</h4>${tfs.length > 1 ? `<div class="vw-jump">${tfs.map(([l]) => `<button data-jump="${l}">${l}</button>`).join('')}</div>` : ''}</div>
         ${tfs.length ? tfs.map(([l,o,t]) => {
           const links = [...new Set([e[t], ...((e[o]||'').match(TVRX) || [])].filter(Boolean))];
-          const text = (e[o]||'').replace(TVRX, '').trim();
+          const td = tdParse((e[o]||'').replace(TVRX, '').trim());
           return `<article class="tfv" id="tf-${l}">
           <div class="tfv-h"><span class="tfl">${l}</span>${links[0] ? `<a class="tvlink" href="${esc(links[0])}" target="_blank" rel="noopener">Open on TradingView ↗</a>` : ''}</div>
-          ${text ? `<p class="tfv-t">${esc(text)}</p>` : ''}
+          ${TD_SEC.filter(([k]) => td[k]).map(([k, lab]) => `<div class="td-row"><span class="kick">${lab}</span><p class="tfv-t">${esc(td[k])}</p></div>`).join('')}
           ${links.map(u => { const snap = tvSnap(u); return snap
             ? `<a class="snap" href="${esc(u)}" target="_blank" rel="noopener"><img src="${snap}" alt="Chart ${l} ${p}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'tvlink',textContent:'Preview unavailable — open chart ↗'}))"></a>`
             : `<a class="tvlink" style="display:block;margin-top:8px;word-break:break-all" href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>`; }).join('')}
@@ -3395,6 +3419,56 @@ function dayView(panel, ctx){
     if(el) panel.scrollTo({ top: el.getBoundingClientRect().top - panel.getBoundingClientRect().top + panel.scrollTop - (panel.querySelector('.ps-head')?.offsetHeight || 0) - 12, behavior:'smooth' }); });
   panel.querySelector('#startEdit')?.addEventListener('click', () => setMode('edit'));
   panel.querySelector('#goEntry')?.addEventListener('click', () => selectDay(held.t.day));
+  bindPlans(panel, p, ds);
+}
+/* structured top-down: each timeframe text is stored as labelled sections in the same column (daily_obs / h4_obs / h1_obs) */
+const TD_SEC = [['sw','Swing structure','Swing'],['in','Internal structure','Internal'],['fr','Fractal structure','Fractal'],['no','Other notes','Notes']];
+function tdParse(t){
+  const o = { sw:'', in:'', fr:'', no:'' }; t = String(t || '').trim(); if(!t) return o;
+  const rx = /^(Swing|Internal|Fractal|Notes):[ \t]*/;
+  if(!t.split('\n').some(l => rx.test(l))){ o.no = t; return o; }
+  let cur = 'no';
+  for(const l of t.split('\n')){ const m = l.match(rx);
+    if(m){ cur = TD_SEC.find(x => x[2]===m[1])[0]; o[cur] += (o[cur] ? '\n' : '') + l.slice(m[0].length); }
+    else o[cur] += (o[cur] || cur!=='no' ? '\n' : '') + l; }
+  for(const k in o) o[k] = o[k].trim();
+  return o;
+}
+function tdJoin(o){ return TD_SEC.filter(([k]) => (o[k] || '').trim()).map(([k,,lab]) => `${lab}: ${o[k].trim()}`).join('\n'); }
+/* plans = watchlist setups for this pair and trading day */
+function dayPlans(p, ds){ return wlAll().filter(x => x.pair===p && wlDay(x)===ds); }
+function planCard(x, edit){
+  const L = x.dir==='Long', st = WL_ST[x.status] || WL_ST.active, img = tvImg(x.img || '');
+  return `<article class="plan-c ${L ? 'long' : 'short'}">
+    <div class="plan-h"><span class="wl-tag" style="background:${L ? '#22AB94' : '#F23645'};color:#fff">${L ? '▲ Long' : '▼ Short'}</span>
+      ${x.trend ? `<span class="wl-tag" style="background:var(--surface-2);color:var(--ink)">${x.trend==='pro' ? '↗ Pro-trend' : '↩ Counter-trend'}</span>` : ''}
+      <span class="wl-tag" style="background:color-mix(in srgb,${st[1]} 16%,transparent);color:${st[1]}">${st[0]}</span>
+      <button type="button" class="bt" data-pledit="${esc(x.key)}" style="margin-left:auto">${edit ? 'Edit' : 'Open'}</button></div>
+    ${x.text ? `<p class="plan-t"><span class="kick">Motivation</span>${esc(x.text)}</p>` : ''}
+    ${img ? `<a href="${esc(x.img)}" target="_blank" rel="noopener"><img class="wl-img" src="${esc(img)}" alt="TradingView chart" loading="lazy"></a>` : x.img ? `<a class="tvlink" href="${esc(x.img)}" target="_blank" rel="noopener">Open on TradingView ↗</a>` : ''}
+  </article>`;
+}
+function plansHtml(p, ds, edit){
+  const a = dayPlans(p, ds);
+  return `<div class="${edit ? 'sec' : 'vsec'}"><div class="trs-h"><h4>Plan <small>${a.length ? a.length + ' · also on the Watchlist' : 'none yet · goes to the Watchlist'}</small></h4>
+    <button type="button" class="btn" data-pladd>+ Add plan</button></div>${a.map(x => planCard(x, edit)).join('')}</div>`;
+}
+function bindPlans(panel, p, ds){
+  const re = () => { const d = document.getElementById('wlDlg'); d.addEventListener('close', () => renderPanel(), { once:true }); };
+  panel.querySelectorAll('[data-pladd]').forEach(b => b.onclick = () => { openWatch(null, p, ds); re(); });
+  panel.querySelectorAll('[data-pledit]').forEach(b => b.onclick = () => { openWatch(b.dataset.pledit); re(); });
+}
+/* trades in the day panel = the Trades page (do_backtests, live) */
+function dayTradesHtml(p, ds){
+  const a = btDay(p, ds);
+  return `<div class="sec trades-sec"><div class="trs-h"><h4>Trades <small>${a.length ? a.length + ' · also on the Trades page' : 'none yet'}</small></h4>
+      <div class="trs-add"><button type="button" class="btn add-long" data-addbt="Long">+ ▲ Long</button><button type="button" class="btn add-short" data-addbt="Short">+ ▼ Short</button></div></div>
+    ${a.length ? `<div class="fc-chk">${a.map(x => `<button type="button" class="fc-ckb" data-btopen="${x.id}"><b class="${x.result==='W' ? 'pos' : x.result==='L' ? 'neg' : ''}">${btLbl(x)}</b>${x.entry_time ? `<span class="muted" style="font-size:12px">${esc(x.entry_time)}</span>` : ''}</button>`).join('')}</div>` : ''}</div>`;
+}
+function bindDayTrades(panel, p, ds){
+  const re = () => document.getElementById('btDlg').addEventListener('close', () => renderPanel(), { once:true });
+  panel.querySelectorAll('[data-addbt]').forEach(b => b.onclick = () => { openBacktest(null, { pair:p, day:ds, kind:'live', direction:b.dataset.addbt, result:'O' }); re(); });
+  panel.querySelectorAll('[data-btopen]').forEach(b => b.addEventListener('pointerdown', re));
 }
 function fmtDayShort(ds){ const d = parseISO(ds); return `${WD_SHORT[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)}`; }
 
@@ -3410,31 +3484,21 @@ function dayEdit(panel, ctx){
   panel.innerHTML = `<div class="ps">
     ${panelHead(dayTitle(ctx), `${p} · <span id="saveState" class="save">${e.id ? 'saved ✓' : 'autosaves'}</span>`)}
     ${wkBanner(ctx)}
-    <div class="sec" style="border-top:none;margin-top:4px">
-      <h4>Day status <small>tap to set · tracked in Analytics</small></h4>
-      <div class="chips" role="group" id="stBox">${opts.map(o => `<button type="button" class="ch stc st-${statusKey(o)}" data-st="${esc(o)}" aria-pressed="${o===e.trade_status}">
-        <i></i>${esc(o)}${custom.has(o) ? `<span class="st-rm" data-strm="${esc(o)}" title="Remove from quick picks" aria-label="Remove ${esc(o)} from quick picks">×</span>` : ''}</button>`).join('')}
-        <button type="button" class="ch st-add" id="stAddBtn">+ New</button></div>
-      <input type="hidden" data-f="trade_status" value="${esc(e.trade_status||'')}">
-      <div class="dyn" id="stAddRow" hidden style="margin-top:8px"><input class="inp" id="stNew" maxlength="28" placeholder="e.g. Missed setup, News day, Holiday…" aria-label="New status"><button type="button" class="btn btn-primary" id="stSave">Add</button></div>
-    </div>
+    <input type="hidden" data-f="trade_status" value="${esc(e.trade_status||'')}"><input type="hidden" data-f="action" value="${esc(e.action||'')}">
     <div class="sec">
       <div class="td-close"><h4 style="margin:0">Top-down</h4>
         <div class="close-row"><label class="close-in">Daily close <input class="inp num" data-f="daily_change" inputmode="decimal" value="${v('daily_change')}" placeholder="-0.19"><span>%</span></label>
           ${S.hasPips ? `<label class="close-in"><input class="inp num" data-f="daily_pips" inputmode="decimal" value="${v('daily_pips')}" placeholder="-21" style="width:78px"><span>pips</span></label>` : ''}</div></div>
       <div class="seg tf-tabs" role="tablist" aria-label="Timeframe">${TFS.map(([k,l,o,t]) => `<button type="button" role="tab" data-tft="${k}" aria-selected="${tfTab===k}" aria-pressed="${tfTab===k}">${l}<i class="tf-dot ${e[o] || e[t] ? 'on' : ''}" data-dot="${k}"></i></button>`).join('')}</div>
-      ${TFS.map(([k,l,o,t]) => `<div class="tf-pane" data-tfp="${k}" ${tfTab===k ? '' : 'hidden'}>
-        <textarea class="inp" data-f="${o}" rows="4" aria-label="${l} observations" placeholder="What do you see on ${l}? Structure, liquidity, MA, plan…">${v(o)}</textarea>
-        <input class="inp tv-in" data-f="${t}" type="url" value="${v(t)}" aria-label="TradingView link ${l}" placeholder="📸 TradingView link (${l})"></div>`).join('')}
+      ${TFS.map(([k,l,o,t]) => { const td = tdParse(e[o]); return `<div class="tf-pane" data-tfp="${k}" ${tfTab===k ? '' : 'hidden'}>
+        <textarea data-f="${o}" hidden>${v(o)}</textarea>
+        ${TD_SEC.map(([sk, lab]) => `<label class="td-lbl"><span class="lbl">${lab}</span><textarea class="inp" data-td="${k}:${sk}" rows="${sk==='no' ? 2 : 1}" aria-label="${l} ${lab}" placeholder="${l} · ${lab.toLowerCase()}">${esc(td[sk])}</textarea></label>`).join('')}
+        <input class="inp tv-in" data-f="${t}" type="url" value="${v(t)}" aria-label="TradingView link ${l}" placeholder="📸 TradingView link (${l})"></div>`; }).join('')}
     </div>
-    <div class="sec trades-sec">
-      <div class="trs-h"><h4>Trades <small>${trs.length ? trs.length + ' on this day' : 'none yet'}</small></h4>
-        <div class="trs-add"><button type="button" class="btn add-long" data-addtr="Long">+ ▲ Long</button><button type="button" class="btn add-short" data-addtr="Short">+ ▼ Short</button></div></div>
-      ${trs.map(t => tradeCard(t, ds, trs.length===1 || t.id===S.openTrade)).join('')}
-      ${!trs.length ? '<p class="hint" style="margin:0">Took a setup? Add it here — you can log several trades on the same day (e.g. one 4H and one 1H).</p>' : ''}
-    </div>
-    <div class="sec"><h4>Plan for tomorrow</h4>${chipGroup('action', ACTIONS, e.action)}
-      <input class="inp" style="margin-top:8px" data-f-alt="action" placeholder="or type a custom action…" aria-label="Custom action"></div>
+    ${plansHtml(p, ds, true)}
+    ${dayTradesHtml(p, ds)}
+    ${trs.length ? `<div class="sec trades-sec"><div class="trs-h"><h4>Older journal trades <small>logged before the Trades page link</small></h4></div>
+      ${trs.map(t => tradeCard(t, ds, t.id===S.openTrade)).join('')}</div>` : ''}
     <div class="editfoot sticky-foot">
       ${e.id ? '<button class="linkbtn" id="pDel">Delete day</button>' : ''}
       <button class="btn btn-primary" style="margin-left:auto" id="doneEdit">Done ✓</button>
@@ -3444,45 +3508,26 @@ function dayEdit(panel, ctx){
   panel.querySelectorAll('textarea').forEach(t => { autosize(t); t.addEventListener('input', () => autosize(t)); });
   TFS.forEach(([k,,o,t]) => {
     const ta = panel.querySelector(`[data-f="${o}"]`), li = panel.querySelector(`[data-f="${t}"]`), dot = panel.querySelector(`[data-dot="${k}"]`);
+    const parts = [...panel.querySelectorAll(`[data-td^="${k}:"]`)];
     const upd = () => dot.classList.toggle('on', !!(ta.value.trim() || li.value.trim()));
-    ta.addEventListener('input', () => {
-      const m = ta.value.match(TVRX); if(m && !li.value.trim()){ li.value = m[0]; ta.value = ta.value.replace(m[0], '').replace(/\n{3,}/g, '\n\n').trim(); autosize(ta); toast('TradingView link moved to the chart field'); }
-      upd(); });
+    parts.forEach(pt => pt.addEventListener('input', () => {
+      const m = pt.value.match(TVRX); if(m && !li.value.trim()){ li.value = m[0]; pt.value = pt.value.replace(m[0], '').replace(/\n{3,}/g, '\n\n').trim(); autosize(pt); toast('TradingView link moved to the chart field'); }
+      ta.value = tdJoin(Object.fromEntries(parts.map(x => [x.dataset.td.split(':')[1], x.value])));
+      ta.dispatchEvent(new Event('input')); upd(); }));
     li.addEventListener('input', upd);
   });
   panel.querySelectorAll('[data-tft]').forEach(b => b.onclick = () => { S.tfTab = b.dataset.tft;
     panel.querySelectorAll('[data-tft]').forEach(x => { const on = x===b; x.setAttribute('aria-selected', String(on)); x.setAttribute('aria-pressed', String(on)); });
     panel.querySelectorAll('[data-tfp]').forEach(x => x.hidden = x.dataset.tfp!==S.tfTab);
-    const ta = panel.querySelector(`[data-tfp="${S.tfTab}"] textarea`); autosize(ta); ta.focus(); });
+    panel.querySelectorAll(`[data-tfp="${S.tfTab}"] textarea[data-td]`).forEach(autosize); panel.querySelector(`[data-tfp="${S.tfTab}"] textarea[data-td]`)?.focus(); });
   const save = () => schedule(() => collectDay(panel));
   panel.querySelectorAll('[data-f]').forEach(el => el.addEventListener('input', save));
   bindChips(panel, 'data-f', field => {
     if(field==='action') panel.querySelector('[data-f="action"]') && (panel.querySelector('[data-f-alt="action"]').value = '');
     save(); flushSave();
   });
-  /* day status: single-select chips + custom quick picks */
-  const stHid = panel.querySelector('[data-f="trade_status"]');
-  panel.querySelector('#stBox').addEventListener('click', async ev => {
-    const rm = ev.target.closest('[data-strm]');
-    if(rm){ ev.stopPropagation(); await setCustomStatuses(customStatuses().filter(x => x!==rm.dataset.strm)); toast(`“${rm.dataset.strm}” removed from quick picks`); renderPanel(); return; }
-    if(ev.target.closest('#stAddBtn')){ const row = panel.querySelector('#stAddRow'); row.hidden = !row.hidden; if(!row.hidden) panel.querySelector('#stNew').focus(); return; }
-    const b = ev.target.closest('[data-st]'); if(!b) return;
-    const on = b.getAttribute('aria-pressed')!=='true';
-    panel.querySelectorAll('[data-st]').forEach(x => x.setAttribute('aria-pressed', 'false'));
-    b.setAttribute('aria-pressed', String(on)); stHid.value = on ? b.dataset.st : '';
-    save(); flushSave();
-  });
-  const addSt = async () => { const inp = panel.querySelector('#stNew'), t = inp.value.trim().replace(/\s+/g,' '); if(!t) return;
-    const exists = statusOptions().find(x => x.toLowerCase()===t.toLowerCase());
-    if(!exists) await setCustomStatuses([...customStatuses(), t]);
-    stHid.value = exists || t; save(); await flushSave(); renderPanel(); toast(exists ? `Status set to “${exists}”` : `“${t}” added to quick picks`); };
-  panel.querySelector('#stSave').onclick = addSt;
-  panel.querySelector('#stNew').addEventListener('keydown', ev => { if(ev.key==='Enter'){ ev.preventDefault(); addSt(); } if(ev.key==='Escape'){ ev.stopPropagation(); panel.querySelector('#stAddRow').hidden = true; } });
-  const alt = panel.querySelector('[data-f-alt="action"]');
-  alt.addEventListener('input', () => { const h = panel.querySelector('[data-f="action"]'); h.value = alt.value.trim();
-    panel.querySelectorAll('[data-chips="action"] .ch').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.v === h.value))); save(); });
   panel.querySelectorAll('[data-trade]').forEach(card => bindTradeCard(card, ds, save));
-  panel.querySelectorAll('[data-addtr]').forEach(b => b.onclick = async () => { const t = await addTrade(p, ds, b.dataset.addtr); if(t){ S.openTrade = t.id; renderCalendar(); renderPanel(); refreshDock(); } });
+  bindPlans(panel, p, ds); bindDayTrades(panel, p, ds);
   panel.querySelector('#doneEdit').onclick = () => setMode('view');
   panel.querySelector('#pDel')?.addEventListener('click', async () => {
     const cur = S.daily.get(dk(p, ds)); if(!cur || !confirm('Delete this day\'s observations? Trades on this day are kept. News stays, since it is shared per currency.')) return;
@@ -6044,7 +6089,7 @@ function renderWatch(){
     const bTag = b && b.bias ? `<span class="wl-tag" style="background:${fit==='with' ? 'color-mix(in srgb,#22AB94 18%,transparent);color:#0b7a68' : fit==='against' ? 'color-mix(in srgb,#FF9800 22%,transparent);color:#b25e00' : 'var(--surface-2);color:var(--muted)'}">${fit==='with' ? '✓ with' : fit==='against' ? '⚠ against' : '◆ no clear'} weekly bias · ${esc(BIAS_LBL[b.bias] || b.bias)}${b.conv ? ' ' + esc(b.conv) : ''}</span>` : '<span class="wl-tag" style="background:var(--surface-2);color:var(--muted)">no weekly analysis</span>';
     const tr = x.trade_id!=null ? S.bt.rows.get(x.trade_id) : null;
     return `<article class="wl-card ${x.status==='active' ? '' : 'off'}" data-wl="${esc(x.key)}">
-      <div class="wl-h"><span class="p">${esc(x.pair)}</span><span class="wl-tag" style="background:${L ? '#22AB94' : '#F23645'};color:#fff">${L ? '▲ Long' : '▼ Short'}</span>
+      <div class="wl-h"><span class="p">${esc(x.pair)}</span><span class="wl-tag" style="background:${L ? '#22AB94' : '#F23645'};color:#fff">${L ? '▲ Long' : '▼ Short'}</span>${x.trend ? `<span class="wl-tag" style="background:var(--surface-2);color:var(--ink)">${x.trend==='pro' ? '↗ Pro-trend' : '↩ Counter-trend'}</span>` : ''}
         <span class="wl-tag" style="background:color-mix(in srgb,${st[1]} 16%,transparent);color:${st[1]}">${st[0]}</span></div>
       <div class="wl-days">${wlDayTag(x)}${x.ext?.length ? `<span class="wl-tag" style="background:var(--surface-2);color:var(--muted)" title="${esc(x.ext.map(e => fmtDayShort(e.from) + ' → ' + fmtDayShort(e.to)).join(' · '))}">↻ extended ${x.ext.length}×</span>` : ''}</div>
       <div>${bTag}${x.status==='active' ? (st2 => st2 ? ` <span class="wl-tag" data-sessw title="${esc(st2.sub)}" style="cursor:pointer;background:var(--surface-2)">${SESS_IC[st2.k]} ${esc(st2.lbl)}</span>` : '')(sessState(x.pair)) : ''}</div>
@@ -6085,18 +6130,19 @@ function renderWatch(){
       onSaved: async t => { await saveSettingKey(k, { ...S.settings[k], status:'taken', trade_id:t.id, closed:new Date().toISOString() }); toast('Trade saved · setup moved to Taken'); if(S.view==='watch') renderWatch(); } }));
   });
 }
-function openWatch(key, pair){
-  const dlg = document.getElementById('wlDlg'), x = key ? S.settings[key] : { pair:pair || ls.get('do_wl_lastpair', 'EURUSD'), dir:'Long', img:'', text:'', valid:'', invalid:'', status:'active' };
-  let dir = x.dir || 'Long';
+function openWatch(key, pair, day){
+  const dlg = document.getElementById('wlDlg'), x = key ? S.settings[key] : { pair:pair || ls.get('do_wl_lastpair', 'EURUSD'), dir:'Long', img:'', text:'', valid:'', invalid:'', status:'active', ...(day ? { for_day:day } : {}) };
+  let dir = x.dir || 'Long', trend = x.trend || '';
   dlg.innerHTML = `<form method="dialog" id="wlForm"><div class="dlg-head"><h2>${key ? 'Edit setup' : 'Add setup'}</h2></div>
     <div class="bt-form" style="padding:0 20px 14px">
       <div class="bt-two"><label><span class="lbl">Pair</span><select class="inp" id="wlPair">${WL_PAIRS.map(p => `<option${p===x.pair ? ' selected' : ''}>${p}</option>`).join('')}</select></label>
-        <label><span class="lbl">Direction</span><div class="seg bt-ch" role="group"><button type="button" data-wdir="Long" aria-pressed="${dir==='Long'}">▲ Long</button><button type="button" data-wdir="Short" aria-pressed="${dir==='Short'}">▼ Short</button></div></label></div>
+        <label><span class="lbl">Orientation</span><div class="seg bt-ch" role="group"><button type="button" data-wdir="Long" aria-pressed="${dir==='Long'}">▲ Long</button><button type="button" data-wdir="Short" aria-pressed="${dir==='Short'}">▼ Short</button></div></label></div>
+      <label><span class="lbl">Trend</span><div class="seg bt-ch" role="group"><button type="button" data-wtr="pro" aria-pressed="${trend==='pro'}">↗ Pro-trend</button><button type="button" data-wtr="counter" aria-pressed="${trend==='counter'}">↩ Counter-trend</button></div></label>
       <label><span class="lbl">Setup for (trading day)</span><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input class="inp" type="date" id="wlDay" value="${wlDay(x)}" style="width:auto">
         <div class="seg bt-ch" role="group"><button type="button" data-wday="${iso(new Date())}">Today</button><button type="button" data-wday="${wlNextTD(iso(new Date()))}">Next trading day</button></div></div></label>
       <label><span class="lbl">TradingView snapshot link</span><input class="inp" id="wlImg" value="${esc(x.img || '')}" placeholder="https://www.tradingview.com/x/…"></label>
       <div id="wlPrev"></div>
-      <label><span class="lbl">What you see</span><textarea class="inp" id="wlText" rows="3" placeholder="The setup in your words">${esc(x.text || '')}</textarea></label>
+      <label><span class="lbl">Motivation</span><textarea class="inp" id="wlText" rows="3" placeholder="Why this plan: structure, zone, liquidity, fundamentals">${esc(x.text || '')}</textarea></label>
       <label><span class="lbl">✅ Validation (what must happen)</span><textarea class="inp" id="wlValid" rows="2" placeholder="e.g. sweep of Asia low, then a 15m fractal break up">${esc(x.valid || '')}</textarea></label>
       <label><span class="lbl">✖ Invalidation (when it is off)</span><textarea class="inp" id="wlInv" rows="2" placeholder="e.g. 1h close below 1.0950, or US CPI hot">${esc(x.invalid || '')}</textarea></label>
     </div>
@@ -6104,16 +6150,17 @@ function openWatch(key, pair){
   const prev = () => { const u = tvImg(dlg.querySelector('#wlImg').value.trim()); dlg.querySelector('#wlPrev').innerHTML = u ? `<img class="wl-img" src="${esc(u)}" alt="Snapshot preview">` : ''; };
   prev(); dlg.querySelector('#wlImg').oninput = prev;
   dlg.querySelectorAll('[data-wdir]').forEach(b => b.onclick = () => { dir = b.dataset.wdir; dlg.querySelectorAll('[data-wdir]').forEach(o => o.setAttribute('aria-pressed', String(o===b))); });
+  dlg.querySelectorAll('[data-wtr]').forEach(b => b.onclick = () => { trend = trend===b.dataset.wtr ? '' : b.dataset.wtr; dlg.querySelectorAll('[data-wtr]').forEach(o => o.setAttribute('aria-pressed', String(o.dataset.wtr===trend))); });
   const dSync = () => dlg.querySelectorAll('[data-wday]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.wday===dlg.querySelector('#wlDay').value)));
   dlg.querySelectorAll('[data-wday]').forEach(b => b.onclick = () => { dlg.querySelector('#wlDay').value = b.dataset.wday; dSync(); }); dlg.querySelector('#wlDay').oninput = dSync; dSync();
   dlg.querySelector('#wlCancel').onclick = () => dlg.close();
   dlg.querySelector('#wlDel')?.addEventListener('click', async () => { if(!confirm('Delete this setup?')) return;
     delete S.settings[key]; try{ const { error } = await sb.from('do_settings').delete().eq('key', key); if(error) throw error; }catch(e){ toast('Could not delete: ' + e.message); }
-    dlg.close(); renderWatch(); });
+    dlg.close(); if(S.view==='watch') renderWatch(); });
   dlg.querySelector('#wlForm').onsubmit = async ev => { ev.preventDefault();
     const img = dlg.querySelector('#wlImg').value.trim();
     if(img && !/^https?:\/\//i.test(img)) return toast('The chart link must start with https://');
-    const v = { ...x, pair:dlg.querySelector('#wlPair').value, dir, img, text:dlg.querySelector('#wlText').value.trim(), valid:dlg.querySelector('#wlValid').value.trim(), invalid:dlg.querySelector('#wlInv').value.trim(), for_day:dlg.querySelector('#wlDay').value || wlDefDay(),
+    const v = { ...x, pair:dlg.querySelector('#wlPair').value, dir, trend:trend || null, img, text:dlg.querySelector('#wlText').value.trim(), valid:dlg.querySelector('#wlValid').value.trim(), invalid:dlg.querySelector('#wlInv').value.trim(), for_day:dlg.querySelector('#wlDay').value || wlDefDay(),
       status:x.status || 'active', created:x.created || new Date().toISOString() };
     const k = key || `wl:${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
     await saveSettingKey(k, v); ls.set('do_wl_lastpair', v.pair); dlg.close(); toast('Setup saved'); if(S.view==='watch') renderWatch(); };
@@ -9463,13 +9510,15 @@ function flashDeskRow(p){
   tr.scrollIntoView({ block:'center', behavior:'smooth' }); tr.classList.remove('flash'); void tr.offsetWidth; tr.classList.add('flash');
 }
 const pairDlg = document.getElementById('pairDlg');
-function openPairPicker(){
-  pairDlg.innerHTML = `<div class="dlg-head" style="padding-bottom:10px"><h2>Switch pair</h2>
+function openPairPicker(opts = {}){
+  const ds = opts.ds, pick = p => { pairDlg.close(); opts.onPick ? opts.onPick(p) : selectPair(p); };
+  pairDlg.classList.add('pp-dlg');
+  pairDlg.innerHTML = `<div class="dlg-head" style="padding-bottom:10px"><div style="display:flex;align-items:center;gap:10px"><h2 style="margin:0">Switch pair</h2>${ds ? `<span class="muted" style="font-size:13px">${ds} · <span class="cov-done"><i class="cdot"></i></span> done <span class="cov-part"><i class="cdot"></i></span> partial</span>` : ''}<button class="iconbtn" id="ppX" aria-label="Close" style="margin-left:auto">✕</button></div>
       <input id="ppQ" class="inp" type="search" autocomplete="off" placeholder="Type a pair or currency — eurj, jpy, gold… then Enter" aria-label="Find a pair" style="margin-top:12px;font-size:15px;padding:11px 13px"></div>
     <div class="dlg-body" id="ppBody" style="max-height:64vh;overflow:auto;padding-bottom:18px"></div>`;
   const q = pairDlg.querySelector('#ppQ'), body = pairDlg.querySelector('#ppBody'); let hits = [];
   const chip = (p, first) => { const r = curWeekRec(p), dv = pairDiv(r);
-    return `<button class="pc b-${r?.bias || 'none'} ${first ? 'pp-first' : ''}" data-pp="${p}" aria-current="${p===S.pair}" title="${p}${r?.bias ? ' · '+BIAS_LBL[r.bias] : ''}"><span class="pc-n">${base(p)}<i>${quote(p)}</i></span>${dv!=null ? `<span class="pc-d">${dv}</span>` : ''}</button>`; };
+    return `<button class="pc b-${r?.bias || 'none'} ${first ? 'pp-first' : ''} ${ds ? 'cov-'+pairCov(p, ds) : ''}" data-pp="${p}" aria-current="${p===S.pair}" title="${p}${r?.bias ? ' · '+BIAS_LBL[r.bias] : ''}">${ds ? '<i class="cdot"></i>' : ''}<span class="pc-n">${base(p)}<i>${quote(p)}</i></span>${dv!=null ? `<span class="pc-d">${dv}</span>` : ''}</button>`; };
   const draw = () => {
     const t = q.value.toUpperCase().replace(/[^A-Z]/g, '');
     const nm = c => (CCY[c] || [''])[0].toUpperCase();
@@ -9483,9 +9532,10 @@ function openPairPicker(){
         : '<p class="muted" style="padding:8px 2px">No pair matches.</p>');
   };
   q.oninput = draw;
-  q.onkeydown = ev => { if(ev.key==='Enter' && hits[0]){ ev.preventDefault(); pairDlg.close(); selectPair(hits[0]); } };
-  body.onclick = ev => { const b = ev.target.closest('[data-pp]'); if(b){ pairDlg.close(); selectPair(b.dataset.pp); } };
-  draw(); pairDlg.showModal(); q.focus();
+  q.onkeydown = ev => { if(ev.key==='Enter' && hits[0]){ ev.preventDefault(); pick(hits[0]); } };
+  body.onclick = ev => { const b = ev.target.closest('[data-pp]'); if(b) pick(b.dataset.pp); };
+  pairDlg.querySelector('#ppX').onclick = () => pairDlg.close();
+  draw(); pairDlg.showModal(); if(window.innerWidth >= 720) q.focus();
 }
 document.addEventListener('keydown', ev => {
   if(ev.key.toLowerCase()!=='p' || ev.ctrlKey || ev.metaKey || ev.altKey || document.querySelector('dialog[open]')) return;
@@ -9493,21 +9543,20 @@ document.addEventListener('keydown', ev => {
   if(['journal','desk'].includes(S.view) && !S.drawerOpen){ ev.preventDefault(); openPairPicker(); }
 });
 /* pair switcher inside the drawer: every pair grouped by base currency, same day */
+function pairCov(p, ds){ return ds > iso(new Date()) ? 'fut' : dayCov(S.daily.get(dk(p, ds))).state; }
 function pairSwitcher(ds){
-  const today = iso(new Date()), cur = S.pair, order = ccyGroups('base');
-  const cov = p => ds > today ? 'fut' : dayCov(S.daily.get(dk(p, ds))).state;
+  const cur = S.pair, list = ccyGroups('base').flatMap(g => g.pairs), i = list.indexOf(cur);
+  const done = list.filter(p => pairCov(p, ds)==='done').length;
   return `<div class="pswitch"><button class="psw-b" data-psw="-1" aria-label="Previous pair" title="Previous pair">‹</button>
-    <div class="psw-s" id="pswS">${order.map(g => `<span class="psw-grp" style="--cc:${ccyCol(g.c)}"><span class="psw-g">${g.c}/</span>${g.pairs.map(p =>
-      `<button class="psc cov-${cov(p)}" data-psp="${p}" aria-current="${p===cur}" title="${p}"><i class="cdot"></i>${base(p)===g.c ? quote(p) : p}</button>`).join('')}</span>`).join('')}</div>
+    <button class="psw-cur cov-${pairCov(cur, ds)}" id="pswCur" style="--pc:${ccyCol(base(cur))}" title="Choose another pair">
+      <i class="cdot"></i><b>${base(cur)}</b><em>${quote(cur)}</em><span class="psw-n">${i + 1}/${list.length} · ${done} done</span><span class="psw-car">▾</span></button>
     <button class="psw-b" data-psw="1" aria-label="Next pair" title="Next pair">›</button></div>`;
 }
 function bindPairSwitcher(panel, ds){
-  const s = panel.querySelector('#pswS'); if(!s) return;
+  const c = panel.querySelector('#pswCur'); if(!c) return;
   const list = ccyGroups('base').flatMap(g => g.pairs);
-  s.querySelectorAll('[data-psp]').forEach(b => b.onclick = () => openPairDay(b.dataset.psp, ds));
+  c.onclick = () => openPairPicker({ ds, onPick: p => openPairDay(p, ds) });
   panel.querySelectorAll('[data-psw]').forEach(b => b.onclick = () => { const i = list.indexOf(S.pair), n = list[(i + Number(b.dataset.psw) + list.length) % list.length]; openPairDay(n, ds); });
-  const c = s.querySelector('[aria-current="true"]');
-  if(c){ s.style.scrollBehavior = 'auto'; s.scrollLeft += c.getBoundingClientRect().left - s.getBoundingClientRect().left - s.clientWidth/2 + c.offsetWidth/2; s.style.scrollBehavior = ''; }
 }
 async function finishWeek(on){
   if(!on){ await saveSettingKey('week_ahead', null); S.desk.k = null; S.gw = null; render(); return toast(`Back to week ${isoWeek(new Date()).week}`); }
