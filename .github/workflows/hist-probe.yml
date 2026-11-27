@@ -1,20 +1,27 @@
 name: Historical data source probe (backtests)
-# Manual only. Checks which public historical FX sources answer from a GitHub runner. Downloads nothing permanent.
+# Manual only. Measures how fast the Dukascopy datafeed day files download from a GitHub runner. Downloads nothing permanent.
 on:
   workflow_dispatch:
 jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - name: Probe sources
+      - name: Time 120 day files with 8 threads
         run: |
-          set +e
-          for u in \
-            "https://datafeed.dukascopy.com/datafeed/EURUSD/2015/00/05/BID_candles_min_1.bi5" \
-            "https://datafeed.dukascopy.com/datafeed/EURUSD/2015/00/05/10h_ticks.bi5" \
-            "https://jetta.dukascopy.com/v1/candles/minute/EUR-USD/BID/2015/1/5" \
-            "https://www.histdata.com/download-free-forex-historical-data/?/ascii/1-minute-bar-quotes/eurusd/2015" \
-            "https://query1.finance.yahoo.com/v8/finance/chart/EURUSD=X?interval=1h&range=1mo" \
-            "https://stooq.com/q/d/l/?s=eurusd&i=d" ; do
-            code=$(curl -s -o /tmp/out -w '%{http_code}' -A 'Mozilla/5.0' "$u"); echo "$code $(stat -c%s /tmp/out) $u"
-          done
+          python3 - <<'PY'
+          import time, urllib.request, datetime as dt
+          from concurrent.futures import ThreadPoolExecutor
+          days=[dt.date(2015,1,5)+dt.timedelta(days=i) for i in range(170) if (dt.date(2015,1,5)+dt.timedelta(days=i)).weekday()!=5][:120]
+          def f(d):
+              u=f'https://datafeed.dukascopy.com/datafeed/EURUSD/{d.year}/{d.month-1:02d}/{d.day:02d}/BID_candles_min_1.bi5'
+              t=time.time()
+              try:
+                  with urllib.request.urlopen(urllib.request.Request(u,headers={'User-Agent':'Mozilla/5.0'}),timeout=30) as r: n=len(r.read()); c=r.status
+              except Exception as e: n=0; c=str(e)[:40]
+              return c,n,time.time()-t
+          t0=time.time()
+          with ThreadPoolExecutor(8) as ex: R=list(ex.map(f,days))
+          el=time.time()-t0
+          ok=sum(1 for c,n,s in R if c==200)
+          print('PROBE files',len(R),'ok',ok,'elapsed',round(el,1),'s  per file',round(el/len(R),2),'s  slowest',round(max(s for c,n,s in R),1),'s  errors',[c for c,n,s in R if c!=200][:5])
+          PY
