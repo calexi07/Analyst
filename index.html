@@ -6101,12 +6101,12 @@ const mtfPx = v => v==null || v==='' ? '—' : String(+(+v).toPrecision(6));
 function mtfPlanTxt(x){
   const L = x.plan_limit || {}, C = x.plan_confirm || {};
   return [L.entry!=null ? `Limit: entry ${mtfPx(L.entry)} · SL ${mtfPx(L.sl)} · TP ${(L.tp || []).map(mtfPx).join(' / ')}` : '',
-    C.trigger_level!=null ? `Confirmare: ${C.trigger_tf || ''} închide dincolo de ${mtfPx(C.trigger_level)}${C.entry!=null ? ` → entry ${mtfPx(C.entry)} · SL ${mtfPx(C.sl)}` : ' → entry la 50% din piciorul de break'}` : ''].filter(Boolean).join('\n');
+    C.trigger_level!=null ? `Confirmare: după ce prețul atinge zona, o lumânare ${C.trigger_tf || ''} închide ${/^s/i.test(x.dir || '') ? 'sub' : 'peste'} ${mtfPx(C.trigger_level)}${C.entry!=null ? ` → entry ${mtfPx(C.entry)} · SL ${mtfPx(C.sl)}` : ` → limit ${/^s/i.test(x.dir || '') ? 'sell' : 'buy'} la 50% din mișcarea care a rupt nivelul`}` : ''].filter(Boolean).join('\n');
 }
 function mtfToWl(x){
   return { pair:x.pair, dir:/^s/i.test(x.dir || '') ? 'Short' : 'Long', trend:/counter/i.test(x.type || '') ? 'counter' : 'pro', img:'',
     text:[x.summary, `🤖 MTF ${x.class || ''} · [${x.tf || ''}]`, mtfPlanTxt(x)].filter(Boolean).join('\n'),
-    valid:x.plan_confirm?.trigger_level!=null ? `${x.plan_confirm.trigger_tf || ''} close beyond ${mtfPx(x.plan_confirm.trigger_level)} after the zone touch` : '',
+    valid:x.plan_confirm?.trigger_level!=null ? `După atingerea zonei: închidere ${x.plan_confirm.trigger_tf || ''} ${/^s/i.test(x.dir || '') ? 'sub' : 'peste'} ${mtfPx(x.plan_confirm.trigger_level)}` : '',
     invalid:x.invalidation || '', for_day:String(x.created_at || '').slice(0, 10) || iso(new Date()), status:'active',
     source:'mtf', mtf_id:x.id, mtf_class:x.class || null, mtf_tf:x.tf || null, created:new Date().toISOString() };
 }

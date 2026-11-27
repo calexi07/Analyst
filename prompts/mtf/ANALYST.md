@@ -172,6 +172,13 @@ Fără „aștept reacție” fără preț. Pentru fiecare setup dai ambele vari
 - SL = dincolo de extrema atinsă în zonă ± buffer
 - Pentru că piciorul nu există încă, dai **formula** și **un exemplu numeric** cu extrema actuală a zonei și nivelul de break (de exemplu: „dacă vârful rămâne 112.30 și break-ul închide la 111.70 → entry 112.00, SL 112.33”).
 
+**Reguli de coerență pentru varianta 2 (verificate în cod, altfel planul nu se publică):**
+- Declanșatorul e CHoCH-ul structurii de intrare (internal sau fractal pe timeframe-ul setup-ului) **care va fi în vigoare când prețul ajunge în zonă**, nu cel de acum. Când prețul urcă în supply, structura de intrare face BOS-uri în sus, iar CHoCH-ul ei urcă după preț. Nivelul de azi e de obicei mult prea departe.
+  - Dacă prețul e deja în zonă: folosești CHoCH-ul curent.
+  - Dacă prețul nu e încă în zonă: scrii „nivelul se stabilește la atingerea zonei: ultimul low protejat (short) / high protejat (long) al structurii de intrare” și **nu dai prețuri de entry/SL/TP pentru varianta 2** până nu ajunge prețul acolo. Rularea următoare le completează.
+- Ordinea pentru short: SL > vârful zonei ≥ entry > declanșator > TP1 > TP2. Pentru long: oglindit. Dacă un TP e între entry și declanșator, sau declanșatorul e dincolo de TP1, planul e greșit: alegi alte ținte, dincolo de declanșator, sau renunți la varianta 2.
+- În text scrii direcția explicit: „închidere 1H **sub** X” la short, „**peste** X” la long. Nu folosești „dincolo de”.
+
 **Pentru ambele variante:**
 - TP1, TP2 (TP3 opțional) = următoarele niveluri de structură, zone sau lichiditate din CSV, în ordine.
 - R:R la fiecare TP, calculat. Distanța SL în pips.
