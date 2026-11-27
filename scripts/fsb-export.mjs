@@ -49,9 +49,15 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     let live = [];
     try { live = await get(`fsb_bars?select=bar_time,o,h,l,c,v&pair=eq.${p}&order=bar_time.desc&limit=${ROWS}`); }
     catch (e) { meta.errors = [...(meta.errors || []), `${p}: ${String(e.message).slice(0, 160)}`]; }
-    for (const r of live) { const t = Date.parse(r.bar_time); m.set(t, { t, o: r.o, h: r.h, l: r.l, c: r.c, v: r.v }); }
+    // consistency check: where a seed candle and a webhook candle overlap, the structure columns (all but pos %) should be equal
+    let same = 0, diff = 0; const diffCols = new Set();
+    for (const r of live) { const t = Date.parse(r.bar_time), sd = m.get(t);
+      if (sd) { let ok = true; COLS.forEach((c, i) => { if (/pos %$/.test(c)) return; const a = sd.v[i] === '' || sd.v[i] == null ? null : +sd.v[i], b = r.v[i] == null ? null : +r.v[i];
+          if (!(a === b || (a != null && b != null && Math.abs(a - b) < 1e-9))) { ok = false; diffCols.add(c); } }); ok ? same++ : diff++; }
+      m.set(t, { t, o: r.o, h: r.h, l: r.l, c: r.c, v: r.v }); }
     const rows = [...m.values()].sort((a, b) => a.t - b.t).slice(-ROWS);
-    meta.pairs[p] = { rows: rows.length, live: live.length, seed: nSeed, last: rows.length ? bucIso(rows.at(-1).t) : null };
+    meta.pairs[p] = { rows: rows.length, live: live.length, seed: nSeed, last: rows.length ? bucIso(rows.at(-1).t) : null,
+      seed_vs_live: same + diff ? { same, diff, cols: [...diffCols].slice(0, 12) } : null };
     if (!rows.length) continue;
     const lines = [['time', 'open', 'high', 'low', 'close', ...COLS].map(q).join(','),
       ...rows.map(r => [bucIso(r.t), r.o, r.h, r.l, r.c, ...r.v].map(cell).join(','))];
