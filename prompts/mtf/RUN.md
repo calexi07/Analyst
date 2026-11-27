@@ -18,6 +18,7 @@ Raportul e în română. Fișierele de stare sunt JSON.
    - Setup-urile tale apar în Daily Observer → Watchlist ca „🤖 Propuse”. Decizia mea e în `watchlist.json` → `all`, cheia `wl:mtf:<id>`: lipsă = nedecis, `status` active = acceptat (poate fi editat de mine; atunci planul meu are prioritate la mesaj, dar tu urmărești în continuare planul tău original), `rejected` = respins. Pe cele respinse le urmărești mai departe în `state.json` (pentru statistică), dar nu le mai pomenești în mesaj. În `state.json` notezi la fiecare setup `decision`: undecided / accepted / rejected.
 
 O pereche fără CSV sau cu ultimul rând mai vechi de 3 ore (în timpul pieței) apare în tabel cu „date lipsă” și nu primește setup-uri noi.
+O pereche cu mai puțin de 120 de rânduri în CSV (sub ~5 zile de istorie) apare cu „istorie insuficientă (n rânduri)” și nu primește setup-uri noi: starea zonelor (proaspătă / testată) nu se poate verifica. Poți descrie structura curentă într-un rând. Pentru a scurta perioada, utilizatorul poate trimite exporturi CSV manuale care se pun în `data/fsb/seed/`.
 
 ## 2. Verificarea setup-urilor existente (întâi)
 Pentru fiecare setup din `state.json` cu starea `waiting`, `armed` sau `open`, pe lumânările 1H de după `checked_at`:
