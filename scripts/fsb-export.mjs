@@ -46,7 +46,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   for (const p of PAIRS) {
     const seedF = `data/fsb/seed/${p}.csv`, m = existsSync(seedF) ? seedRows(readFileSync(seedF, 'utf8')) : new Map();
     const nSeed = m.size;
-    const live = await get(`fsb_bars?select=bar_time,o,h,l,c,v&pair=eq.${p}&order=bar_time.desc&limit=${ROWS}`);
+    let live = [];
+    try { live = await get(`fsb_bars?select=bar_time,o,h,l,c,v&pair=eq.${p}&order=bar_time.desc&limit=${ROWS}`); }
+    catch (e) { meta.errors = [...(meta.errors || []), `${p}: ${String(e.message).slice(0, 160)}`]; }
     for (const r of live) { const t = Date.parse(r.bar_time); m.set(t, { t, o: r.o, h: r.h, l: r.l, c: r.c, v: r.v }); }
     const rows = [...m.values()].sort((a, b) => a.t - b.t).slice(-ROWS);
     meta.pairs[p] = { rows: rows.length, live: live.length, seed: nSeed, last: rows.length ? bucIso(rows.at(-1).t) : null };
@@ -56,7 +58,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     writeFileSync(`data/fsb/${p}.csv`, lines.join('\n') + '\n');
   }
   // active Watchlist setups (the plans you keep in Daily Observer)
-  const st = await get(`do_settings?select=key,value&key=like.wl:*&limit=2000`);
+  let st = [];
+  try { st = await get(`do_settings?select=key,value&key=like.wl:*&limit=2000`); } catch (e) { meta.errors = [...(meta.errors || []), `watchlist: ${String(e.message).slice(0, 160)}`]; }
   const wl = st.map(r => ({ key: r.key, ...r.value })).filter(x => x && x.pair && (x.status || 'active') === 'active');
   writeFileSync('data/fsb/watchlist.json', JSON.stringify({ generated_at: meta.generated_at, setups: wl }, null, 1) + '\n');
   meta.watchlist_active = wl.length;
