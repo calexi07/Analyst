@@ -52,6 +52,11 @@ Dacă o sesiune nu are date (luni dimineață nu există NY „de ieri” = vine
 
 ## 4. Ce scrii
 1. `reports/mtf/YYYY-MM-DD-HHMM.md` (ora rulării, București), în ordinea:
+   - **🌍 Fundamental (contextul săptămânii)** — PRIMA secțiune, înaintea oricărei analize tehnice, din `imports/` (cel mai nou `YYYY-Www-final.json`, altfel `phase1`, și cel mai nou `check-*.json`):
+     - un rând cu săptămâna, starea (FINAL / PHASE 1) și ora verificării zilnice folosite;
+     - pentru fiecare din cele 29 de perechi, **textul exact** din postările TradingView, fără să-l rescrii: titlul din `stories[PERECHE].title` și primul paragraf al `stories[PERECHE].text` (de după rândul cu simbolul; scoți doar tag-urile BBCode și emoji-urile de formatare, păstrezi cuvintele), plus rândul de bias (`Week NN bias: … | … conviction`); apoi din verificarea zilnică `status` și `hook`, tot exact. Dacă `stories` lipsește, folosești `pairs[].summary`, `main_driver` și `currencies[].note`, exact;
+     - perechile la care verificarea zilnică spune că biasul e slăbit sau pus sub semnul întrebării le marchezi ⚠.
+     Fundamentalul se folosește **contextual** în toată analiza: la fiecare idee spui dacă e pro- sau contra-fundamental, citezi într-o frază motivul fundamental (din textul de mai sus) și știrile care o pot schimba. Nu schimbi și nu reinterpretezi biasul; nu inventezi cifre.
    - **Recapitularea sesiunii** (3b), în cuvinte simple: 5–8 rânduri despre ce a făcut piața (cine a fost puternic / slab, ce lichidități s-au luat, ce structuri s-au schimbat), apoi câte un rând pentru perechile cu mișcări sau evenimente notabile; restul grupate;
    - **De urmărit** (azi / pe New York): maxim 8 perechi, fiecare cu povestea în stilul ANALYST 2b-J (Daily → 4H → 1H, scurt), nivelul sau zona de urmărit și ce ar valida / anula ideea; plus știrile HIGH/CRITICAL ale intervalului (din `imports/`, cu ora București);
    - un rând cu ora datelor (cel mai vechi și cel mai nou „ultimul rând”), săptămâna fundamentală și check-ul folosit;
@@ -71,6 +76,7 @@ Dacă o sesiune nu are date (luni dimineață nu există NY „de ieri” = vine
 ## 5. Mesajul către mine
 Un singur mesaj scurt (SendUserMessage), pentru telefon:
 - primul rând: „🌅 Dimineață” sau „🌆 Seară”, ora și „X schimbări · Y setup-uri A+/A noi”;
+- 🌍 fundamentalul în 2–3 rânduri: biasurile cele mai puternice ale săptămânii și hook-ul verificării zilnice pentru perechile din „De urmărit” (textul exact, scurtat doar dacă e prea lung);
 - recapitularea sesiunii în 3–4 rânduri (moneda cea mai puternică / slabă, lichiditățile importante luate, schimbările de structură pe D/4H);
 - „De urmărit”: maxim 5 rânduri, câte unul pe pereche;
 - overview-ul pe scurt: 🎯 setup-uri bune, 📍 aproape, 👀 de interes, maxim 3 rânduri fiecare;
