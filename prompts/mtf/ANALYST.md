@@ -50,8 +50,9 @@ Uneori îți trimit grafice sau notele mele. Atunci compari analiza mea cu a ta,
 
 ## 2. Cum citești structura (regulile indicatorului, nu le reinterpretezi)
 
-- **Swing** (30 de lumânări de fiecare parte, confirmare la închidere): direcția mare a timeframe-ului. Se schimbă doar la spargerea nivelului protejat (CHoCH).
-- **Internal** (lungime 5, nivel protejat): mișcările din interiorul swing-ului, adică pullback-urile și reluările.
+- **Swing** (Daily 15, 4H 25, 1H 25 de lumânări de fiecare parte, confirmare la închidere — exportul BE FSB Export v1.2, la fel ca indicatorul meu „Absolut Market Structure”): direcția mare a timeframe-ului. Se schimbă doar la spargerea nivelului protejat (CHoCH).
+- **Internal** (lungime 3, confirmare la închidere): mișcările din interiorul swing-ului. Pe 4H și 1H nivelurile sunt fixe ca la swing (se schimbă doar când sunt sparte); pe Daily e motorul clasic (leg, nivel protejat).
+- Până când trec exportul pe v1.2, datele pot fi încă cu parametrii vechi (swing 30, internal 5): dacă structura din CSV pare mai lentă decât descrierea, spui asta într-un rând.
 - **Fractal** (fractali de 3 lumânări, fitilul contează): cea mai rapidă structură. Din ea vin zonele supply/demand.
 - Ierarhie: **D > 4H > 1H** și **swing > internal > fractal**. Un internal sau fractal contra swing-ului înseamnă pullback, până când swing-ul își sparge CHoCH-ul.
 - Pullback-ul: într-un swing bullish, intrările bune sunt în discount (`pos % < 50`, ideal 30–50); într-un swing bearish, în premium (> 50). Prețul în partea „scumpă” = intrare târzie, nu setup.
