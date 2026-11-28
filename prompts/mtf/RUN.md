@@ -1,4 +1,9 @@
-# Analiza MTF programată — procedura unei rulări (08:35 · 14:05 · 20:10 București, luni–vineri; seara după check-ul fundamental de 19:55)
+# Analiza MTF programată — procedura unei rulări (luni–vineri: DIMINEAȚA 08:35 și SEARA 18:47, ora București)
+
+Tipul rulării îl stabilești din ora București la pornire: înainte de 12:00 = **dimineață**, după = **seară**.
+- **Dimineață**: recapitulezi **sesiunea New York de ieri** (15:30–23:00) și **sesiunea Asia de azi** (00:00–09:00), apoi ce urmăresc **azi** (Londra și New York).
+- **Seară**: recapitulezi **sesiunea Londra de azi** (10:00–18:30) și ce urmăresc pe **New York** în continuare și peste noapte.
+Analiza se face după regulile mele din `ANALYST.md` secțiunea 2b (HTF → LTF, veto de HTF, lichiditate, zone, intrări E1/E2/E3).
 
 Rulezi singur, nimeni nu te urmărește. Nu pui întrebări: iei interpretarea cea mai rezonabilă și o notezi în raport.
 Regulile de analiză sunt în `prompts/mtf/ANALYST.md` (le citești întâi și le aplici întocmai). Aici e doar procedura.
@@ -36,8 +41,19 @@ Pentru fiecare pereche cu date: aplici `ANALYST.md` (piloni, clasă, conviction,
 - Setup-urile C și NO TRADE nu intră în `state.json`; apar doar în tabel.
 - `valid_until`: cel mult vineri 22:00, sau mai devreme dacă planul o cere.
 
+## 3b. Recapitularea sesiunii (în cod, din CSV-urile 1H)
+Pentru fiecare pereche, pe lumânările sesiunii (vezi orele de sus):
+- range-ul sesiunii (high, low, mișcarea în pips și în multipli de ATR 1H), direcția;
+- ce lichiditate s-a luat: high/low-ul zilei anterioare, high/low-ul sesiunii precedente, stop hunt-uri (regula din ANALYST 2b-C5, pe 1H și pe 4H), cu fitil sau corp și ce a făcut prețul după;
+- schimbările de structură din sesiune (D / 4H / 1H, swing / internal / fractal), din digest `changes_48h`;
+- dacă prețul a intrat într-o zonă D sau 4H și cum a reacționat.
+Plus, pe toată piața: puterea monedelor în sesiune (media celor 7 perechi ale fiecărei monede, cu semn), din cele 28 de perechi.
+Dacă o sesiune nu are date (luni dimineață nu există NY „de ieri” = vinerea; folosești sesiunea NY de vineri), spui ce ai folosit.
+
 ## 4. Ce scrii
 1. `reports/mtf/YYYY-MM-DD-HHMM.md` (ora rulării, București), în ordinea:
+   - **Recapitularea sesiunii** (3b), în cuvinte simple: 5–8 rânduri despre ce a făcut piața (cine a fost puternic / slab, ce lichidități s-au luat, ce structuri s-au schimbat), apoi câte un rând pentru perechile cu mișcări sau evenimente notabile; restul grupate;
+   - **De urmărit** (azi / pe New York): maxim 8 perechi, fiecare cu povestea în stilul ANALYST 2b-J (Daily → 4H → 1H, scurt), nivelul sau zona de urmărit și ce ar valida / anula ideea; plus știrile HIGH/CRITICAL ale intervalului (din `imports/`, cu ora București);
    - un rând cu ora datelor (cel mai vechi și cel mai nou „ultimul rând”), săptămâna fundamentală și check-ul folosit;
    - **Schimbări de la ultima rulare**: setup-uri confirmate, deschise, invalidate, TP/SL lovite, plus planurile din Watchlist validate sau invalidate;
    - **Overview** (chiar la început, înainte de orice detaliu), trei liste scurte, calculate în cod unde e posibil, câte un rând pe pereche:
@@ -54,7 +70,9 @@ Pentru fiecare pereche cu date: aplici `ANALYST.md` (piloni, clasă, conviction,
 
 ## 5. Mesajul către mine
 Un singur mesaj scurt (SendUserMessage), pentru telefon:
-- primul rând: ora și „X schimbări · Y setup-uri A+/A noi”;
+- primul rând: „🌅 Dimineață” sau „🌆 Seară”, ora și „X schimbări · Y setup-uri A+/A noi”;
+- recapitularea sesiunii în 3–4 rânduri (moneda cea mai puternică / slabă, lichiditățile importante luate, schimbările de structură pe D/4H);
+- „De urmărit”: maxim 5 rânduri, câte unul pe pereche;
 - overview-ul pe scurt: 🎯 setup-uri bune, 📍 aproape, 👀 de interes, maxim 3 rânduri fiecare;
 - schimbările importante (maxim 5 rânduri);
 - setup-urile A+/A noi, în stilul „Pe scurt”: o propoziție cu povestea plus rândul „Entry · SL · TP”;

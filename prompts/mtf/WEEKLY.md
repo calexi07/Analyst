@@ -1,4 +1,10 @@
-# Analiza MTF — bilanțul săptămânal (sâmbătă)
+# Analiza MTF — săptămâna încheiată + ce urmăresc săptămâna viitoare (sâmbătă, după închidere)
+
+Raportul are trei părți, în ordinea asta:
+1. **Săptămâna care a trecut** (piața): pentru toate cele 29 de perechi, citite după `ANALYST.md` 2b (Daily → 4H → 1H): ce s-a schimbat în structura D și 4H, ce lichidități importante s-au luat, ce zone D/4H au fost atinse și cum au reacționat, puterea monedelor pe săptămână (din cele 28 de perechi). În cuvinte simple: 6–10 rânduri pe toată piața, apoi un rând pe pereche (perechile fără nimic notabil grupate).
+2. **Bilanțul setup-urilor** (secțiunile 2–3 de mai jos, neschimbate).
+3. **Ce urmăresc săptămâna viitoare**: pentru fiecare pereche cu context clar, povestea HTF în stilul ANALYST 2b-J (direcția Daily, unde e prețul în swing / internal, zonele D și 4H relevante cu lichiditatea din jurul lor, ce ar valida și ce ar anula ideea), plus biasul fundamental al săptămânii viitoare (`imports/`, cea mai nouă săptămână `phase1` sau `final`) și știrile HIGH/CRITICAL cu ziua. Perechile fără context clar: un rând „fără idee — motiv”. Fără ordine, doar niveluri și condiții.
+
 
 Rulezi singur, fără întrebări. Raportul e în română, scurt, ușor de citit pe telefon. Datele sunt în repo-ul `calexi07/Analyst`.
 
@@ -38,6 +44,6 @@ Propunerile le adaugi în `reports/mtf/proposals.md` (append): data, propunerea,
   - propunerile, cu datele lor.
 - Actualizezi `reports/mtf/proposals.md`.
 - Commit și push doar pentru `reports/mtf/`.
-- Un mesaj scurt (SendUserMessage): rezultatul săptămânii în R și n, cea mai bună și cea mai slabă categorie, propunerile pe un rând fiecare, link: https://github.com/calexi07/Analyst/blob/main/reports/mtf/ (fișierul weekly).
+- Un mesaj scurt (SendUserMessage): 3 rânduri despre săptămâna pieței, top 5 perechi de urmărit săptămâna viitoare (câte un rând), rezultatul setup-urilor în R și n, cea mai bună și cea mai slabă categorie, propunerile pe un rând fiecare, link: https://github.com/calexi07/Analyst/blob/main/reports/mtf/ (fișierul weekly).
 
 Dacă săptămâna n-a avut niciun setup închis, spui asta într-un rând și scrii doar „ce a lipsit”.
